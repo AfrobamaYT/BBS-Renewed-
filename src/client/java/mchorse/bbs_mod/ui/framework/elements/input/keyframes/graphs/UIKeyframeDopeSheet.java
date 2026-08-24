@@ -1076,6 +1076,16 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         Icon icon = !this.isPoseTabParent(sheet) ? null
             : this.expandedPoseTabs.contains(sheet) ? Icons.ARROW_DOWN : Icons.ARROW_RIGHT;
 
+        String kern = sheet.id.contains("/") ? sheet.id.substring(sheet.id.lastIndexOf('/') + 1) : sheet.id;
+        int achse = "x".equals(kern) || "vX".equals(kern) ? NanoDesign.ACHSE_X
+            : "y".equals(kern) || "vY".equals(kern) ? NanoDesign.ACHSE_Y
+            : "z".equals(kern) || "vZ".equals(kern) ? NanoDesign.ACHSE_Z : 0;
+
+        if (achse != 0)
+        {
+            context.batcher.box(area.x, y, area.x + 2, y + (int) this.trackHeight, achse | Colors.A100);
+        }
+
         /* Entwurfszeile .cr.sel: die zuletzt angefasste Spur traegt die blaue Toenung. */
         if (sheet == this.lastSheet)
         {
@@ -1109,6 +1119,12 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         int h = (int) this.trackHeight;
         boolean hover = area.isInside(context) && context.mouseY >= y && context.mouseY < y + h;
+
+        /* Blender-Farbcode der Ebenen: Gruppenzeilen gruen, Kanaele neutral. */
+        if (gruppe)
+        {
+            context.batcher.box(area.x, y, area.x + w, y + h, Colors.setA(NanoDesign.GRUEN, 0.13F));
+        }
 
         if (hover)
         {
@@ -1239,14 +1255,12 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         context.batcher.box(area.x, by, area.ex(), by + bh, surface);
 
-        if (sheet == this.lastSheet)
-        {
-            context.batcher.box(area.x, by, area.ex(), by + bh, Colors.setA(0x4772B3, 0.12F));
-        }
+        int toenung = sheet == this.lastSheet ? Colors.setA(0x4772B3, 0.12F)
+            : hover ? BBSSettings.color(BBSSettings.raisedSurface(), Colors.A25) : 0;
 
-        if (hover)
+        if (toenung != 0)
         {
-            context.batcher.box(area.x, by, area.ex(), by + bh, BBSSettings.color(BBSSettings.raisedSurface(), Colors.A25));
+            context.batcher.box(area.x, by, area.ex(), by + bh, toenung);
         }
 
         /* Was unter den Keyframes dieser Zeile liegen soll (Kamera-Clips), kommt hierhin:
@@ -1310,25 +1324,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                     forcedIndex += 1;
                 }
 
-                boolean isPointHover = this.isNear(this.keyframes.toGraphX(frame.getTick()), my, context.mouseX, context.mouseY, Window.isAltPressed() && Window.isShiftPressed());
-                boolean toRemove = Window.isCtrlPressed() && isPointHover;
-
-                if (this.keyframes.isSelecting())
-                {
-                    isPointHover = isPointHover || this.keyframes.getGrabbingArea(context).isInside(x1, my);
-                }
-
-                /* Entwurf: helle Raute mit dunklem Rand; Auswahl fuellt bernstein (innen). */
-                int c = (isPointHover ? 0xEAEAEA : 0x0F0F0F) | Colors.A100;
-
-                if (toRemove)
-                {
-                    c = Colors.RED | Colors.A100;
-                }
-
-                int pointOffset = toRemove ? 4 : 3;
-
-                renderShape(frame, context, ecken, matrix, x1, my, pointOffset, c);
+                this.randMarker(context, ecken, matrix, frame, x1, my);
             }
 
             /* Render keyframe handles (inner) */
@@ -1352,6 +1348,27 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             .renderKeyframeBackground(context, builder, matrix, mx, my, 2, mc);
     }
 
+    /** Rand eines Markers: dunkel, Hover hell, Entfernen-Geste rot — beide Renderpfade. */
+    private void randMarker(UIContext context, VertexConsumer builder, Matrix4f matrix, Keyframe frame, int x1, int my)
+    {
+        boolean isPointHover = this.isNear(x1, my, context.mouseX, context.mouseY, Window.isAltPressed() && Window.isShiftPressed());
+        boolean toRemove = Window.isCtrlPressed() && isPointHover;
+
+        if (this.keyframes.isSelecting())
+        {
+            isPointHover = isPointHover || this.keyframes.getGrabbingArea(context).isInside(x1, my);
+        }
+
+        int c = (isPointHover ? 0xEAEAEA : 0x0F0F0F) | Colors.A100;
+
+        if (toRemove)
+        {
+            c = Colors.RED | Colors.A100;
+        }
+
+        renderShape(frame, context, builder, matrix, x1, my, toRemove ? 4 : 3, c);
+    }
+
     private void renderSheetKeyframeShapes(UIContext context, VertexConsumer builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int y)
     {
         if (!this.isVisible(sheet))
@@ -1372,24 +1389,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             Keyframe frame = (Keyframe) keyframes.get(j);
             int x1 = this.keyframes.toGraphX(frame.getTick());
 
-            boolean isPointHover = this.isNear(x1, my, context.mouseX, context.mouseY, Window.isAltPressed() && Window.isShiftPressed());
-            boolean toRemove = Window.isCtrlPressed() && isPointHover;
-
-            if (this.keyframes.isSelecting())
-            {
-                isPointHover = isPointHover || this.keyframes.getGrabbingArea(context).isInside(x1, my);
-            }
-
-            int c = (isPointHover ? 0xEAEAEA : 0x0F0F0F) | Colors.A100;
-
-            if (toRemove)
-            {
-                c = Colors.RED | Colors.A100;
-            }
-
-            int pointOffset = toRemove ? 4 : 3;
-
-            renderShape(frame, context, builder, matrix, x1, my, pointOffset, c);
+            this.randMarker(context, builder, matrix, frame, x1, my);
         }
 
         for (int j = 0; j < keyframes.size(); j++)
