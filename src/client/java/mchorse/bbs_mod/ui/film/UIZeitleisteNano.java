@@ -18,21 +18,21 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
 /**
- * Zeitleiste im neuen Designsystem: Kanal-Spalte links, Spuren rechts, Lineal, Abspielkopf.
+ * Zeitleisten-KOPF im neuen Designsystem: Editor-Typ, Transport, Marker/Key, Loop-Ring —
+ * plus die Kanalspalte im Kamera-Zweig.
  *
- * <p>Alle Keyframes kommen aus den ECHTEN Kanaelen des gewaehlten Replays; der Abspielkopf
- * steht auf dem echten Cursor des Film-Editors.</p>
+ * <p>⛔ NUR der Kopf. Alles darunter — Spuren, Clips, Keyframes, Lineal — zeichnet der
+ * Koerper-Editor des aktiven Modus ({@link ZeitleisteZweig}): UIClips fuer Kamera-Clips
+ * mit seinen 89 Methoden (Auswahl, Kollisionen, Einrasten, Ebenen), der Dope Sheet des
+ * Replay-Editors fuer Keyframes. Der Neubau hatte versucht, UIClips nachzubauen, und
+ * 88 der 89 Methoden verloren — jede Nutzermeldung seither war ein Stueck dieser Logik.
+ * Was der Kopf ausloest, geht an dieselben Stellen wie vorher.</p>
  */
 public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffrischbar
 {
 	private final NanoFlaeche flaeche;
 	private String stand = "";
 	private int gewaehlteSpur = -1;
-	/** Clip unter der Maus seit dem Druck — der Zieh-Handler kennt sonst nur die Zonen-Id,
-	 * und die Zuordnung Id→Clip lebt nur im Zeichendurchgang. */
-	private mchorse.bbs_mod.utils.clips.Clip zugClip;
-	/** Ob der Zieh-Handler an der Flaeche haengt — siehe zeichnen(). */
-	private boolean ziehenVerdrahtet;
 	/** Sichtbarer Zeitausschnitt. Beide 0 = ganze Dauer zeigen.
 	 *
 	 * ⛔ Ohne das rechnete die Zeitleiste stur {@code t / dauer} — kein Zoom, kein
@@ -44,16 +44,8 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 	 * Hotswap auf 0. */
 	private float sichtVon;
 	private float sichtBis;
-	/** Angesammelte Verschiebung in Ticks, damit auch Zuege unter 1 Tick nicht verpuffen. */
-	private float zugRest;
-	/** 0 = kein Trimm, 1 = linke Kante, 2 = rechte Kante. */
-	private int zugTrimmLinks;
-	/** Mehrfachauswahl: alle mitgezogenen Clips. Leer = nur zugClip. */
-	private final java.util.List<mchorse.bbs_mod.utils.clips.Clip> auswahl = new ArrayList<>();
-	/** Zwischenablage — ein kopierter Clip überlebt den Wechsel der Auswahl. */
-	private mchorse.bbs_mod.utils.clips.Clip ablage;
-	/** 0 = Dope Sheet (Kanaele), 1 = nur bewegte Kanaele, 2 = Kamera-Clips. */
-	public int modus;   /* 0 Dope Sheet · 1 Animated only · 2 Camera clips — vom Animier-Bereich gelesen */
+	/** 0 Dope Sheet · 1 Animated only · 2 Camera clips — Boot zeigt den Kamera-Schnitt. */
+	public int modus = 2;
 
 	private final List<ZeitleisteSpuren.Zeile> spuren = new ArrayList<>();
 	/**
@@ -70,10 +62,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 	public UIZeitleisteNano()
 	{
 		this.flaeche = new NanoFlaeche(this::zeichnen);
-		/* ⛔ Abspielkopf ZIEHEN, nicht nur anklicken. Die Scrub-Zone reagierte auf den
-		 * Klick und danach auf nichts mehr — man konnte den Kopf setzen, aber nicht
-		 * schrubben, was die Zeitleiste praktisch unbedienbar machte. */
-		this.flaeche.beimZiehen(this::ziehen);
 		this.flaeche.relative(this).x(0).y(0).w(1F).h(1F);
 		this.add(this.flaeche);
 		this.h(240);
@@ -142,52 +130,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		super.render(context);
 	}
 
-	/**
-	 * Zieh-Handler der Flaeche. Der Abspielkopf folgt der ABSOLUTEN Mausposition, nicht der
-	 * Verschiebung — sonst driftet er bei schnellen Zuegen weg.
-	 */
-	private void ziehen(String zoneId, float d)
-	{
-		if (zoneId.startsWith("clip") || zoneId.startsWith("trimm"))
-		{
-			this.clipZiehen(d);
-
-			return;
-		}
-
-		if (!"scrub".equals(zoneId))
-		{
-			return;
-		}
-
-		UIFilmPanel panel = this.filmPanel();
-
-		if (panel == null || panel.getData() == null)
-		{
-			return;
-		}
-
-		float mx = this.flaeche.mausPositionX();
-
-		if (mx < 0F)
-		{
-			return;
-		}
-
-		/* ⛔ Dieselbe Formel wie in zeichnen(): die Kanalspalte ist nicht fest, sondern
-		 * haengt an der Flaechenbreite. Eine eigene Konstante hier waere eine zweite
-		 * Wahrheit, die beim naechsten Layout-Wechsel auseinanderliefe. */
-		float k = Math.max(1F, this.flaeche.skala());
-		float b = this.flaeche.area.w * k;
-		float spurX = Math.max(Math.min(210F * k, b * 0.52F), Math.min(b * 0.5F, 96F * k));
-		float spurB = Math.max(1F, b - spurX);
-		int dauer = Math.max(1, panel.getData().camera.calculateDuration());
-		int tick = Math.round(this.von(dauer) + (mx - spurX) / spurB * this.spanne(dauer));
-
-		panel.setCursor(Math.max(0, Math.min(dauer, tick)));
-		this.stand = "";
-		this.flaeche.neuMalen();
-	}
 
 	/** Linker Rand des sichtbaren Ausschnitts in Ticks. */
 	private float von(int dauer)
@@ -236,14 +178,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		this.flaeche.neuMalen();
 	}
 
-	/**
-	 * ⛔ NUR die Kopfzeile. Alles darunter — Spuren, Clips, Keyframes, Lineal — zeichnet
-	 * {@code UIClips}, das dafuer 89 Methoden mitbringt (Auswahl, Kollisionen, Einrasten,
-	 * Ebenen). Der Neubau hatte versucht, das nachzubauen, und 88 davon verloren.
-	 *
-	 * <p>Diese Flaeche ist damit reine Zier: Editor-Typ, Transport, Marker/Key, Loop-Ring.
-	 * Was sie ausloest, geht an dieselben Stellen wie vorher.</p>
-	 */
 	/**
 	 * Kanalspalte links — die Namen zu den Ebenen, die UIClips daneben zeichnet.
 	 *
@@ -374,9 +308,8 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 					mchorse.bbs_mod.l10n.keys.IKey.raw(e[0]), () ->
 				{
 					this.modus = wahl;
-					this.stand = "";
 					this.auffrischen();
-					this.flaeche.neuMalen();
+					ZeitleisteZweig.anwenden(filmPanel(), wahl);
 				});
 			}
 		});
@@ -458,11 +391,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		return kx;
 	}
 
-	private boolean nurKopf()
-	{
-		return true;
-	}
-
 	private void zeichnen(long vg, int b, int h, float mausX, float mausY, NanoFlaeche f)
 	{
 		/* ⛔ Handler HIER sichern, nicht nur im Konstruktor. Der laeuft beim Hotswap nicht
@@ -474,8 +402,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		 * Flag noch stand. Drei Zuweisungen je Bild kosten nichts — eine Absicherung, die am
 		 * Hotswap scheitert, kostet eine Stunde Fehlersuche. */
 		{
-			f.beimZiehen(this::ziehen);
-
 			/* MMB schwenkt die ZEIT, das Rad zoomt sie — beides konnte die alte Zeitleiste
 			 * ueber ihre Scale, die neue bis 2026-08-20 nicht. */
 			f.beimSchwenken((dx, breite) ->
@@ -493,14 +419,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 					Math.min(breite * 0.5F, 96F * k2));
 
 				this.zeitSchwenken(dx / Math.max(1F, breite - sX) * this.spanne(d), d);
-			});
-			/* Rechtsklick auf einen Clip: Kontextmenue wie in der alten Zeitleiste. */
-			f.beimRechtsklick((zone, punkt) ->
-			{
-				if (zone.startsWith("clip") || zone.startsWith("trimm"))
-				{
-					this.oeffneClipMenue();
-				}
 			});
 			f.beimZoomen((faktor) ->
 			{
@@ -525,15 +443,8 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		/* ⛔ NUR Kopfzeile und Kanalspalte fuellen, nicht die ganze Flaeche. Diese Flaeche
 		 * liegt UEBER UIClips (sie wird spaeter eingehaengt); ein Vollflaechen-Grund uebermalte
 		 * Lineal und Clips vollstaendig — im Bild blieb rechts der CHANNELS-Spalte nichts. */
-		if (this.nurKopf())
-		{
-			NanoStifte.flaeche(vg, 0, 0, b, NanoDesign.H_KOPF * k, NanoDesign.R_AREA * k,
-				NanoDesign.REGION);
-		}
-		else
-		{
-			NanoStifte.flaeche(vg, 0, 0, b, h, NanoDesign.R_AREA * k, NanoDesign.REGION);
-		}
+		NanoStifte.flaeche(vg, 0, 0, b, NanoDesign.H_KOPF * k, NanoDesign.R_AREA * k,
+			NanoDesign.REGION);
 
 		float nachKopf = NanoBausteine.kopfzeile(vg, b, k, "dopesheet");
 
@@ -680,381 +591,14 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		 * Keyframes — zeichnet ab jetzt UIClips darunter, mit seinen 89 Methoden fuer Auswahl,
 		 * Kollisionen, Einrasten und Ebenen. Der Neubau hatte das nachgebaut und 88 davon
 		 * verloren; jede Nutzermeldung seither war ein Stueck dieser Logik. */
-		if (this.nurKopf())
-		{
-			/* ⛔ Eingaben NUR im Kopf annehmen. Diese Flaeche hat volle Hoehe (sie traegt auch
-			 * die Kanalspalte), liegt aber ueber UIClips — ohne diese Grenze schluckte sie
-			 * dessen komplette Bedienung: Rechtsklick, Mittelklick, Clip-Griffe, alles kam
-			 * nicht mehr an. Der Nutzer meldete „die regressions von davor sind back".
-			 *
-			 * Die Kanalspalte bleibt bewusst DRAUSSEN: sie ist Beschriftung, und ein Klick
-			 * darauf soll die Spur darunter treffen. */
-			this.kanalspalte(vg, f, b, h, k);
-
-			f.eingabeFeld(0F, 0F, this.area.w, NanoDesign.H_KOPF);
-			NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
-
-			return;
-		}
-
-		float oben     = NanoDesign.H_KOPF * k;
-		/* Entwurfsmass .chan{width:210px}; bei schmaler Flaeche auf die halbe Breite gedeckelt,
-		 * sonst frisst die Kanalspalte die Spuren. */
-		float kanalB   = Math.max(Math.min(210F * k, b * 0.52F), Math.min(b * 0.5F, 96F * k));
-		float linealH  = 20F * k;
-		float zeileH   = 18F * k;
-
-		/* Kanal-Spalte */
-		NanoStifte.flaeche(vg, 0, oben, kanalB, h - oben, 0F, 0x191919);
-		NanoStifte.text(vg, NanoDesign.SANS, 9.5F * k, 8F * k, oben + 13F * k,
-			NanoDesign.TXT_OFF, "CHANNELS", null);
-		/* Spurenflaeche */
-		NanoStifte.flaeche(vg, kanalB, oben, b - kanalB, h - oben, 0F, NanoDesign.EDITOR);
-
-		/* Lineal */
-		NanoStifte.flaeche(vg, kanalB, oben, b - kanalB, linealH, 0F, 0x151515);
-
-		float spurX = kanalB + 4F * k;
-		float spurB = b - spurX - 6F * k;
-
-		int schritt = dauer <= 40 ? 5 : dauer <= 120 ? 20 : 50;
-
-		for (int t = 0; t <= dauer; t += schritt)
-		{
-			float tx = spurX + spurB * ((t - this.von(dauer)) / this.spanne(dauer));
-
-			NanoStifte.linie(vg, tx, oben + linealH - 4F * k, tx, oben + linealH, 1F * k, 0x3A3A3A);
-			NanoStifte.text(vg, NanoDesign.SANS, 9F * k, tx + 2F * k, oben + 10F * k,
-				NanoDesign.TXT_DIM, String.valueOf(t), null);
-		}
-
-		/* Merkstellen unten am Lineal: Dreieck plus Beschriftung, wie im Entwurf. */
-		if (film != null)
-		{
-			for (mchorse.bbs_mod.film.markers.Marker m : film.markers.getList())
-			{
-				float mx = spurX + spurB * ((m.tick.get() - this.von(dauer)) / this.spanne(dauer));
-
-				NanoStifte.dreieck(vg, mx - 3.5F * k, oben + linealH - 5F * k,
-					mx + 3.5F * k, oben + linealH - 5F * k, mx, oben + linealH, 0xB9B9B9);
-
-				String beschriftung = m.label.get().isEmpty()
-					? String.valueOf(m.tick.get()) : m.label.get();
-
-				NanoStifte.text(vg, NanoDesign.SANS, 8.5F * k, mx + 5F * k,
-					oben + linealH - 1F * k, NanoDesign.TXT_DIM, beschriftung, null);
-			}
-		}
-
-		if (this.spuren.isEmpty())
-		{
-			NanoStifte.text(vg, NanoDesign.SANS, 11F * k, 9F * k, oben + linealH + 20F * k,
-				NanoDesign.TXT_OFF, "No replay selected", null);
-			return;
-		}
-
-		float y = oben + linealH;
-		java.util.List<Object[]> clipZonen = new ArrayList<>();
-		java.util.List<Object[]> trimmZonen = new ArrayList<>();
-		java.util.List<Object[]> klappZonen = new ArrayList<>();
-
-		/* Rollen: wie viele Zeilen passen, wie viele gibt es? Die Flaeche kennt nur die Grenze. */
-		int passen = Math.max(1, (int) ((h - oben - linealH) / zeileH));
-		int ersteZeile = Math.min((int) f.rollVersatz(), Math.max(0, this.spuren.size() - passen));
-
-		f.rollGrenze(Math.max(0, this.spuren.size() - passen));
-
-		for (int i = ersteZeile; i < this.spuren.size(); i++)
-		{
-			ZeitleisteSpuren.Zeile s = this.spuren.get(i);
-
-			if (y + zeileH > h)
-			{
-				break;
-			}
-
-			boolean sel = i == this.gewaehlteSpur;
-			boolean kopfzeile = s.ebene == 0;
-
-			if (sel)
-			{
-				NanoStifte.flaecheArgb(vg, 0, y, b, zeileH, 0F, NanoDesign.A_AUSWAHL);
-			}
-			else if ((i - ersteZeile) % 2 == 1)
-			{
-				NanoStifte.flaeche(vg, kanalB, y, b - kanalB, zeileH, 0F, 0x1B1B1B);
-			}
-
-			/* Einrueckung nach Ebene: Replay · Gruppe · Einzelkanal */
-			float tx = 8F * k + s.ebene * 14F * k;
-
-			if (kopfzeile && s.replay != null)
-			{
-				NanoStifte.flaeche(vg, 0, y, 3F * k, zeileH, 0F, NanoDesign.GRUEN);
-			}
-
-			/* Klapppfeil, wo es etwas zu klappen gibt */
-			if (!s.klappe.isEmpty())
-			{
-				if (s.auf)
-				{
-					NanoSymbole.pfeilAb(vg, tx + 4F * k, y + zeileH / 2F, NanoDesign.TXT_DIM, k * 0.75F);
-				}
-				else
-				{
-					NanoSymbole.pfeilRechts(vg, tx + 4F * k, y + zeileH / 2F, NanoDesign.TXT_DIM, k * 0.75F);
-				}
-
-				/* Gemerkt, nicht sofort gemeldet: die Spurzone deckt die ganze Kanalspalte und
-				 * kommt spaeter — sie wuerde den Klick sonst schlucken (treffe() nimmt die
-				 * zuletzt gemeldete Zone). Dieselbe Falle wie bei den Clips. */
-				klappZonen.add(new Object[] {s.klappe, s.auf, tx - 2F * k, y, 14F * k, zeileH});
-
-				tx += 13F * k;
-			}
-
-			if (kopfzeile)
-			{
-				NanoSymbole.symbol(vg, s.replay == null ? "kamera" : "replay",
-					tx + 6F * k, y + zeileH / 2F, NanoDesign.TXT_DIM, k * 0.85F);
-				tx += 16F * k;
-			}
-
-			/* Zaehler zuerst vermessen — der Name wird danach gegen SEINE Kante gekuerzt.
-			 * Vorher stand beides uebereinander, sobald der Name lang war. */
-			float zaehlerB = s.zaehler.isEmpty() ? 0F : NanoDesign.breite(s.zaehler, 9.5F * k);
-			/* Platz fuer das Auge freihalten. */
-			float zaehlerRechts = kanalB - (kopfzeile ? 24F * k : 7F * k);
-			float namePlatz = zaehlerRechts - zaehlerB - 8F * k - tx;
-
-			NanoStifte.textInBox(vg, kopfzeile ? NanoDesign.BOLD : NanoDesign.SANS, 11F * k,
-				tx, y + zeileH / 2F,
-				sel ? NanoDesign.TXT_MAX : (kopfzeile ? NanoDesign.GRUEN : NanoDesign.TXT),
-				NanoDesign.kuerzen(s.name, namePlatz, 11F * k));
-
-			if (!s.zaehler.isEmpty())
-			{
-				NanoStifte.textInBox(vg, NanoDesign.SANS, 9.5F * k, zaehlerRechts - zaehlerB,
-					y + zeileH / 2F,
-					sel ? 0xB9CCE9 : NanoDesign.TXT_OFF, s.zaehler);
-			}
-
-			/* Kamera-Clips als Balken — Typ-Farbe, Titel, Auswahlkontur wie im Entwurf */
-			if (s.clips != null)
-			{
-				for (int c = 0; c < s.clips.size(); c++)
-				{
-					mchorse.bbs_mod.utils.clips.Clip clip = s.clips.get(c);
-					float cx = spurX + spurB * ((clip.tick.get() - this.von(dauer)) / this.spanne(dauer));
-					float cb = Math.max(6F * k, spurB * (clip.duration.get() / this.spanne(dauer)));
-
-					boolean gewaehltC = gewaehlterClip() == clip;
-
-					NanoStifte.flaeche(vg, cx, y + 2F * k, cb, zeileH - 4F * k, 3F * k,
-						!clip.enabled.get() ? 0x333333 : gewaehltC ? 0x4A6FA5 : 0x3E5C86);
-					NanoStifte.rahmen(vg, cx, y + 2F * k, cb, zeileH - 4F * k, 3F * k, 1F * k,
-						gewaehltC ? 0xE8E8E8 : 0x2B4265);
-
-					/* Typ-Symbol vor dem Titel, wie im Entwurf. */
-					String art = clip.getClass().getSimpleName().replace("Clip", "");
-					String sym = clipSymbol(art);
-					float tx3 = cx + 5F * k;
-
-					if (!sym.isEmpty() && cb > 34F * k)
-					{
-						NanoSymbole.symbol(vg, sym, cx + 9F * k, y + zeileH / 2F, 0xDCE6F5, k * 0.62F);
-						tx3 += 12F * k;
-					}
-
-					String titel = clip.title.get().isEmpty() ? art : clip.title.get();
-
-					NanoStifte.textInBox(vg, NanoDesign.SANS, 9.5F * k, tx3,
-						y + zeileH / 2F, gewaehltC ? 0xFFFFFF : 0xDCE6F5,
-						NanoDesign.kuerzen(titel, cb - (tx3 - cx) - 4F * k, 9.5F * k));
-
-					/* Trimm-Griffe in Bernstein an den Kanten des gewaehlten Clips. */
-					if (gewaehltC && cb > 10F * k)
-					{
-						NanoStifte.flaeche(vg, cx + 1F * k, y + 3F * k, 2.5F * k, zeileH - 6F * k,
-							1.5F * k, NanoDesign.BERNSTEIN);
-						NanoStifte.flaeche(vg, cx + cb - 3.5F * k, y + 3F * k, 2.5F * k, zeileH - 6F * k,
-							1.5F * k, NanoDesign.BERNSTEIN);
-					}
-
-					/* Waehlbar wie in der alten Zeitleiste. Gemerkt, nicht sofort gemeldet:
-					 * die Scrub-Zone kommt spaeter und laege sonst darueber. */
-					clipZonen.add(new Object[] {clip, cx, y + 2F * k, cb, zeileH - 4F * k});
-
-					/* ⛔ Trimm-Zonen an den Kanten. Die Griffe wurden GEZEICHNET (Bernstein,
-					 * siehe unten), reagierten aber auf nichts — eine Attrappe, die aussieht
-					 * wie eine Funktion. Der Nutzer meldete genau das: „clips kann ich nicht
-					 * verkuerzen oder verlaengern mit dem zieh symbol".
-					 * 6 px breit, damit sie greifbar sind, ohne den Clip-Zug zu schlucken. */
-					float griff = Math.min(6F * k, cb / 3F);
-
-					trimmZonen.add(new Object[] {clip, cx, y + 2F * k, griff, zeileH - 4F * k,
-						Boolean.TRUE});
-					trimmZonen.add(new Object[] {clip, cx + cb - griff, y + 2F * k, griff,
-						zeileH - 4F * k, Boolean.FALSE});
-				}
-			}
-
-			/* Keyframes zeichnen */
-			/* ⛔ ALLE Kanaele der Zeile, nicht nur s.kanal: der ist bei Gruppen mit mehreren
-			 * Kanaelen null, und „Transform" (10) wie „Pose" blieben dadurch leer. */
-			for (KeyframeChannel<?> kanal : s.kanaele)
-			{
-				for (Keyframe<?> kf : kanal.getKeyframes())
-				{
-					float tx2 = spurX + spurB * ((kf.getTick() - this.von(dauer)) / this.spanne(dauer));
-					/* Der Keyframe AM Cursor ist der, den die Properties gerade zeigen —
-					 * groesser und bernstein, wie der gewaehlte im Entwurf. */
-					boolean amCursor = Math.abs(kf.getTick() - cursor) < 1;
-					float r = (amCursor ? 4.4F : 3.4F) * k;
-					int farbe = amCursor ? NanoDesign.BERNSTEIN : 0xCFCFCF;
-
-					NanoStifte.dreieck(vg, tx2, y + zeileH / 2F - r, tx2 + r, y + zeileH / 2F,
-						tx2, y + zeileH / 2F + r, farbe);
-					NanoStifte.dreieck(vg, tx2, y + zeileH / 2F - r, tx2 - r, y + zeileH / 2F,
-						tx2, y + zeileH / 2F + r, farbe);
-				}
-			}
-
-			/* Auge je Spur: Gruppe schaltet das Replay, Kameraspur die Clips. */
-			if (kopfzeile)
-			{
-				boolean sichtbar = s.replay == null || s.replay.enabled.get();
-
-				NanoSymbole.symbol(vg, sichtbar ? "auge" : "auge-aus", kanalB - 12F * k,
-					y + zeileH / 2F, sichtbar ? NanoDesign.TXT_DIM : NanoDesign.TXT_OFF, k * 0.85F);
-
-				if (s.replay != null)
-				{
-					final Replay r = s.replay;
-
-					f.zone("auge" + i, kanalB - 22F * k, y, 20F * k, zeileH, () ->
-					{
-						r.enabled.set(!r.enabled.get());
-						this.stand = "";
-						this.flaeche.neuMalen();
-					});
-				}
-			}
-
-			final int idx = i;
-			f.zone("spur" + i, 0, y, kanalB, zeileH, () ->
-			{
-				this.gewaehlteSpur = this.gewaehlteSpur == idx ? -1 : idx;
-				this.flaeche.neuMalen();
-			});
-
-			y += zeileH;
-		}
-
-		/* Scrubbing im LINEAL-Band — wie in Blender: dort setzt der Klick den Abspielkopf.
-		   Zuletzt registriert, damit sie ueber allem liegt (treffe() nimmt die letzte Zone). */
-		if (panel != null)
-		{
-			final int dauerF = dauer;
-			final float spurXF = spurX;
-			final float spurBF = spurB;
-			final UIFilmPanel panelF = panel;
-
-			f.zone("scrub", kanalB, oben, b - kanalB, h - oben, () ->
-			{
-				float rel = (f.letzterKlickX() - spurXF) / Math.max(1F, spurBF);
-				int tick = Math.round(rel * dauerF);
-
-				panelF.setCursor(Math.max(0, Math.min(dauerF, tick)));
-				this.stand = "";
-				this.flaeche.neuMalen();
-			});
-		}
-
-		/* Clips ZULETZT: ein Klick auf einen Balken waehlt ihn, daneben scrubbt er weiter. */
-		for (int c = 0; c < clipZonen.size(); c++)
-		{
-			Object[] z = clipZonen.get(c);
-			final mchorse.bbs_mod.utils.clips.Clip gewaehlt = (mchorse.bbs_mod.utils.clips.Clip) z[0];
-
-			f.zone("clip" + c, (Float) z[1], (Float) z[2], (Float) z[3], (Float) z[4], () ->
-			{
-				UIFilmPanel pp = filmPanel();
-
-				if (pp != null && pp.cameraEditor != null && pp.cameraEditor.clips != null)
-				{
-					pp.cameraEditor.clips.pickClip(gewaehlt);
-				}
-
-				/* Fuer das Ziehen merken — losgelassen wird er im Handler. */
-				this.zugClip = gewaehlt;
-				this.zugTrimmLinks = 0;
-				this.zugRest = 0F;
-
-				/* ⛔ MEHRFACHAUSWAHL mit Shift/Strg. Die alte Zeitleiste konnte mehrere Clips
-				 * zusammen greifen (`grabbedClips`); ohne das muss man jeden einzeln schieben
-				 * und verliert dabei ihre Abstaende. */
-				if (mchorse.bbs_mod.graphics.window.Window.isShiftPressed()
-					|| mchorse.bbs_mod.graphics.window.Window.isCtrlPressed())
-				{
-					if (!this.auswahl.remove(gewaehlt))
-					{
-						this.auswahl.add(gewaehlt);
-					}
-				}
-				else if (!this.auswahl.contains(gewaehlt))
-				{
-					this.auswahl.clear();
-				}
-				this.stand = "";
-				this.flaeche.neuMalen();
-			});
-		}
-
-		/* Trimm-Griffe NACH den Clips: treffe() nimmt die zuletzt registrierte Zone, und der
-		 * Griff liegt IM Clip — sonst schluckt der Clip-Zug ihn. */
-		for (int t = 0; t < trimmZonen.size(); t++)
-		{
-			Object[] z = trimmZonen.get(t);
-			final mchorse.bbs_mod.utils.clips.Clip clip = (mchorse.bbs_mod.utils.clips.Clip) z[0];
-			final boolean links = (Boolean) z[5];
-
-			f.zone("trimm" + t, (Float) z[1], (Float) z[2], (Float) z[3], (Float) z[4], () ->
-			{
-				this.zugClip = clip;
-				this.zugTrimmLinks = links ? 1 : 2;
-				this.zugRest = 0F;
-			});
-		}
-
-		/* Klapppfeile ZULETZT — sie liegen ueber der Spurzeile, nicht darunter. */
-		for (int c = 0; c < klappZonen.size(); c++)
-		{
-			Object[] z = klappZonen.get(c);
-			final String schluessel = (String) z[0];
-			final boolean jetzt = (Boolean) z[1];
-
-			f.zone("klapp" + c, (Float) z[2], (Float) z[3], (Float) z[4], (Float) z[5], () ->
-			{
-				this.offen.put(schluessel, !jetzt);
-				this.stand = "";
-				this.flaeche.neuMalen();
-			});
-		}
-
-		/* Abspielkopf */
-		float px = spurX + spurB * ((cursor - this.von(dauer)) / this.spanne(dauer));
-
-		NanoStifte.flaeche(vg, px - 1F * k, oben, 2F * k, h - oben, 0F, 0x5FA3E7);
-
-		String marke = String.valueOf(cursor);
-		float mb = NanoDesign.breite(marke, 9.5F * k) + 10F * k;
-
-		NanoStifte.widget(vg, px - mb / 2F, oben + 2F * k, mb, 13F * k, 3F * k, NanoDesign.BLAU, k);
-		NanoStifte.textInBox(vg, NanoDesign.BOLD, 9.5F * k, px - mb / 2F, oben + 11.5F * k,
-			0xFFFFFF, marke);
-	
-		/* Tooltip ganz zuletzt — er liegt ueber allem, auch ueber aufgeklappten Listen. */
+		this.kanalspalte(vg, f, b, h, k);
+
+		/* ⛔ Eingaben NUR im Kopf annehmen. Diese Flaeche hat volle Hoehe (sie traegt auch
+		 * die Kanalspalte), liegt aber ueber dem Koerper-Editor — ohne diese Grenze schluckte
+		 * sie dessen komplette Bedienung: Rechtsklick, Mittelklick, Griffe, alles kam nicht
+		 * mehr an. Die Kanalspalte bleibt bewusst DRAUSSEN: sie ist Beschriftung, und ein
+		 * Klick darauf soll die Spur darunter treffen. */
+		f.eingabeFeld(0F, 0F, this.area.w, NanoDesign.H_KOPF);
 		NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
 	}
 	/**
@@ -1281,107 +825,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 		return x - 8F * k;
 	}
-	/** Der im Kamera-Editor gewaehlte Clip, oder null. */
-	private static mchorse.bbs_mod.utils.clips.Clip gewaehlterClip()
-	{
-		UIFilmPanel panel = filmPanel();
-
-		return panel == null || panel.cameraEditor == null || panel.cameraEditor.clips == null
-			? null : panel.cameraEditor.clips.getLastSelectedClip();
-	}
-
-	/** Symbol zur Clip-Art — die Namen stammen aus den echten Clip-Klassen von BBS. */
-	private static String clipSymbol(String art)
-	{
-		return switch (art)
-		{
-			case "Keyframe" -> "rec";
-			case "Path" -> "pfad";
-			case "Translate", "Drag" -> "flug";
-			case "Orbit", "Angle", "Look" -> "persp";
-			case "Idle" -> "kamera";
-			case "Shake", "DollyZoom" -> "funken";
-			case "Audio" -> "ton";
-			default -> "";
-		};
-	}
-	/**
-	 * Camera-Clip auf der Zeitachse verschieben.
-	 *
-	 * <p>⛔ Die Verschiebung wird in {@link #zugRest} ANGESAMMELT. Ein Pixel ist bei langen
-	 * Filmen weniger als ein Tick; wer jeden Aufruf einzeln rundet, verschiebt gar nichts —
-	 * der Clip klebte fest, obwohl der Zug ankam.</p>
-	 *
-	 * <p>Der Clip wird nicht unter 0 geschoben; ein negativer Tick waere fuer BBS ein
-	 * ungueltiger Zustand, den erst der Export bemerkt.</p>
-	 */
-	private void clipZiehen(float d)
-	{
-		UIFilmPanel panel = filmPanel();
-
-		if (this.zugClip == null || panel == null || panel.getData() == null)
-		{
-			return;
-		}
-
-		float k = Math.max(1F, this.flaeche.skala());
-		float b = this.flaeche.area.w * k;
-		float spurX = Math.max(Math.min(210F * k, b * 0.52F), Math.min(b * 0.5F, 96F * k));
-		float spurB = Math.max(1F, b - spurX);
-		int dauer = Math.max(1, panel.getData().camera.calculateDuration());
-
-		this.zugRest += d / spurB * dauer;
-
-		int ticks = (int) this.zugRest;
-
-		if (ticks == 0)
-		{
-			return;
-		}
-
-		this.zugRest -= ticks;
-
-		if (this.zugTrimmLinks == 1)
-		{
-			/* Linke Kante: Start UND Dauer gegenlaeufig, sonst wandert der Clip statt zu
-			 * wachsen. Mindestens 1 Tick, sonst verschwindet er. */
-			int neuTick = Math.max(0, this.zugClip.tick.get() + ticks);
-			int diff = neuTick - this.zugClip.tick.get();
-			int neuDauer = this.zugClip.duration.get() - diff;
-
-			if (neuDauer >= 1)
-			{
-				this.zugClip.tick.set(neuTick);
-				this.zugClip.duration.set(neuDauer);
-			}
-		}
-		else if (this.zugTrimmLinks == 2)
-		{
-			this.zugClip.duration.set(Math.max(1, this.zugClip.duration.get() + ticks));
-		}
-		else
-		{
-			/* ⛔ EINRASTEN an den Kanten anderer Clips und am Abspielkopf — die alte
-			 * Zeitleiste sammelte dafuer `snappingPoints`. Ohne das trifft man Anschluesse
-			 * nie exakt, und im fertigen Film klafft ein Bild Luecke. */
-			int ziel = Math.max(0, this.zugClip.tick.get() + ticks);
-			int gerastet = this.einrasten(panel, ziel);
-			int wirklich = gerastet - this.zugClip.tick.get();
-
-			this.zugClip.tick.set(gerastet);
-
-			/* Mitgewaehlte um denselben Betrag — sonst zerfaellt ihr Abstand. */
-			for (mchorse.bbs_mod.utils.clips.Clip mit : this.auswahl)
-			{
-				if (mit != this.zugClip)
-				{
-					mit.tick.set(Math.max(0, mit.tick.get() + wirklich));
-				}
-			}
-		}
-		this.stand = "";
-		this.flaeche.neuMalen();
-	}
 
 	/**
 	 * Das „Key"-Menue: Keyframes setzen, loeschen, anspringen.
@@ -1424,151 +867,11 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		});
 	}
 
-	/**
-	 * Keyframe am Cursor setzen oder loeschen — der Tastenweg.
-	 *
-	 * <p>Arbeitet auf der gewaehlten Zeile. Ohne Auswahl passiert nichts: welchen von bis zu
-	 * 55 Kanaelen sollte die Taste sonst meinen?</p>
-	 */
-	/**
-	 * Naechster Rastpunkt zu {@code tick}, wenn einer nah genug liegt.
-	 *
-	 * <p>Kandidaten sind Anfang und Ende aller ANDEREN Clips sowie der Abspielkopf. Die
-	 * Fangweite haengt am Zoom: bei weit herausgezoomter Achse sind zwei Ticks ein Pixel,
-	 * und ein fester Wert in Ticks fienge dort alles oder nichts.</p>
-	 */
-	private int einrasten(UIFilmPanel panel, int tick)
-	{
-		float weite = Math.max(1F, this.spanne(Math.max(1,
-			panel.getData().camera.calculateDuration())) / 40F);
-		int besterAbstand = Integer.MAX_VALUE;
-		int bester = tick;
-
-		java.util.List<Integer> punkte = new ArrayList<>();
-
-		punkte.add(panel.getCursor());
-
-		for (mchorse.bbs_mod.utils.clips.Clip c : panel.getData().camera.get())
-		{
-			if (c == this.zugClip || this.auswahl.contains(c))
-			{
-				continue;
-			}
-
-			punkte.add(c.tick.get());
-			punkte.add(c.tick.get() + c.duration.get());
-		}
-
-		for (int p : punkte)
-		{
-			int abstand = Math.abs(p - tick);
-
-			if (abstand < besterAbstand && abstand <= weite)
-			{
-				besterAbstand = abstand;
-				bester = p;
-			}
-		}
-
-		return Math.max(0, bester);
-	}
-
-	/** Kontextmenue fuer den gewaehlten Camera-Clip — Rechtsklick, wie in der alten Zeitleiste. */
-	private void oeffneClipMenue()
-	{
-		UIFilmPanel panel = filmPanel();
-		mchorse.bbs_mod.utils.clips.Clip clip = this.zugClip;
-
-		if (panel == null || clip == null)
-		{
-			return;
-		}
-
-		this.getContext().replaceContextMenu((menu) ->
-		{
-			menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.MOVE_TO,
-				mchorse.bbs_mod.l10n.keys.IKey.raw("Move to cursor"), () ->
-			{
-				clip.tick.set(Math.max(0, panel.getCursor()));
-				this.stand = "";
-				this.flaeche.neuMalen();
-			});
-			menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.DUPE,
-				mchorse.bbs_mod.l10n.keys.IKey.raw("Duplicate"), () ->
-			{
-				/* copy() ohne Argument — der Clip weiss selbst, wie er sich vervielfaeltigt. */
-				mchorse.bbs_mod.utils.clips.Clip kopie = clip.copy();
-
-				kopie.tick.set(clip.tick.get() + clip.duration.get());
-				panel.getData().camera.get().add(kopie);
-				this.stand = "";
-				this.flaeche.neuMalen();
-			});
-			menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.REMOVE,
-				mchorse.bbs_mod.l10n.keys.IKey.raw("Remove"), () ->
-			{
-				/* Mitgewaehlte gleich mit — sonst muesste man bei einer Auswahl von zehn
-				 * Clips zehnmal dasselbe Menue oeffnen. */
-				panel.getData().camera.get().remove(clip);
-
-				for (mchorse.bbs_mod.utils.clips.Clip mit : new ArrayList<>(this.auswahl))
-				{
-					panel.getData().camera.get().remove(mit);
-				}
-
-				this.auswahl.clear();
-				this.zugClip = null;
-				this.stand = "";
-				this.flaeche.neuMalen();
-			});
-
-			menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.COPY,
-				mchorse.bbs_mod.l10n.keys.IKey.raw("Copy"), () -> this.ablage = clip.copy());
-
-			if (this.ablage != null)
-			{
-				menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.PASTE,
-					mchorse.bbs_mod.l10n.keys.IKey.raw("Paste at cursor"), () ->
-				{
-					mchorse.bbs_mod.utils.clips.Clip neu2 = this.ablage.copy();
-
-					neu2.tick.set(Math.max(0, panel.getCursor()));
-					panel.getData().camera.get().add(neu2);
-					this.stand = "";
-					this.flaeche.neuMalen();
-				});
-			}
-
-			menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.MOVE_DOWN,
-				mchorse.bbs_mod.l10n.keys.IKey.raw("Move to layer " + (Math.min(clip.layer.get() + 1, panel.cameraEditor.clips.hoechsteFremdeEbene(clip) + 1) + 1)),
-				() ->
-			{
-				/* Ebene wechseln — die Zeitleiste zeigt jetzt eine Zeile je Ebene, also ist
-				 * das der Weg, ueberlappende Clips auseinanderzuziehen. */
-				clip.layer.set(Math.min(clip.layer.get() + 1, panel.cameraEditor.clips.hoechsteFremdeEbene(clip) + 1));
-				this.stand = "";
-				this.flaeche.neuMalen();
-			});
-
-			if (clip.layer.get() > 0)
-			{
-				menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.MOVE_UP,
-					mchorse.bbs_mod.l10n.keys.IKey.raw("Move to layer " + clip.layer.get()),
-					() ->
-				{
-					clip.layer.set(clip.layer.get() - 1);
-					this.stand = "";
-					this.flaeche.neuMalen();
-				});
-			}
-		});
-	}
-
 	public void modusUmschalten(int ziel)
 	{
 		this.modus = this.modus == ziel ? 0 : ziel;
-		this.stand = "";
-		this.flaeche.neuMalen();
+		this.auffrischen();
+		ZeitleisteZweig.anwenden(filmPanel(), this.modus);
 	}
 
 	/**

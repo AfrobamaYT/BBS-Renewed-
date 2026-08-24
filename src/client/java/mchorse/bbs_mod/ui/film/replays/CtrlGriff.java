@@ -110,11 +110,9 @@ public class CtrlGriff
         editor.pendingPick = null;
 
         /* Ohne sichtbares Panel rendert die UIPropTransform nicht — ihr modaler Grab
-         * tickt NUR im render() (editing=true, Wert stand still; gemessen 2026-08-14). */
-        if (!editor.isVisible())
-        {
-            editor.filmPanel.showPanel(editor);
-        }
+         * tickt NUR im render() (editing=true, Wert stand still; gemessen 2026-08-14).
+         * Zieht ausserdem den Modus im Nano-Kopf auf „Animated only" mit. */
+        mchorse.bbs_mod.ui.film.ZeitleisteZweig.animationOeffnen(editor.filmPanel);
 
         /* Leerer Pick = Ctrl_Master: greift die Form-Spur (Master bewegt ALLES). */
         if (pick.b == null || pick.b.isEmpty())
