@@ -84,7 +84,7 @@ public class UIPropTransform extends UITransform
     private Axis axis = Axis.X;
     private Axis axis2;
     private Transform cache = new Transform();
-    private Timer checker = new Timer(30);
+    Timer checker = new Timer(30);   /* paketprivat: UITransformHandler treibt verborgen */
 
     private boolean model;
 
@@ -122,14 +122,14 @@ public class UIPropTransform extends UITransform
     private DragStrategy strategy;
     private final Bridge bridge = new Bridge();
 
-    private final TransformNumericInput numeric = new TransformNumericInput();
+    final TransformNumericInput numeric = new TransformNumericInput();   /* paketprivat, s. checker */
 
     /* Fine-drag (Shift) precision: a virtual cursor that lags the real one,
      * advancing at {@link DragStrategy#FINE_DRAG_FACTOR} speed while Shift is
      * held, so every ray gesture slows uniformly without per-mode code. The
      * lag is the accumulated offset between the two. */
     /** The cursor the running gesture reads (Shift damping, cursorless start) — see DragCursor. */
-    private final DragCursor cursor = new DragCursor();
+    final DragCursor cursor = new DragCursor();   /* paketprivat: Fuehler im Handler */
 
     /** Blender's middle-click axis pick; live only while an edit runs — see MittelklickAchse.
      *  Declared after {@link #bridge}, which supplies its host hooks; package-private for
@@ -1519,7 +1519,7 @@ public class UIPropTransform extends UITransform
      * virtual (Shift-slowed) for ray gestures, raw for the additive fallback,
      * which damps Shift through its step factor instead.
      */
-    private void updateDrag(UIContext context)
+    void updateDrag(UIContext context)   /* paketprivat: UITransformHandler treibt verborgen */
     {
         /* UIContext.mouseX can't be used because when cursor is outside of window
          * its position stops being updated. That's why it has to be queried manually

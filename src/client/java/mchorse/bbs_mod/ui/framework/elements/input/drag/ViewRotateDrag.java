@@ -95,6 +95,8 @@ public class ViewRotateDrag extends DragStrategy
 
         if (drag == null || this.ctx.transform() == null || this.refuseConstrainedRotation())
         {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("vr.abbruch1",
+                "drag=" + (drag != null) + " transform=" + (this.ctx.transform() != null));
             this.hasStart = false;
 
             return;
@@ -118,6 +120,8 @@ public class ViewRotateDrag extends DragStrategy
 
         if (cameraBasis == null || !drag.projectToScreen(drag.gizmoOrigin, this.screenCenter))
         {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("vr.abbruch2", "basis=" + (cameraBasis != null));
+
             return;
         }
 
@@ -130,6 +134,8 @@ public class ViewRotateDrag extends DragStrategy
 
         if (parentInverse == null)
         {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("vr.abbruch3");
+
             return;
         }
 
@@ -145,6 +151,7 @@ public class ViewRotateDrag extends DragStrategy
         this.grabScreenAngle = this.lastScreenAngle;
         this.accumulatedDeg = 0F;
         this.hasStart = true;
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("vr.start");
     }
 
     @Override

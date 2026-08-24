@@ -23,6 +23,24 @@ public class UITransformHandler extends UIElement
         this.transform = transform;
     }
 
+    /**
+     * Wirklich auf dem Schirm — die ganze Elternkette. ⛔ {@code isVisible()} prueft NUR die
+     * eigene Flagge: das Transform-Panel im verborgenen Replay-Editor meldete sichtbar=true
+     * (gemessen 2026-08-24), und jedes Tor, das darauf baute, griff daneben.
+     */
+    public static boolean aufSchirm(UIElement element)
+    {
+        for (UIElement e = element; e != null; e = e.getParent())
+        {
+            if (!e.isVisible())
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     @Override
     protected boolean subMouseClicked(UIContext context)
     {
@@ -51,7 +69,7 @@ public class UITransformHandler extends UIElement
              * click negates a value (UITrackpad#subMouseClicked). Swallowing it there would
              * silently kill that for as long as an edit runs. Visibility is checked too —
              * a hidden panel keeps a stale area that would block legitimate clicks. */
-            boolean overPanel = this.transform.isVisible() && this.transform.area.isInside(context);
+            boolean overPanel = aufSchirm(this.transform) && this.transform.area.isInside(context);
 
             if (!overPanel && this.transform.middleAxis.maustasteGedrueckt(context.mouseButton, context.mouseX, context.mouseY))
             {
@@ -60,6 +78,34 @@ public class UITransformHandler extends UIElement
         }
 
         return super.subMouseClicked(context);
+    }
+
+    /**
+     * ⛔ ENTER/ESC auch OHNE sichtbares Panel (Umzug 2026-08-24): die Bearbeitung soll im
+     * Kamera-Blick laufen, ohne den alten Pose-Editor aufzuschalten. Dessen subKeyPressed
+     * sieht verborgen keine Taste — der Handler haengt im Overlay und sieht sie immer.
+     * Nur im verborgenen Fall, sonst wuerde die Numerik-Eingabe des Panels uebergangen.
+     */
+    @Override
+    protected boolean subKeyPressed(UIContext context)
+    {
+        if (this.transform.isEditing() && !aufSchirm(this.transform))
+        {
+            if (context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER))
+            {
+                this.transform.acceptChanges();
+
+                return true;
+            }
+            else if (context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE))
+            {
+                this.transform.rejectChanges();
+
+                return true;
+            }
+        }
+
+        return super.subKeyPressed(context);
     }
 
     @Override
@@ -117,6 +163,17 @@ public class UITransformHandler extends UIElement
         super.render(context);
 
         mchorse.bbs_mod.graphics.Messpunkt.zaehle("handler.render");
+
+        /* ⛔ VERBORGEN WEITERTREIBEN (Umzug 2026-08-24). updateDrag lief nur im render des
+         * Panels — also nur sichtbar; genau deshalb schaltete der Ring-Klick frueher den
+         * alten Pose-Editor auf. Der Handler existiert exakt solange eine Bearbeitung
+         * laeuft und rendert jedes Bild. Dieselben Tore wie im Panel-render: Numerik
+         * pausiert die Maus, der Timer entprellt den Rand-Umbruch. */
+        if (this.transform.isEditing() && !aufSchirm(this.transform)
+            && !this.transform.numeric.isActive() && this.transform.checker.isTime())
+        {
+            this.transform.updateDrag(context);
+        }
 
         /* Blenders Transform-Rueckmeldung (Akte 07). Der Handler ist NUR waehrend einer
          * Bearbeitung im Baum — Cursor und Voransicht werden je Bild auf den Ist-Zustand

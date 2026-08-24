@@ -66,18 +66,24 @@ public class CtrlGriff
             return true;
         }
 
-        /* ⛔ ERST SETZEN, DANN AUSWAEHLEN (Wunsch des Nutzers 2026-08-24: "wenn man den
-         * Ring klickt, dass dann ein Pose-Keyframe gesetzt wird, wenn da keiner ist").
-         *
-         * Die Reihenfolge ist der ganze Punkt: pickForm SPRINGT den Abspielkopf auf den
-         * naechsten vorhandenen Pose-Keyframe (UIReplaysEditorUtils, isPoseSheet-Zweig:
-         * cursor.setCursor(closest.getTick())). Wer danach einfuegt, landet immer auf einem
-         * bestehenden Keyframe und setzt nichts — gemessen: Cursor 377, nach dem Klick lag
-         * der Kopf auf 0 und der Pose-Kanal hatte unveraendert einen Keyframe bei 0. */
-        UIReplaysEditorUtils.pickForm(editor.keyframeEditor, editor.filmPanel,
-            pending.a, pending.b, true);
+        /* ⛔ AUSWAEHLEN, CURSOR ZURUECKSTELLEN, DANN SETZEN (Wunsch des Nutzers 2026-08-24:
+         * "wenn man den Ring klickt, dass dann ein Pose-Keyframe gesetzt wird, wenn da
+         * keiner ist"). Die Reihenfolge ist zweimal gemessen worden:
+         *   1. Einfuegen VOR der Auswahl scheitert im Kamera-Blick still — die Kategorie
+         *      steht noch auf PLAYER (Sonde: category=PLAYER), der Pose-Kanal existiert
+         *      erst, nachdem pickForm auf POSE umgeschaltet hat.
+         *   2. Einfuegen NACH der Auswahl ohne Zuruecksetzen scheitert auch: die Auswahl
+         *      SPRINGT den Abspielkopf auf den naechsten vorhandenen Pose-Keyframe
+         *      (cursor.setCursor(closest)), das Einfuegen landet also immer auf einem
+         *      bestehenden. Gemessen: Cursor 377 -> Kopf auf 0, nichts gesetzt.
+         * Also: auswaehlen (baut Kategorie und Kanal), Cursor auf den Klick-Zeitpunkt
+         * zurueck, dann einfuegen — insertIntoPoseSheet setzt nur, wenn dort keiner ist. */
+        int tick = editor.filmPanel.getCursor();
 
         editor.pickForm(pending.a, pending.b);
+        editor.filmPanel.setCursor(tick);
+        UIReplaysEditorUtils.pickForm(editor.keyframeEditor, editor.filmPanel,
+            pending.a, pending.b, true);
 
         return true;
     }

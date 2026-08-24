@@ -427,6 +427,42 @@ public class UIFilmPreview extends UIElement
         return super.subMouseScrolled(context);
     }
 
+    /**
+     * ⛔ R/G/S IM KAMERA-BLICK, OHNE DEN ALTEN POSE-EDITOR (Umzug 2026-08-24, derselbe
+     * Schnitt wie an der Zeitleiste: Logik behalten, Zuhause tauschen). Die Transform-
+     * Kuerzel sind am {@code UIPoseTransforms} des Keyframe-Editors registriert — verborgen
+     * laeuft dessen Keybind-Pruefung nie. Hier werden dieselben Keybinds gefeuert; ihre
+     * {@code active}-Bedingungen (enabled/editing) werden RESPEKTIERT, nur die Sichtbarkeit
+     * nicht — sie sind der einzige Grund, warum das Panel frueher aufgeschaltet wurde.
+     * Muster: KameraSpurTasten.weiterreichen.
+     */
+    @Override
+    protected boolean subKeyPressed(UIContext context)
+    {
+        var transform = mchorse.bbs_mod.ui.film.replays.UIReplaysEditorUtils
+            .getEditableTransform(this.panel.replayEditor == null ? null : this.panel.replayEditor.keyframeEditor);
+
+        if (transform != null
+            && !mchorse.bbs_mod.ui.framework.elements.input.UITransformHandler.aufSchirm(transform))
+        {
+            for (mchorse.bbs_mod.ui.utils.keys.Keybind keybind : transform.keys().keybinds)
+            {
+                /* inside-Kuerzel messen gegen eine Flaeche, die verborgen veraltet ist. */
+                if (keybind.inside || (keybind.active != null && !keybind.active.get()))
+                {
+                    continue;
+                }
+
+                if (keybind.feuern(context.getKeyCode(), context.getKeyAction(), true))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return super.subKeyPressed(context);
+    }
+
     /** Radius der Panel-Ecken; muss zu NanoDesign.R_PANEL passen. */
     private static int eckenRadius()
     {
