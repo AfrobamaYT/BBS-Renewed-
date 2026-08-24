@@ -243,7 +243,11 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
 
             if (this.target == null)
             {
+                /* Ohne editArea-Dock wohnt das Panel als 160px-Spalte rechts in der
+                 * Zeitleiste — die Clips muessen ihr den Platz lassen, sonst laufen sie
+                 * voll durch und das Panel liegt unsichtbar dahinter (Akte 38). */
                 this.panel.relative(this).x(1F, -160).w(160).h(1F);
+                this.clips.w(1F, -160);
             }
             else
             {

@@ -132,8 +132,9 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 	}
 
 	/**
-	 * Drehung und Groesse ziehen — die sitzen an {@code Form.transform}, nicht an den
-	 * Replay-Kanaelen.
+	 * Drehung und Groesse ziehen — als KEYFRAME im transform-Property-Kanal am Cursor,
+	 * nicht auf {@code Form.transform} (das ist EIN Wert je Replay; direkt beschrieben
+	 * wirkten die Felder global statt pro Keyframe — Nutzerbefund Akte 38).
 	 *
 	 * <p>Der Schritt ist grober als bei der Position: 100 px Zug = 90 Grad waeren
 	 * unbrauchbar fein, 100 px = 45 Grad trifft die Erwartung. Die Skalierung bleibt
@@ -143,12 +144,26 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 	private void formWertZiehen(Replay replay, String kanal, float d)
 	{
 		mchorse.bbs_mod.forms.forms.Form form = replay.form.get();
-		mchorse.bbs_mod.utils.pose.Transform tf = form == null ? null : form.transform.get();
+		UIFilmPanel panel = filmPanel();
 
-		if (tf == null)
+		if (form == null || panel == null)
 		{
 			return;
 		}
+
+		mchorse.bbs_mod.utils.keyframes.KeyframeChannel<mchorse.bbs_mod.utils.pose.Transform> ziel =
+			replay.properties.getOrCreate(form, "transform");
+
+		if (ziel == null)
+		{
+			return;
+		}
+
+		int tick = panel.getCursor();
+		/* Startwert: interpolierter Kanalwert; bei leerem Kanal der Ist-Zustand der Form,
+		 * damit der erste Zug nicht auf die Nullpose springt. */
+		mchorse.bbs_mod.utils.pose.Transform basis = ziel.interpolate(tick, form.transform.get());
+		mchorse.bbs_mod.utils.pose.Transform tf = basis == null ? new mchorse.bbs_mod.utils.pose.Transform() : basis.copy();
 
 		if (kanal.equals("sx"))
 		{
@@ -177,8 +192,29 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			}
 		}
 
+		ziel.insert(tick, tf);
 		this.stand = "";
 		this.flaeche.neuMalen();
+	}
+
+	/** Transform am Tick: interpolierter Kanalwert, sonst der Ist-Zustand der Form.
+	 *  Nur LESEN — getOrCreate wuerde beim blossen Anzeigen einen Kanal anlegen. */
+	private static mchorse.bbs_mod.utils.pose.Transform leseTransform(Replay replay,
+		mchorse.bbs_mod.forms.forms.Form form, int tick)
+	{
+		if (form == null)
+		{
+			return null;
+		}
+
+		if (replay.properties.get("transform") instanceof mchorse.bbs_mod.utils.keyframes.KeyframeChannel<?> kanal
+			&& !kanal.getKeyframes().isEmpty()
+			&& kanal.interpolate(tick, null) instanceof mchorse.bbs_mod.utils.pose.Transform wert)
+		{
+			return wert;
+		}
+
+		return form.transform.get();
 	}
 
 	private static Replay gewaehltesReplay()
@@ -356,10 +392,11 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			return;
 		}
 
-		/* Rotation und Skalierung stehen NICHT in den Replay-Kanaelen, sondern in der Form
-		 * ({@code Form.transform} traegt translate/rotate/scale). Deshalb hier von dort. */
+		/* Rotation und Skalierung: aus dem transform-Property-Kanal am Cursor interpoliert
+		 * (dahin schreibt formWertZiehen die Keyframes); bei leerem Kanal der Ist-Zustand
+		 * der Form — Anzeige und Schreibweg muessen denselben Wert sehen (Akte 38). */
 		mchorse.bbs_mod.forms.forms.Form form = replay.form.get();
-		mchorse.bbs_mod.utils.pose.Transform tf = form == null ? null : form.transform.get();
+		mchorse.bbs_mod.utils.pose.Transform tf = leseTransform(replay, form, tick);
 
 		/* --- Transform: Ort aus den Kanaelen, Drehung und Groesse aus der Form --- */
 		if (this.schiene == 0)

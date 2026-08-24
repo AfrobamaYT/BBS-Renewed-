@@ -40,16 +40,34 @@ public final class ZeitleisteZweig
 	}
 
 	/**
-	 * Lineal-Dekor des Replay-Dope-Sheets: erst der alte Ruler-Weg (Audio-Wellenform,
-	 * Clip-Gradient), dann die Film-Merkstellen als Nur-Anzeige (Entwurf zeigt die
-	 * Dreiecke in BEIDEN Zweigen; bedient werden sie in der Kamera-Zeitleiste).
+	 * Lineal-Dekor des Replay-Dope-Sheets: der alte Ruler-Weg (Audio-Wellenform,
+	 * Clip-Gradient). Die Film-Merkstellen zeichnet UIFilmKeyframes.renderOverlay —
+	 * der Decorator hier laeuft VOR den Skalen-Ticks, dort uebermalten sie die Koepfe.
 	 */
 	public static void linealDekor(mchorse.bbs_mod.ui.framework.UIContext context,
 		mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes view,
 		UIClipsPanel cameraEditor, mchorse.bbs_mod.film.Film film)
 	{
 		mchorse.bbs_mod.ui.film.replays.UIReplaysEditor.renderRuler(context, view, cameraEditor, film.camera, 0);
-		mchorse.bbs_mod.ui.film.markers.UIMarkerLane.zeichneImLineal(context, view.graphArea, film.markers, view::toGraphX);
+	}
+
+	/**
+	 * Clip-Eigenschaften sichtbar schalten. Seit editArea aus dem Dock-Layout gefallen
+	 * ist (Migration setzt Layouts mit editArea auf den Default zurueck), waren die
+	 * Kamera-Clip-Felder NIRGENDS mehr zu sehen — „die camera properties fehlen
+	 * komplett" (Akte 38). Ohne editArea-Dock wohnen sie wieder als 160px-Spalte
+	 * rechts in der Kamera-Zeitleiste, wie in 1.21.1 (target=null-Zweig von pickClip).
+	 */
+	public static void propertiesSchalten(UIFilmPanel panel, boolean mainActive,
+		boolean editAreaActive, boolean cameraVisible, boolean replayVisible)
+	{
+		if (!editAreaActive)
+		{
+			panel.cameraEditor.target(null);
+		}
+
+		panel.cameraEditor.setPropertiesVisible((editAreaActive || mainActive) && cameraVisible);
+		panel.replayEditor.setPropertiesVisible(editAreaActive && replayVisible);
 	}
 
 	/**

@@ -110,6 +110,17 @@ public class UIFilmKeyframes extends UIKeyframes implements com.mcstudio.nano.Zo
     @Override
     protected void renderOverlay(UIContext context)
     {
+        /* Film-Merkstellen NACH dem Lineal (Overlay), nicht im rulerDecorator: der laeuft
+         * VOR renderTicks und die Skala uebermalte die Koepfe (Nutzerbefund Akte 38).
+         * Nur im absolute-Modus — die Clip-Unteransichten rechnen mit Clip-Versatz. */
+        if (this.absolute && this.editor != null && this.editor.getFilm() != null)
+        {
+            context.batcher.clip(this.graphArea, context);
+            mchorse.bbs_mod.ui.film.markers.UIMarkerLane.zeichneImLineal(context,
+                this.graphArea, this.editor.getFilm().markers, this::toGraphX);
+            context.batcher.unclip(context);
+        }
+
         if (this.editor != null)
         {
             int cx = this.toGraphX(this.getOffset());

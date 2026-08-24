@@ -109,14 +109,47 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 			this.gewaehlt = idx;
 			this.flaeche.neuMalen();
 
-			this.getContext().replaceContextMenu((menu) ->
+			/* Das VOLLE Menue der alten Liste (Dupe, Process, Offset time, Paste keyframes,
+			 * Remove, …) statt eines Nachbaus — die Aktionsmethoden dahinter sind private,
+			 * und ein Mini-Menue mit nur Remove war Akte 38 („duplizieren und die mathematik
+			 * optionen fehlen"). Davor die zwei Form-Wege, die im alten UI am Form-Knopf
+			 * des Editor-Panels sassen und sonst nirgends erreichbar waeren. */
+			mchorse.bbs_mod.ui.framework.elements.context.UIContextMenu voll =
+				liste.createContextMenu(this.getContext());
+
+			if (voll instanceof mchorse.bbs_mod.ui.framework.elements.context.UISimpleContextMenu simple)
 			{
-				menu.gruppe(mchorse.bbs_mod.l10n.keys.IKey.raw("Replay"));
-				menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.REMOVE,
-					mchorse.bbs_mod.ui.UIKeys.SCENE_REPLAYS_CONTEXT_REMOVE,
-					mchorse.bbs_mod.utils.colors.Colors.NEGATIVE, liste::removeReplay)
-					.taste(mchorse.bbs_mod.ui.Keys.DELETE);
-			});
+				/* Anonyme Klassen statt Lambdas: neue Lambdas im Konstruktor verschieben die
+				 * lambda$-Zaehlung und brechen den Hotswap; neue Nested-Klassen laden lazy. */
+				simple.actions.getList().add(0, new mchorse.bbs_mod.ui.utils.context.ContextAction(
+					mchorse.bbs_mod.ui.utils.icons.Icons.POSE,
+					mchorse.bbs_mod.l10n.keys.IKey.raw("Pick form..."),
+					new Runnable()
+					{
+						@Override
+						public void run()
+						{
+							liste.openFormEditor(ziel.form, false, null);
+						}
+					}));
+				simple.actions.getList().add(1, new mchorse.bbs_mod.ui.utils.context.ContextAction(
+					mchorse.bbs_mod.ui.utils.icons.Icons.EDIT,
+					mchorse.bbs_mod.l10n.keys.IKey.raw("Edit form..."),
+					new Runnable()
+					{
+						@Override
+						public void run()
+						{
+							liste.openFormEditor(ziel.form, true, null);
+						}
+					}));
+				simple.actions.update();
+			}
+
+			if (voll != null)
+			{
+				this.getContext().replaceContextMenu(voll);
+			}
 		});
 
 		/* Entf loescht das im Outliner gewaehlte Replay — derselbe Weg wie das Menue. */

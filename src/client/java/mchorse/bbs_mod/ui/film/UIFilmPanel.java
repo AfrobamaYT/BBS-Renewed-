@@ -802,12 +802,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.replayEditor.setVisible(replayVisible);
 
         this.cameraEditor.setTimelineVisible(mainActive && cameraVisible);
-        this.cameraEditor.setPropertiesVisible(editAreaActive && cameraVisible);
-
-        /* The recording editor toggles internally between its keyframe and action
-         * timelines; both share main (timeline) and editArea (parameters). */
         this.replayEditor.setTimelineVisible(mainActive && replayVisible);
-        this.replayEditor.setPropertiesVisible(editAreaActive && replayVisible);
+        ZeitleisteZweig.propertiesSchalten(this, mainActive, editAreaActive, cameraVisible, replayVisible);
     }
 
     private void toggleLayoutLock()
