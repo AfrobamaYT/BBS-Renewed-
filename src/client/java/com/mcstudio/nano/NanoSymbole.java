@@ -87,6 +87,11 @@ public final class NanoSymbole
 				NanoStifte.linie(vg, cx + 2.6F * k, cy + 2.6F * k, cx + 5F * k, cy + 5F * k, 1.2F * k, farbe);
 				break;
 
+			case "trichter":
+				NanoStifte.dreieck(vg, cx - 5F * k, cy - 4.5F * k, cx + 5F * k, cy - 4.5F * k, cx, cy + 0.5F * k, farbe);
+				NanoStifte.linie(vg, cx, cy, cx, cy + 4.5F * k, 1.8F * k, farbe);
+				break;
+
 			case "auge":
 				NanoStifte.kreis(vg, cx, cy, 2.2F * k, farbe);
 				NanoStifte.rahmen(vg, cx - 6F * k, cy - 3.4F * k, 12F * k, 6.8F * k, 3.4F * k, farbe);

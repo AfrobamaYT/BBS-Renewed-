@@ -333,62 +333,45 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 	{
 		UIFilmPanel panel = filmPanel();
 
-		if (panel == null || panel.replayEditor == null || !panel.replayEditor.isVisible())
+		/* EIN Trichter-Knopf mit Popover (Blenders Funnel) statt der Knopfreihe: die
+		 * brach bei engem Kopf ab und war dann UNERREICHBAR (960er GUI: 0 Zonen). */
+		if (panel == null || panel.replayEditor == null || !panel.replayEditor.isVisible()
+			|| kx + 22F * k > grenze - 6F * k)
 		{
 			return kx;
 		}
 
-		final UIReplaysEditor editor = panel.replayEditor;
-		String aktiv = editor.aktiverFilter();
-
-		/* Reihenfolge wie die alte Spalte: die vier Kategorien, dann die zwei Umschalter. */
-		String[][] filter = {
-			{"player", "replay", "Player channels"},
-			{"model", "wuerfel", "Model channels"},
-			{"pose", "knochen", "Pose channels"},
-			{"physics", "funken", "Physics channels"},
-			{"all", "outliner", "All tracks"},
-			{"actions", "play", "Action timeline"},
-		};
-
-		float b = 22F * k;
+		boolean an = !"all".equals(panel.replayEditor.aktiverFilter());
 		float y = (NanoDesign.H_KOPF - 20F) * k / 2F;
 
-		for (String[] e : filter)
+		if (an)
 		{
-			if (kx + b > grenze - 6F * k)
-			{
-				break;
-			}
-
-			boolean an = e[0].equals(aktiv);
-			boolean ueber = f.istHover("kf" + e[0]);
-
-			if (an)
-			{
-				NanoStifte.widget(vg, kx, y, b, 20F * k, NanoDesign.R_WIDGET * k, NanoDesign.BLAU, k);
-			}
-			else if (ueber)
-			{
-				NanoStifte.widget(vg, kx, y, b, 20F * k, NanoDesign.R_WIDGET * k, NanoDesign.WIDGET, k);
-			}
-
-			NanoSymbole.symbol(vg, e[1], kx + b / 2F, NanoDesign.H_KOPF * k / 2F,
-				an ? 0xFFFFFF : NanoDesign.TXT_DIM, k * 0.8F);
-
-			final String id = e[0];
-
-			f.zone("kf" + id, kx, y, b, 20F * k, () ->
-			{
-				editor.filterWaehlen(id);
-				this.stand = "";
-				this.flaeche.neuMalen();
-			}, e[2], "");
-
-			kx += b + 2F * k;
+			NanoStifte.widget(vg, kx, y, 22F * k, 20F * k, NanoDesign.R_WIDGET * k, NanoDesign.BLAU, k);
+		}
+		else if (f.istHover("kf-trichter"))
+		{
+			NanoStifte.widget(vg, kx, y, 22F * k, 20F * k, NanoDesign.R_WIDGET * k, NanoDesign.WIDGET, k);
 		}
 
-		return kx;
+		NanoSymbole.symbol(vg, "trichter", kx + 11F * k, NanoDesign.H_KOPF * k / 2F,
+			an ? 0xFFFFFF : NanoDesign.TXT_DIM, k * 0.8F);
+
+		f.zone("kf-trichter", kx, y, 22F * k, 20F * k, this::filterMenue,
+			"Filter channels by type (Blender: funnel)", "");
+
+		return kx + 24F * k;
+	}
+
+	private void filterMenue()
+	{
+		KanalSuche.filterMenue(this);
+	}
+
+	/** Kennung brechen + Kopf neu malen — fuer die Kopf-Werkzeuge in {@link KanalSuche}. */
+	void kopfNeu()
+	{
+		this.stand = "";
+		this.flaeche.neuMalen();
 	}
 
 	private void zeichnen(long vg, int b, int h, float mausX, float mausY, NanoFlaeche f)
@@ -496,7 +479,9 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		float nachTransport = this.transport(vg, f, transportRechts, k, panel, cursor, dauer);
 
 		/* Kanal-Suche rechts der Transportgruppe — links ist der Kopf voll (46 px Rest gemessen). */
-		KanalSuche.zeichnen(vg, f, transportRechts + 8F * k, zx - 8F * k, k, this.modus);
+		float nachTrichter = this.kanalfilter(vg, f, transportRechts + 8F * k, zx - 8F * k, k);
+
+		KanalSuche.zeichnen(vg, f, nachTrichter, zx - 8F * k, k, this.modus);
 		nachTransport = this.schleife(vg, f, nachTransport, k, panel, cursor);
 		nachTransport -= 22F * k;
 		this.transportKnopf(vg, f, "tr-bone", nachTransport, (NanoDesign.H_KOPF * k - 20F * k) / 2F, 22F * k, 20F * k, k, "knochen",
@@ -587,7 +572,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 				kx += mw;
 			}
 
-			kx = this.kanalfilter(vg, f, kx + 8F * k, nachTransport, k);
 		}
 
 		/* ⛔ HIER ENDET diese Flaeche: alles darunter zeichnet UIClips mit seinen 89 Methoden —

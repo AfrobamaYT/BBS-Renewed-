@@ -68,6 +68,43 @@ final class KanalSuche
 			"Filter channels by name (Blender: Ctrl-F)", "");
 	}
 
+	/** Popover zum Trichter-Knopf: Kanal-Kategorie waehlen, aktive mit Haken. */
+	static void filterMenue(UIZeitleisteNano kopf)
+	{
+		UIFilmPanel panel = mchorse.bbs_mod.BBSModClient.getDashboard() == null ? null
+			: mchorse.bbs_mod.BBSModClient.getDashboard().getPanel(UIFilmPanel.class);
+
+		if (panel == null || panel.replayEditor == null)
+		{
+			return;
+		}
+
+		final mchorse.bbs_mod.ui.film.replays.UIReplaysEditor editor = panel.replayEditor;
+		String aktiv = editor.aktiverFilter();
+
+		kopf.getContext().replaceContextMenu((menu) ->
+		{
+			menu.gruppe(mchorse.bbs_mod.l10n.keys.IKey.raw("Show"));
+
+			String[][] filter = {{"all", "All tracks"}, {"player", "Player channels"},
+				{"model", "Model channels"}, {"pose", "Pose channels"},
+				{"physics", "Physics channels"}, {"actions", "Action timeline"}};
+
+			for (String[] e : filter)
+			{
+				final String id = e[0];
+
+				menu.action(id.equals(aktiv) ? mchorse.bbs_mod.ui.utils.icons.Icons.CHECKMARK
+					: mchorse.bbs_mod.ui.utils.icons.Icons.FILTER,
+					mchorse.bbs_mod.l10n.keys.IKey.raw(e[1]), () ->
+				{
+					editor.filterWaehlen(id);
+					kopf.kopfNeu();
+				});
+			}
+		});
+	}
+
 	/** Zeichen anhaengen, Ruecktaste loescht; Filter sofort anwenden. */
 	private static void tippen(String fokusId, char c)
 	{
