@@ -107,14 +107,14 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     {
         this.trackHeight = MathUtils.clamp(height, 8D, 100D);
         this.updateScrollSize();
-
-        this.dopeSheet.clamp();
     }
 
-    private void updateScrollSize()
+    public void updateScrollSize()
     {
         this.sheetYCache.clear();
         this.dopeSheet.scrollSize = this.calculateLayout(this.elements, 0) + TOP_MARGIN;
+        /* Clamp dazu: nach einem Filterwechsel zeigt der alte Scroll-Offset sonst ins Leere. */
+        this.dopeSheet.clamp();
     }
 
     private int calculateLayout(List<UIKeyframeElement> elements, int y)

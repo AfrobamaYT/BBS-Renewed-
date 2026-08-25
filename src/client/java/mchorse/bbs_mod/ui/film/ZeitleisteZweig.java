@@ -125,7 +125,23 @@ public final class ZeitleisteZweig
 			: mchorse.bbs_mod.BBSModClient.getDashboard().getPanel(UIFilmPanel.class));
 	}
 
-	/** Auch nach jedem Editor-Neubau aufrufen — der Neubau verliert das Predicate. */
+	/** Kanal-Suche (Blenders Ctrl-F im Dope Sheet): filtert die Zeilen nach Namen.
+	 *  Lazy gelesen — ein per Hotswap neues static-Feld startet als null. */
+	private static String kanalSuche;
+
+	public static String kanalSuche()
+	{
+		return kanalSuche == null ? "" : kanalSuche;
+	}
+
+	public static void kanalSuche(String text)
+	{
+		kanalSuche = text == null ? "" : text;
+	}
+
+	/** Auch nach jedem Editor-Neubau aufrufen — der Neubau verliert das Predicate.
+	 *  Wendet Bone-Filter UND Kanal-Suche als EIN Predicate an; die Kennung macht
+	 *  den Aufruf je Frame idempotent. */
 	public static void boneFilterAnwenden(UIFilmPanel panel)
 	{
 		if (panel == null || panel.replayEditor == null || panel.replayEditor.keyframeEditor == null)
@@ -136,33 +152,84 @@ public final class ZeitleisteZweig
 		mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.UIKeyframeDopeSheet dope =
 			panel.replayEditor.keyframeEditor.view.getDopeSheet();
 
-		if (dope == null || (dope.zusatzFilter != null) == nurBone)
+		if (dope == null)
 		{
 			return;
 		}
 
-		final mchorse.bbs_mod.ui.film.replays.UIReplaysEditor editor = panel.replayEditor;
+		String suche = kanalSuche().toLowerCase();
 
-		dope.zusatzFilter = !nurBone ? null
-			: new java.util.function.Predicate<mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet>()
+		if (!nurBone && suche.isEmpty())
 		{
-			@Override
-			public boolean test(mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet sheet)
+			if (dope.zusatzFilter != null)
+			{
+				dope.zusatzFilter = null;
+				dope.updateScrollSize();
+			}
+
+			return;
+		}
+
+		String kennung = (nurBone ? "b|" : "|") + suche;
+
+		if (dope.zusatzFilter instanceof KanalFilter alt && alt.kennung.equals(kennung))
+		{
+			return;
+		}
+
+		dope.zusatzFilter = new KanalFilter(kennung, nurBone, suche, panel.replayEditor);
+		/* Ohne Neuvermessung bleibt der Scrollbereich der VOLLEN Liste stehen und der
+		 * alte Offset haengt unter dem geschrumpften Inhalt. */
+		dope.updateScrollSize();
+	}
+
+	/** Eigene Klasse statt Lambda (swap-fest); die Kennung traegt den Filterzustand. */
+	private static final class KanalFilter
+		implements java.util.function.Predicate<mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet>
+	{
+		final String kennung;
+		private final boolean bone;
+		private final String suche;
+		private final mchorse.bbs_mod.ui.film.replays.UIReplaysEditor editor;
+
+		KanalFilter(String kennung, boolean bone, String suche, mchorse.bbs_mod.ui.film.replays.UIReplaysEditor editor)
+		{
+			this.kennung = kennung;
+			this.bone = bone;
+			this.suche = suche;
+			this.editor = editor;
+		}
+
+		@Override
+		public boolean test(mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet sheet)
+		{
+			/* Gruppenkoepfe bleiben stehen — sie tragen die Klapp-Bedienung. */
+			if (!this.suche.isEmpty() && !sheet.groupHeader)
+			{
+				String name = sheet.title == null ? sheet.id : sheet.title.get();
+
+				if (!name.toLowerCase().contains(this.suche) && !sheet.id.toLowerCase().contains(this.suche))
+				{
+					return false;
+				}
+			}
+
+			if (this.bone)
 			{
 				mchorse.bbs_mod.film.replays.PerLimbService.PoseBonePath pfad =
 					mchorse.bbs_mod.film.replays.PerLimbService.parsePoseBonePath(sheet.id);
 
-				if (pfad == null)
+				if (pfad != null)
 				{
-					return true;
+					mchorse.bbs_mod.utils.Pair<String, Boolean> gewaehlt = this.editor.keyframeEditor == null
+						? null : this.editor.keyframeEditor.getBone();
+
+					return gewaehlt != null && pfad.bone().equals(gewaehlt.a);
 				}
-
-				mchorse.bbs_mod.utils.Pair<String, Boolean> bone = editor.keyframeEditor == null
-					? null : editor.keyframeEditor.getBone();
-
-				return bone != null && pfad.bone().equals(bone.a);
 			}
-		};
+
+			return true;
+		}
 	}
 
 	/**

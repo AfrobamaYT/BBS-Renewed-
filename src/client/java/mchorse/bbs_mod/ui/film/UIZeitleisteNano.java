@@ -486,18 +486,17 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		NanoStifte.textInBox(vg, NanoDesign.SANS, 11F * k, zx,
 			NanoDesign.H_KOPF * k / 2F, NanoDesign.TXT, zeit);
 
-		/* ⛔ TRANSPORT MITTIG. Vorher hing die Gruppe rechts an der Zeitanzeige und liess
-		 * zwischen „Marker" und den Knoepfen ein breites Loch — der Nutzer hat genau dieses
-		 * Loch mit einem Pfeil markiert. Die Gruppe baut weiterhin von rechts nach links
-		 * auf; verschoben wird nur ihre rechte Kante, und zwar so, dass ihre Mitte auf der
-		 * Mitte der Kopfzeile liegt. Reicht der Platz nicht (schmale Flaeche), bleibt sie
-		 * rechts stehen, statt in den Titel zu laufen. */
+		/* ⛔ TRANSPORT MITTIG: rechts an der Zeitanzeige liess die Gruppe vor „Marker" ein
+		 * breites Loch (Nutzerpfeil). Sie baut weiter von rechts nach links; nur ihre rechte
+		 * Kante wandert auf Kopfmitte. Reicht der Platz nicht, bleibt sie rechts stehen. */
 		float transportB = 6F * 22F * k + 6F * k;
 		float mittig = b / 2F + transportB / 2F;
 		float transportRechts = Math.min(zx - 8F * k, Math.max(mittig, transportB + 8F * k));
 
 		float nachTransport = this.transport(vg, f, transportRechts, k, panel, cursor, dauer);
 
+		/* Kanal-Suche rechts der Transportgruppe — links ist der Kopf voll (46 px Rest gemessen). */
+		KanalSuche.zeichnen(vg, f, transportRechts + 8F * k, zx - 8F * k, k, this.modus);
 		nachTransport = this.schleife(vg, f, nachTransport, k, panel, cursor);
 		nachTransport -= 22F * k;
 		this.transportKnopf(vg, f, "tr-bone", nachTransport, (NanoDesign.H_KOPF * k - 20F * k) / 2F, 22F * k, 20F * k, k, "knochen",

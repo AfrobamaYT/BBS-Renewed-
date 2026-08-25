@@ -582,7 +582,11 @@ public class NanoFlaeche extends UIElement
 	@Override
 	protected boolean subKeyPressed(UIContext context)
 	{
-		if (!this.fokus.isEmpty() && this.tastenHandler != null)
+		/* ⛔ UIScreen reicht auch das LOSLASSEN als keyPressed in den Baum (UIScreen:197).
+		 * Ohne diesen Guard loescht jedes physische Backspace ZWEI zeichen (PRESS+RELEASE)
+		 * — gemessen 2026-08-25. REPEAT bleibt erlaubt: halten soll weiterloeschen. */
+		if (!this.fokus.isEmpty() && this.tastenHandler != null
+			&& context.getKeyAction() != mchorse.bbs_mod.ui.utils.keys.KeyAction.RELEASED)
 		{
 			int taste = context.getKeyCode();
 
