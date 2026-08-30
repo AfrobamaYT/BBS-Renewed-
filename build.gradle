@@ -476,19 +476,19 @@ dependencies {
 	 * mit, aber NICHT das nanovg-modul. Gegenprobe am gebauten jar:
 	 * `unzip -l build/libs/*.jar | grep nanovg` muss 7 treffer zeigen, nicht 0.
 	 * Dieselbe regel wie weiter unten bei jflac/jlayer. */
-	implementation include("org.lwjgl:lwjgl-nanovg:3.3.3")
-	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-linux"
-	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-linux-arm64"
-	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-windows"
-	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-windows-arm64"
-	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-macos"
-	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-macos-arm64"
-	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.3.3:natives-linux"
-	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.3.3:natives-linux-arm64"
-	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.3.3:natives-windows"
-	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.3.3:natives-windows-arm64"
-	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.3.3:natives-macos"
-	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.3.3:natives-macos-arm64"
+	implementation include("org.lwjgl:lwjgl-nanovg:3.4.1")
+	include "org.lwjgl:lwjgl-nanovg:3.4.1:natives-linux"
+	include "org.lwjgl:lwjgl-nanovg:3.4.1:natives-linux-arm64"
+	include "org.lwjgl:lwjgl-nanovg:3.4.1:natives-windows"
+	include "org.lwjgl:lwjgl-nanovg:3.4.1:natives-windows-arm64"
+	include "org.lwjgl:lwjgl-nanovg:3.4.1:natives-macos"
+	include "org.lwjgl:lwjgl-nanovg:3.4.1:natives-macos-arm64"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.4.1:natives-linux"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.4.1:natives-linux-arm64"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.4.1:natives-windows"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.4.1:natives-windows-arm64"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.4.1:natives-macos"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.4.1:natives-macos-arm64"
 
 	// Uncomment the following line to enable the deprecated Fabric API modules. 
 	// These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
