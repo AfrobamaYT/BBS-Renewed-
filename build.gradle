@@ -366,7 +366,12 @@ def physicsModJar = file("libs/physics-mod-pro-v186-fabric-mc-26.2.jar")
 sourceSets {
 	client {
 		java {
+			/* Ohne das jar fallen genau die vier dateien heraus, die net.diebuddies
+			 * importieren: die drei mixins und ihre bruecken-logik. Nur PhysikModLogik
+			 * traegt die fremdtypen ausserhalb des mixin-pakets — die mixins rufen sie
+			 * ueber MixinBruecke, also namentlich, und vermissen sie zur laufzeit nicht. */
 			if (!physicsModJar.exists()) exclude "com/afrobama/bbstools/client/mixin/physicsmod/**"
+			if (!physicsModJar.exists()) exclude "com/afrobama/blendertransform/PhysikModLogik.java"
 			exclude "com/afrobama/bbstools/client/bbs/veil/**"
 			exclude "com/afrobama/bbstools/client/veil/**"
 			// 2026-08-10 raus: physicsmod ist wieder im build (v186, mc 26.2).
