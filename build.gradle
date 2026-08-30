@@ -361,9 +361,12 @@ loom {
  * ZURUECKHOLEN, einzeln und je mit eigenem beweis: abhaengigkeit anschalten, eintrag hier
  * streichen, mixin-namen zurueck in die konfiguration, bauen, booten, wirkung messen.
  */
+def physicsModJar = file("libs/physics-mod-pro-v186-fabric-mc-26.2.jar")
+
 sourceSets {
 	client {
 		java {
+			if (!physicsModJar.exists()) exclude "com/afrobama/bbstools/client/mixin/physicsmod/**"
 			exclude "com/afrobama/bbstools/client/bbs/veil/**"
 			exclude "com/afrobama/bbstools/client/veil/**"
 			// 2026-08-10 raus: physicsmod ist wieder im build (v186, mc 26.2).
@@ -564,7 +567,14 @@ dependencies {
 	 * compileOnly — nur die drei Mixins unter mixin/physicsmod/ brauchen die Typen.
 	 * Die uebrigen acht Dateien, die PhysicsMod ansprechen, arbeiten per Reflection
 	 * (FracturePhysicsBridge allein 17x) und kompilieren auch ohne. */
-	compileOnly files("libs/physics-mod-pro-v186-fabric-mc-26.2.jar")
+	/* ⛔ NUR WENN DAS JAR DALIEGT. Physics Mod Pro ist "all rights reserved" und darf dem
+	 * repository nicht beiliegen (siehe LICENSE.md) — ein fremder klon hat es also nicht.
+	 * Ohne die bedingung scheiterte `gradlew build` dort an net.diebuddies.physics, und das
+	 * waere die erste erfahrung eines jeden, der den fork bauen will. Mit dem jar in libs/
+	 * baut alles wie zuvor; ohne es fallen die drei mixins unter mixin/physicsmod/ heraus
+	 * (dieselbe mechanik wie bei veil/accelrender weiter oben). Die uebrigen acht dateien,
+	 * die PhysicsMod ansprechen, arbeiten per reflection und kompilieren ohne das jar. */
+	if (physicsModJar.exists()) compileOnly files(physicsModJar)
 	// P3-26.2-AUS: compileOnly files("libs/worldedit-mod-7.3.8.jar")
 	// P3-26.2-AUS: compileOnly "com.cinemamod:mcef:2.1.6-1.21.1"
 
@@ -736,9 +746,26 @@ tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach
 
 processResources {
 	inputs.property "version", project.version
+	inputs.property "physicsMod", physicsModJar.exists()
 
 	filesMatching("fabric.mod.json") {
 		expand "version": project.version
+
+	}
+
+	/* Ohne das Physics-Mod-jar sind die drei mixins nicht kompiliert — dann darf ihre
+	 * konfiguration auch nicht in fabric.mod.json stehen, sonst sucht Mixin beim start
+	 * nach klassen (samt mixin-plugin), die es nicht gibt. Als JSON-umbau, nicht als
+	 * zeilenfilter: der eintrag ist ein objekt ueber mehrere zeilen. */
+	doLast {
+		if (!physicsModJar.exists()) {
+			def datei = new File(destinationDir, "fabric.mod.json")
+			def daten = new groovy.json.JsonSlurper().parse(datei)
+			daten.mixins = daten.mixins.findAll { eintrag ->
+				!((eintrag instanceof Map ? eintrag.config : eintrag).toString().contains("physicsmod"))
+			}
+			datei.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(daten))
+		}
 	}
 }
 
