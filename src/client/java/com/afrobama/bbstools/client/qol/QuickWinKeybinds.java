@@ -31,6 +31,13 @@ import com.afrobama.bbstools.client.keybinds.BBSKeyCategories;
  */
 public final class QuickWinKeybinds
 {
+    /** ⛔ Dev-Werkzeug registriert sich nur im Entwicklungsbaum — im Release faellt es weg,
+     * wie das Sandbox-Panel im Dashboard. Reine Diagnose ohne Nutzen fuer Spieler, und F11
+     * kollidiert mit Vanillas Vollbild-Taste. Nicht registrieren statt spaeter verstecken:
+     * drain() vertraegt null, die Handler laufen nie an. Bewusst nicht ausgebaut — jede
+     * Zeile Unterschied zum Release-Zweig muesste bei jedem Merge von Hand gepflegt werden. */
+    public static final boolean DEV_ENV = net.fabricmc.loader.api.FabricLoader.getInstance().isDevelopmentEnvironment();
+
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/qol/quickwins");
 
     /** F4 — toggle cinematic profile (calls into the same knobs as
@@ -97,14 +104,14 @@ public final class QuickWinKeybinds
             BBSKeyCategories.BBSTOOLS
         ));
 
-        gpuDebugCapture = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        gpuDebugCapture = !DEV_ENV ? null : KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.gpu_debug_capture",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F11,
             BBSKeyCategories.BBSTOOLS
         ));
 
-        threadDump = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        threadDump = !DEV_ENV ? null : KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.thread_dump",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F10,
@@ -126,7 +133,7 @@ public final class QuickWinKeybinds
          *                            MC-keybinding — dort kollidiert es also nicht)
          *
          * F6 ist auf MC-ebene frei; F9 bleibt damit für den keybind-editor. */
-        bugBundle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        bugBundle = !DEV_ENV ? null : KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.bug_bundle",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F6,

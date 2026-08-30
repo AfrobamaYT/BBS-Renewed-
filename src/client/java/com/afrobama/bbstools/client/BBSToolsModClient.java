@@ -228,7 +228,7 @@ public final class BBSToolsModClient implements ClientModInitializer
 
         /* === Fracture feature: PhysicsMod-driven model destruction === */
         com.afrobama.bbstools.client.fracture.FracturePhysicsBridge.init();
-        com.afrobama.bbstools.client.fracture.FractureTestCommand.register();
+        if (com.afrobama.bbstools.client.qol.QuickWinKeybinds.DEV_ENV) com.afrobama.bbstools.client.fracture.FractureTestCommand.register();
         com.afrobama.bbstools.client.debug.BBSDebugEverything.register();
 
         /* /bbstools skin <username> — pulls a player's current Mojang
@@ -331,20 +331,20 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  root — server-side subcommands get rejected by Fabric's
          *  client dispatcher as "Incorrect argument" and never
          *  forwarded. */
-        com.afrobama.bbstools.client.cinematic.CrowdModeCommand.register();
+        if (com.afrobama.bbstools.client.qol.QuickWinKeybinds.DEV_ENV) com.afrobama.bbstools.client.cinematic.CrowdModeCommand.register();
         /* /bbstools fastpath on|off|status: toggle the CrowdIris
          *  Sodium fast-path (54-byte direct Iris-extended push). ON =
          *  30-40 FPS but transparent villagers (extension-byte bug
          *  unresolved). OFF = 7 FPS visible. Default OFF for safe
          *  rendering. */
-        com.afrobama.bbstools.client.cinematic.FastPathCommand.register();
+        if (com.afrobama.bbstools.client.qol.QuickWinKeybinds.DEV_ENV) com.afrobama.bbstools.client.cinematic.FastPathCommand.register();
         /* /bbstools accelrender on|off|status: Tier 1a — toggle the
          *  AcceleratedRendering GPU-compute crowd path. Requires
          *  AccelRender mod installed. Default OFF until tested. */
 
         /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         /* Tier 1 — replay fast-path measure-mode toggle. Coded by Afrobama/Claude. */
-        com.afrobama.bbstools.client.cinematic.ReplayFastPathCommand.register();
+        if (com.afrobama.bbstools.client.qol.QuickWinKeybinds.DEV_ENV) com.afrobama.bbstools.client.cinematic.ReplayFastPathCommand.register();
         /* Tier 2-h — deferred GPU-instanced replay draw (AFTER_TRANSLUCENT,
          *  outside Iris gbuffers pass). Coded by Afrobama/Claude. */
         com.afrobama.bbstools.client.bbs.fastpath.Tier2hInstancedDraw.register();
