@@ -27,6 +27,17 @@ public class Replay extends ValueGroup
     public final Clips actions = new Clips("actions", BBSMod.getFactoryActionClips());
 
     public final ValueBoolean enabled = new ValueBoolean("enabled", true);
+
+    /**
+     * Nur im Viewport zeigen, im fertigen Video NICHT.
+     *
+     * <p>Fuer tutorial- und making-of-aufnahmen: hilfs-akteure, platzhalter oder
+     * referenz-posen bleiben beim arbeiten sichtbar und verschwinden im export,
+     * ohne dass man sie vorher ausschalten und hinterher wieder einschalten muss.
+     *
+     * <p>Unterschied zu {@link #enabled}: das schaltet den akteur UEBERALL ab.
+     */
+    public final ValueBoolean nurVorschau = new ValueBoolean("nur_vorschau", false);
     /**
      * Single-level folder name for the replay list (empty = root). No {@code /} — see {@link #normalizeCategory(String)}.
      */
@@ -69,6 +80,8 @@ public class Replay extends ValueGroup
         this.add(this.actions);
 
         this.add(this.enabled);
+
+        this.add(this.nurVorschau);
         this.add(this.category);
         this.add(this.label);
         this.add(this.labelColor);

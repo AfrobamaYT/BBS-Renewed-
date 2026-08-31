@@ -1464,7 +1464,7 @@ public abstract class BaseFilmController
             return false;
         }
 
-        return i != this.exception;
+        return i != this.exception && !com.afrobama.blendertransform.NurVorschauLogik.ueberspringen(replay, updateMode == UpdateMode.RENDER);
     }
 
     public void render(LevelRenderContext context)

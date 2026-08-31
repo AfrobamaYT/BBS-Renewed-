@@ -36,6 +36,43 @@ public abstract class VideoExportSession
     }
 
     protected State state = State.IDLE;
+
+    /**
+     * Laeuft gerade IRGENDEIN export (Film- oder Welt-export)?
+     *
+     * <p>Statisch, weil der zeichnende {@link mchorse.bbs_mod.film.BaseFilmController}
+     * die session-instanz nicht kennt, die antwort aber je bild braucht — daran haengt,
+     * ob nur-vorschau-akteure gezeichnet werden.
+     *
+     * <p>⚠️ Ein ZAEHLER, kein boolean: Film- und Welt-export sind eigene sessions und
+     * koennen sich ueberlappen. Ein boolean wuerde beim ende der einen den anderen
+     * faelschlich als beendet melden.
+     */
+    private static int laufendeExporte = 0;
+
+    public static boolean laeuftExport()
+    {
+        return laufendeExporte > 0;
+    }
+
+    /** Haelt {@link #laufendeExporte} an JEDEM zustandswechsel synchron. */
+    protected void setzeZustand(State neuerZustand)
+    {
+        boolean warAktiv = this.state != State.IDLE;
+        boolean istAktiv = neuerZustand != State.IDLE;
+
+        if (warAktiv != istAktiv)
+        {
+            laufendeExporte += istAktiv ? 1 : -1;
+
+            if (laufendeExporte < 0)
+            {
+                laufendeExporte = 0;
+            }
+        }
+
+        this.state = neuerZustand;
+    }
     protected long warmupEndsAtMs;
 
     protected File audioFile;
@@ -121,7 +158,7 @@ public abstract class VideoExportSession
 
         if (delayMs > 0L)
         {
-            this.state = State.WARMUP;
+            this.setzeZustand(State.WARMUP);
             this.warmupEndsAtMs = System.currentTimeMillis() + delayMs;
             this.onWarmupStarted();
         }
@@ -166,7 +203,7 @@ public abstract class VideoExportSession
 
         /* Optimistically enter RECORDING before the start attempt so a failure
          * still routes through teardown and restores whatever prepare() applied. */
-        this.state = State.RECORDING;
+        this.setzeZustand(State.RECORDING);
 
         String movieName = this.getMovieName();
 
@@ -275,7 +312,7 @@ public abstract class VideoExportSession
             this.deferredAudioFile.delete();
         }
 
-        this.state = State.IDLE;
+        this.setzeZustand(State.IDLE);
         this.teardown(cancelled);
         this.reset();
 
@@ -422,7 +459,7 @@ public abstract class VideoExportSession
 
     private void reset()
     {
-        this.state = State.IDLE;
+        this.setzeZustand(State.IDLE);
         this.warmupEndsAtMs = 0L;
         this.audioFile = null;
         this.textureId = 0;

@@ -372,7 +372,7 @@ public class UIKeys
     public static final IKey FILM_REPLAY_RECORD = L10n.lang("bbs.ui.film.replay.record");
     public static final IKey FILM_REPLAY_TELEPORT_TO_PLAYER = L10n.lang("bbs.ui.film.replay.teleport_to_player");
     public static final IKey FILM_REPLAY_RELATIVE_TOOLTIP = L10n.lang("bbs.ui.film.replay.relative-tooltip");
-    public static final IKey FILM_REPLAY_REPLAY = L10n.lang("bbs.ui.film.replay.replay");
+    public static final IKey FILM_REPLAY_REPLAY = L10n.lang("bbs.ui.film.replay.replay"); public static final IKey FILM_REPLAY_NUR_VORSCHAU = L10n.lang("bbs.ui.film.replay.nur_vorschau"), FILM_REPLAY_NUR_VORSCHAU_TOOLTIP = L10n.lang("bbs.ui.film.replay.nur_vorschau_tooltip");
     public static final IKey FILM_REPLAY_SHADOW = L10n.lang("bbs.ui.film.replay.shadow");
     public static final IKey FILM_REPLAY_SECTION_OTHER = L10n.lang("bbs.ui.film.replay.section_other");
     public static final IKey FILM_REPLAY_SHADOW_SIZE = L10n.lang("bbs.ui.film.replay.shadow_size");

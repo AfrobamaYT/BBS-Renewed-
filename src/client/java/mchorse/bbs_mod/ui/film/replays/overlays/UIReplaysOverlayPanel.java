@@ -31,6 +31,7 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
     public UIElement properties;
     public UINestedEdit pickEdit;
     public UIToggle enabled;
+    public UIToggle nurVorschau;
     public UITextbox label;
     public UITextbox nameTag;
     public UIToggle shadow;
@@ -92,6 +93,11 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
             this.edit((replay) -> replay.enabled.set(b.getValue()));
             filmPanel.getController().createEntities();
         });
+        this.nurVorschau = new UIToggle(UIKeys.FILM_REPLAY_NUR_VORSCHAU, (b) ->
+        {
+            this.edit((replay) -> replay.nurVorschau.set(b.getValue()));
+        });
+        this.nurVorschau.tooltip(UIKeys.FILM_REPLAY_NUR_VORSCHAU_TOOLTIP);
         this.label = new UITextbox(1000, (s) -> this.edit((replay) -> replay.label.set(s)));
         this.label.textbox.setPlaceholder(UIKeys.FILM_REPLAY_LABEL);
         this.nameTag = new UITextbox(1000, (s) -> this.edit((replay) -> replay.nameTag.set(s)));
@@ -146,7 +152,7 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
 
         this.properties = UI.scrollView(5, 6,
             UI.label(UIKeys.FILM_REPLAY_REPLAY),
-            this.pickEdit, this.enabled,
+            this.pickEdit, this.enabled, this.nurVorschau,
             this.label, this.nameTag,
             this.shadow, this.shadowSize,
             UI.label(UIKeys.FILM_REPLAY_LOOPING),
@@ -192,6 +198,7 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
         {
             this.pickEdit.setForm(replay.form.get());
             this.enabled.setValue(replay.enabled.get());
+            this.nurVorschau.setValue(replay.nurVorschau.get());
             this.label.setText(replay.label.get());
             this.nameTag.setText(replay.nameTag.get());
             this.shadow.setValue(replay.shadow.get());

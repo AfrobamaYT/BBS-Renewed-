@@ -1857,4 +1857,6 @@
 	"bbs.ui.keys.script_console": "Script console",
 	"bbs.config.video.supersampling": "Supersampling",
 	"bbs.config.video.supersampling-comment": "Render the export at N× resolution and scale it back down (Lanczos) — smoother edges at the cost of render time",
+	"bbs.ui.film.replay.nur_vorschau": "Preview only",
+	"bbs.ui.film.replay.nur_vorschau_tooltip": "Visible in the viewport, but skipped when the film is exported. For helper actors, placeholders and reference poses in tutorials and making-of shots."
 }
