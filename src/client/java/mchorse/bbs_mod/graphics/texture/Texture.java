@@ -10,6 +10,7 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import mchorse.bbs_mod.utils.resources.Pixels;
 import net.minecraft.client.gui.render.TextureSetup;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
@@ -379,31 +380,26 @@ public class Texture
 
     public void bind()
     {
-        GL11.glBindTexture(this.target, this.id);
+        if (this.target == GL11.GL_TEXTURE_2D) GlStateManager._bindTexture(this.id);
+        else GL11.glBindTexture(this.target, this.id);
     }
 
-    /**
-     * ⚠️ 26.2: {@code GlStateManager} ist nach {@code com.mojang.blaze3d.opengl}
-     * gewandert und ist Mojangs interner Zustands-Zwischenspeicher. Diese Klasse
-     * bindet ohnehin an ihm vorbei (roher GL-Pfad), darum wird die Texturschicht
-     * direkt ueber LWJGL gewaehlt statt ueber Mojangs Zwischenspeicher — sonst
-     * stuende in seinem Speicher etwas anderes als in GL.
-     */
     public void bind(int texture)
     {
-        GL13.glActiveTexture(texture);
-        GL11.glBindTexture(this.target, this.id);
+        GlStateManager._activeTexture(texture);
+        this.bind();
     }
 
     public void unbind()
     {
-        GL11.glBindTexture(this.target, 0);
+        if (this.target == GL11.GL_TEXTURE_2D) GlStateManager._bindTexture(0);
+        else GL11.glBindTexture(this.target, 0);
     }
 
     public void unbind(int texture)
     {
-        GL13.glActiveTexture(texture);
-        GL11.glBindTexture(this.target, 0);
+        GlStateManager._activeTexture(texture);
+        this.unbind();
     }
 
     public void setFormat(TextureFormat format)
