@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.utils;
 
+import com.mojang.blaze3d.opengl.GlStateManager;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
@@ -359,7 +360,7 @@ public class VideoRecorder
 
             GL30.glPixelStorei(GL30.GL_PACK_ALIGNMENT, 1);
             GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, this.pbos[pbo]);
-            GL30.glBindTexture(GL30.GL_TEXTURE_2D, this.textureId);
+            GlStateManager._bindTexture(this.textureId);
             GL30.glGetTexImage(GL30.GL_TEXTURE_2D, 0, GL30.GL_BGR, GL30.GL_UNSIGNED_BYTE, 0);
 
             GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, this.pbos[nextPbo]);
@@ -392,7 +393,7 @@ public class VideoRecorder
         this.buffer.clear();
 
         GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, 1);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.textureId);
+        GlStateManager._bindTexture(this.textureId);
         GL11.glGetTexImage(GL11.GL_TEXTURE_2D, 0, GL12.GL_BGR, GL11.GL_UNSIGNED_BYTE, this.buffer);
         this.buffer.rewind();
 

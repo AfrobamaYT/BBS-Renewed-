@@ -1,5 +1,6 @@
 package com.mcstudio.nano;
 
+import com.mojang.blaze3d.opengl.GlStateManager;
 import org.lwjgl.opengl.GL33C;
 
 /**
@@ -53,7 +54,7 @@ final class NanoGlKlammer
 		this.programm = GL33C.glGetInteger(GL33C.GL_CURRENT_PROGRAM);
 		this.vao = GL33C.glGetInteger(GL33C.GL_VERTEX_ARRAY_BINDING);
 		this.aktiv = GL33C.glGetInteger(GL33C.GL_ACTIVE_TEXTURE);
-		GL33C.glActiveTexture(GL33C.GL_TEXTURE0);
+		GlStateManager._activeTexture(GL33C.GL_TEXTURE0);
 		this.tex0 = GL33C.glGetInteger(GL33C.GL_TEXTURE_BINDING_2D);
 		GL33C.glGetIntegerv(GL33C.GL_VIEWPORT, this.viewport);
 		this.blend = GL33C.glIsEnabled(GL33C.GL_BLEND);
@@ -81,9 +82,9 @@ final class NanoGlKlammer
 		GL33C.glBindFramebuffer(GL33C.GL_READ_FRAMEBUFFER, this.readFbo);
 		GL33C.glUseProgram(this.programm);
 		GL33C.glBindVertexArray(this.vao);
-		GL33C.glActiveTexture(GL33C.GL_TEXTURE0);
-		GL33C.glBindTexture(GL33C.GL_TEXTURE_2D, this.tex0);
-		GL33C.glActiveTexture(this.aktiv);
+		GlStateManager._activeTexture(GL33C.GL_TEXTURE0);
+		GlStateManager._bindTexture(this.tex0);
+		GlStateManager._activeTexture(this.aktiv);
 		GL33C.glViewport(this.viewport[0], this.viewport[1], this.viewport[2], this.viewport[3]);
 		schalte(GL33C.GL_BLEND, this.blend);
 		schalte(GL33C.GL_CULL_FACE, this.cull);

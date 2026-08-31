@@ -663,11 +663,11 @@ public final class Tier2hInstancedDraw
         if (drawableN > b.boneTexRows)
         {
             int newRows = Math.max(drawableN, b.boneTexRows * 2);
-            GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, b.boneTex);
+            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(b.boneTex);
             GL11C.glTexImage2D(GL11C.GL_TEXTURE_2D, 0, GL30C.GL_RGBA32F,
                 b.boneTexWidth, newRows, 0, GL11C.GL_RGBA, GL11C.GL_FLOAT, (java.nio.ByteBuffer) null);
             b.boneTexRows = newRows;
-            GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
+            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
         }
 
 
@@ -680,7 +680,7 @@ public final class Tier2hInstancedDraw
         /* Upload bone palettes into the bone texture. bScratch is laid out
          * instance-major (one row = one instance's 4*boneCount texels). */
         Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
-        GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, b.boneTex);
+        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(b.boneTex);
         /* Force tight pixel-store state. Another mod (or MC) may leave
          * GL_UNPACK_ROW_LENGTH / SKIP_* non-zero — then glTexSubImage2D
          * reads with the wrong stride and runs off the end of bScratch →
@@ -735,9 +735,9 @@ public final class Tier2hInstancedDraw
             GL20C.glUseProgram(0);
             GL30C.glBindVertexArray(0);
             GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
-            GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
+            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
             Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
-            GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
+            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
         }
 
         BBSPerfConfig.tier2hPhaseGNsAccum += System.nanoTime() - phaseGNs;
@@ -860,7 +860,7 @@ public final class Tier2hInstancedDraw
         b.boneTexWidth = b.boneCount * 4;
         int initialRows = 256;
         b.boneTex = GL11C.glGenTextures();
-        GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, b.boneTex);
+        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(b.boneTex);
         GL11C.glTexParameteri(GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_MIN_FILTER, GL11C.GL_NEAREST);
         GL11C.glTexParameteri(GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_MAG_FILTER, GL11C.GL_NEAREST);
         GL11C.glTexParameteri(GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_WRAP_S, GL12C.GL_CLAMP_TO_EDGE);
@@ -868,7 +868,7 @@ public final class Tier2hInstancedDraw
         GL11C.glTexImage2D(GL11C.GL_TEXTURE_2D, 0, GL30C.GL_RGBA32F,
             b.boneTexWidth, initialRows, 0, GL11C.GL_RGBA, GL11C.GL_FLOAT, (java.nio.ByteBuffer) null);
         b.boneTexRows = initialRows;
-        GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
+        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
 
         /* Build VAO with all attribs wired (matches shader layout). */
         b.vao = GL30C.glGenVertexArrays();
@@ -1268,7 +1268,7 @@ public final class Tier2hInstancedDraw
         /* Bone palette → unit 1 (already populated; no upload). VAT mode reuses
          * the persisted atlas texture, per-frame mode the per-instance bone tex. */
         Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
-        GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, mode == 1 ? b.atlasTex : b.boneTex);
+        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(mode == 1 ? b.atlasTex : b.boneTex);
 
         /* Diffuse → unit 0. */
         Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE0);
@@ -1307,9 +1307,9 @@ public final class Tier2hInstancedDraw
             GL20C.glUseProgram(0);
             GL30C.glBindVertexArray(0);
             GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
-            GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
+            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
             Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
-            GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
+            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
         }
     }
 
@@ -1406,7 +1406,7 @@ public final class Tier2hInstancedDraw
 
         /* Upload the whole atlas ONCE into the bundle's atlas texture. */
         if (b.atlasTex == 0) b.atlasTex = GL11C.glGenTextures();
-        GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, b.atlasTex);
+        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(b.atlasTex);
         if (totalRows > b.atlasRowsCap || b.atlasRowsCap == 0)
         {
             GL11C.glTexParameteri(GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_MIN_FILTER, GL11C.GL_NEAREST);
@@ -1424,7 +1424,7 @@ public final class Tier2hInstancedDraw
         scratch.position(0).limit(width * totalRows * 16);
         GL11C.glTexSubImage2D(GL11C.GL_TEXTURE_2D, 0, 0, 0,
             width, totalRows, GL11C.GL_RGBA, GL11C.GL_FLOAT, scratch);
-        GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
+        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
 
         b.atlasUsedRows       = totalRows;
         b.atlasTicksPerGroup  = ticksPerGroup;

@@ -206,16 +206,35 @@ public final class CrowdTextureAtlas implements IFeatureDebugger
 
             /* Regenerate mips after the freshly-blitted tile. Cheap enough
              * since this only runs once per unique texture (≤256 ever). */
+            int vorherTex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+            int vorherEinheit = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
             GL13.glActiveTexture(GL13.GL_TEXTURE0);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasGlId);
             GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, vorherTex);
+            GL13.glActiveTexture(vorherEinheit);
 
             return tile;
         }
     }
 
     /** Bind the atlas to GL_TEXTURE0. Caller should restore prior state. */
+    /**
+     * ⛔ LAESST DEN ZUSTAND STEHEN — das ist hier Absicht (der Shader soll den Atlas
+     * lesen), aber Mojangs Merker erfaehrt nichts davon.
+     *
+     * <p>{@code GlStateManager._bindTexture} ist ein Zwischenspeicher; wer daran vorbei
+     * bindet, laesst ihn falsch stehen, und Mojangs naechster Upload landet in der hier
+     * gebundenen Textur. Genau das liess am 2026-08-31 die Schrift in jedem Menue
+     * zerfallen (9 von 12 Laeufen), Ursache war dieselbe Zeile in {@code Texture.bind()}.
+     *
+     * <p>⚠️ NICHT UMGESTELLT, weil diese Klasse in {@code src/main} liegt und
+     * {@code com.mojang.blaze3d.opengl} dort nicht existiert. Die drei aufraeumenden
+     * Bloecke dieser Klasse stellen den Zustand jetzt exakt wieder her und sind damit
+     * unschaedlich; nur dieser eine bleibt offen. Preis fuer die saubere Loesung:
+     * diese Klasse und {@link BindlessTextureRegistry} nach {@code src/client}
+     * verschieben. Der Pfad ist per Vorgabe aus ({@code ENABLED = false}).
+     */
     public void bindAtlas()
     {
         if (!initialized || atlasGlId == 0) return;
@@ -229,10 +248,13 @@ public final class CrowdTextureAtlas implements IFeatureDebugger
     public void generateMipmaps()
     {
         if (!initialized || atlasGlId == 0) return;
+        int vorherTex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+        int vorherEinheit = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasGlId);
         GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, vorherTex);
+        GL13.glActiveTexture(vorherEinheit);
     }
 
     /* ===================== internals ===================== */
@@ -240,6 +262,8 @@ public final class CrowdTextureAtlas implements IFeatureDebugger
     private void initIfNeeded()
     {
         if (initialized) return;
+        int vorherTex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+        int vorherEinheit = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
         atlasGlId = GL11.glGenTextures();
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasGlId);
@@ -258,7 +282,8 @@ public final class CrowdTextureAtlas implements IFeatureDebugger
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T,
             GL11.GL_CLAMP);
 
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, vorherTex);
+        GL13.glActiveTexture(vorherEinheit);
 
         initialized = true;
         LOG.info("CrowdTextureAtlas init: {}x{} GL_RGBA8 {} levels — gl id {}",
@@ -296,6 +321,8 @@ public final class CrowdTextureAtlas implements IFeatureDebugger
              * tile origin; remaining padding inside the tile stays at
              * whatever GL_RGBA8 storage default is — fine since outer
              * padding pixels are never sampled (mesh UV stays in inner). */
+            int vorherTex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+            int vorherEinheit = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
             GL13.glActiveTexture(GL13.GL_TEXTURE0);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasGlId);
             GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
@@ -309,7 +336,8 @@ public final class CrowdTextureAtlas implements IFeatureDebugger
                 GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
 
             GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, 0);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, vorherTex);
+            GL13.glActiveTexture(vorherEinheit);
 
             /* Inner-rect UVs (xy=origin, zw=origin+size), normalised to
              * atlas size. Mesh UV [0..1] mixes between xy and zw. */
