@@ -44,4 +44,29 @@ public class ChunkSectionsToRenderMixin
         MixinBruecke.rufe("ChunkSectionsToRenderLogik", "renderGroup", gruppe);
     }
 
+    /**
+     * Chroma-Himmel ohne Gelaende: die Chunk-Schichten fallen weg.
+     *
+     * <p>⛔ EIGENER HAKEN, NICHT DER OBEN — der spuelt die Form-Warteschlange und darf nicht
+     * abbrechen, sonst blieben durchsichtige Formen haengen.</p>
+     *
+     * <p>Das ist die 26.2-Entsprechung des Upstream-Hakens auf {@code renderLayer}: dort
+     * bricht {@code chromaSkyEnabled && !chromaSkyTerrain} das Zeichnen der Chunk-Schicht ab.
+     * In 26.2 zeichnet sie {@code ChunkSectionsToRender.renderGroup}.</p>
+     *
+     * <p>⛔ MIT SODIUM WIRKT DAS NICHT (gemessen 2026-09-01, Sodium 0.9.1+mc26.2): der Anteil
+     * Gelaende im Bild war mit {@code terrain} an und aus derselbe. Sodium zeichnet die
+     * Chunk-Schichten in seinem eigenen Renderer, Vanillas {@code renderGroup} laeuft dann gar
+     * nicht. Der Haken bleibt trotzdem: OHNE Sodium ist er der richtige Punkt. Wer es auch
+     * mit Sodium haben will, braucht einen zweiten Haken in dessen Renderer.</p>
+     */
+    @Inject(method = "renderGroup", at = @At("HEAD"), cancellable = true)
+    public void bbs$gelaendeVerbergen(ChunkSectionLayerGroup gruppe, com.mojang.blaze3d.textures.GpuSampler abtaster, CallbackInfo info)
+    {
+        if (com.afrobama.blendertransform.ChromaHimmelLogik.gelaendeVerbergen())
+        {
+            info.cancel();
+        }
+    }
+
 }

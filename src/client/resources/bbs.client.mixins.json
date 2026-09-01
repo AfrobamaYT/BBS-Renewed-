@@ -17,6 +17,7 @@
     "GuiRenderStateAccessor",
     "ChromaHimmelMixin",
     "ChromaNebelMixin",
+    "ChromaWolkenMixin",
     "HimmelMessMixin",
     "InGameHudAccessor",
     "InGameHudMixin",
