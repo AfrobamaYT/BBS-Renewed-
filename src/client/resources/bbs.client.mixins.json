@@ -51,6 +51,7 @@
     "iris.SliderElementWidgetMixin",
     "iris.StringElementWidgetInvoker",
     "iris.SystemTimeUniformsTimerMixin",
+    "sodium.ChromaSodiumGelaendeMixin",
     "sodium.ColorAttributeMixin"
   ],
   "injectors": {
