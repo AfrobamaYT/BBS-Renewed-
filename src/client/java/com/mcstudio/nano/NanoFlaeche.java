@@ -77,9 +77,33 @@ public class NanoFlaeche extends UIElement
 	private float mausX = -1;
 	private float mausY = -1;
 
+	/**
+	 * ⛔ DER TICK GEHOERT HIERHER, NICHT IN EINE DEBUG-KLASSE (gemessen 2026-09-01).
+	 * {@link #tickAbarbeiten()} wurde ausschliesslich in {@code NanoProbe.register()}
+	 * angemeldet — einer Klasse, die nur {@code StudioClient} aufruft. Beide gehen im
+	 * oeffentlichen Baum nicht mit, also lief der Tick dort nie, und die GESAMTE
+	 * Nano-Oberflaeche blieb leer: Topbar, Statusleiste, Zeitleiste, Render-Reiter,
+	 * Werkzeugleiste. Am Bild verglichen: dev zeigt die Leisten, public nicht.
+	 * Wer eine Flaeche baut, bekommt den Tick jetzt automatisch.
+	 */
+	private static boolean tickAngemeldet;
+
+	private static void tickAnmelden()
+	{
+		if (tickAngemeldet)
+		{
+			return;
+		}
+
+		tickAngemeldet = true;
+		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(
+			client -> tickAbarbeiten());
+	}
+
 	public NanoFlaeche(Inhalt inhalt)
 	{
 		this.inhalt = inhalt;
+		tickAnmelden();
 	}
 
 	/** Inhalt hat sich geaendert (Status, Setting) — beim naechsten Tick neu malen. */
