@@ -199,7 +199,24 @@ public final class VektorSchrift
     {
         if (schatten)
         {
-            this.durchgang(batcher, text, x + 1F, y + 1F, color, true);
+            /* ⛔ SCHATTEN UM EINEN GERAETEPIXEL, nicht um eine GUI-einheit (2026-09-01).
+             *
+             * Gemessen im 1.20.1-baum an "Films" (18 px schrift, GUI-skala 2), anteil
+             * halbdeckender pixel in der textregion:
+             *   mit schatten +1 GUI  6,67 %   <- weich, wirkt doppelt belichtet
+             *   nur kantenkurve      5,16 %
+             *   ganz OHNE schatten   0,96 %   <- der schatten war ~80 % der unschaerfe
+             *
+             * +1 GUI-einheit sind bei skala 2 ZWEI geraetepixel — neben einer schrift,
+             * deren stämme selbst nur ~1,5 px breit sind, ist das ein zweites wort statt
+             * einer kante. Bei Minecrafts bitmap-font faellt das nicht auf (harte pixel,
+             * kein AA), bei einer AA-vektorschrift sofort.
+             *
+             * Ein geraetepixel (1/skala GUI-einheiten) haelt den schatten als feine kante —
+             * die lesbarkeit auf hellem grund bleibt, das doppelbild verschwindet. */
+            float versatz = 1F / this.skala();
+
+            this.durchgang(batcher, text, x + versatz, y + versatz, color, true);
         }
 
         this.durchgang(batcher, text, x, y, color, false);

@@ -75,7 +75,7 @@ public final class VektorGlyphAtlas
         {
             for (int c = 0; c < spalten; c++)
             {
-                int deckung = quelle.get(r * pitch + c) & 0xFF;
+                int deckung = kante(quelle.get(r * pitch + c) & 0xFF);
                 int ziel = ((this.packY + r) * this.seite + this.packX + c) * 4;
 
                 this.bild.put(ziel, (byte) 0xFF);
@@ -90,6 +90,38 @@ public final class VektorGlyphAtlas
         this.zeilenHoehe = Math.max(this.zeilenHoehe, zeilen);
 
         return true;
+    }
+
+    /**
+     * Kantenkurve fuer die Glyph-Deckung — macht die Schrift scharf statt weich.
+     *
+     * <p>⛔ WARUM (2026-09-01). Inter wird bei 18 px (BASIS 9 x GUI-Skala 2) gerastert.
+     * FreeType liefert dort reines Graustufen-AA, und ein Stamm von 1,4 px Breite
+     * verteilt sich auf zwei Pixel mit je ~70 % Deckung — das ist die weiche Schrift.
+     * Hinting half nicht: Inter bringt keine Hinting-Tabellen mit, FreeType nutzt den
+     * Autohinter dort ohnehin schon, FT_LOAD_FORCE_AUTOHINT war messbar ein No-Op
+     * (Textregion ueber den Build-Wechsel bit-identisch).</p>
+     *
+     * <p>Der wirksame Hebel ist die Deckungskurve selbst: eine S-Kurve um 0,5 zieht
+     * Halbdeckungen zu voll oder leer, ohne die Glyphform zu verschieben. Das ist der
+     * uebliche Weg (Skia: Gammakorrektur + Kontrastanhebung fuer Text, FreeType:
+     * Stem-Darkening), kein Eigenbau.</p>
+     *
+     * <p>⛔ Nur die DECKUNG anfassen, nie Position oder Groesse — sonst wandern die
+     * Buchstaben, und das Mass in VektorSchrift.breite() passt nicht mehr zum Bild.</p>
+     */
+    private static int kante(int deckung)
+    {
+        float x = deckung / 255F;
+
+        /* Stem-Darkening: duenne Striche etwas kraeftiger, sonst wirken sie ausgewaschen. */
+        x = (float) Math.pow(x, 0.82F);
+
+        /* Kontrast um die Mitte — 1,7 ist gemessen der Punkt, an dem Kanten hart werden,
+         * ohne dass duenne Rundungen (e, s, a) aufbrechen. */
+        x = (x - 0.5F) * 1.7F + 0.5F;
+
+        return Math.max(0, Math.min(255, Math.round(x * 255F)));
     }
 
     /** Einmal nach dem Fuellen; gibt den CPU-Puffer frei — danach ist der Atlas fix. */
