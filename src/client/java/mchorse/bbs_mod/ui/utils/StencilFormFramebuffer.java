@@ -285,7 +285,7 @@ public class StencilFormFramebuffer
          * weil apply()/unbind() die Klammer um den Durchgang sind: eine Aufrufstelle statt
          * vieler, und der Name kann nicht vergessen werden. Kosten: ein GL-Aufruf je
          * Durchgang. Warum die Marker vorher nie feuerten: ApiTraceBridge#pushGroup. */
-        com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.pushGroup(
+        mchorse.bbs_mod.sonden.Sonden.gpu.gruppeAuf(
             "BBS Auswahlpuffer (Stencil)");
 
         /* ⭐ DERSELBE ABSCHNITT FUER NSIGHT (2026-08-03). Zwei Zeilen statt einer, weil die
@@ -294,7 +294,7 @@ public class StencilFormFramebuffer
          * Erst zusammen beantworten sie "welcher Zeichenaufruf" UND "wie lange dauerte er".
          * Kostet nichts, wenn NVTX nicht angehaengt ist -- rangePush prueft ATTACHED und
          * kehrt sofort zurueck. */
-        com.afrobama.bbstools.client.debug.master.external.NvtxBridge.rangePush(
+        mchorse.bbs_mod.sonden.Sonden.gpu.bereichAuf(
             "BBS Auswahlpuffer (Stencil)");
 
         /* Setzt das Sichtfeld auf die Puffergroesse. Das Binden darin braucht der
@@ -743,12 +743,12 @@ public class StencilFormFramebuffer
 
         /* Gegenstueck zum pushGroup in apply() — ohne das Paar verschachtelt sich der Event
          * Browser falsch, was schlimmer ist als gar kein Marker. */
-        com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.popGroup();
+        mchorse.bbs_mod.sonden.Sonden.gpu.gruppeZu();
 
         /* Gegenstueck zum rangePush in apply(). Muss auf JEDEM Weg aus dem Durchgang
          * laufen, sonst wandert der Bereich in Nsight bis ans Ende der Aufzeichnung und
          * die Zeitachse ist unlesbar. */
-        com.afrobama.bbstools.client.debug.master.external.NvtxBridge.rangePop();
+        mchorse.bbs_mod.sonden.Sonden.gpu.bereichZu();
     }
 
     public void clearPicking()

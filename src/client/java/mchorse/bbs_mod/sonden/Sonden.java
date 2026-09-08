@@ -36,6 +36,9 @@ public final class Sonden
     /** Zeiger und Modifikatoren. Ohne Companion: echte Werte, unveraendert. */
     public static volatile Eingabesonde eingabe = Eingabesonde.NICHTS;
 
+    /** Marken im GL-Strom fuer Frame-Debugger. Ohne Companion: keine Marken. */
+    public static volatile Gpusonde gpu = Gpusonde.NICHTS;
+
     private Sonden()
     {}
 }

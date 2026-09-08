@@ -143,8 +143,9 @@ public final class StencilAnzeige
          *
          * Die Flaeche reist mit, weil bei #2 genau sie in Frage steht: liegt der Umriss an
          * derselben Stelle wie das Modell, oder blittet er ein Bild von woanders. */
-        com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.pushGroup(
-            "bbs-umriss " + area.w + "x" + area.h + " ab=" + abIndex);
+        mchorse.bbs_mod.sonden.Sonden.gpu.gruppeAuf(mchorse.bbs_mod.sonden.Sonden.gpu.marken()
+            ? "bbs-umriss " + area.w + "x" + area.h + " ab=" + abIndex
+            : null);
 
         try
         {
@@ -155,7 +156,7 @@ public final class StencilAnzeige
         {
             /* Paarig -- ein Push ohne Pop verschachtelt den Event Browser falsch, und das ist
              * schlimmer als gar kein Marker. */
-            com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.popGroup();
+            mchorse.bbs_mod.sonden.Sonden.gpu.gruppeZu();
         }
 
         /* ⚗️ Auf Anforderung nachsehen, ob der Umriss ueberhaupt IM Zwischenbild steht.

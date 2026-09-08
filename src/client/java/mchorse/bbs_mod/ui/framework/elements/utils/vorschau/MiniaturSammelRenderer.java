@@ -101,9 +101,10 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                  * Liste -- beim Umriss-Versatz waren das 1776 Stueck, und den richtigen zu
                  * finden kostete zwei Tage. Ein GL-Aufruf je Kachel, kein Schalter davor
                  * (siehe ApiTraceBridge#pushGroup: genau daran hing es vorher). */
-                com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.pushGroup(
-                    "bbs-miniatur " + e.zeichner().getClass().getSimpleName()
-                        + " @" + e.x0() + "," + e.y0());
+                mchorse.bbs_mod.sonden.Sonden.gpu.gruppeAuf(mchorse.bbs_mod.sonden.Sonden.gpu.marken()
+                    ? "bbs-miniatur " + e.zeichner().getClass().getSimpleName()
+                        + " @" + e.x0() + "," + e.y0()
+                    : null);
 
                 /* ⛔ JEDE VORSCHAU EINZELN ABGESICHERT. Ohne das reisst EINE kaputte Form
                  * alle uebrigen mit -- und weil hier kein Aufrufer mehr wartet, der die
@@ -219,7 +220,7 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                     kontext.mouseX = mausX;
                     kontext.mouseY = mausY;
 
-                    com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.popGroup();
+                    mchorse.bbs_mod.sonden.Sonden.gpu.gruppeZu();
 
                     continue;
                 }
@@ -289,7 +290,7 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
 
                     /* Paarig zum pushGroup oben: ein Push ohne Pop verschachtelt den Event
                      * Browser falsch, und das ist schlimmer als gar kein Marker. */
-                    com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.popGroup();
+                    mchorse.bbs_mod.sonden.Sonden.gpu.gruppeZu();
                 }
             }
         }
