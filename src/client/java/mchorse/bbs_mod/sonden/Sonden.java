@@ -39,6 +39,9 @@ public final class Sonden
     /** Marken im GL-Strom fuer Frame-Debugger. Ohne Companion: keine Marken. */
     public static volatile Gpusonde gpu = Gpusonde.NICHTS;
 
+    /** Mess-Ueberlagerung um den HUD-Zug herum. Ohne Companion: es gibt keine. */
+    public static volatile Ueberlagerungssonde ueberlagerung = Ueberlagerungssonde.NICHTS;
+
     private Sonden()
     {}
 }

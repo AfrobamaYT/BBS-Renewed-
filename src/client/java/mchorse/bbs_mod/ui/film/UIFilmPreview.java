@@ -727,10 +727,9 @@ public class UIFilmPreview extends UIElement
 
         /* Unser debug-overlay haengt am HudRenderCallback und wuerde den viewport
          * zupflastern — es gehoert auf den bildschirm, nicht ins kamerabild. */
-        boolean debugOverlay = com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED;
+        boolean debugOverlay = mchorse.bbs_mod.sonden.Sonden.ueberlagerung.ausschalten();
 
         mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(false);
-        com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED = false;
 
         try
         {
@@ -748,7 +747,7 @@ public class UIFilmPreview extends UIElement
         }
         finally
         {
-            com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED = debugOverlay;
+            mchorse.bbs_mod.sonden.Sonden.ueberlagerung.wiederherstellen(debugOverlay);
             mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(hidden);
 
             context.batcher.flush();
