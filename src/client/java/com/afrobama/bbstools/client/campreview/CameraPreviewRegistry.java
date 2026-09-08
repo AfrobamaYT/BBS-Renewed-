@@ -2,7 +2,7 @@
 package com.afrobama.bbstools.client.campreview;
 
 import mchorse.bbs_mod.BBSModClient;
-import com.afrobama.bbstools.client.debug.BBSDebugRegistry;
+import com.afrobama.bbstools.sonden.Messregister;
 import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
@@ -264,7 +264,7 @@ public final class CameraPreviewRegistry
         // PHASE NICHT BELEGT GLEICHWERTIG: alt war LAST/END/AFTER_SETUP. 26.2 hat dafuer kein benanntes Gegenstueck -- ob diese Phase an derselben Stelle liegt, ist am laufenden Bild zu pruefen (Export gegen Fenster).
         LevelRenderEvents.END_MAIN.register(CameraPreviewRenderHook::onWorldRenderLast);
 
-        BBSDebugRegistry.register("CameraPreview", out ->
+        Messregister.HALTER.aktiv.text("CameraPreview", out ->
         {
             out.append("previews=").append(PREVIEWS.size()).append('\n');
             for (CameraPreview p : PREVIEWS)

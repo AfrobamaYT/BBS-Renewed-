@@ -89,7 +89,6 @@ public final class BBSToolsModClient implements ClientModInitializer
         }
 
 
-        /* Crowd-form applier: client-tick scan + Form injection per villager UUID. */
 
         /* PhysicsMod ragdoll bridge — reflection-gated, safe to call
          *  whether or not physics-mod-pro is installed. */
@@ -357,21 +356,11 @@ public final class BBSToolsModClient implements ClientModInitializer
         com.afrobama.bbstools.client.powerbins.WorldFrameCapture.register();
 
 
-        
-        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
-
-        
-
-
 
 
         /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
 
         /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
-
-
-
-        com.afrobama.bbstools.client.schematic.SchematicPreview.register();
 
 
         /* Phase 2 Editor: Block Animation. Captures Block-Selection region,
@@ -486,33 +475,6 @@ public final class BBSToolsModClient implements ClientModInitializer
         /* enable() hier entfernt (2026-07-28) — start-pass entscheidet. Der snapshot-thread
          * lief sonst ab mod-init und schrieb alle 10 s in einen 360-slot-ring. */
 
-        /* Start-zustand der debugger. DEFERRED auf CLIENT_STARTED — einige
-         *  Feature.setEnabled-impls fassen GL-zustand an (bindless-probe, GLFW
-         *  input-grab), der beim ModInitializer noch nicht existiert (r36: das
-         *  hat den boot zerlegt).
-         *
-         *  ⛔ NICHT MEHR "alles an ausser verbotsliste" (2026-07-28): das hatte 57
-         *  von 87 debuggern scharf, kostete gemessen ~136 ms voll-GC pro minute und
-         *  flutete das log so, dass ein crash-fenster nichts mehr hergab. Jetzt
-         *  entscheidet die POSITIVLISTE in StartPositivliste — begruendung und die
-         *  liste selbst stehen dort, damit sie an einer stelle wachsen. */
-        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STARTED
-            .register(client ->
-            {
-                try
-                {
-                    com.afrobama.bbstools.client.debug.StartPositivliste.anwenden();
-                }
-                catch (Throwable t)
-                {
-                    BBSToolsMod.LOG.error("[master-debug] start-zustand fehlgeschlagen", t);
-                }
-
-                /* JFR-dauer-aufnahme: seit 2026-07-28 nur noch auf ausdruecklichen wunsch.
-                 * Sie schaltet die erweiterte klassen-redefinition der JVM ab (gemessen),
-                 * und damit strukturelles hotswap — begruendung in JfrAutostart. */
-                com.afrobama.bbstools.client.debug.master.jfr.JfrAutostart.starteWennErlaubt();
-            });
 
         com.afrobama.bbstools.client.fracture.GravityGunHandler.register();
         com.afrobama.bbstools.client.fracture.GravityGunHud.register();

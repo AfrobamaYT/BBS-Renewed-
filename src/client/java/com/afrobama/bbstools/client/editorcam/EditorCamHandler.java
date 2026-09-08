@@ -172,7 +172,7 @@ public final class EditorCamHandler
         {
             removeController();
             chat("§6[BBSTools] §fEditor-cam: §a→ player view §7(F8 next, Shift+F8 prev)");
-            com.afrobama.bbstools.client.console.BBSActionRecorder.editorCam(
+            com.afrobama.bbstools.sonden.Meldesonde.HALTER.aktiv.aktion("editor-cam", 
                 "cycle → player view");
             return;
         }
@@ -182,7 +182,7 @@ public final class EditorCamHandler
         addController();
         chat("§6[BBSTools] §fEditor-cam: §a→ replay '" + safeName(r) + "' §7("
             + (cycleIndex + 1) + "/" + replays.size() + ", F8 next, Shift+F8 prev)");
-        com.afrobama.bbstools.client.console.BBSActionRecorder.editorCam(
+        com.afrobama.bbstools.sonden.Meldesonde.HALTER.aktiv.aktion("editor-cam", 
             "cycle → replay '" + safeName(r) + "' (" + (cycleIndex + 1) + "/" + replays.size() + ")");
     }
 

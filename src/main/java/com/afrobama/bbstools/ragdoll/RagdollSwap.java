@@ -36,7 +36,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-
+/* Seit 2026-09-09 hinter einem Anschluss: die Armee liegt in der Companion, ohne sie
+ * gibt es keine Armee-Kreaturen und der Filter antwortet konstant nein. */
+import com.afrobama.bbstools.sonden.ArmeeFilter;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EntitySpawnReason;
 
@@ -245,6 +247,7 @@ public final class RagdollSwap
             livingCount++;
             if (e instanceof Player) continue;
             if (RAGDOLLED.contains(e.getUUID())) continue;
+            if (ArmeeFilter.istArmee.test(e.getUUID())) continue;
             if (actorClass == null || !actorClass.isInstance(le)) continue;
             actorCount++;
 
@@ -324,6 +327,7 @@ public final class RagdollSwap
             if (!(e instanceof LivingEntity le)) continue;
             if (e instanceof Player) continue;
             if (RAGDOLLED.contains(e.getUUID())) continue;
+            if (ArmeeFilter.istArmee.test(e.getUUID())) continue;
             if (actorClass == null || !actorClass.isInstance(le)) continue;
 
             double d = le.position().distanceToSqr(sourcePos);
@@ -709,6 +713,7 @@ public final class RagdollSwap
                 continue;
             }
 
+            if (ArmeeFilter.istArmee.test(e.getUUID()))
             {
                 continue;
             }

@@ -16,7 +16,6 @@
 // ArrayList is fine.
 package com.afrobama.bbstools.client.bbs.fastpath;
 
-import com.afrobama.bbstools.client.debug.master.crashsafe.BbstoolsJfrEvents;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import mchorse.bbs_mod.cubic.ModelInstance;
@@ -127,15 +126,8 @@ public final class FastPathBatch
             BBSPerfConfig.fastPathLastFrameSubmissions = totalSubmissions;
             BBSPerfConfig.fastPathLastFrameUniqueModels = uniqueModels;
 
-            try
-            {
-                BbstoolsJfrEvents.FastPathFlushEvent event = new BbstoolsJfrEvents.FastPathFlushEvent();
-                event.totalSubmissions = totalSubmissions;
-                event.uniqueModels = uniqueModels;
-                event.flushIndex = flushCount;
-                event.commit();
-            }
-            catch (Throwable ig) {}
+            com.afrobama.bbstools.sonden.Meldesonde.HALTER.aktiv.schnellpfad(
+                totalSubmissions, uniqueModels, flushCount);
 
             /* One log per session: prove the pipeline reached flush. */
             if (flushCount == 1L)

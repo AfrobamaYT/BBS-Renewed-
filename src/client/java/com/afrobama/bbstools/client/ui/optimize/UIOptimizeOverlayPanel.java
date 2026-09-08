@@ -1,6 +1,6 @@
 package com.afrobama.bbstools.client.ui.optimize;
 
-import com.afrobama.bbstools.client.debug.BBSDebugRegistry;
+import com.afrobama.bbstools.sonden.Messregister;
 import com.afrobama.bbstools.config.BBSToolsConfig;
 import com.afrobama.bbstools.debug.IFeatureDebugger;
 
@@ -159,7 +159,7 @@ public class UIOptimizeOverlayPanel extends UIOverlayPanel
     /** Feature mit diesem namen aus der registry, oder {@code null}. */
     private static IFeatureDebugger sucheFeature(String name)
     {
-        for (IFeatureDebugger f : BBSDebugRegistry.typed())
+        for (IFeatureDebugger f : Messregister.HALTER.aktiv.alle())
         {
             if (name.equals(f.getName()))
             {

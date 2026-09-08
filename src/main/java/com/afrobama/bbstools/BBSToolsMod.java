@@ -41,10 +41,6 @@ public final class BBSToolsMod implements ModInitializer
 
         com.afrobama.bbstools.network.BBSToolsNetworkInit.init();
 
-        /* /buildschematic + /ragdolly each register their own
-         *  CommandRegistrationCallback internally — just call register(). */
-        com.afrobama.bbstools.schematic.BuildSchematic.register();
-
         /* AUTONOMIE 2026-07-27: damage-hitbox (keyframed schaden-AABB fuer kampf-animationen).
          * Gleiches muster wie BuildSchematic drueber — register() haengt sich selbst an
          * CommandRegistrationCallback + END_SERVER_TICK. Der aufruf fehlte schlicht, damit

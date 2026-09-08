@@ -31,24 +31,9 @@ public final class ShaderSourceLogik
      */
     public static void shaderSource(int shader, String source)
     {
-        if (!com.afrobama.bbstools.client.debug.master.shader.ShaderDebugger.ENABLED) return;
-
-        try
-        {
-            /* Weiterhin ein StringBuilder, weil onShaderSource genau den nimmt — und weil
-             * die aufrufstelle so unveraendert bleibt. */
-            StringBuilder sb = new StringBuilder(source == null ? 0 : source.length());
-
-            if (source != null)
-            {
-                sb.append(source);
-            }
-
-            com.afrobama.bbstools.client.debug.master.shader.ShaderDebugger.onShaderSource(shader, sb);
-        }
-        catch (Throwable ignored)
-        {
-            /* Nie den GL-aufruf abreissen. */
-        }
+        /* ⛔ KEIN SCHALTER MEHR DAVOR: die Standardfassung der Sonde nimmt die Quelle
+         * entgegen und wirft sie weg, und der JIT setzt den Aufruf dann weg. Der frueher
+         * hier abgefragte ShaderDebugger.ENABLED liegt in der Companion. */
+        com.afrobama.bbstools.sonden.Meldesonde.HALTER.aktiv.schattierung(shader, source);
     }
 }

@@ -1,6 +1,5 @@
 package com.mcstudio.see;
 
-import com.mcstudio.http.StudioServer;
 import com.mcstudio.util.RenderThread;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.opengl.GlStateManager;
@@ -42,44 +41,6 @@ public final class Readback
 	}
 
 	/**
-	 * Self-register the /shot route. Called by StudioClient (one line, added by Lead) before
-	 * StudioServer.start(). /shot?name=foo captures MC's main framebuffer to run/mcstudio-shots/foo.png.
-	 */
-	public static void register()
-	{
-		StudioServer.route("/shot", exchange ->
-		{
-			String name = StudioServer.query(exchange, "name");
-
-			if (name == null || name.isEmpty())
-			{
-				name = "shot";
-			}
-
-			/* Sanitize to a bare filename (no path traversal, no separators). */
-			name = name.replaceAll("[^A-Za-z0-9._-]", "_");
-
-			File out = new File(shotsDir(), name + ".png");
-
-			/* Actual GL work must run on the render thread; the HTTP handler thread blocks on the result. */
-			final String path = out.getAbsolutePath();
-			String json = RenderThread.submit(() -> captureMainFramebuffer(path));
-
-			StudioServer.respond(exchange, json);
-		});
-
-		StudioServer.route("/shot/puffer", exchange ->
-		{
-			String was = StudioServer.query(exchange, "was");
-			final String ziel = was == null || was.isEmpty() ? "kugel" : was;
-
-			StudioServer.respond(exchange, RenderThread.submit(() -> pufferSchreiben(ziel)));
-		});
-
-		System.out.println("[mcstudio] Readback registered /shot, /shot/puffer");
-	}
-
-	/**
 	 * Schreibt einen BBS-eigenen Zwischenpuffer als PNG.
 	 *
 	 * <p>⛔ WOFUER (2026-08-11). Die Trackball-Hervorhebung erscheint in 26.2 nicht. Die
@@ -91,7 +52,9 @@ public final class Readback
 	 * <p>Die Summe aller RGB-Werte steht mit im Ergebnis: ein leerer Puffer ist damit eine
 	 * Zahl, nicht ein Eindruck.
 	 */
-	private static String pufferSchreiben(String was)
+	/* ⛔ PAKETWEIT statt private (2026-09-09): die HTTP-Route liegt in SeeRouten im
+	 * dev-Modul, im SELBEN Paket — diese Sichtbarkeit reicht, public waere zu viel. */
+	static String pufferSchreiben(String was)
 	{
 		try
 		{

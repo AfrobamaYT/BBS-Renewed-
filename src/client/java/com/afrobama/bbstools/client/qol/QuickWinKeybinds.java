@@ -55,16 +55,6 @@ public final class QuickWinKeybinds
      *  modpacks. */
     private static KeyMapping shaderReload;
 
-    /** F11 — in-game GPU debugger capture (Phase 1). Fires BBSGpuDebug.captureNow
-     *  which dumps current program / VAO / VBO / FBO / pipeline state to log. */
-    private static KeyMapping gpuDebugCapture;
-
-    /** F10 — Master debugger Module 5: thread dump on demand (deadlock detect + all stacks). */
-    private static KeyMapping threadDump;
-
-    /** F9 — Master debugger Module 6: one-shot bug-report bundle (zips log+crash+modlist+screenshot). */
-    private static KeyMapping bugBundle;
-
     /* F12 (debug-overlay) liegt seit 2026-07-28 in
      * com.afrobama.bbstools.client.keybinds.DebugOverlayKeybind. Grund: hier
      * haengt jede taste an KeyBinding.wasPressed(), und das feuert nicht,
@@ -104,41 +94,6 @@ public final class QuickWinKeybinds
             BBSKeyCategories.BBSTOOLS
         ));
 
-        gpuDebugCapture = !DEV_ENV ? null : KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.bbstools.gpu_debug_capture",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_F11,
-            BBSKeyCategories.BBSTOOLS
-        ));
-
-        threadDump = !DEV_ENV ? null : KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.bbstools.thread_dump",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_F10,
-            BBSKeyCategories.BBSTOOLS
-        ));
-
-        /* ⛔ NICHT F9 — und auch NICHT F2 (beides gemessen 2026-07-26).
-         *
-         * F9 schluckte den keybind-editor: Minecraft-keybindings laufen VOR dem
-         * BBS-UI-system und `drain()` verbraucht das event mit `wasPressed()`. Damit kam
-         * unser Shift+F9 (BBSToolsKeys.KEYBIND_EDITOR_OPEN) nie an — MC-keybindings
-         * ignorieren modifier, also traf es auch die shift-variante.
-         *
-         * Erster ausweichversuch war F2 — falsch: das ist Minecrafts SCREENSHOT-taste.
-         * Ich hatte nur `GLFW_KEY_F*` im quellcode gegrept und die vanilla-belegung
-         * nicht geprüft. Live an der JVM nachgemessen ergibt:
-         *   belegt: F2(screenshot) F4 F5 F8 F10 F11 F12
-         *   frei:   F1 F3 F6 F7 F9  (F1/F3/F6/F7 nutzt BBS nur im UI, nicht als
-         *                            MC-keybinding — dort kollidiert es also nicht)
-         *
-         * F6 ist auf MC-ebene frei; F9 bleibt damit für den keybind-editor. */
-        bugBundle = !DEV_ENV ? null : KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.bbstools.bug_bundle",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_F6,
-            BBSKeyCategories.BBSTOOLS
-        ));
 
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick(client));
@@ -158,57 +113,10 @@ public final class QuickWinKeybinds
         boolean fireCinematic    = drain(cinematicToggle);
         boolean fireVeil         = drain(veilCrowdToggle);
         boolean fireShaderReload = drain(shaderReload);
-        boolean fireGpuDebug     = drain(gpuDebugCapture);
 
         if (fireCinematic)    handleCinematic(client);
         if (fireVeil)         handleVeilCrowd(client);
         if (fireShaderReload) handleShaderReload(client);
-        if (fireGpuDebug)
-        {
-            /* Ctrl+F11 = GPU dev-loop layer 3: hard-reset poisoned GL state (no restart).
-             * Plain F11 = capture snapshot. */
-            boolean ctrl = GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS
-                || GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
-
-            if (ctrl)
-            {
-                com.afrobama.bbstools.client.debug.BBSGpuDebug.resetGlState();
-                if (client.player != null)
-                    client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§a[gpu-debug] GL state reset (VAO/program/buffers unbound)"));
-            }
-            else
-            {
-                com.afrobama.bbstools.client.debug.BBSGpuDebug.enable(false);
-                com.afrobama.bbstools.client.debug.BBSGpuDebug.captureNow("F11");
-                if (client.player != null)
-                    client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b[gpu-debug] capture fired — check bbstools-console.log"));
-            }
-        }
-
-        boolean fireThreadDump = drain(threadDump);
-        if (fireThreadDump)
-        {
-            com.afrobama.bbstools.client.debug.master.jvm.ThreadDumper.dumpAll();
-            if (client.player != null)
-                client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b[thread-dump] all threads dumped to log"));
-        }
-
-        boolean fireBugBundle = drain(bugBundle);
-        if (fireBugBundle)
-        {
-            try
-            {
-                java.nio.file.Path zip = com.afrobama.bbstools.client.debug.master.bundle.BugReportBundle.create("F9");
-                if (client.player != null)
-                    client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§a[bug-bundle] saved: " + zip.getFileName()));
-            }
-            catch (Throwable t)
-            {
-                LOG.error("Bug bundle creation threw", t);
-                if (client.player != null)
-                    client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§c[bug-bundle] failed: " + t.getMessage()));
-            }
-        }
     }
 
     private static boolean drain(KeyMapping kb)

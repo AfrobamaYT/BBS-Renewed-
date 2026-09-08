@@ -1,6 +1,5 @@
 package com.mcstudio.see;
 
-import com.mcstudio.http.StudioServer;
 import com.mcstudio.util.RenderThread;
 
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
@@ -11,7 +10,10 @@ import java.io.File;
 public final class WeltbildFahrt
 {
 	/** Obergrenze je Aufruf — laengere Fahrten in Folgeaufrufen mit start-Offset (Antwort nennt es). */
-	private static final int MAX_FRAMES = 600;
+	/* ⛔ PAKETWEIT statt private (2026-09-09): die HTTP-Route liegt seit dem Companion-Umbau
+	 * in com.mcstudio.see.SeeRouten im dev-Modul — im SELBEN Paket, damit genau diese
+	 * Sichtbarkeit reicht und nichts public werden muss. */
+	static final int MAX_FRAMES = 600;
 
 	private WeltbildFahrt()
 	{
@@ -22,35 +24,6 @@ public final class WeltbildFahrt
 	public static File verzeichnis()
 	{
 		return Readback.shotsDir();
-	}
-
-	/** Route registrieren — StudioServer kann seit 2026-07-22 auch nach start() live registrieren. */
-	public static void register()
-	{
-		StudioServer.route("/welt_fahrt", exchange ->
-		{
-			String name = StudioServer.query(exchange, "name");
-			int frames = zahl(StudioServer.query(exchange, "frames"), -1);
-			int start = Math.max(0, zahl(StudioServer.query(exchange, "start"), 0));
-			String wunschFilm = StudioServer.query(exchange, "film");
-
-			if (name == null || name.isEmpty())
-			{
-				name = "bbs_frame";
-			}
-
-			final String basis = name.replaceAll("[^A-Za-z0-9._-]", "_");
-
-			if (frames <= 0)
-			{
-				StudioServer.respond(exchange, "{\"error\":\"?frames= muss eine positive zahl sein\"}");
-				return;
-			}
-
-			StudioServer.respond(exchange, fahren(basis, start, Math.min(frames, MAX_FRAMES), wunschFilm));
-		});
-
-		System.out.println("[mcstudio] WeltbildFahrt registered /welt_fahrt");
 	}
 
 	/**

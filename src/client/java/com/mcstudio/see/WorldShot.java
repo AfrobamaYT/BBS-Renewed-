@@ -1,6 +1,5 @@
 package com.mcstudio.see;
 
-import com.mcstudio.http.StudioServer;
 import com.mcstudio.util.RenderThread;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
@@ -120,7 +119,9 @@ public final class WorldShot
 	 * Auf dem Render-Thread scharfstellen (via RenderThread.submit aus der Route). Gibt bei
 	 * Vorbedingungsfehlern sofort das Fehler-JSON zurueck, sonst null ("scharf, warte auf Frame").
 	 */
-	private static String scharfstellen(String pfad)
+	/* ⛔ PAKETWEIT statt private (2026-09-09): die HTTP-Route liegt in SeeRouten im
+	 * dev-Modul, im SELBEN Paket — diese Sichtbarkeit reicht, public waere zu viel. */
+	static String scharfstellen(String pfad)
 	{
 		Minecraft client = Minecraft.getInstance();
 
@@ -161,7 +162,10 @@ public final class WorldShot
 	}
 
 	/** HTTP-Thread: auf den naechsten Frame warten. Laut scheitern statt ewig haengen. */
-	private static String warten()
+	/* ⛔ PAKETWEIT statt private (2026-09-09): die HTTP-Route liegt seit dem Companion-Umbau
+	 * in com.mcstudio.see.SeeRouten im dev-Modul — im SELBEN Paket, damit genau diese
+	 * Sichtbarkeit reicht und nichts public werden muss. */
+	static String warten()
 	{
 		java.util.concurrent.CompletableFuture<String> f = armErgebnis;
 
@@ -186,42 +190,6 @@ public final class WorldShot
 
 			return "{\"error\":\"wait failed: " + escape(String.valueOf(e)) + "\"}";
 		}
-	}
-
-	/**
-	 * Self-register /shot_world. Called by StudioClient (one line, added by Lead) BEFORE StudioServer.start().
-	 * /shot_world?name=foo renders the dashboard-free world into run/mcstudio-shots/foo.png.
-	 */
-	public static void register()
-	{
-		StudioServer.route("/shot_world", exchange ->
-		{
-			String name = StudioServer.query(exchange, "name");
-
-			if (name == null || name.isEmpty())
-			{
-				name = "world";
-			}
-
-			/* Sanitize to a bare filename (no path traversal, no separators) — same rule as /shot. */
-			name = name.replaceAll("[^A-Za-z0-9._-]", "_");
-
-			File out = new File(Readback.shotsDir(), name + ".png");
-
-			final String path = out.getAbsolutePath();
-			/* v2: auf dem Render-Thread nur SCHARFSTELLEN (null = ok), dann hier — auf dem
-			 * HTTP-Thread — auf den naechsten echten Frame warten. Nie den Render-Thread blocken. */
-			String json = RenderThread.submit(() -> scharfstellen(path));
-
-			if (json == null)
-			{
-				json = warten();
-			}
-
-			StudioServer.respond(exchange, json);
-		});
-
-		System.out.println("[mcstudio] WorldShot registered /shot_world");
 	}
 
 	/**

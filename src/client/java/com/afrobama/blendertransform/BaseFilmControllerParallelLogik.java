@@ -1,7 +1,7 @@
 package com.afrobama.blendertransform;
 
 import com.afrobama.bbstools.client.bbs.fastpath.ActorWork;
-import com.afrobama.bbstools.client.debug.master.jvm.CatchBlockTracker;
+import com.afrobama.bbstools.sonden.Meldesonde;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import io.netty.util.collection.IntObjectMap;
@@ -131,7 +131,7 @@ public final class BaseFilmControllerParallelLogik
         }
         catch (Throwable t)
         {
-            CatchBlockTracker.reportSilent("BaseFilmControllerParallelMixin.replays.getList", t);
+            Meldesonde.HALTER.aktiv.verschluckt("BaseFilmControllerParallelMixin.replays.getList", t);
             return false;
         }
         if (replays == null || replays.isEmpty()) return false;
@@ -212,7 +212,7 @@ public final class BaseFilmControllerParallelLogik
                     catch (Throwable th)
                     {
                         throttledLog("per-replay properties threw, skipping: " + th);
-                        CatchBlockTracker.reportSilent("BaseFilmControllerParallelMixin.applyProperties", th);
+                        Meldesonde.HALTER.aktiv.verschluckt("BaseFilmControllerParallelMixin.applyProperties", th);
                     }
                 }
 
@@ -241,7 +241,7 @@ public final class BaseFilmControllerParallelLogik
                     catch (Throwable th)
                     {
                         throttledLog("actor pass threw for replay " + aw.i() + ": " + th);
-                        CatchBlockTracker.reportSilent("BaseFilmControllerParallelMixin.actorPass", th);
+                        Meldesonde.HALTER.aktiv.verschluckt("BaseFilmControllerParallelMixin.actorPass", th);
                     }
                 }
             }

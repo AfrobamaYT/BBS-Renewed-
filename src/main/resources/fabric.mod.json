@@ -44,8 +44,7 @@
     ],
     "client": [
       "mchorse.bbs_mod.BBSModClient",
-      "com.afrobama.bbstools.client.BBSToolsModClient",
-      "com.mcstudio.StudioClient"
+      "com.afrobama.bbstools.client.BBSToolsModClient"
     ]
   },
   "mixins": [

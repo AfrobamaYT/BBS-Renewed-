@@ -72,17 +72,7 @@
     "UIPickableFormRendererLodBypassMixin",
     "UIClipsDragEdgeCrashFixMixin",
     "UIOverlayMinSizeMixin",
-    "FormCategoriesAddCameraMixin",
-    "debug.MixinGlStateManager_GlRing",
-    "debug.MixinGlStateManager_GpuResources",
-    "debug.MixinGlResource_Close$Textur",
-    "debug.MixinGlResource_Close$Puffer",
-    "debug.MixinGlStateManager_ShaderEvents",
-    "debug.MixinMethodTracer_BaseFilmController",
-    "debug.MixinMethodTracer_BOBJModelVAO",
-    "debug.MixinAssetProvider_IoTrace",
-    "debug.MixinCrashReport",
-    "HotswapProbeMixin"
+    "FormCategoriesAddCameraMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -47,7 +47,7 @@ public final class BBSToolsTextureEnhancer implements IFeatureDebugger
 
     public static void register()
     {
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(INSTANCE);
+        com.afrobama.bbstools.sonden.Messregister.HALTER.aktiv.feature(INSTANCE);
         LOG.info("BBSToolsTextureEnhancer registered. ENABLED={}, LOD_BIAS={}, target ANISOTROPY={}",
             ENABLED, LOD_BIAS, ANISOTROPY);
     }

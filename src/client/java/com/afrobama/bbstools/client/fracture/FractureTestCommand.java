@@ -103,28 +103,6 @@ public final class FractureTestCommand
                 .executes(ctx -> {
                     runAddCameraReplay(ctx.getSource());
                     return 1;
-                }))
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("console-mark")
-                .executes(ctx -> {
-                    com.afrobama.bbstools.client.console.BBSActionRecorder.command("/bbstools console-mark");
-                    com.afrobama.bbstools.client.console.LogConsoleBuffer.pushUserMarker(null);
-                    sendChat(ctx.getSource(), "§a[BBSTools] §fMarker pushed to log console.");
-                    return 1;
-                })
-                .then(com.mojang.brigadier.builder.RequiredArgumentBuilder
-                    .<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource, String>argument(
-                        "label", com.mojang.brigadier.arguments.StringArgumentType.greedyString())
-                    .executes(ctx -> {
-                        String label = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "label");
-                        com.afrobama.bbstools.client.console.BBSActionRecorder.command("/bbstools console-mark \"" + label + "\"");
-                        com.afrobama.bbstools.client.console.LogConsoleBuffer.pushUserMarker(label);
-                        sendChat(ctx.getSource(), "§a[BBSTools] §fMarker '§e" + label + "§f' pushed to log console.");
-                        return 1;
-                    })))
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("console-report")
-                .executes(ctx -> {
-                    com.afrobama.bbstools.client.console.ConsoleReport.write(ctx.getSource());
-                    return 1;
                 })));
     }
 
