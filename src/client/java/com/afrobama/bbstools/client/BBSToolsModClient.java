@@ -16,12 +16,6 @@ public final class BBSToolsModClient implements ClientModInitializer
     {
         BBSToolsMod.LOG.info("BBSTools client init");
 
-        /* AUTONOMIE 2026-07-27: zwei fertige, aber nie gerufene werkzeuge.
-         * F12 oeffnet die in-game log-konsole (BBSLogConsoleScreen), das HUD zeigt
-         * perf-zahlen (aus mit /bbs-renewed hud). Beide haben ihr register() seit
-         * jeher — es hat sie nur niemand aufgerufen, also gab es sie im spiel nicht. */
-        com.afrobama.bbstools.client.console.BBSLogConsoleHotkey.register();
-        com.afrobama.bbstools.client.console.BBSRenewedHud.register();
 
         /* AUTONOMIE 2026-07-27: BBSToolsAddon von hand am event-bus anmelden.
          * Frueher lief das ueber BBS' custom-entrypoint "bbs-addon-client" (CML-fork), das
@@ -30,71 +24,13 @@ public final class BBSToolsModClient implements ClientModInitializer
          * (dashboard-panel + sprachdatei fehlen dann still). */
         mchorse.bbs_mod.BBSMod.events.register(new com.afrobama.bbstools.client.addon.BBSToolsAddon());
 
-        /* Blender-transform-kern bei BBS anmelden. UIPropTransform kennt seit 2026-07-26 nur
-         * noch das interface mchorse…input.BlenderModalKernel — ohne diese zeile bleibt die
-         * fabrik null und G/R/S fällt auf BBS' alten ray-pfad zurück (kein crash, aber der
-         * kernel ist dann einfach nicht da). */
-        /* Blender-transform entfernt 2026-07-26 (user-order). */
 
-        /* Master Debugger Modules 41+42 — crash-safe writers init FIRST,
-         *  before UncaughtExceptionCapture, so the very first exception
-         *  (if any) lands in bbs/debugger/exceptions.ndjson. r38 2026-05-18 —
-         *  survives JVM native AVs because the writer uses
-         *  FileChannel.force(false).
-         *
-         *  ⚠ bbs/debugger/recording.jfr entsteht seit 2026-07-28 NICHT mehr von
-         *  selbst: die JFR-dauer-aufnahme schaltet die erweiterte klassen-
-         *  redefinition der JVM ab (gemessen) und damit strukturelles hotswap.
-         *  Wer die .jfr fuer eine crash-jagd braucht: BBS-einstellung
-         *  bbstools.jfr_auto_record — siehe JfrAutostart. */
-        com.afrobama.bbstools.client.debug.master.crashsafe.CrashSafeExceptionLog.init();
-        com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.init();
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.crashsafe.CrashSafeExceptionLog.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.INSTANCE);
-
-        /* Master Debugger Modules 43-46 — external + zero-install GL
-         *  inspection. Each init is a one-shot probe; no-op if the
-         *  corresponding tool isn't present in the process. Order:
-         *    43 RenderDoc (open source, MIT — needs MC launched via
-         *       RenderDoc to attach)
-         *    44 NVTX (NVIDIA Tools Extension — needs nvToolsExt DLL,
-         *       ships with CUDA Toolkit / Nsight Graphics)
-         *    45 APITrace (open source MIT — needs `apitrace trace ...`)
-         *    46 GlIntrospect (zero-install — just OpenGL queries) */
-        com.afrobama.bbstools.client.debug.master.external.RenderDocBridge.init();
-        com.afrobama.bbstools.client.debug.master.external.NvtxBridge.init();
-        com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.init();
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.external.RenderDocBridge.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.external.NvtxBridge.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.gl.GlIntrospect.INSTANCE);
 
         /* Per-tick heartbeat pulse — tells external watchers MC's tick
          *  thread is still alive. Cheap (single AtomicLong store). */
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(
             client ->
             {
-                com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onTick();
-
-                /* ⭐ TAKTMARKE FUER NSIGHT (2026-08-04). Ohne einen Marker, der IMMER
-                 * feuert, bleibt die Nsight-Zeitachse in aller Regel leer: der zweite
-                 * Marker sitzt am Auswahlpuffer, und der laeuft ausschliesslich beim
-                 * Bone-Hover-Picking (BoneHoverPickRunner) -- also nur mit Maus ueber der
-                 * Kameravorschau. Gemessen: 25 s Aufzeichnung im offenen Film-Editor
-                 * ergaben NULL Bereiche.
-                 *
-                 * Mit dieser Marke hat jede Aufzeichnung ein Taktraster, an dem sich alles
-                 * andere einordnen laesst -- und Tick-Aussetzer werden als Luecke sichtbar.
-                 * Kosten: ein Funktionsaufruf je Tick (20/s), und er faellt sofort zurueck,
-                 * wenn NVTX nicht angehaengt oder das Feature aus ist. */
-                com.afrobama.bbstools.client.debug.master.external.NvtxBridge.mark("tick");
-
                 /* afrobama — mirror the BBS top-bar "Bake" menu flags into perf config. */
                 com.afrobama.bbstools.client.qol.BakeMenuSync.tick();
 
@@ -127,48 +63,8 @@ public final class BBSToolsModClient implements ClientModInitializer
             kontext ->
             {
                 com.afrobama.bbstools.perf.BBSPerfConfig.bbstoolsRenderFrameId++;
-
-                /* ⛔ ZWEITER ANTRIEB FUER DEN HERZSCHLAG — der HUD-Antrieb unten steht still,
-                 * sobald ein Screen offen ist, und offen ist er in JEDER Editor-Sitzung.
-                 * Gemessen 2026-08-04: frame blieb 45 Minuten auf 11930 und fps auf 30,
-                 * waehrend die Instanz mit 85–140 fps lief. Ein eingefrorener Wert, der wie
-                 * ein Messwert aussieht, ist teurer als gar keiner: er beendet die Suche.
-                 * Hier laeuft es je Weltdurchgang, also auch hinter dem Editor. */
-                com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onFrameWelt();
-                try
-                {
-                    com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.setFps(
-                        net.minecraft.client.Minecraft.getInstance().getFps());
-                }
-                catch (Throwable ig) {}
             });
 
-        /* Per-frame counter for the heartbeat's "frame" + "fps" fields.
-         *
-         * 26.2: HudRenderCallback ist gestrichen, Nachfolger HudElementRegistry (siehe
-         * BBSModClient). Dieses Element ZEICHNET nichts, es zaehlt nur -- der Zeichner wird
-         * gar nicht angefasst. addLast, weil der alte Rueckruf am Ende des HUD lief; fuer
-         * einen reinen Zaehler ist die Ebene ohnehin egal. */
-        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
-            net.minecraft.resources.Identifier.fromNamespaceAndPath(com.afrobama.bbstools.BBSToolsMod.MOD_ID, "herzschlag"),
-            (drawContext, tickDelta) ->
-            {
-                com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onFrameHud();
-                try
-                {
-                    com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.setFps(
-                        net.minecraft.client.Minecraft.getInstance().getFps());
-                }
-                catch (Throwable ig) {}
-                /* Benchmark harness: once-per-real-frame driver (Iris-safe; WorldRenderEvents fires per pass). */
-                try { com.afrobama.bbstools.client.debug.master.bench.BenchHarness.onFrame(); }
-                catch (Throwable ig) {}
-            });
-
-        /* Master Debugger Module 3a — install global uncaught-exception
-         *  handler FIRST so anything thrown by later init lines lands in
-         *  our [uncaught] log instead of falling through to vanilla MC. */
-        com.afrobama.bbstools.client.debug.master.jvm.UncaughtExceptionCapture.install();
 
         /* UI Overhaul Phase 1: editor transparency keybind (Ctrl+Alt+T). */
         com.afrobama.bbstools.client.ui.theme.BBSToolsTransparency.register();
@@ -192,8 +88,6 @@ public final class BBSToolsModClient implements ClientModInitializer
             BBSToolsMod.LOG.warn("Failed to set BBS primary color: {}", t.toString());
         }
 
-        /* In-game profiler dashboard /bbsdebug. */
-        com.afrobama.bbstools.client.debug.BBSDebug.register();
 
         /* Crowd-form applier: client-tick scan + Form injection per villager UUID. */
 
@@ -229,7 +123,6 @@ public final class BBSToolsModClient implements ClientModInitializer
         /* === Fracture feature: PhysicsMod-driven model destruction === */
         com.afrobama.bbstools.client.fracture.FracturePhysicsBridge.init();
         if (com.afrobama.bbstools.client.qol.QuickWinKeybinds.DEV_ENV) com.afrobama.bbstools.client.fracture.FractureTestCommand.register();
-        com.afrobama.bbstools.client.debug.BBSDebugEverything.register();
 
         /* /bbstools skin <username> — pulls a player's current Mojang
          *  skin PNG into bbs/skins/<username>.png so the user can drop
@@ -352,62 +245,16 @@ public final class BBSToolsModClient implements ClientModInitializer
         /* Decoupled per-unique-animation baker — runs on client tick so the
          * cache fills AFK (the bypass only ran during playback). */
         com.afrobama.bbstools.client.bbs.fastpath.BackgroundBaker.register();
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.ReplayFastPathDebugger.INSTANCE);
-        /* Opt-in frustum cull (default OFF) — toggle via /bbsdebug frustum-cull on
-         *  or http://localhost:7777/feature/frustum-cull/on. Big GPU win when a
-         *  shot frames only part of the crowd (off-screen instances skip Iris's
-         *  deferred shading); zero visual change. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.FrustumCullDebugger.INSTANCE);
-        /* Diagnostic crowd-draw toggle — A/B the crowd's true cost at a fixed view
-         *  (off = no instanced crowd, camera/world identical). */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.CrowdDrawDebugger.INSTANCE);
-        /* A/B PhysicsMod's render-thread cost WITHOUT removing the jar (disabling
-         *  features in PhysicsMod's GUI does NOT unload its renderMain/renderLiquid
-         *  hooks). /bbsdebug physics-suppress on|off or .../feature/physics-suppress/on. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.PhysicsSuppressDebugger.INSTANCE);
         /* Whole-world-render GPU timer (GL_TIMESTAMP) — settles GPU-bound vs CPU-bound
          *  directly, since the cpu-sampler's leaf attribution is unreliable on a
          *  busy-waiting render thread. .../feature/world-gpu/dump -> worldGpuUs. */
         com.afrobama.bbstools.client.perf.WorldGpuTimer.register();
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.WorldGpuDebugger.INSTANCE);
-        /* Parked-editor dip fix toggle (re-apply only selected, skip 3000-crowd full). */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.ParkReapplyDebugger.INSTANCE);
-        /* /bbstools crowdgpu on|off|status: Option B — GPU-instanced
-         *  crowd renderer powered by iris-fork's custom crowd shader. */
-
-
-        /* Tier framework registration (2026-05-17 mega-session):
-         *  Wire every new tier feature's IFeatureDebugger into
-         *  BBSDebugRegistry. Each gets /bbsdebug <name> for free.
-         *  Skeletons + safety-default OFF until in-game verification.
-         *  Some have additional commands shipped here too. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.VeilGroupAuditor.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            new com.afrobama.bbstools.perf.BBSPerfHud.Debugger());
         /* Tier 4b — visible HUD renderer wired to BBSPerfHud.ENABLED.
          *  Toggle via /bbsdebug perfhud on (flips the same flag the
          *  Debugger above owns). HudRenderCallback early-returns when
          *  disabled so the OFF path is a single volatile read. */
         com.afrobama.bbstools.client.hud.BBSPerfHudRenderer.register();
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.render.texture.BBSToolsTextureEnhancer.INSTANCE);
         com.afrobama.bbstools.client.render.texture.BBSToolsTextureEnhancer.register();
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.audit.GlAuditRingBuffer.INSTANCE);
-        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.BBSEntityWorkerPool.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.BBSCoarseOccluder.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.BBSUploadThread.INSTANCE);
         /* Tier 2e DH-style upload thread — hidden 64×48 GLFW window
          *  sharing the MC main context, dedicated worker for
          *  glBufferSubData uploads. Default OFF; opt in via /bbsdebug
@@ -420,122 +267,15 @@ public final class BBSToolsModClient implements ClientModInitializer
             });
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING
             .register(client -> com.afrobama.bbstools.perf.BBSUploadThread.shutdown());
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.AsyncMeshLoader.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.PausedReplayCache.INSTANCE);
-        /* Tier 3g — paused-replay bone-matrix cache. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.PausedReplayBoneCache.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.PausedReplayMatrixCache.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.MolangComputeDispatcher.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.CrowdTextureAtlas.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.BindlessTextureRegistry.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.jfr.BBSJfrRecorder.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.shader.ShaderHotReload.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.ShadowSkipStats.INSTANCE);
-        /* Tier 3f — lazy keyframe channel allocation. /bbsdebug keyframes
-         *  prints the touched-vs-total ratio + heap savings ceiling. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.perf.LazyKeyframeChannel.INSTANCE);
-
-        /* Master Debugger Module 14 — mixin conflict detector + bytecode
-         *  dumper. Both default OFF (one-shot triggers, not toggles).
-         *  - mixin-conflict: parses every loaded mod's *.mixins.json +
-         *    ASM-reads the @Mixin classes to find cross-mod injector
-         *    collisions on the same target.method. Run via /bbsdebug
-         *    feature mixin-conflict on.
-         *  - bytecode-dump: writes a class's pre-mixin bytecode to
-         *    <instance>/bbstools_bytecode/<class>-<ts>.class so it can
-         *    be inspected with `javap -c`. Run via /bbsdebug bytecode-dump
-         *    <fqcn>. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.mixin.MixinConflictDetector.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.mixin.BytecodeDumper.INSTANCE);
-
-        /* Master Debugger Module 18 — HTML report generator. Parses
-         *  bbstools-console.log/latest.log into a single-file HTML with
-         *  collapsible sections per capture/exception/dump. Easy to share
-         *  with Claude (HTML can be pasted as text). Default OFF; trigger
-         *  via /bbsdebug feature html-report generate (or generate-from). */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            new com.afrobama.bbstools.client.debug.master.report.HtmlReportGenerator.Feature());
-
-        /* Master Debugger Module 21 — disk + file-handle tracker. 30s
-         *  background poll of <instance>/'s FileStore.getUsableSpace(),
-         *  warn line when <5GB free. Pack + bbsmod tree scans on-demand
-         *  via /bbsdebug feature disk-monitor packs|bbs|dump. Default
-         *  ON for poll (one syscall / 30s is free), scans are explicit. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            new com.afrobama.bbstools.client.debug.master.disk.DiskMonitor.Feature());
-        /* Der poll-thread laesst sich nachtraeglich nicht mehr ungestartet machen — also
-         * hier fragen statt ihn zu starten und im start-pass wieder abzuschalten. */
-        if (com.afrobama.bbstools.client.debug.StartPositivliste.istStandardAn("disk-monitor"))
-        {
-            com.afrobama.bbstools.client.debug.master.disk.DiskMonitor.startPolling();
-        }
-
-        /* Master Debugger Module 22 — mod compatibility suite. Logs load
-         *  order, Fabric event hook fire order, refmap status, and the
-         *  full dependency graph. Helps diagnose "mod X breaks mod Y".
-         *  Default-ON for the lightweight load-order capture (cached, one
-         *  scan); toggling ON via /bbsdebug feature mod-compat on triggers
-         *  the full dumpAll. Sub-aliases: dump | load-order | hooks <evt>
-         *  | refmaps | deps (wired in BBSDebugClientCommand). */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            new com.afrobama.bbstools.client.debug.master.modcompat.ModCompatDebugger.Feature());
-
-        /* Master Debugger Module 30 — HTTP debug endpoint. Tiny JDK HttpServer
-         *  on 127.0.0.1:7777 exposing /state /threads /heap /gpu /film
-         *  /log/tail/N /screenshot /eval /feature/{name}[/on|/off] /triggers.
-         *  Lets Claude WebFetch the live state instead of grepping logs.
-         *  Bound to loopback only (security). Default ON per spec (sandbox).
-         *  Conflict-detect tries 7778..7799 if port busy. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            new com.afrobama.bbstools.client.debug.master.http.HttpDebugServer.Feature());
-        try { com.afrobama.bbstools.client.debug.master.http.HttpDebugServer.start(); }
-        catch (Throwable t) { /* log line emitted inside; never fatal */ }
-
-        /* Master Debugger Module 26 — window + input state inspector.
-         *  Lazy/on-command snapshot (cursor mode, monitor index, refresh
-         *  rate, keybind conflicts, currently-held GLFW keys, mouse
-         *  capture state). Default ON — ENABLED gates only whether
-         *  `dump` does anything; no per-frame cost. Use
-         *  /bbsdebug feature input-window dump to fire a full snapshot. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.input.InputWindowDebugger.INSTANCE);
-
-        /* Master Debugger Module 33 — on-screen DebugOverlayHud.
-         *  Top-left 10-row panel rendered via HudRenderCallback, updated
-         *  every 500ms via ClientTickEvents — shows FPS, frame ms, CPU%,
-         *  RAM/GC, bound GL program, render-thread state, mod count,
-         *  last F11 capture age, IFeatureDebugger active count, live-log
-         *  MB, HTTP API port. Default ON; F12 toggles or
-         *  /bbsdebug feature debug-overlay on|off. */
-        com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.register();
 
 
-        com.afrobama.bbstools.client.debug.BBSDebugClientCommand.register();
 
-        /* Bridge legacy renderer ENABLED flags into BBSDebugRegistry so
-         *  /bbsdebug crowdgpu on AND /bbstools crowdgpu on both work. */
-        /* 2026-07-31 WIEDER DA. Der Aufruf war entfernt, weil LegacyRendererDebuggers vom
-         * Compile ausgeschlossen ist -- und daran hingen nicht nur die drei Crowd-Schalter,
-         * sondern die SAMMELANMELDUNG VON RUND 40 DEBUGGERN: eval (der JShell-Kanal, ueber den
-         * unser Messwerkzeug dev.py/beweis.py laeuft), live-log, catch-track, jdwp,
-         * parallel-animator. Zwei Huellen kosteten achtunddreissig Werkzeuge.
-         *
-         * Die zwei stehen jetzt allein in LegacyCrowdDebuggers, nur die bleibt ausgeschlossen.
-         * crowdgpu und accelrender sind damit weiterhin aus -- der Rest ist zurueck. */
-        com.afrobama.bbstools.client.debug.LegacyRendererDebuggers.registerAll();
+
+
+
+
+
+
         /* /bbstools sky freeze|unfreeze: locks daylight + weather cycles
          *  and forces clear sky so lighting stays constant across the
          *  dozens of takes per hero shot. Bundles two /gamerule toggles
@@ -739,84 +479,10 @@ public final class BBSToolsModClient implements ClientModInitializer
             BBSToolsMod.LOG.error("MASAutoEnableVibrancy.register failed: {}", t.toString(), t);
         }
 
-        /* In-game log console: install Log4j ring-buffer appender FIRST
-         *  so it captures every event from now on, then register the
-         *  F12 toggle handler. */
-        com.afrobama.bbstools.client.console.LogConsoleBuffer.install();
 
-        /* Master Debugger Module 24 — system-wide live log interceptor.
-         *  Installs a separate Log4j AbstractAppender that captures every
-         *  SLF4J/Log4j event from every mod, filters to our preferred tag
-         *  set + bbstools/* loggers, and writes them to a dedicated file
-         *  at <instance>/bbstools_debug_live.log. Default ON so Claude has
-         *  a clean grep target. Installed AFTER LogConsoleBuffer so both
-         *  ring-buffer + live file capture in parallel. */
-        com.afrobama.bbstools.client.debug.master.log.LiveLogAppender.install();
 
-        /* Master Debugger Module 31 — crash-report enrichment + GL fence
-         *  monitor. Both DEFAULT ON; both expose IFeatureDebugger so
-         *  `/bbsdebug crash-enrich` and `/bbsdebug gl-fence` work.
-         *  - 31a (crash-enrich): MixinCrashReport.<init> adds a "BBSTools
-         *    Debug State" section to every CrashReport. Zero overhead
-         *    until a crash fires. Section pulls last-100 live-log lines,
-         *    GL ring state, all feature toggles, BBS film summary.
-         *  - 31b (gl-fence): wraps glFenceSync / glClientWaitSync calls
-         *    so we can spot CPU stalls on GPU. Callers route through
-         *    GlFenceMonitor.recordInsert / recordWait. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.crash.CrashEnricher.FEATURE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.gl.GlFenceMonitor.FEATURE);
 
-        /* Master Debugger Module 35 — inline tracepoint via persisted
-         *  config (Instrumentation API fallback). User issues
-         *  /bbsdebug feature tracepoint add <class.method>; if the target
-         *  matches one of MethodTracer's 5 pre-baked keys it activates
-         *  immediately, otherwise it's persisted to
-         *  <instance>/bbstools_tracepoints.json and re-applied on next
-         *  launch (with a clear "needs -javaagent" notice). DEFAULT ON
-         *  — only reads the config file once, no per-frame cost. */
-        com.afrobama.bbstools.client.debug.master.tracepoint.TracepointManager.loadConfig();
-        com.afrobama.bbstools.client.debug.master.tracepoint.TracepointManager.applyAll();
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.tracepoint.TracepointManager.FEATURE);
 
-        /* Master Debugger Module 34 — time-series metrics DB.
-         *  In-memory 1-hour ring per metric (3600 samples × 1Hz × 12 metrics
-         *  = ~340 KB). Daemon thread polls existing module APIs (fps, frame-time,
-         *  cpu%, heap, gc, draws...) every 1s. Exposes HTTP endpoints
-         *  /metrics/all, /metrics/{name}, /metrics/{name}.csv so Claude can
-         *  WebFetch trend data and compare "before bug" vs "after bug".
-         *  Registered AFTER HttpDebugServer (line ~306) so its
-         *  installHttpEndpoints() reflective hook finds a live server.
-         *  DEFAULT ON. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            new com.afrobama.bbstools.client.debug.master.timeseries.TimeSeriesMetrics.Feature());
-        /* enable() hier entfernt (2026-07-28): der start-pass entscheidet. Sonst laeuft der
-         * 1-Hz-poll-thread ab mod-init und wird eine sekunde spaeter wieder abgeschaltet. */
-
-        /* Master Debugger Module 38 — Jaeger-style distributed tracing.
-         *  Lock-free 1000-span rolling buffer + ThreadLocal stack for
-         *  auto-nested parents. Spans are AutoCloseable: try-with-resources
-         *  is the canonical pattern. Registered AFTER HttpDebugServer so
-         *  its installHttpEndpoints() reflective hook adds /traces to the
-         *  live server. DEFAULT ON; overhead is ~200-400ns per traced span,
-         *  ~10ns when disabled (single volatile read short-circuits). */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            new com.afrobama.bbstools.client.debug.master.tracing.SpanTracer.Feature());
-        /* enable() hier entfernt (2026-07-28) — start-pass entscheidet. */
-
-        /* Master Debugger Module 39 — time-travel debugger (state snapshot
-         *  rewind). NOT rr-style instruction-level replay (impossible
-         *  without -agentlib): instead a daemon thread captures a frozen
-         *  view of every BBSPerfConfig field + headline runtime counters
-         *  every 10s into a rolling 360-slot ring. 1 hour of history at
-         *  ~1.8 MB heap. User can `/bbsdebug feature time-travel diff 0 30`
-         *  to see what flag changed in the last 5 minutes. Registered
-         *  AFTER HttpDebugServer so its installHttpEndpoints() reflective
-         *  hook adds /time-travel/* to the live server. DEFAULT ON. */
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.debug.master.timetravel.StateTimeMachine.FEATURE);
         /* enable() hier entfernt (2026-07-28) — start-pass entscheidet. Der snapshot-thread
          * lief sonst ab mod-init und schrieb alle 10 s in einen 360-slot-ring. */
 
@@ -848,7 +514,6 @@ public final class BBSToolsModClient implements ClientModInitializer
                 com.afrobama.bbstools.client.debug.master.jfr.JfrAutostart.starteWennErlaubt();
             });
 
-        com.afrobama.bbstools.client.console.LogConsoleHandler.register();
         com.afrobama.bbstools.client.fracture.GravityGunHandler.register();
         com.afrobama.bbstools.client.fracture.GravityGunHud.register();
         com.afrobama.bbstools.client.fracture.BlockDestructionWireframe.register();
