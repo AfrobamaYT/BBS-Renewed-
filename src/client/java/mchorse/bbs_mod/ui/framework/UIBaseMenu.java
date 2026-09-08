@@ -179,13 +179,13 @@ public abstract class UIBaseMenu
              * zwingt den Mixin-Agenten, jede Unterklasse neu zu weben — dabei scheiterte
              * sofort ein Redirector in UIReplaysEditorUndoFast ("Critical injection failure").
              * Eine Basisklasse anzufassen kostet die Webung ihrer ganzen Nachkommenschaft. */
-            com.afrobama.bbstools.client.debug.klick.Klickspur.angenommenVon(element);
+            mchorse.bbs_mod.sonden.Sonden.klick.angenommenVon(element);
         }
 
         /* Ein physischer Klick faengt hier an und hoert hier auf — der einzige Punkt, an dem
          * sich GENAU EINE Zeile schreiben laesst. Auch wenn niemand angenommen hat: gerade
          * dieser Fall ist der Befund (Fehler liegt vor der Behandlung, nicht in ihr). */
-        com.afrobama.bbstools.client.debug.klick.Klickspur.abgeschlossen(mouseX, mouseY, mouseButton);
+        mchorse.bbs_mod.sonden.Sonden.klick.abgeschlossen(mouseX, mouseY, mouseButton);
 
         return result;
     }

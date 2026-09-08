@@ -10,3 +10,7 @@ pluginManagement {
 }
 
 rootProject.name = "BBS mod"
+
+/* Die Companion-Mod mit allem, was nur in der Entwicklung laufen soll.
+ * Der oeffentliche Bau ist `:` allein — `dev` ist ein eigenes Modul, keine Kopie. */
+include 'dev'
