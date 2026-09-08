@@ -109,8 +109,8 @@ public class UIContext implements IViewportStack
          * Hier statt an den Aufrufstellen, weil setMouse der einzige Eingang ist: alle
          * Bewegungs-, Klick- und Radereignisse laufen hindurch. Nicht scharf (Normalfall,
          * auch beim Nutzer) heisst: echter Wert unveraendert, Kosten ein volatile-Read. */
-        this.mouseX = com.afrobama.bbstools.client.autotest.VirtuelleMaus.x(mouseX);
-        this.mouseY = com.afrobama.bbstools.client.autotest.VirtuelleMaus.y(mouseY);
+        this.mouseX = mchorse.bbs_mod.sonden.Sonden.eingabe.mausX(mouseX);
+        this.mouseY = mchorse.bbs_mod.sonden.Sonden.eingabe.mausY(mouseY);
         this.viewportStack.reset();
 
         /* Messfuehler: sieht der RENDER-thread die scharfe VirtuelleMaus? (Classloader-
@@ -119,7 +119,7 @@ public class UIContext implements IViewportStack
         {
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("ui.setMouse",
                 "in=" + mouseX + "," + mouseY + " out=" + this.mouseX + "," + this.mouseY
-                    + " " + com.afrobama.bbstools.client.autotest.VirtuelleMaus.zustand()
+                    + " " + mchorse.bbs_mod.sonden.Sonden.eingabe.zustand()
                     + " ctx=" + System.identityHashCode(this));
         }
     }

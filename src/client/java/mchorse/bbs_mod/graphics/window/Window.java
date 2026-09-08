@@ -69,19 +69,19 @@ public class Window
      * Kosten ein volatile-Read je Abfrage. */
     public static boolean isCtrlPressed()
     {
-        return com.afrobama.bbstools.client.autotest.VirtuelleTasten.strg(
+        return mchorse.bbs_mod.sonden.Sonden.eingabe.strg(
             Minecraft.getInstance().hasControlDown());
     }
 
     public static boolean isShiftPressed()
     {
-        return com.afrobama.bbstools.client.autotest.VirtuelleTasten.umschalt(
+        return mchorse.bbs_mod.sonden.Sonden.eingabe.umschalt(
             Minecraft.getInstance().hasShiftDown());
     }
 
     public static boolean isAltPressed()
     {
-        return com.afrobama.bbstools.client.autotest.VirtuelleTasten.alt(
+        return mchorse.bbs_mod.sonden.Sonden.eingabe.alt(
             Minecraft.getInstance().hasAltDown());
     }
 

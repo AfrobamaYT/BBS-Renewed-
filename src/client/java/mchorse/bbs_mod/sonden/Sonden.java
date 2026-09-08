@@ -33,6 +33,9 @@ public final class Sonden
     /** Wer hat den Mausklick angenommen. Ohne Companion: niemand hoert zu. */
     public static volatile Klicksonde klick = Klicksonde.NICHTS;
 
+    /** Zeiger und Modifikatoren. Ohne Companion: echte Werte, unveraendert. */
+    public static volatile Eingabesonde eingabe = Eingabesonde.NICHTS;
+
     private Sonden()
     {}
 }
