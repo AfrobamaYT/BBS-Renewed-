@@ -9,6 +9,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeGroup;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import org.joml.Matrix4f;
 
@@ -160,6 +161,79 @@ final class DopeSheetFlaeche
 		{
 			this.dope.fuelleMarker(context, builder, matrix, sheet, j, my);
 		}
+	}
+
+	/**
+	 * Treffer in einer Aggregat-Zeile (Summary, Replay-Kopf, Gruppe).
+	 *
+	 * <p>⛔ WOFUER (Nutzerbefund 2026-09-09): "warum hat das tray fuer die modell anzeige
+	 * keyframes die nichtmal benutzbar sind ... sind ne attrape". Er hatte recht —
+	 * {@link #findKeyframe} kannte nur {@link UIKeyframeSheet}, und auf einer Gruppenzeile
+	 * gibt es keins. Die dort GEZEICHNETEN Aggregat-Rauten waren damit weder waehlbar noch
+	 * ziehbar; ein Klick klappte die Zeile nur auf und zu.</p>
+	 *
+	 * <p>Zurueck kommt ein ECHTER Keyframe aus einem Kindkanal — damit greift die vorhandene
+	 * Auswahl unveraendert weiter: {@code getSheet(Keyframe)} findet sein Sheet ueber den
+	 * Parent-Channel, also ist es gleich, ob er ueber die Gruppe oder direkt gefunden wurde.</p>
+	 *
+	 * <p>⛔ DIESELBE MENGE UND DIESELBE X-KLEMME WIE DIE ZEICHNUNG. Sonst klickt man neben
+	 * die Raute, die man sieht — die Sammelquelle ist {@link DopeSheetFlaeche#sammle}, die
+	 * Klemme {@link DopeSheetFlaeche#randKlemme}.</p>
+	 */
+	Pair<Keyframe, KeyframeType> findInGroup(int mouseX, int mouseY)
+	{
+		return this.sucheZeile(this.dope.elements, this.dope.getDopeSheetY(), mouseX, mouseY);
+	}
+
+	/**
+	 * Laeuft die Zeilen ab wie das Zeichnen und prueft in jeder GRUPPENZEILE, ob der Zeiger
+	 * eine ihrer Aggregat-Rauten trifft.
+	 *
+	 * <p>⛔ OHNE EIGENEN Y-CACHE: die Y-Position wird hier genauso aufaddiert wie beim
+	 * Zeichnen. Ein zweiter Cache muesste in UIKeyframeDopeSheet leben (dort rechnet das
+	 * Layout), und die Datei steht bei 1347 Zeilen an der Groessengrenze. Ein Klick laeuft
+	 * die Liste einmal ab — das faellt neben dem Zeichnen nicht ins Gewicht.</p>
+	 */
+	private Pair<Keyframe, KeyframeType> sucheZeile(List<UIKeyframeElement> zeilen, int y,
+		int mouseX, int mouseY)
+	{
+		for (UIKeyframeElement element : zeilen)
+		{
+			if (element instanceof UIKeyframeGroup group && group.kameraEbene < 0
+				&& mouseY >= y && mouseY < y + this.dope.trackHeight)
+			{
+				int my = y + (int) this.dope.trackHeight / 2;
+
+				for (Keyframe keyframe : this.sammle(group))
+				{
+					int x = randKlemme(this.dope.keyframes.toGraphX(keyframe.getTick()),
+						this.dope.keyframes.graphArea);
+
+					if (this.dope.isNear(x, my, mouseX, mouseY, false))
+					{
+						return new Pair<>(keyframe, KeyframeType.REGULAR);
+					}
+				}
+
+				return null;
+			}
+
+			if (element instanceof UIKeyframeGroup group && !group.collapsed)
+			{
+				/* Gleiche Rekursion wie clickElements: Kinder beginnen eine Zeile tiefer. */
+				Pair<Keyframe, KeyframeType> tiefer = this.sucheZeile(group.children,
+					y + (int) this.dope.trackHeight, mouseX, mouseY);
+
+				if (tiefer != null)
+				{
+					return tiefer;
+				}
+			}
+
+			y += this.dope.getElementHeight(element);
+		}
+
+		return null;
 	}
 
 	/** Radius der Raute am Rand. Zeichnung und {@link #randKlemme} muessen denselben nehmen. */
@@ -404,7 +478,9 @@ final class DopeSheetFlaeche
 	}
 
 	/** Schluessel der Zeile: Summary nimmt ALLE Kanaele des Graphen, Gruppen ihre Kinder. */
-	private List<Keyframe> sammle(UIKeyframeGroup group)
+	/** ⛔ PAKETWEIT: UIKeyframeDopeSheet.findKeyframe muss GENAU diese Menge treffen, sonst
+	 *  klickt man neben die gezeichnete Raute. Eine Quelle fuer beides. */
+	List<Keyframe> sammle(UIKeyframeGroup group)
 	{
 		List<Keyframe> alle = new ArrayList<>();
 

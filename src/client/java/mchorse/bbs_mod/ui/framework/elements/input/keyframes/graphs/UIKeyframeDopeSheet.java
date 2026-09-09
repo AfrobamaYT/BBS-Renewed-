@@ -52,7 +52,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
     UIKeyframes keyframes;
 
-    private List<UIKeyframeElement> elements = new ArrayList<>();
+    List<UIKeyframeElement> elements = new ArrayList<>();
     private List<UIKeyframeSheet> sheets = new ArrayList<>();
     private Map<UIKeyframeSheet, Integer> sheetYCache = new HashMap<>();
     UIKeyframeSheet lastSheet;
@@ -549,7 +549,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         if (sheet == null)
         {
-            return null;
+            return this.flaecheSchmuck().findInGroup(mouseX, mouseY);
         }
 
         List keyframes = sheet.channel.getKeyframes();
