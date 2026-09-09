@@ -23,7 +23,7 @@ import java.util.List;
  * ihrer Kinder als Aggregat-Rauten (Summary-Zeile: alle Kanaele des Graphen). Kanalzeilen
  * bekommen das Range-Band. Aus {@link UIKeyframeDopeSheet} herausgehalten (Monolith).
  */
-final class DopeSheetFlaeche
+public final class DopeSheetFlaeche
 {
 	private static final int BAND_BLAU = 0x4772B3;
 	private static final int BAND_GRUEN = 0x7CBF6B;
@@ -180,6 +180,112 @@ final class DopeSheetFlaeche
 	 * die Raute, die man sieht — die Sammelquelle ist {@link DopeSheetFlaeche#sammle}, die
 	 * Klemme {@link DopeSheetFlaeche#randKlemme}.</p>
 	 */
+	/**
+	 * Auswahl nach einem Klick auf einen Keyframe.
+	 *
+	 * <p>Auf einer normalen Kanalzeile ist es der eine Keyframe — wie zuvor. Traf der Klick
+	 * dagegen eine AGGREGAT-Zeile (Summary, Replay-Kopf, Gruppe), wird die ganze SPALTE
+	 * dieser Gruppe gewaehlt: alle Keys aller ihrer Kanaele auf diesem Tick. Genau das
+	 * erwartet man von einer Uebersichtszeile — ein Zug bewegt sie gemeinsam, wie in
+	 * Blenders Dope Sheet.</p>
+	 *
+	 * <p>⛔ NUR AUS DEM KLICK-PFAD. findKeyframe ruft auch der Hover-Tooltip; eine Auswahl
+	 * als Nebenwirkung davon wuerde beim blossen Darueberfahren die Selektion umwerfen.
+	 * Darum ist das hier eine eigene Methode und keine Zeile in findInGroup.</p>
+	 *
+	 * <p>⛔ NUR DIE GRUPPE, nicht alles. selectByX nimmt ungefiltert jedes Blatt — in der
+	 * Summary-Zeile ist das richtig, in "Transform" waere es zu viel.</p>
+	 */
+	public static void spaltenAuswahl(IUIKeyframeGraph graph, UIKeyframeSheet sheet,
+		Keyframe gewaehlt, int mouseY)
+	{
+		sheet.selection.add(gewaehlt);
+
+		if (!(graph instanceof UIKeyframeDopeSheet dope))
+		{
+			return;
+		}
+
+		dope.flaecheSchmuck().spalte(dope, gewaehlt, mouseY);
+	}
+
+	/** Die Blaetter der getroffenen Gruppenzeile auf dem Tick des Keyframes waehlen. */
+	private void spalte(UIKeyframeDopeSheet dope, Keyframe gewaehlt, int mouseY)
+	{
+		UIKeyframeGroup group = this.gruppeBei(dope.elements, dope.getDopeSheetY(), mouseY);
+
+		if (group == null)
+		{
+			return;
+		}
+
+		List<UIKeyframeSheet> blaetter = new ArrayList<>();
+
+		this.blaetter(group, blaetter);
+
+		float tick = gewaehlt.getTick();
+
+		dope.waehle(blaetter, (x, y) -> Math.abs(x - dope.keyframes.toGraphX(tick)) < 1);
+	}
+
+	/**
+	 * Alle Blaetter unterhalb einer Gruppe — dieselbe Menge, die {@link #sammle} abklappert.
+	 *
+	 * <p>⛔ DER SUMMARY-FALL GEHT NICHT UEBER children. Die Summary-Zeile hat keine, sie
+	 * aggregiert ueber ALLE Blaetter des Graphen — genau wie sammle() es tut. Ohne diesen
+	 * Zweig waehlte ein Klick auf Summary gemessen genau EINEN Keyframe statt aller
+	 * (2026-09-09, Transform lieferte korrekt 7, Summary nur 1).</p>
+	 */
+	private void blaetter(UIKeyframeGroup group, List<UIKeyframeSheet> aus)
+	{
+		if (group.summary)
+		{
+			aus.addAll(this.dope.getSheets());
+
+			return;
+		}
+
+		for (UIKeyframeElement element : group.children)
+		{
+			if (element instanceof UIKeyframeSheet blatt)
+			{
+				aus.add(blatt);
+			}
+			else if (element instanceof UIKeyframeGroup tiefer)
+			{
+				this.blaetter(tiefer, aus);
+			}
+		}
+	}
+
+	/** Die Gruppenzeile unter mouseY, mit derselben Zeilenrechnung wie {@link #sucheZeile}. */
+	private UIKeyframeGroup gruppeBei(List<UIKeyframeElement> zeilen, int y, int mouseY)
+	{
+		for (UIKeyframeElement element : zeilen)
+		{
+			if (element instanceof UIKeyframeGroup group && mouseY >= y
+				&& mouseY < y + this.dope.trackHeight)
+			{
+				return group;
+			}
+
+			if (element instanceof UIKeyframeGroup group && !group.collapsed)
+			{
+				UIKeyframeGroup tiefer = this.gruppeBei(group.children,
+					y + (int) this.dope.trackHeight, mouseY);
+
+				if (tiefer != null)
+				{
+					return tiefer;
+				}
+			}
+
+			y += this.dope.getElementHeight(element);
+		}
+
+		return null;
+	}
+
 	Pair<Keyframe, KeyframeType> findInGroup(int mouseX, int mouseY)
 	{
 		return this.sucheZeile(this.dope.elements, this.dope.getDopeSheetY(), mouseX, mouseY);

@@ -463,7 +463,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     }
 
     /** Beide Auswahlwege: dieselbe Schleife, nur ein anderes Kriterium. */
-    private void waehle(List<UIKeyframeSheet> blaetter,
+    void waehle(List<UIKeyframeSheet> blaetter,
         java.util.function.BiPredicate<Integer, Integer> trifft)
     {
         for (UIKeyframeSheet sheet : blaetter)
@@ -1086,7 +1086,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     /** ⛔ Lazy: ein per Hotswap neu hinzugekommenes Feld ist auf bestehenden Instanzen null. */
     private DopeSheetFlaeche flaecheSchmuck;
 
-    private DopeSheetFlaeche flaecheSchmuck()
+    DopeSheetFlaeche flaecheSchmuck()
     {
         if (this.flaecheSchmuck == null)
         {

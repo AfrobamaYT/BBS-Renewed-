@@ -1163,7 +1163,7 @@ public class UIKeyframes extends UIElement
                 this.currentGraph.clearSelection();
             }
 
-            sheet.selection.add(found);
+            mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.DopeSheetFlaeche.spaltenAuswahl(this.currentGraph, sheet, found, context.mouseY);
 
             found = this.currentGraph.getSelected();
 
