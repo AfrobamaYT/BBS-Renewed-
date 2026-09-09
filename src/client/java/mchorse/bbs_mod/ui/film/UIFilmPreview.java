@@ -601,34 +601,7 @@ public class UIFilmPreview extends UIElement
 
         this.panel.getController().renderHUD(context, area);
 
-        if (this.panel.replayEditor.isVisible() && BBSSettings.audioWaveformVisibleInPreview.get())
-        {
-            RunnerCameraController runner = this.panel.getRunner();
-            int w = (int) (area.w * BBSSettings.audioWaveformWidth.get());
-            int x = area.x(0.5F, w);
-            float tick = this.panel.getCursor() + (runner.isRunning() ? context.getTransition() : 0);
-
-            this.clips.clear();
-
-            for (Clip clip : this.panel.getData().camera.get())
-            {
-                if (clip instanceof AudioClip)
-                {
-                    this.clips.add((AudioClip) clip);
-                }
-            }
-
-            int h = BBSSettings.audioWaveformHeight.get();
-
-            if (BBSSettings.audioWaveformPreviewCombined.get())
-            {
-                AudioRenderer.renderPreviewCombined(context.batcher, this.clips, tick, x, area.y + 10, w, h, context.menu.width, context.menu.height);
-            }
-            else
-            {
-                AudioRenderer.renderAll(context.batcher, this.clips, tick, x, area.y + 10, w, h, context.menu.width, context.menu.height);
-            }
-        }
+        ViewportWellenform.zeichnen(this.panel, this.clips, context, area);
 
         Area a = this.icons.area;
 
@@ -794,5 +767,6 @@ public class UIFilmPreview extends UIElement
             org.apache.logging.log4j.LogManager.getLogger("bbs/standbild").warn("Standbild des Films konnte nicht abgelegt werden", fehler);
         }
     }
+
 
 }
