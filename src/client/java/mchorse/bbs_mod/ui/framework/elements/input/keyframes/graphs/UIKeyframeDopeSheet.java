@@ -1197,7 +1197,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     {
         Keyframe frame = (Keyframe) sheet.channel.getKeyframes().get(j);
         int kc = frame.getColor() != null ? frame.getColor().getRGBColor() : 0xCFCFCF;
-        int mx = this.keyframes.toGraphX(frame.getTick());
+        int mx = DopeSheetFlaeche.randKlemme(this.keyframes.toGraphX(frame.getTick()), this.keyframes.graphArea);
         boolean gewaehlt = sheet.selection.has(j);
         int mc = (gewaehlt ? NanoDesign.BERNSTEIN : kc) | Colors.A100;
 

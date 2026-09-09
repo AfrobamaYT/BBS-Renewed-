@@ -162,6 +162,40 @@ final class DopeSheetFlaeche
 		}
 	}
 
+	/** Radius der Raute am Rand. Zeichnung und {@link #randKlemme} muessen denselben nehmen. */
+	static final int RAUTE_RADIUS = 3;
+
+	/**
+	 * Haelt eine Raute am Rand VOLLSTAENDIG im Bild.
+	 *
+	 * <p>⛔ WOFUER (Nutzerbefund 2026-09-09): ein Keyframe auf Tick 0 landet auf
+	 * {@code toGraphX(0) == graphArea.x}, also exakt auf der Clip-Kante — die linke Haelfte
+	 * wird weggeschnitten und der Rest sieht aus wie ein kleines Dreieck. Der Nutzer las
+	 * das nicht als Keyframe und hielt die Zeile fuer leer, obwohl dort in diesem Film
+	 * SIEBEN lagen (gemessen: x, y, z, yaw, pitch, headYaw, bodyYaw, alle Tick 0).</p>
+	 *
+	 * <p>⛔ NUR WAS DRIN IST, WIRD GEKLEMMT. Der Filter oben laesst bewusst 4 px Ueberhang
+	 * durch; eine Raute, die WIRKLICH links draussen liegt, darf nicht nach innen rutschen —
+	 * sie wuerde einen Keyframe an einer Stelle vortaeuschen, an der keiner ist. Verschoben
+	 * wird darum hoechstens um den Radius, und nur innerhalb der Flaeche.</p>
+	 */
+	static int randKlemme(int x, Area area)
+	{
+		int r = RAUTE_RADIUS;
+
+		if (x >= area.x && x < area.x + r)
+		{
+			return area.x + r;
+		}
+
+		if (x <= area.ex() && x > area.ex() - r)
+		{
+			return area.ex() - r;
+		}
+
+		return x;
+	}
+
 	/** Aggregat-Rauten: klein, grau, dedupliziert auf 3 px — die Dichte traegt die Info. */
 	private void rauten(UIContext context, Matrix4f matrix, Area area, List<Keyframe> alle, int my)
 	{
@@ -173,7 +207,7 @@ final class DopeSheetFlaeche
 
 			if (x >= area.x - 4 && x <= area.ex() + 4)
 			{
-				xs.add(x);
+				xs.add(randKlemme(x, area));
 			}
 		}
 
@@ -201,7 +235,7 @@ final class DopeSheetFlaeche
 				}
 
 				letzt = x;
-				UIKeyframeDopeSheet.renderShape(muster, context, ecken, matrix, x, my, 3, rand);
+				UIKeyframeDopeSheet.renderShape(muster, context, ecken, matrix, x, my, RAUTE_RADIUS, rand);
 			}
 
 			letzt = -100000;
