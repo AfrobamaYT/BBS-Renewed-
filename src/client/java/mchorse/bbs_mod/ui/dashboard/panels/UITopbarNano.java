@@ -197,10 +197,20 @@ public class UITopbarNano extends UIElement
 				 * zeigt das Icon farbig, alle anderen entsaettigt — sonst leuchtet die
 				 * ganze Leiste bunt und nichts hebt sich ab. Fehlt die Datei
 				 * (Morphing: eigenes Asset folgt), greift das Vektorsymbol wie bisher. */
-				if (!NanoBilder.symbol(vg, symbol, x + 17F * k, h / 2F + 0.5F * k,
-					15F * k, an ? 1F : 0.75F, an))
+				/* 17 statt 15: die Icon-Dateien tragen seit 2026-09-10 einen einheitlichen
+				 * Rand (laengste Inhaltsseite 52 von 64), damit kein randloses Symbol mehr
+				 * am Text klebt — gemessen waren es 0 % Rand bei `bild`/`film` gegen 17 %
+				 * bei `replay`. Der Rand kostet optische Groesse, die die groessere Kachel
+				 * zurueckgibt; der Textabstand bleibt trotzdem groesser als vorher. */
+				/* ⛔ 3.5 statt 0.5 (2026-09-10): das Symbol sass 3 px ueber der Textmitte.
+				 * Gemessen bei Skala 3 an den Bloecken der Leiste — Symbolmitte y=35.0,
+				 * Textmitte y=44.0, also 9 px = 3k Versatz. Korrigiert wird das SYMBOL,
+				 * nicht der Text: die Reiterbeschriftung steht auf derselben Grundlinie
+				 * wie File/Edit/Render/Window, und die duerfen nicht auseinanderlaufen. */
+				if (!NanoBilder.symbol(vg, symbol, x + 17F * k, h / 2F + 3.5F * k,
+					17F * k, an ? 1F : 0.75F, an))
 				{
-					NanoSymbole.symbol(vg, symbol, x + 17F * k, h / 2F + 0.5F * k,
+					NanoSymbole.symbol(vg, symbol, x + 17F * k, h / 2F + 3.5F * k,
 						an ? NanoDesign.ORANGE : NanoDesign.TXT_OFF, k * 0.75F);
 				}
 
