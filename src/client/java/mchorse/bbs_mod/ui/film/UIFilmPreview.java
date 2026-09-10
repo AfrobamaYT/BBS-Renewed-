@@ -585,9 +585,12 @@ public class UIFilmPreview extends UIElement
             }
         }
 
-        /* Current window resolution label (bottom-right, same style as replay name) */
-        int resW = BBSRendering.getVideoWidth();
-        int resH = BBSRendering.getVideoHeight();
+        /* Unten rechts steht die EXPORT-Aufloesung, nicht die der Vorschau-Textur.
+         * Im flaechenfuellenden Modus sind das zwei verschiedene Zahlen — dort rendert die
+         * Vorschau in Flaechengroesse (gemessen 896x340), waehrend das Video 3840x2160 wird.
+         * Die Zahl, die den Nutzer interessiert, ist die des Exports. */
+        int resW = BBSSettings.videoWidth.get();
+        int resH = BBSSettings.videoHeight.get();
         String resLabel = resW + " × " + resH;
         int resLabelW = context.batcher.getFont().getWidth(resLabel);
         int resLabelH = context.batcher.getFont().getHeight();
@@ -600,6 +603,8 @@ public class UIFilmPreview extends UIElement
         context.batcher.text(resLabel, resX - resLabelW, resY, 0xFFE0E0E0);
 
         this.panel.getController().renderHUD(context, area);
+
+        KameraRahmen.zeichnen(this.panel, context, area);
 
         ViewportWellenform.zeichnen(this.panel, this.clips, context, area);
 
