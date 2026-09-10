@@ -748,7 +748,7 @@ public class UIFilmPreview extends UIElement
      * Schemata {@code assets:} und {@code bbs:}, und Filme liegen im Welt-Ordner. Das
      * Standbild ist ohnehin ein Zwischenspeicher — es laesst sich jederzeit neu aufnehmen.</p>
      */
-    private void standbildAblegen(mchorse.bbs_mod.graphics.texture.Texture texture, int w, int h)
+    void standbildAblegen(mchorse.bbs_mod.graphics.texture.Texture texture, int w, int h)
     {
         try
         {

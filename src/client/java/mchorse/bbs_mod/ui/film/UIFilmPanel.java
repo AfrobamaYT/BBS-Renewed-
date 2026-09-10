@@ -2557,11 +2557,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public void forceSave()
     {
         super.forceSave();
-
-        /* Nach dem Speichern: der Hash im Journal gehoert zur gerade geschriebenen Film-Datei. */
+        /* Journal-Hash und Kachelbild gehoeren zur gerade geschriebenen Film-Datei. */
         if (this.data != null && this.undoHandler != null)
         {
             UndoPersistence.speichern(this.data.getId(), this.undoHandler.getUndoManager());
+            this.preview.standbildAblegen(BBSRendering.getTexture(), BBSRendering.getVideoWidth(), BBSRendering.getVideoHeight());
         }
     }
 
