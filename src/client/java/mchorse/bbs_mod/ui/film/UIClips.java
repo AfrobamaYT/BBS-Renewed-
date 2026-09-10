@@ -1861,17 +1861,15 @@ public class UIClips extends UIElement
         clip.tick.set(newTick);
         clip.duration.set(newDuration);
 
-        /* ⛔ KEINE LUECKEN NACH OBEN. Ohne Grenze durfte ein Clip auf jede beliebige Ebene
-         * springen — und weil die Spurenzahl aus der hoechsten belegten Ebene folgt, wuchs
-         * die Zeitleiste beim Hochschieben um eine Spur je Schritt und schrumpfte beim
-         * Runterschieben wieder. Gemessen: ein einziger Clip auf Ebene 5 ergab 7 Spuren.
-         * Nutzer: „wenn ich den clip nach oben schiebe kommen da immer mehr channels … und
-         * die timeline verliert/gewinnt ihren raster flaechen beim verschieben."
-         *
-         * Jetzt reicht die Zielebene hoechstens eine Spur ueber die hoechste, die ein
-         * ANDERER Clip belegt — genau wie in Schnittprogrammen: man legt auf eine
-         * vorhandene Spur oder auf die naechste neue, nie ins Leere darueber. */
-        clip.layer.set(MathUtils.clamp(newLayer, 0, this.hoechsteFremdeEbene(clip) + 1));
+        /* ⛔ KEINE LUECKEN NACH OBEN. Ohne Grenze sprang ein Clip auf jede Ebene, und weil
+         * die Spurenzahl aus der hoechsten belegten folgt, wuchs die Zeitleiste je Schritt
+         * („kommen da immer mehr channels … timeline verliert/gewinnt ihren raster").
+         * Erlaubt ist eine Spur ueber die hoechste BELEGTE — die eigene eingeschlossen.
+         * Ohne das `Math.max` war die eigene ausgenommen, und damit sass der OBERSTE Clip
+         * immer am Deckel: ein einzelner Clip liess sich nie hochziehen, obwohl ein NEUER
+         * ueber ihm erlaubt war (2026-09-10 gemessen: Ebene 3 -> Deckel 3). */
+        clip.layer.set(MathUtils.clamp(newLayer, 0,
+            Math.max(this.hoechsteFremdeEbene(clip), clip.layer.get()) + 1));
     }
 
     /** Hoechste Ebene, die ein anderer Clip als {@code ausser} belegt; -1 wenn keiner. */
