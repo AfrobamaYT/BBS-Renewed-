@@ -478,38 +478,44 @@ public class UIFilmPreview extends UIElement
         int r = eckenRadius();
         int rgb = 0x0D0D0D;
 
-        /* ⛔ MIT TEILDECKUNG, NICHT ALS TREPPE. Vorher wurde je Zeile ein ganzzahliges
-         * Stueck hart uebermalt. Die Ecke kannte dadurch nur ZWEI Grauwerte — gemessen 13
-         * (Naht) und 208 (Bild), kein einziger Zwischenwert — und zeigte drei sichtbare
-         * Stufen, waehrend NanoVG daneben geglaettete Rundecke zeichnet. Jetzt bekommt der
-         * Randpixel genau die Deckung, die dem Kreis an dieser Zeile fehlt. */
-        for (int i = 0; i < r; i++)
-        {
-            double dy = r - i - 0.5D;
-            double genau = r - Math.sqrt(Math.max(0D, r * r - dy * dy));
-            int voll = (int) genau;
-            int rand = (int) Math.round((genau - voll) * 255D);
-            int oben = area.y + i;
-            int unten = area.ey() - i - 1;
+        /* ⛔ IN BILDSCHIRMZEILEN RECHNEN, NICHT IN GUI-EINHEITEN (2026-09-11). Die Schleife
+         * lief ueber r GUI-Zeilen — bei GUI-Skala 2 sind das je ZWEI Bildschirmzeilen, und
+         * die Kante sprang in Zweierbloecken. Gemessen an der Ecke, Spalte des ersten hellen
+         * Pixels je Zeile: 8 8 4 4 2 2 2 2 2 2 0 0 0 0 — vier Stufen auf zwoelf Pixeln.
+         * Jetzt bekommt jede Bildschirmzeile ihren eigenen Wert, und der Randpixel die
+         * Teildeckung, die dem Kreis dort fehlt. */
+        float k = Math.max(1F, BBSModClient.getGUIScale());
+        int zeilen = Math.max(1, Math.round(r * k));
+        float pix = 1F / k;
 
-            if (voll > 0)
+        for (int i = 0; i < zeilen; i++)
+        {
+            float dy = r - (i + 0.5F) * pix;
+            float genau = r - (float) Math.sqrt(Math.max(0F, r * r - dy * dy));
+            int vollPix = (int) (genau * k);
+            int rand = Math.round((genau * k - vollPix) * 255F);
+            float breite = vollPix * pix;
+            float oben = area.y + i * pix;
+            float unten = area.ey() - (i + 1) * pix;
+
+            if (vollPix > 0)
             {
                 int naht = 0xFF000000 | rgb;
 
-                context.batcher.box(area.x, oben, area.x + voll, oben + 1, naht);
-                context.batcher.box(area.ex() - voll, oben, area.ex(), oben + 1, naht);
-                context.batcher.box(area.x, unten, area.x + voll, unten + 1, naht);
-                context.batcher.box(area.ex() - voll, unten, area.ex(), unten + 1, naht);
+                context.batcher.box(area.x, oben, area.x + breite, oben + pix, naht);
+                context.batcher.box(area.ex() - breite, oben, area.ex(), oben + pix, naht);
+                context.batcher.box(area.x, unten, area.x + breite, unten + pix, naht);
+                context.batcher.box(area.ex() - breite, unten, area.ex(), unten + pix, naht);
             }
 
             if (rand > 0)
             {
                 int saum = (rand << 24) | rgb;
 
-                context.batcher.box(area.x + voll, oben, area.x + voll + 1, oben + 1, saum);
-                context.batcher.box(area.ex() - voll - 1, oben, area.ex() - voll, oben + 1, saum);
-                context.batcher.box(area.x + voll, unten, area.x + voll + 1, unten + 1, saum);
-                context.batcher.box(area.ex() - voll - 1, unten, area.ex() - voll, unten + 1, saum);
+                context.batcher.box(area.x + breite, oben, area.x + breite + pix, oben + pix, saum);
+                context.batcher.box(area.ex() - breite - pix, oben, area.ex() - breite, oben + pix, saum);
+                context.batcher.box(area.x + breite, unten, area.x + breite + pix, unten + pix, saum);
+                context.batcher.box(area.ex() - breite - pix, unten, area.ex() - breite, unten + pix, saum);
             }
         }
     }
