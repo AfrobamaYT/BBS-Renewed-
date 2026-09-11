@@ -157,27 +157,45 @@ public class UITopbarNano extends UIElement
 		 * sind 378 ohne Chip und 294 mit. Reicht es nicht, faellt die BESCHRIFTUNG weg statt des
 		 * Reiters — sieben Symbolreiter brauchen 7x34 = 238 und passen immer. Blender macht bei
 		 * Platzmangel dasselbe. */
-		float vollBreit = 0F;
-		float nurAktivBeschriftet = 0F;
-
-		for (int nr = 0; nr < this.namen.size(); nr++)
+		/* ⛔ SO VIELE NAMEN WIE MOEGLICH (2026-09-11, nach der ersten Fassung). Die drei
+		 * Stufen davor warfen bei Platzmangel ALLE Namen weg, auch wenn nur einer zu viel war —
+		 * Nutzer: „jetzt sieht man oben nur symbole und kein text plus symbole". Jetzt bekommt
+		 * jeder Reiter von links seinen Namen, solange der Rest als Symbol noch dahinter passt.
+		 * Ein Reiter, den man nicht sieht, waere ein unerreichbarer Bereich — ein Reiter ohne
+		 * Namen ist bloss schmal. */
+		boolean[] ohneTextJe = new boolean[this.namen.size()];
 		{
-			int i = this.reihenfolge(nr);
+			float symbolRest = 0F;
 
-			if (i < 0)
+			for (int nr = 0; nr < this.namen.size(); nr++)
 			{
-				continue;
+				int i = this.reihenfolge(nr);
+
+				if (i >= 0)
+				{
+					symbolRest += this.reiterBreite(vg, this.namen.get(i), true, k);
+				}
 			}
 
-			vollBreit += this.reiterBreite(vg, this.namen.get(i), false, k);
-			nurAktivBeschriftet += this.reiterBreite(vg, this.namen.get(i), i != aktiv, k);
-		}
+			float lauf = x;
 
-		/* Drei Stufen statt Wegfallen: alles beschriftet — nur der offene Bereich beschriftet —
-		 * alles als Symbol. Ein Reiter, den man nicht sieht, ist ein Bereich, den man nicht
-		 * erreicht; ein Reiter ohne Namen ist bloss schmal. */
-		boolean nurSymbole = x + nurAktivBeschriftet > rechtsGrenze;
-		boolean knapp = !nurSymbole && x + vollBreit > rechtsGrenze;
+			for (int nr = 0; nr < this.namen.size(); nr++)
+			{
+				int i = this.reihenfolge(nr);
+
+				if (i < 0)
+				{
+					continue;
+				}
+
+				float mitText = this.reiterBreite(vg, this.namen.get(i), false, k);
+				float alsSymbol = this.reiterBreite(vg, this.namen.get(i), true, k);
+
+				symbolRest -= alsSymbol;
+				ohneTextJe[i] = lauf + mitText + symbolRest > rechtsGrenze;
+				lauf += ohneTextJe[i] ? alsSymbol : mitText;
+			}
+		}
 
 		for (int nr = 0; nr < this.namen.size(); nr++)
 		{
@@ -198,7 +216,7 @@ public class UITopbarNano extends UIElement
 			 * NanoVG rundet Glyphenbreiten auf ganze Pixel, und bei 23 px faellt der Fehler
 			 * anders aus als bei 11.5. Der Browser layoutet in CSS-Pixeln und skaliert danach —
 			 * dieselbe Reihenfolge macht die Breiten deckungsgleich. */
-			boolean ohneText = nurSymbole || (knapp && i != aktiv);
+			boolean ohneText = ohneTextJe[i];
 			float rb = this.reiterBreite(vg, voll, ohneText, k);
 
 			boolean an = i == aktiv;

@@ -38,6 +38,16 @@ public final class KameraRahmen
             return;
         }
 
+        /* ⛔ AN DEN VORHANDENEN SCHALTER, nicht an einen neuen (2026-09-11). `camera_preview`
+         * schaltet schon die Kameragrenzen im Editor; der Rahmen ist dieselbe Aussage in der
+         * Vorschau. Nutzer nach dem ersten Einbau: „der weisse rand sollte nicht da sein" —
+         * er will die gestreckte Flaeche ohne Zier, und das muss ein Schalter sein, kein
+         * Ausbau: ohne Rahmen zeigt der flaechenfuellende Modus nicht mehr, was im Video landet. */
+        if (!BBSSettings.recordingCameraPreview.get())
+        {
+            return;
+        }
+
         int videoW = BBSSettings.videoWidth.get();
         int videoH = BBSSettings.videoHeight.get();
 
