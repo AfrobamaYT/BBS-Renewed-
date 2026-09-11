@@ -28,6 +28,20 @@ public final class NanoStifte
 		}
 	}
 
+	/** Fuellt nur die vier Eckenzwickel — das Loch-Winding dreht die innere Kontur um. */
+	public static void eckenSaum(long vg, float x, float y, float w, float h, float radius, int argb)
+	{
+		try (MemoryStack s = MemoryStack.stackPush())
+		{
+			nvgBeginPath(vg);
+			nvgRect(vg, x, y, w, h);
+			nvgRoundedRect(vg, x, y, w, h, radius);
+			nvgPathWinding(vg, NVG_HOLE);
+			nvgFillColor(vg, farbe(argb, argb >>> 24, NVGColor.malloc(s)));
+			nvgFill(vg);
+		}
+	}
+
 	public static void flaecheArgb(long vg, float x, float y, float w, float h, float radius, int argb)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())

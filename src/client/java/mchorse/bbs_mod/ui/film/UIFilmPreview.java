@@ -68,6 +68,8 @@ public class UIFilmPreview extends UIElement
     /** Werkzeugleiste oben im Viewport (Designsystem). */
     public UIWerkzeugleisteNano werkzeuge;
     public UIViewportHudNano hud;
+    private final com.mcstudio.nano.NanoFlaeche eckenFlaeche;
+    private String eckenStand = "";
 
     public UIIcon onionSkin;
     public UIIcon motionPath;
@@ -300,7 +302,15 @@ public class UIFilmPreview extends UIElement
         this.hud = new UIViewportHudNano(this);
         this.hud.relative(this).x(46).y(7).w(1F, -86).h(28);
 
-        this.add(this.werkzeuge, this.hud);
+        /* ⛔ ECKEN MIT NANOVG, NICHT MIT RECHTECKEN. Uebermalen bleibt eine Treppe, auch mit
+         * Teildeckung je Bildschirmzeile (2026-09-11: 4 -> 8 Stufen, sichtbar blieb sie).
+         * NanoVG glaettet Kurven selbst. Zuerst hinzugefuegt: ueber dem Bild, unter Leiste
+         * und HUD. */
+        this.eckenFlaeche = new com.mcstudio.nano.NanoFlaeche(this::eckenZeichnen);
+        this.eckenFlaeche.relative(this).x(0).y(0).w(1F).h(1F);
+        this.eckenFlaeche.setEnabled(false);
+
+        this.add(this.eckenFlaeche, this.werkzeuge, this.hud);
     }
 
     public void openOnionSkin()
@@ -463,61 +473,15 @@ public class UIFilmPreview extends UIElement
         return super.subKeyPressed(context);
     }
 
-    /** Radius der Panel-Ecken; muss zu NanoDesign.R_PANEL passen. */
-    private static int eckenRadius()
+    private void eckenZeichnen(long vg, int b, int h, float mausX, float mausY,
+        com.mcstudio.nano.NanoFlaeche f)
     {
-        return 6;
-    }
+        Area v = this.getViewport();
+        float k = Math.max(1F, f.skala());
 
-    /**
-     * Uebermalt die vier Ecken des Bildes mit der Nahtfarbe, damit der Viewport dieselbe
-     * Rundung bekommt wie die NanoVG-Flaechen daneben.
-     */
-    private static void eckenRunden(UIContext context, Area area)
-    {
-        int r = eckenRadius();
-        int rgb = 0x0D0D0D;
-
-        /* ⛔ IN BILDSCHIRMZEILEN RECHNEN, NICHT IN GUI-EINHEITEN (2026-09-11). Die Schleife
-         * lief ueber r GUI-Zeilen — bei GUI-Skala 2 sind das je ZWEI Bildschirmzeilen, und
-         * die Kante sprang in Zweierbloecken. Gemessen an der Ecke, Spalte des ersten hellen
-         * Pixels je Zeile: 8 8 4 4 2 2 2 2 2 2 0 0 0 0 — vier Stufen auf zwoelf Pixeln.
-         * Jetzt bekommt jede Bildschirmzeile ihren eigenen Wert, und der Randpixel die
-         * Teildeckung, die dem Kreis dort fehlt. */
-        float k = Math.max(1F, BBSModClient.getGUIScale());
-        int zeilen = Math.max(1, Math.round(r * k));
-        float pix = 1F / k;
-
-        for (int i = 0; i < zeilen; i++)
-        {
-            float dy = r - (i + 0.5F) * pix;
-            float genau = r - (float) Math.sqrt(Math.max(0F, r * r - dy * dy));
-            int vollPix = (int) (genau * k);
-            int rand = Math.round((genau * k - vollPix) * 255F);
-            float breite = vollPix * pix;
-            float oben = area.y + i * pix;
-            float unten = area.ey() - (i + 1) * pix;
-
-            if (vollPix > 0)
-            {
-                int naht = 0xFF000000 | rgb;
-
-                context.batcher.box(area.x, oben, area.x + breite, oben + pix, naht);
-                context.batcher.box(area.ex() - breite, oben, area.ex(), oben + pix, naht);
-                context.batcher.box(area.x, unten, area.x + breite, unten + pix, naht);
-                context.batcher.box(area.ex() - breite, unten, area.ex(), unten + pix, naht);
-            }
-
-            if (rand > 0)
-            {
-                int saum = (rand << 24) | rgb;
-
-                context.batcher.box(area.x + breite, oben, area.x + breite + pix, oben + pix, saum);
-                context.batcher.box(area.ex() - breite - pix, oben, area.ex() - breite, oben + pix, saum);
-                context.batcher.box(area.x + breite, unten, area.x + breite + pix, unten + pix, saum);
-                context.batcher.box(area.ex() - breite - pix, unten, area.ex() - breite, unten + pix, saum);
-            }
-        }
+        /* 6 = NanoDesign.R_PANEL, damit die Rundung neben der der Nachbarflaechen sitzt. */
+        com.mcstudio.nano.NanoStifte.eckenSaum(vg, (v.x - this.area.x) * k, (v.y - this.area.y) * k,
+            v.w * k, v.h * k, 6F * k, 0xFF0D0D0D);
     }
 
     @Override
@@ -525,6 +489,15 @@ public class UIFilmPreview extends UIElement
     {
         Texture texture = BBSRendering.getTexture();
         Area area = this.getViewport();
+        String eckenJetzt = area.x + ":" + area.y + ":" + area.w + ":" + area.h;
+
+        /* Nur neu malen, wenn das Rechteck sich bewegt hat — sonst kostet es jeden Frame. */
+        if (!eckenJetzt.equals(this.eckenStand))
+        {
+            this.eckenStand = eckenJetzt;
+            this.eckenFlaeche.neuMalen();
+        }
+
         Camera camera = this.panel.getCamera();
 
         camera.copy(this.panel.getWorldCamera());
@@ -546,7 +519,6 @@ public class UIFilmPreview extends UIElement
              * Rechteck, also werden die vier Ecken danach in der Nahtfarbe uebermalt —
              * eine Treppe aus Pixelzeilen entlang der Kreisgleichung. Bei 6 px Radius sind
              * das 24 winzige Rechtecke je Bild, gegenueber dem Weltrender nichts. */
-            eckenRunden(context, area);
         }
 
         /* The navigation ball replaces the axes crosshair in the corner */
