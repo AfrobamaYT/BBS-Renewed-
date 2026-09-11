@@ -1270,15 +1270,12 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
             if (form != null)
             {
+                /* ⛔ Das 40er-Feld muss GANZ in der Flaeche liegen: `y -= 5` und `y -= 10`
+                 * zogen es 15 Einheiten hoch, ein Viertel lag ueber dem Bild und wurde
+                 * abgeschnitten (Sonde in renderUI: „839,14 bis 879,54", Flaeche ab y=24). */
                 x -= w + 35;
-                y -= 5;
-
-                context.batcher.clip(x, y - 10, 40, 40, context);
-
-                y -= 10;
-
+                context.batcher.clip(x, y, 40, 40, context);
                 FormUtilsClient.renderUI(form, context, x, y, x + 40, y + 40);
-
                 context.batcher.unclip(context);
             }
         }
@@ -1414,7 +1411,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
         /* Das Mischen kommt aus der Pipeline der Kachel: der Batcher zeichnet sie ueber
          * BBSPipelines (von RenderPipelines.GUI_TEXTURED geerbt), und deren ColorTargetState
          * traegt BlendFunction.TRANSLUCENT. Ein enableBlend davor gibt es in 26.2 nicht mehr. */
-        context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, this.stencil.hervorhebungsbild(), Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
+        if (!Boolean.getBoolean("bbs.probe.keinStencilBlit")) context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, this.stencil.hervorhebungsbild(), Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
 
         this.hoveredReplayIndex = StencilAnzeige.beschriftung(context, this.panel, altPressed,
             index, REPLAY_STENCIL_OFFSET, this.getCurrentReplayIndex(), pair);
