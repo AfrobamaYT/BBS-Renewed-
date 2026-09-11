@@ -147,6 +147,38 @@ public class UITopbarNano extends UIElement
 		 * genug fuer 11.5-px-Schrift, ohne dass der Reiter oben anstoesst. */
 		float reiterH = h - 4F * k;
 
+		/* ⛔ KEIN REITER DARF WEGFALLEN (2026-09-11). Vorher brach die Schleife ab, sobald der
+		 * naechste Reiter nicht mehr passte — und wie viel Platz da ist, haengt am Film-Chip
+		 * rechts, den es nur mit offenem Film gibt. Ergebnis: im Film-Panel fehlte „Particles",
+		 * in Models/Blocks war es wieder da. Nutzer: „der particles bereich wird erst angezeigt
+		 * wenn man auf models oder blocks bereich gerade ist".
+		 *
+		 * Gemessen bei ui_scale 3 (GUI-Breite 640): alle sieben Reiter brauchen 555, verfuegbar
+		 * sind 378 ohne Chip und 294 mit. Reicht es nicht, faellt die BESCHRIFTUNG weg statt des
+		 * Reiters — sieben Symbolreiter brauchen 7x34 = 238 und passen immer. Blender macht bei
+		 * Platzmangel dasselbe. */
+		float vollBreit = 0F;
+		float nurAktivBeschriftet = 0F;
+
+		for (int nr = 0; nr < this.namen.size(); nr++)
+		{
+			int i = this.reihenfolge(nr);
+
+			if (i < 0)
+			{
+				continue;
+			}
+
+			vollBreit += this.reiterBreite(vg, this.namen.get(i), false, k);
+			nurAktivBeschriftet += this.reiterBreite(vg, this.namen.get(i), i != aktiv, k);
+		}
+
+		/* Drei Stufen statt Wegfallen: alles beschriftet — nur der offene Bereich beschriftet —
+		 * alles als Symbol. Ein Reiter, den man nicht sieht, ist ein Bereich, den man nicht
+		 * erreicht; ein Reiter ohne Namen ist bloss schmal. */
+		boolean nurSymbole = x + nurAktivBeschriftet > rechtsGrenze;
+		boolean knapp = !nurSymbole && x + vollBreit > rechtsGrenze;
+
 		for (int nr = 0; nr < this.namen.size(); nr++)
 		{
 			int i = this.reihenfolge(nr);
@@ -166,13 +198,8 @@ public class UITopbarNano extends UIElement
 			 * NanoVG rundet Glyphenbreiten auf ganze Pixel, und bei 23 px faellt der Fehler
 			 * anders aus als bei 11.5. Der Browser layoutet in CSS-Pixeln und skaliert danach —
 			 * dieselbe Reihenfolge macht die Breiten deckungsgleich. */
-			float rb = (NanoStifte.textBreite(vg, NanoDesign.SANS, 11.5F, name)
-				+ (symbol.isEmpty() ? 22F : 40F)) * k;
-
-			if (x + rb > rechtsGrenze)
-			{
-				break;
-			}
+			boolean ohneText = nurSymbole || (knapp && i != aktiv);
+			float rb = this.reiterBreite(vg, voll, ohneText, k);
 
 			boolean an = i == aktiv;
 			boolean ueber = mausX >= x && mausX < x + rb && mausY >= h - reiterH && mausY < h;
@@ -219,8 +246,11 @@ public class UITopbarNano extends UIElement
 
 			/* Der Entwurf hebt den aktiven Reiter ueber Grund und Farbe hervor, nicht ueber
 			 * Fettschrift — sonst spraenge die Breite beim Wechsel. */
-			NanoStifte.text(vg, NanoDesign.SANS, 11.5F * k,
-				textX, basis, an ? NanoDesign.TXT : NanoDesign.TXT_DIM, name, null);
+			if (!ohneText)
+			{
+				NanoStifte.text(vg, NanoDesign.SANS, 11.5F * k,
+					textX, basis, an ? NanoDesign.TXT : NanoDesign.TXT_DIM, name, null);
+			}
 
 			final int idx = i;
 
@@ -244,6 +274,27 @@ public class UITopbarNano extends UIElement
 	 * Zeichnet Film-Chip, Neu und Menue am rechten Rand und liefert die linke Kante zurueck,
 	 * damit die Reiter davor enden.
 	 */
+	/**
+	 * Breite eines Reiters. EINE Quelle fuer die Vorab-Messung und das Zeichnen — zwei
+	 * getrennte Rechnungen waeren genau die Stelle, an der die Leiste wieder auseinanderlaeuft.
+	 */
+	private float reiterBreite(long vg, String voll, boolean nurSymbole, float k)
+	{
+		String[] eintrag = eintragZu(voll);
+		String name = eintrag == null ? voll : eintrag[1];
+		String symbol = eintrag == null ? "" : eintrag[2];
+
+		if (nurSymbole && !symbol.isEmpty())
+		{
+			return 34F * k;
+		}
+
+		/* ⛔ Bei der ENTWURFSGROESSE messen und dann skalieren: NanoVG rundet Glyphenbreiten
+		 * auf ganze Pixel, und bei 23 px faellt der Fehler anders aus als bei 11.5. */
+		return (NanoStifte.textBreite(vg, NanoDesign.SANS, 11.5F, name)
+			+ (symbol.isEmpty() ? 22F : 40F)) * k;
+	}
+
 	private float zeichneRechts(long vg, int b, int h, float mausX, float mausY, NanoFlaeche f, float k)
 	{
 		UIFilmPanel panel = this.filmPanel();
