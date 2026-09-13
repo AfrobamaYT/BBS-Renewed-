@@ -16,6 +16,12 @@ public abstract class IKQTask
     final IKQSegment segment;
 
     int id;
+    /**
+     * ⛔ Wie Blenders {@code IK_QTask.h}: hier liegt die WURZEL des gesetzten Gewichts
+     * ({@code SetWeight: m_weight = sqrt(weight)}, {@code Weight(): m_weight * m_weight}), und
+     * mit dieser Wurzel werden Betas und Ableitungen skaliert. Mit dem Gewicht selbst skaliert
+     * (bis 2026-09-13) wog ein Ziel im Baum quadratisch zu stark — Testrig: ik_b 0,13 daneben.
+     */
     double weight = 1D;
 
     protected IKQTask(int size, boolean primary, IKQSegment segment)
@@ -42,12 +48,12 @@ public abstract class IKQTask
 
     public double gewicht()
     {
-        return this.weight;
+        return this.weight * this.weight;
     }
 
     public void setzeGewicht(double gewicht)
     {
-        this.weight = gewicht;
+        this.weight = Math.sqrt(gewicht);
     }
 
     public boolean positionsAufgabe()

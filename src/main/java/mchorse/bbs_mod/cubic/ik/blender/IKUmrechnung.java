@@ -103,18 +103,16 @@ public final class IKUmrechnung
     }
 
     /**
-     * Segmenttyp aus den gesperrten Achsen, wie {@code IK_CreateSegment}:
-     * 1 freier Grad = Scharnier, 3 freie = Kugel. Zwei freie Grade (Swing/Elbow)
-     * sind noch nicht portiert und scheitern LAUT statt still als Kugel
-     * durchzurutschen — eine falsch geratene Biegeebene sieht man erst am Bild.
+     * Segmenttyp aus den gesperrten Achsen, wie Blenders {@code CreateSegment}: 0 freie Grade =
+     * starr, 1 = Scharnier, 2 = Schwinggelenk (X+Z) oder Ellbogen (X+Y bzw. Y+Z), 3 = Kugel.
      */
     public static IKQSegment segment(boolean sperrX, boolean sperrY, boolean sperrZ)
     {
         int frei = (sperrX ? 0 : 1) + (sperrY ? 0 : 1) + (sperrZ ? 0 : 1);
 
-        if (frei == 3)
+        if (frei == 0)
         {
-            return new IKQSphericalSegment();
+            return new IKQNullSegment();
         }
 
         if (frei == 1)
@@ -122,10 +120,15 @@ public final class IKUmrechnung
             return new IKQRevoluteSegment(!sperrX ? 0 : !sperrY ? 1 : 2);
         }
 
-        throw new UnsupportedOperationException(
-            "IK-Gelenk mit " + frei + " freien Achsen (sperr=" + sperrX + "," + sperrY + ","
-            + sperrZ + "): Swing-, Elbow- und Null-Segment sind noch nicht "
-            + "aus Blender portiert.");
+        if (frei == 2)
+        {
+            int achse1 = !sperrX ? 0 : 1;
+            int achse2 = !sperrX ? (!sperrY ? 1 : 2) : 2;
+
+            return achse1 + achse2 == 2 ? new IKQSwingSegment() : new IKQElbowSegment(achse1 == 0 ? 0 : 2);
+        }
+
+        return new IKQSphericalSegment();
     }
 
     /**
@@ -145,6 +148,12 @@ public final class IKUmrechnung
         if (!dehnbar)
         {
             return dreh;
+        }
+
+        /* IK_CreateSegment: ohne Drehfreiheit IST das Verschiebe-Segment das Glied. */
+        if (dreh instanceof IKQNullSegment)
+        {
+            return new IKQTranslateSegment(1);
         }
 
         IKQSegment schub = new IKQTranslateSegment(1);
