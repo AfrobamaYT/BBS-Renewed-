@@ -86,6 +86,45 @@ public class BOBJBone
     /** Blenders {@code inherit_scale_mode}; {@code null} ist FULL, der Normalfall. */
     public String skalenErbe;
 
+    /**
+     * Blenders {@code BONE_CONNECTED}: der Kopf klebt am Elternende. {@code BKE_pchan_to_mat4}
+     * uebernimmt die {@code location} eines verbundenen Knochens NICHT — bis 2026-09-13 tat
+     * BBS es und liess Rigifys verbundene FK-Controls (shin_fk, forearm_fk) vom Gelenk ziehen
+     * (gemessen 0,10 m). Kommt aus {@code rig.json}.
+     */
+    public boolean verbunden;
+
+    /** Blenders {@code BONE_HINGE} (use_inherit_rotation aus): die Pose-Drehung des Elters
+     *  wird NICHT weitergegeben, nur seine Ruhedrehung. */
+    public boolean keineElternDrehung;
+
+    /**
+     * Blenders {@code rotation_mode} fuer Euler-Knochen (XYZ, XZY, YXZ, YZX, ZXY, ZYX);
+     * {@code null} heisst XYZ. Rigifys Tweaks stehen auf ZXY — BBS setzte bis 2026-09-13
+     * jeden Euler-Kanal als XYZ zusammen, also in einer anderen Reihenfolge als Blender.
+     */
+    public String eulerOrdnung;
+
+    /**
+     * Blenders {@code rotation_mode} des Knochens, so wie er im Rig steht (QUATERNION,
+     * AXIS_ANGLE oder eine Euler-Ordnung); {@code null} heisst XYZ. Anders als BBS' eigener
+     * Kanalmodus: der Action-Constraint wertet seine Kurven danach aus.
+     */
+    public String drehModus;
+
+    /** Bendy-Bone-Daten und -Cache; {@code null} bei gewoehnlichen Knochen. */
+    public BOBJBBone bbone;
+
+    /** Blenders {@code pchan->child}: das letzte VERBUNDENE Kind in Knochenreihenfolge —
+     *  der AUTO-Griff am Ende eines B-Bones. */
+    public BOBJBone verbundenesKind;
+
+    /** Blenders Huelle: Kopfradius, Schwanzradius, Abstand ({@code rad_head, rad_tail, dist}). */
+    public float[] huelle;
+
+    /** {@code BONE_MULT_VG_ENV}: Huellgewicht gilt auch ohne den Schalter am Armature-Constraint. */
+    public boolean huelleMult;
+
     public BOBJBone(int index, String name, String parent, Matrix4f boneMat)
     {
         this.index = index;
@@ -136,7 +175,7 @@ public class BOBJBone
         /* Weicht die Elternuebergabe von der Norm ab, rechnet Blenders eigener Weg —
          * fuer 654 von 706 Rigify-Knochen und fuer jedes Modell ohne Rig-Mechanik
          * bleibt es Zeile fuer Zeile der alte, allokationsfreie Pfad darunter. */
-        if (this.elternraumVerschiebung || this.skalenErbe != null)
+        if (this.elternraumVerschiebung || this.skalenErbe != null || this.keineElternDrehung || this.verbunden)
         {
             return BOBJElternTransform.rechne(this, m);
         }
@@ -159,8 +198,14 @@ public class BOBJBone
 
     public void applyTransformations()
     {
-        this.mat.translate(this.transform.translate);
-        this.originMat.translate(this.transform.translate);
+        /* Ein VERBUNDENER Knochen hat in Blender keine Verschiebung: BKE_pchan_to_mat4
+         * laesst `loc` bei BONE_CONNECTED aus. */
+        if (!this.verbunden)
+        {
+            this.mat.translate(this.transform.translate);
+            this.originMat.translate(this.transform.translate);
+        }
+
         this.kanalDrehung(this.mat);
     }
 
@@ -188,7 +233,7 @@ public class BOBJBone
             /* Rest bones (all angles zero) skip the trig entirely; BOBJ channels are radians. */
             if (rotate.x != 0F || rotate.y != 0F || rotate.z != 0F)
             {
-                ziel.rotate(Matrices.toLocalRotationZYXRadians(rotate));
+                ziel.rotate(this.eulerQuaternion(rotate));
             }
         }
 
@@ -203,7 +248,50 @@ public class BOBJBone
      */
     public Quaternionf evaluatedRotation()
     {
-        return this.orient != null ? new Quaternionf(this.orient) : this.transform.createRotation();
+        return this.orient != null ? new Quaternionf(this.orient) : this.kanalQuaternion();
+    }
+
+    /**
+     * Die Euler-Kanaele als Quaternion — in der Reihenfolge, die Blender fuer DIESEN Knochen
+     * benutzt ({@link #eulerOrdnung}); ohne Angabe XYZ, was JOMLs ZYX-Komposition ist.
+     * DIE eine Stelle, an der ein Euler dieses Knochens zusammengesetzt wird.
+     */
+    public Quaternionf eulerQuaternion(Vector3f rotate)
+    {
+        if (this.eulerOrdnung == null || "XYZ".equals(this.eulerOrdnung))
+        {
+            return Matrices.toLocalRotationZYXRadians(rotate);
+        }
+
+        float[] m = mchorse.bbs_mod.cubic.ik.RigEuler.zuMatrix(new float[] {rotate.x, rotate.y, rotate.z}, this.eulerOrdnung);
+
+        return new org.joml.Matrix3f(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8])
+            .getNormalizedRotation(new Quaternionf());
+    }
+
+    /** Die Kanal-Drehung als Quaternion, modusabhaengig (Euler in Blenders Ordnung oder Quaternion). */
+    public Quaternionf kanalQuaternion()
+    {
+        return this.transform.rotationMode == Transform.RotationMode.QUATERNION
+            ? new Quaternionf(this.transform.quat) : this.eulerQuaternion(this.transform.rotate);
+    }
+
+    /** Ein Quaternion als Euler in Blenders Ordnung dieses Knochens, nahe an {@code bezug}. */
+    public Vector3f eulerAus(Quaternionf q, Vector3f bezug, Vector3f dest)
+    {
+        if (this.eulerOrdnung == null || "XYZ".equals(this.eulerOrdnung))
+        {
+            return Matrices.toCompatibleEulerZYXRadians(q, bezug, dest);
+        }
+
+        float[] m = new float[9];
+
+        new org.joml.Matrix3f().rotation(q).get(m);
+
+        float[] e = mchorse.bbs_mod.cubic.ik.RigEuler.ausMatrixNahe(m,
+            new float[] {bezug.x, bezug.y, bezug.z}, this.eulerOrdnung);
+
+        return dest.set(e[0], e[1], e[2]);
     }
 
     /**
@@ -216,7 +304,7 @@ public class BOBJBone
     {
         if (this.orient == null)
         {
-            this.orient = this.transform.createRotation();
+            this.orient = this.kanalQuaternion();
         }
         else
         {

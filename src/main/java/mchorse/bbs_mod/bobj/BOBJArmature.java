@@ -99,6 +99,13 @@ public class BOBJArmature
 
     public Zwang zwang;
 
+    /**
+     * Blenders Rahmen fuers Skinning: {@code inv(G·W)}, BBS-Armature-Raum nach Blender-Pose-Raum.
+     * Setzt die Rig-Mechanik; {@code null} = kein Rig (dann Einheit). Die B-Bone-Segmentwahl je
+     * Vertex ({@code RigBBone.segmentIndex}) rechnet in Blenders Pose-Raum.
+     */
+    public float[] rigPoseWandler;
+
     public void setupMatrices()
     {
         /* ⛔ NUR RECHNEN, WENN SICH DIE EINGABEN GEAENDERT HABEN. Gemessen am 2026-08-21:

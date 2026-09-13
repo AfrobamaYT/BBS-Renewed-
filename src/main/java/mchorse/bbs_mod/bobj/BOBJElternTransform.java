@@ -1,5 +1,8 @@
 package mchorse.bbs_mod.bobj;
 
+import mchorse.bbs_mod.cubic.ik.RigMathe;
+import mchorse.bbs_mod.cubic.ik.RigMatrix3;
+
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -8,167 +11,220 @@ import org.joml.Vector3f;
  * ZWEI Matrizen statt einer — {@code rotskal} traegt Drehung und Skalierung, {@code ort}
  * traegt allein die Ortsspalte, und Blender nimmt aus jeder nur ihren Teil.
  *
- * ⛔ Bei vollem Skalen-Erbe UND lokal wirkender Verschiebung sind beide gleich; dann ist
- * dieser Apparat ueberfluessig und {@link BOBJBone#computeMatrix} nimmt den alten,
- * allokationsfreien Weg. Das gilt fuer 654 von 706 Rigify-Knochen und fuer JEDES Modell
- * ohne Rig-Mechanik — der Umbau kann also nichts Bestehendes verschieben.
+ * ⛔ Bei vollem Skalen-Erbe UND lokal wirkender Verschiebung UND geerbter Drehung sind beide
+ * gleich; dann ist dieser Apparat ueberfluessig und {@link BOBJBone#computeMatrix} nimmt den
+ * alten, allokationsfreien Weg. Das gilt fuer die meisten Knochen und fuer JEDES Modell ohne
+ * Rig-Mechanik — der Umbau kann also nichts Bestehendes verschieben.
  *
- * Quelle: {@code BKE_bone_parent_transform_calc_from_matrices} und
- * {@code BKE_bone_parent_transform_apply}, blenkernel/intern/armature.cc (v5.2.0).
- * Anordnung wie in {@link BOBJBasisMathe}: {@code a[i * 4 + j]} ist {@code R[i][j]}.
+ * Quelle: {@code BKE_bone_parent_transform_calc_from_matrices}, {@code _invert} und
+ * {@code _apply}, blenkernel/intern/armature.cc (v5.2.1). Anordnung wie in
+ * {@link BOBJBasisMathe}: {@code a[i * 4 + j]} ist {@code R[i][j]}.
  */
 public final class BOBJElternTransform
 {
+    /** Blenders {@code BoneParentTransform}. */
+    public static final class Bpt
+    {
+        public float[] rotskal = RigMathe.einheit();
+        public float[] ort = RigMathe.einheit();
+        public float[] nachSkala = {1F, 1F, 1F};
+
+        /** {@code BKE_bone_parent_transform_invert}. */
+        public Bpt invertiert()
+        {
+            Bpt b = new Bpt();
+
+            b.rotskal = RigMathe.invertiert(this.rotskal);
+            b.ort = RigMathe.invertiert(this.ort);
+
+            for (int i = 0; i < 3; i++)
+            {
+                b.nachSkala[i] = this.nachSkala[i] == 0F ? 0F : 1F / this.nachSkala[i];
+            }
+
+            return b;
+        }
+
+        /** {@code BKE_bone_parent_transform_apply}. */
+        public float[] anwenden(float[] inmat)
+        {
+            float[] out = RigMathe.mul(this.rotskal, inmat);
+
+            RigMathe.setzeOrt(out, RigMathe.punkt(this.ort, RigMathe.ort(inmat)));
+            RigMathe.skaliere(out, this.nachSkala);
+
+            return out;
+        }
+    }
+
     private BOBJElternTransform()
     {}
+
+    /**
+     * {@code BKE_bone_parent_transform_calc_from_matrices} — rahmenunabhaengig: alle Eingaben
+     * im selben Raum (BBS-Armature oder Blender-Pose), das Ergebnis gilt dort.
+     *
+     * @param offs      {@code offs_bone}: Ruhelage relativ zum Elter (bei Wurzeln: arm_mat)
+     * @param elternPose Pose-Matrix des Elters, null bei Wurzeln
+     * @param elternArm  Ruhe-Matrix des Elters im Armature-Raum (fuer Hinge), null bei Wurzeln
+     */
+    public static Bpt berechne(float[] offs, float[] elternPose, float[] elternArm,
+                               boolean erbtDrehung, String skalenErbe, boolean lokaleVerschiebung)
+    {
+        Bpt r = new Bpt();
+
+        if (elternPose == null)
+        {
+            r.rotskal = RigMathe.kopie(offs);
+
+            if (!lokaleVerschiebung)
+            {
+                r.ort = RigMathe.einheit();
+                RigMathe.setzeOrt(r.ort, RigMathe.ort(offs));
+            }
+            else
+            {
+                r.ort = RigMathe.kopie(r.rotskal);
+            }
+
+            return r;
+        }
+
+        String modus = skalenErbe == null || skalenErbe.isEmpty() ? "FULL" : skalenErbe;
+        boolean voll = erbtDrehung && "FULL".equals(modus);
+
+        if (voll)
+        {
+            r.rotskal = RigMathe.mul(elternPose, offs);
+        }
+        else
+        {
+            float[] t;
+
+            if (erbtDrehung)
+            {
+                t = RigMathe.kopie(elternPose);
+
+                switch (modus)
+                {
+                    case "NONE", "AVERAGE" -> BOBJBasisMathe.orthogonalisiereUmY(t, true);
+                    case "ALIGNED" ->
+                    {
+                        BOBJBasisMathe.orthogonalisiereUmY(t, false);
+                        BOBJBasisMathe.normalisiereMitSkala(t, r.nachSkala);
+                    }
+                    case "NONE_LEGACY" -> BOBJBasisMathe.normalisiereMitSkala(t, new float[3]);
+                    default ->
+                    {}
+                }
+            }
+            else
+            {
+                /* BONE_HINGE: die RUHE-Drehung des Elters statt seiner Pose-Drehung. */
+                t = RigMathe.kopie(elternArm);
+
+                switch (modus)
+                {
+                    case "FULL" -> RigMathe.skaliere(t, RigMathe.groesse(elternPose));
+                    case "FIX_SHEAR" -> RigMathe.skaliere(t, RigMatrix3.groesseOhneScherung(elternPose));
+                    case "ALIGNED" -> r.nachSkala = RigMatrix3.groesseOhneScherung(elternPose);
+                    default ->
+                    {}
+                }
+            }
+
+            if ("AVERAGE".equals(modus))
+            {
+                BOBJBasisMathe.skaliereBasis(t,
+                    (float) Math.cbrt(Math.abs(BOBJBasisMathe.determinante3(elternPose))));
+            }
+
+            r.rotskal = RigMathe.mul(t, offs);
+
+            if ("FIX_SHEAR".equals(modus))
+            {
+                BOBJBasisMathe.orthogonalisiereUmY(r.rotskal, false);
+            }
+        }
+
+        if (!lokaleVerschiebung)
+        {
+            /* Die Verschiebung wirkt im ELTERNRAUM, ohne die eigene Ruhedrehung: Ort =
+             * Elternpose x Kopf, 3x3 = die 3x3 der Elternpose. */
+            r.ort = RigMathe.einheit();
+
+            for (int i = 0; i < 3; i++)
+            {
+                System.arraycopy(elternPose, i * 4, r.ort, i * 4, 3);
+            }
+
+            RigMathe.setzeOrt(r.ort, RigMathe.punkt(elternPose, RigMathe.ort(offs)));
+        }
+        else if (!voll)
+        {
+            r.ort = RigMathe.mul(elternPose, offs);
+        }
+        else
+        {
+            r.ort = RigMathe.kopie(r.rotskal);
+        }
+
+        return r;
+    }
+
+    /** Die Elternuebergabe DIESES Knochens im BBS-Armature-Raum. */
+    public static Bpt berechne(BOBJBone b)
+    {
+        float[] offs = b.relBoneMat.get(new float[16]);
+
+        if (b.parentBone == null)
+        {
+            return berechne(offs, null, null, !b.keineElternDrehung, b.skalenErbe, !b.elternraumVerschiebung);
+        }
+
+        return berechne(offs, b.parentBone.mat.get(new float[16]), b.parentBone.boneMat.get(new float[16]),
+            !b.keineElternDrehung, b.skalenErbe, !b.elternraumVerschiebung);
+    }
 
     /** Weltmatrix nach {@code m}; {@link BOBJBone#originMat} wird mitgezogen. */
     static Matrix4f rechne(BOBJBone b, Matrix4f m)
     {
-        float[] rotskal = new float[16];
-        float[] ort = new float[16];
-        float[] nachSkala = {1F, 1F, 1F};
-
-        zerlege(b, rotskal, ort, nachSkala);
+        Bpt bpt = berechne(b);
 
         /* Zweimal angewandt: mit den Kanaelen die echte Lage, ohne sie originMat —
          * daran haengen Control-Gizmos und Picking, die den Knochen ohne seine
          * eigene Drehung meinen. */
-        anwenden(rotskal, ort, nachSkala, b.transform.translate, null, b.originMat);
-        anwenden(rotskal, ort, nachSkala, b.transform.translate,
-            b.kanalDrehung(new Matrix4f()), m);
+        anwenden(bpt, b, null, b.originMat);
+        anwenden(bpt, b, b.kanalDrehung(new Matrix4f()), m);
 
         b.mat.set(m);
 
         return m;
     }
 
-    private static void zerlege(BOBJBone b, float[] rotskal, float[] ort, float[] nachSkala)
+    private static void anwenden(Bpt bpt, BOBJBone b, Matrix4f kanal, Matrix4f raus)
     {
-        float[] eigen = new float[16];
+        Vector3f loc = b.verbunden ? new Vector3f() : b.transform.translate;
 
-        b.relBoneMat.get(eigen);
-
-        if (b.parentBone == null)
-        {
-            System.arraycopy(eigen, 0, rotskal, 0, 16);
-
-            if (b.elternraumVerschiebung)
-            {
-                einheit(ort);
-                ort[12] = eigen[12];
-                ort[13] = eigen[13];
-                ort[14] = eigen[14];
-            }
-
-            return;
-        }
-
-        float[] p = new float[16];
-
-        b.parentBone.mat.get(p);
-
-        String modus = b.skalenErbe;
-        boolean voll = modus == null || "FULL".equals(modus);
-
-        if (voll)
-        {
-            mul(p, eigen, rotskal);
-        }
-        else
-        {
-            float[] t = p.clone();
-
-            switch (modus)
-            {
-                case "NONE", "AVERAGE" -> BOBJBasisMathe.orthogonalisiereUmY(t, true);
-                case "ALIGNED" ->
-                {
-                    BOBJBasisMathe.orthogonalisiereUmY(t, false);
-                    BOBJBasisMathe.normalisiereMitSkala(t, nachSkala);
-                }
-                case "NONE_LEGACY" -> BOBJBasisMathe.normalisiereMitSkala(t, new float[3]);
-                /* FIX_SHEAR behaelt Skala und Scherung hier und raeumt unten auf;
-                 * ein unbekannter Wert rechnet wie FULL statt still falsch. */
-                default ->
-                {}
-            }
-
-            if ("AVERAGE".equals(modus))
-            {
-                BOBJBasisMathe.skaliereBasis(t,
-                    (float) Math.cbrt(Math.abs(BOBJBasisMathe.determinante3(p))));
-            }
-
-            mul(t, eigen, rotskal);
-
-            if ("FIX_SHEAR".equals(modus))
-            {
-                BOBJBasisMathe.orthogonalisiereUmY(rotskal, false);
-            }
-        }
-
-        if (b.elternraumVerschiebung)
-        {
-            /* ⛔ DIE Stelle: die Verschiebung wirkt im ELTERNRAUM, ohne die eigene
-             * Ruhedrehung. Rigify setzt das auf seine IK-Griffe (hand_ik, foot_ik,
-             * *_ik_target), damit sie sich in geraden Achsen ziehen lassen. BBS
-             * drehte sie stattdessen durch die Ruhebasis — bei foot_ik ist die die
-             * Einheitsmatrix und der Fehler unsichtbar, bei hand_ik nicht. */
-            einheit(ort);
-
-            for (int i = 0; i < 3; i++)
-            {
-                System.arraycopy(p, i * 4, ort, i * 4, 3);
-            }
-
-            ort[12] = p[0] * eigen[12] + p[4] * eigen[13] + p[8] * eigen[14] + p[12];
-            ort[13] = p[1] * eigen[12] + p[5] * eigen[13] + p[9] * eigen[14] + p[13];
-            ort[14] = p[2] * eigen[12] + p[6] * eigen[13] + p[10] * eigen[14] + p[14];
-        }
-        else if (!voll)
-        {
-            /* Die Skalen-Flags treffen die Lage nicht — schlichter Elternraum. */
-            mul(p, eigen, ort);
-        }
-        else
-        {
-            System.arraycopy(rotskal, 0, ort, 0, 16);
-        }
-    }
-
-    private static void anwenden(float[] rotskal, float[] ort, float[] nachSkala,
-                                 Vector3f loc, Matrix4f kanal, Matrix4f raus)
-    {
-        raus.set(rotskal);
+        raus.set(bpt.rotskal);
 
         if (kanal != null)
         {
             raus.mul(kanal);
         }
 
+        float[] o = bpt.ort;
+
         /* Die Ortsspalte kommt AUSSCHLIESSLICH aus ort. Genau hier trennt Blender
          * Verschiebung von Drehung — und genau das fehlte BBS. */
         raus.setTranslation(
-            ort[0] * loc.x + ort[4] * loc.y + ort[8] * loc.z + ort[12],
-            ort[1] * loc.x + ort[5] * loc.y + ort[9] * loc.z + ort[13],
-            ort[2] * loc.x + ort[6] * loc.y + ort[10] * loc.z + ort[14]);
+            o[0] * loc.x + o[4] * loc.y + o[8] * loc.z + o[12],
+            o[1] * loc.x + o[5] * loc.y + o[9] * loc.z + o[13],
+            o[2] * loc.x + o[6] * loc.y + o[10] * loc.z + o[14]);
 
-        if (nachSkala[0] != 1F || nachSkala[1] != 1F || nachSkala[2] != 1F)
+        if (bpt.nachSkala[0] != 1F || bpt.nachSkala[1] != 1F || bpt.nachSkala[2] != 1F)
         {
-            raus.scale(nachSkala[0], nachSkala[1], nachSkala[2]);
+            raus.scale(bpt.nachSkala[0], bpt.nachSkala[1], bpt.nachSkala[2]);
         }
-    }
-
-    private static void mul(float[] a, float[] b, float[] raus)
-    {
-        new Matrix4f().set(a).mul(new Matrix4f().set(b)).get(raus);
-    }
-
-    private static void einheit(float[] a)
-    {
-        java.util.Arrays.fill(a, 0F);
-
-        a[0] = a[5] = a[10] = a[15] = 1F;
     }
 }
