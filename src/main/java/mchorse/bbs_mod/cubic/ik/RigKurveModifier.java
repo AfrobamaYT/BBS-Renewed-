@@ -5,6 +5,7 @@ import mchorse.bbs_mod.data.types.MapType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Blenders F-Modifier ({@code fmodifier.cc}) auf einer Treiber- oder Action-Kurve: LIMITS und
@@ -14,6 +15,9 @@ import java.util.List;
  */
 final class RigKurveModifier
 {
+    /** Die Typen, die hier gerechnet werden; alles andere zaehlt {@link RigTreiber} als unbekannt. */
+    static final Set<String> KANN = Set.of("GENERATOR", "FNGENERATOR", "LIMITS", "STEPPED");
+
     private RigKurveModifier()
     {}
 

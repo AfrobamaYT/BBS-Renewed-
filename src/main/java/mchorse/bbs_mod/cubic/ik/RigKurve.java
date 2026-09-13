@@ -70,6 +70,20 @@ public final class RigKurve
         return new RigKurve(kurve);
     }
 
+    /** Die {@code typ}-Werte der exportierten Modifier — damit der Treiber Unbekanntes zaehlen kann. */
+    public static List<String> modifierTypen(MapType kurve)
+    {
+        List<String> typen = new ArrayList<>();
+        ListType mods = kurve == null ? null : kurve.getList("modifiers");
+
+        for (int i = 0; mods != null && i < mods.size(); i++)
+        {
+            typen.add(mods.getMap(i).getString("typ", ""));
+        }
+
+        return typen;
+    }
+
     /** {@code evaluate_fcurve_driver}: Treiberwert rein, Eigenschaftswert raus. */
     public float wert(float treiberwert)
     {

@@ -100,7 +100,19 @@ public final class RigTreiber
 
         if (k == null)
         {
-            k = RigKurve.lesen(treiber.getMap("kurve"));
+            MapType kurve = treiber.getMap("kurve");
+
+            /* F-Modifier, die RigKurveModifier nicht rechnet (NOISE, CYCLES, ENVELOPE, PYTHON),
+             * liessen die Kurve sonst STILL unveraendert — Stufe 1 exportiert alle Typen. */
+            for (String typ : RigKurve.modifierTypen(kurve))
+            {
+                if (!RigKurveModifier.KANN.contains(typ))
+                {
+                    this.zaehle("fmodifier:" + typ);
+                }
+            }
+
+            k = RigKurve.lesen(kurve);
             this.kurven.put(treiber, k);
         }
 
