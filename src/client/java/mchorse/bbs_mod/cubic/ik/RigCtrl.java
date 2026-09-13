@@ -28,9 +28,14 @@ public class RigCtrl
     /* Lazy (Hotswap: neue statics sind null). Leere Liste = Modell hat kein eigenes rig.json. */
     private static java.util.Map<String, List<Eintrag>> proModell;
 
+    /**
+     * @param versteckt Blenders {@code hide}-Treiber (Rigify blendet Pol-Controls ueber
+     *                  {@code pole_vector} aus), null = nie getrieben
+     * @param verbunden {@code use_connect}: Blender ignoriert die Verschiebung dieses Controls
+     */
     public record Eintrag(String name, String anker, String pick, int farbeN, int farbeA,
         float breite, String schalter, boolean ik, boolean dragRot, boolean fest,
-        List<String> lagen, float[][] linien) {}
+        List<String> lagen, float[][] linien, MapType versteckt, boolean verbunden) {}
 
     /** Das importierte Control-Rig dieses Modells, sonst null. Einziges Kriterium:
      *  das Modell bringt ein rig.json mit — BBS erzeugt selbst keine Rigs mehr. */
@@ -76,6 +81,19 @@ public class RigCtrl
     /** Der Weg ueber die Entity — fuer Aufrufer, die nur sie haben. */
     public static List<Eintrag> fuerEntity(mchorse.bbs_mod.forms.entities.IEntity entity)
     {
+        if (!(entity != null && entity.getForm() instanceof mchorse.bbs_mod.forms.forms.ModelForm form))
+        {
+            return null;
+        }
+
+        BOBJArmature armature = armatureVon(entity);
+
+        return armature == null ? null : fuer(armature, form.model.get());
+    }
+
+    /** Die Armature des BOBJ-Modells hinter dieser Entity, sonst null. */
+    public static BOBJArmature armatureVon(mchorse.bbs_mod.forms.entities.IEntity entity)
+    {
         if (entity == null
             || !(entity.getForm() instanceof mchorse.bbs_mod.forms.forms.ModelForm form)
             || !(mchorse.bbs_mod.forms.FormUtilsClient.getRenderer(form) instanceof mchorse.bbs_mod.forms.renderers.ModelFormRenderer renderer))
@@ -86,7 +104,7 @@ public class RigCtrl
         mchorse.bbs_mod.cubic.ModelInstance instance = renderer.getModel();
 
         return instance != null && instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bobj
-            ? fuer(bobj.getArmature(), form.model.get()) : null;
+            ? bobj.getArmature() : null;
     }
 
     /** Gate fuer Gizmo/Umriss — je Frame billig (die Liste ist gecacht). */
@@ -162,6 +180,21 @@ public class RigCtrl
      * Rig-Layers (Blenders Bone-Collections); sichtbar ist es, sobald EINE davon an ist —
      * genau wie in Blender. Ohne Layer-Angabe immer sichtbar.
      */
+    /**
+     * Wie {@link #sichtbar(Eintrag)}, zusaetzlich mit Blenders {@code hide}-Treiber des Controls:
+     * Rigify blendet Pol-Controls und VIS-Linien ueber {@code pole_vector} aus.
+     */
+    public static boolean sichtbar(Eintrag e, BOBJArmature armature)
+    {
+        if (e.versteckt != null && armature != null && armature.zwang instanceof RigMechanik m
+            && m.treiber.wert(e.versteckt, 0F) > RigTreiber.BOOL_SCHWELLE)
+        {
+            return false;
+        }
+
+        return sichtbar(e);
+    }
+
     public static boolean sichtbar(Eintrag e)
     {
         if (e.lagen == null || e.lagen.isEmpty())
@@ -279,7 +312,8 @@ public class RigCtrl
                     Integer.parseInt(farbe.getString("aktiv"), 16),
                     c.getFloat("breite", 1F), c.getString("schalter"),
                     c.getBool("ik", false), c.getBool("dragRot", false),
-                    c.getBool("fest", false), strings(c.getList("lagen")), zuege));
+                    c.getBool("fest", false), strings(c.getList("lagen")), zuege,
+                    c.has("versteckt") ? c.getMap("versteckt") : null, c.getBool("verbunden", false)));
             }
         }
 

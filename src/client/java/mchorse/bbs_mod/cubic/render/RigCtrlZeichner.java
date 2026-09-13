@@ -51,11 +51,13 @@ public class RigCtrlZeichner
          * 23 von 30 Render-Stapelabzuegen unter diesem Pfad, 3 FPS im Editor. */
         mchorse.bbs_mod.forms.renderers.utils.BildFrameCache.anlegen();
 
+        BOBJArmature armature = RigCtrl.armatureVon(entity);
+
         try
         {
         for (RigCtrl.Eintrag e : rig)
         {
-            if (!RigCtrl.sichtbar(e))
+            if (!RigCtrl.sichtbar(e, armature))
             {
                 continue;
             }
@@ -133,7 +135,7 @@ public class RigCtrlZeichner
 
         for (RigCtrl.Eintrag e : rig)
         {
-            if (!RigCtrl.sichtbar(e))
+            if (!RigCtrl.sichtbar(e, armature))
             {
                 continue;
             }

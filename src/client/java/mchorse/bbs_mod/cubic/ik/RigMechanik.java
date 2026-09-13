@@ -1,20 +1,14 @@
 package mchorse.bbs_mod.cubic.ik;
 
-import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.bobj.BOBJArmature;
+import mchorse.bbs_mod.bobj.BOBJBBone;
 import mchorse.bbs_mod.bobj.BOBJBone;
 import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
-import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.resources.Link;
 
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,58 +16,38 @@ import java.util.Map;
 
 /**
  * Fuehrt den importierten Constraint-Graphen des Blender-Rigs aus — BBS erzeugt keine
- * Rig-Mechanik mehr, es vollzieht Blenders nach. Der ganze Matrix-Durchlauf liegt hier,
- * weil die Reihenfolge eine andere ist als BBS' Eltern-vor-Kind: das Werkzeug hat sie
- * topologisch vorberechnet (Ziel vor Besitzer). Was ein Typ noch nicht kann, wird in
- * {@link #unbekannt} GEZAEHLT, nie stillschweigend uebergangen.
+ * Rig-Mechanik mehr, es vollzieht Blenders nach: {@code BKE_pose_where_is_bone} je Knochen
+ * (Kanal-Treiber, Elternuebergabe, Constraint-Stapel in Blenders WELTRAUM ueber
+ * {@link RigRahmen}/{@link RigRaum}, Einfluss als {@code interp_m4_m4m4}), IK-Baeume an der
+ * Stelle, an der ihre Gruppe faellig ist ({@link RigIKKetten}), danach die B-Bone-Segmente
+ * ({@link RigBBone}). Was ein Typ noch nicht kann, wird in {@link #unbekannt} GEZAEHLT.
  */
 public final class RigMechanik implements BOBJArmature.Zwang
 {
-    record Zwang(String typ, String ziel, float einfluss, boolean welt,
-        boolean nutzX, boolean nutzY, boolean nutzZ, String spur, String sperre,
-        MapType daten, float[] jetzt)
-    {
-        /** Die Staerke DIESES Bildes — getrieben, wenn ein Treiber dranhaengt.
-         * {@link #einfluss} ist nur der feste Wert aus der Datei. */
-        float staerke()
-        {
-            return this.jetzt[0];
-        }
-    }
-
     private final List<String> reihenfolge;
-    private final Map<String, List<Zwang>> proBone;
-    /** Typen, die dieses Rig braucht und Stufe 1 noch nicht kann — mit Anzahl. */
+    /** Constraint-Stapel je Knochen (ohne IK), in Blenders Stapelreihenfolge. */
+    private final Map<String, List<MapType>> proBone;
+    /** Typen, die dieses Rig braucht und die Laufzeit nicht kann — mit Anzahl. */
     public final Map<String, Integer> unbekannt = new HashMap<>();
     /** Blenders Treiber: IK/FK, Space-Switching, Stretch. Der Schaltmechanismus. */
     public final RigTreiber treiber = new RigTreiber();
 
-    /** Blenders eigener Solver, portiert — ersetzt BBS' IKTreeSolver. */
     RigIKKetten ketten;
-
-    /** Shape-Key-Name -> Treiber. Das ist die Mechanik eines Gesichts-Boards. */
     final Map<String, MapType> shapeTreiber = new HashMap<>();
-
-    /**
-     * Ruhedaten-Flags je Knochen, die von Blenders Vorgabe abweichen — nur die, die
-     * abweichen, darum meist eine Handvoll. Sie gehoeren nicht in den Constraint-Stapel,
-     * sondern an den Knochen selbst: sie aendern, wie die ELTERNLAGE weitergereicht wird.
-     */
     final Map<String, MapType> knochenFlags = new HashMap<>();
-
-    /** Pose-Kanaele, die das Rig AUSGELIEFERT mitbringt (Blenders {@code matrix_basis});
-     *  der BOBJ traegt nur die Ruhelage. Rigify backt sie in `MCH-*_foot_parent.*`. */
+    final Map<String, MapType> huellen = new HashMap<>();
+    /** Pose-Kanaele, die das Rig AUSGELIEFERT mitbringt (Blenders {@code matrix_basis}). */
     final Map<String, Matrix4f> ruhekanal = new HashMap<>();
-
-    /** Knochen mit {@code use_connect}: ihr Kopf klebt am Elternende, auch gegen einen
-     *  Constraint. Kommt aus {@code rig.json} (knochen.*.verbunden). */
-    final java.util.Set<String> verbunden = new java.util.HashSet<>();
-
-    /** Treiber, die direkt in die POSE eines Knochens schreiben statt in einen Constraint —
-     *  Rigifys Fingerkruemmung, Auto-Rig Pros no-stretch-Griffe. */
     final Map<String, List<MapType>> kanalTreiber = new HashMap<>();
+    final List<MapType> propTreiber = new ArrayList<>();
+    final List<MapType> bboneTreiber = new ArrayList<>();
+    RigRahmen rahmen = RigRahmen.einheit();
+    /** {@code pose_position == REST}: Blender zeigt dann die Ruhelage, ohne Pose und Constraints. */
+    boolean ruhelage;
 
-    RigMechanik(List<String> reihenfolge, Map<String, List<Zwang>> proBone)
+    private final List<String> bboneKnochen = new ArrayList<>();
+
+    RigMechanik(List<String> reihenfolge, Map<String, List<MapType>> proBone)
     {
         this.reihenfolge = reihenfolge;
         this.proBone = proBone;
@@ -86,15 +60,11 @@ public final class RigMechanik implements BOBJArmature.Zwang
     }
 
     /**
-     * Haengt die Mechanik an die Armature, falls das Modell eine mitbringt. Je Frame billig
-     * (nach dem ersten Laden ist es ein Map-Zugriff).
+     * Haengt die Mechanik an die Armature, falls das Modell eine mitbringt.
      *
-     * ⛔ Die ARMATURE haelt die Mechanik fest, nicht der Cache. Wer hier nur auf
-     * {@code zwang != null} prueft, laesst nach {@link #leeren()} — Hotswap, neu
-     * exportiertes rig.json — die ALTE Fassung haengen: heute dreimal darauf
-     * hereingefallen, einmal mit NullPointerException im Bild, weil ein neu
-     * dazugekommenes Feld auf dem alten Objekt fehlte. Verglichen wird darum gegen das,
-     * was der Loader JETZT liefert.
+     * ⛔ Die ARMATURE haelt die Mechanik fest, nicht der Cache: nach {@link #leeren()}
+     * (Hotswap, neu exportiertes rig.json) muss die ALTE Fassung ersetzt werden — verglichen
+     * wird darum gegen das, was der Loader JETZT liefert.
      */
     public static void installieren(BOBJModel model, String modellId)
     {
@@ -121,35 +91,304 @@ public final class RigMechanik implements BOBJArmature.Zwang
         mechanik.flaggen(armature);
     }
 
-    /**
-     * Setzt die Ruhedaten-Flags auf die Knochen DIESER Armature. Muss je Armature laufen,
-     * nicht je Modell-Id: die Mechanik ist geteilt, die Knochen sind es nicht.
-     */
+    /** Setzt Blenders Knochen-Flags, Huellen und B-Bone-Daten auf DIESE Armature. */
     private void flaggen(BOBJArmature armature)
     {
-        for (Map.Entry<String, MapType> e : this.knochenFlags.entrySet())
+        this.treiber.rahmen = this.rahmen;
+        armature.rigPoseWandler = this.rahmen.poseWandler();
+        this.bboneKnochen.clear();
+
+        for (BOBJBone bone : armature.orderedBones)
         {
-            BOBJBone bone = armature.bones.get(e.getKey());
+            MapType f = this.knochenFlags.get(bone.name);
+            String skala = f == null ? null : f.getString("skala");
+            String modus = f == null ? null : f.getString("dreh_modus");
+
+            bone.elternraumVerschiebung = f != null && !f.getBool("lokal_loc", true);
+            bone.skalenErbe = skala == null || skala.isEmpty() || "FULL".equals(skala) ? null : skala;
+            bone.verbunden = f != null && f.getBool("verbunden", false);
+            bone.keineElternDrehung = f != null && !f.getBool("erbt_dreh", true);
+            bone.eulerOrdnung = modus != null && modus.length() == 3 && !"XYZ".equals(modus) ? modus : null;
+            bone.drehModus = modus == null || modus.isEmpty() || "XYZ".equals(modus) ? null : modus;
+            bone.bbone = f != null && f.has("bbone") ? bbone(f.getMap("bbone")) : null;
+
+            if (bone.bbone != null)
+            {
+                this.bboneKnochen.add(bone.name);
+            }
+
+            MapType h = this.huellen.get(bone.name);
+
+            bone.huelle = h == null ? null : new float[] {h.getFloat("kopf_radius", 0F),
+                h.getFloat("schwanz_radius", 0F), h.getFloat("abstand", 0F)};
+            bone.huelleMult = h != null && h.getBool("mult_huelle", false);
+        }
+
+        for (String name : this.bboneKnochen)
+        {
+            BOBJBBone d = armature.bones.get(name).bbone;
+
+            for (int i = 0; i < 2; i++)
+            {
+                d.griffKnochen[i] = d.griff[i] == null ? null : armature.bones.get(d.griff[i]);
+            }
+        }
+
+        RigBBone.kinderZuweisen(armature);
+    }
+
+    private static BOBJBBone bbone(MapType m)
+    {
+        BOBJBBone d = new BOBJBBone();
+
+        d.segmente = m.getInt("segmente", 1);
+        d.x = m.getFloat("x", 0F);
+        d.z = m.getFloat("z", 0F);
+        d.mapping = m.getString("mapping", "STRAIGHT");
+        d.endrollAlsInroll = m.getBool("endroll_als_inroll", false);
+        d.skaliertEasing = m.getBool("skaliert_easing", false);
+
+        ListType typ = m.getList("griff_typ");
+        ListType griff = m.getList("griff");
+        ListList skala = new ListList(m.getList("griff_skala"));
+        ListType ease = m.getList("griff_ease");
+
+        for (int i = 0; i < 2; i++)
+        {
+            d.griffTyp[i] = typ == null || i >= typ.size() ? "AUTO" : typ.getString(i);
+            d.griff[i] = griff == null || i >= griff.size() ? null : griff.getString(i);
+            d.griffEase[i] = ease != null && i < ease.size() && ease.getBool(i);
+
+            for (int k = 0; k < 3; k++)
+            {
+                d.griffSkala[i][k] = skala.bool(i, k);
+            }
+        }
+
+        ebene(m.getMap("ruhe"), d.ruheEase, d.ruheRoll, d.ruheKurveIn, d.ruheKurveOut, d.ruheSkalaIn, d.ruheSkalaOut);
+        ebene(m.getMap("pose"), d.poseEase, d.poseRoll, d.poseKurveIn, d.poseKurveOut, d.poseSkalaIn, d.poseSkalaOut);
+
+        return d;
+    }
+
+    private record ListList(ListType l)
+    {
+        boolean bool(int i, int k)
+        {
+            ListType inner = this.l == null || i >= this.l.size() ? null : this.l.getList(i);
+
+            return inner != null && k < inner.size() && inner.getBool(k);
+        }
+    }
+
+    private static void ebene(MapType m, float[] ease, float[] roll, float[] kurveIn, float[] kurveOut,
+                              float[] skalaIn, float[] skalaOut)
+    {
+        if (m == null)
+        {
+            return;
+        }
+
+        fuelle(m.getList("ease"), ease);
+        fuelle(m.getList("roll"), roll);
+        fuelle(m.getList("kurve_in"), kurveIn);
+        fuelle(m.getList("kurve_out"), kurveOut);
+        fuelle(m.getList("skala_in"), skalaIn);
+        fuelle(m.getList("skala_out"), skalaOut);
+    }
+
+    private static void fuelle(ListType l, float[] ziel)
+    {
+        for (int i = 0; l != null && i < ziel.length && i < l.size(); i++)
+        {
+            ziel[i] = l.getFloat(i);
+        }
+    }
+
+    /* ================== Auswertung ================== */
+
+    @Override
+    public boolean auswerten(BOBJArmature armature)
+    {
+        this.treiber.knochen = armature;
+        this.treiber.rahmen = this.rahmen;
+
+        if (this.ruhelage)
+        {
+            for (BOBJBone bone : armature.orderedBones)
+            {
+                bone.mat.set(bone.boneMat);
+                bone.originMat.set(bone.boneMat);
+                armature.matrices[bone.index] = bone.hautMatrix();
+            }
+
+            return true;
+        }
+
+        this.eigenschaftsTreiber();
+
+        java.util.Set<BOBJBone> verarbeitet = new java.util.HashSet<>();
+
+        for (String name : this.reihenfolge)
+        {
+            BOBJBone bone = armature.bones.get(name);
 
             if (bone == null)
             {
                 continue;
             }
 
-            bone.elternraumVerschiebung = !e.getValue().getBool("lokal_loc", true);
+            /* ⛔ VOR compute(): Kanal-Treiber schreiben die Pose, aus der compute() rechnet. */
+            for (MapType k : this.kanalTreiber.getOrDefault(name, List.of()))
+            {
+                kanalSetzen(bone, k, this.treiber.wert(k.getMap("treiber"), 0F));
+            }
 
-            String skala = e.getValue().getString("skala");
+            for (MapType k : this.bboneTreiber)
+            {
+                if (name.equals(k.getString("bone")))
+                {
+                    bboneSetzen(bone, k, this.treiber.wert(k.getMap("treiber"), 0F));
+                }
+            }
 
-            bone.skalenErbe = skala == null || skala.isEmpty() || "FULL".equals(skala)
-                ? null : skala;
+            armature.matrices[bone.index] = bone.compute();
+
+            Matrix4f kanal = this.ruhekanal.get(name);
+
+            if (kanal != null)
+            {
+                /* Wirkt wie Blenders matrix_basis: im eigenen Ruheraum, VOR den Constraints. */
+                bone.mat.mul(kanal);
+                bone.originMat.mul(kanal);
+            }
+
+            List<MapType> liste = this.proBone.get(name);
+
+            if (liste != null && !liste.isEmpty())
+            {
+                this.zwaenge(armature, bone, liste);
+            }
+
+            armature.matrices[bone.index] = bone.hautMatrix();
+
+            verarbeitet.add(bone);
+
+            if (this.ketten != null && this.ketten.hat(name))
+            {
+                List<BOBJBone> kette = this.ketten.loese(armature, name, this.treiber, this.rahmen);
+
+                for (BOBJBone b : kette)
+                {
+                    armature.matrices[b.index] = b.hautMatrix();
+                }
+
+                this.nachrechnen(armature, kette, verarbeitet);
+            }
+        }
+
+        /* Segmente NACH der ganzen Pose: die Griffe sind fremde Knochen mit Endlage. */
+        for (String name : this.bboneKnochen)
+        {
+            RigBBone.cacheBerechnen(this.rahmen, armature.bones.get(name));
+        }
+
+        return true;
+    }
+
+    /**
+     * Nach einer IK-Loesung: Knochen, die schon gerechnet waren und unter einem Kettenknochen
+     * haengen, ohne selbst zur Kette zu gehoeren (Spitze bei {@code use_tail=False}, Kinder) —
+     * in Blender haengt ihr BONE_DONE hinter dem IK-Solver, hier wird nachgerechnet.
+     */
+    private void nachrechnen(BOBJArmature armature, List<BOBJBone> kette, java.util.Set<BOBJBone> verarbeitet)
+    {
+        java.util.Set<BOBJBone> ketteSet = new java.util.HashSet<>(kette);
+
+        for (String name : this.reihenfolge)
+        {
+            BOBJBone bone = armature.bones.get(name);
+
+            if (bone == null || !verarbeitet.contains(bone) || ketteSet.contains(bone))
+            {
+                continue;
+            }
+
+            boolean nachfahre = false;
+
+            for (BOBJBone p = bone.parentBone; p != null && !nachfahre; p = p.parentBone)
+            {
+                nachfahre = ketteSet.contains(p);
+            }
+
+            if (!nachfahre)
+            {
+                continue;
+            }
+
+            armature.matrices[bone.index] = bone.compute();
+
+            Matrix4f kanal = this.ruhekanal.get(name);
+
+            if (kanal != null)
+            {
+                bone.mat.mul(kanal);
+                bone.originMat.mul(kanal);
+            }
+
+            List<MapType> liste = this.proBone.get(name);
+
+            if (liste != null && !liste.isEmpty())
+            {
+                this.zwaenge(armature, bone, liste);
+            }
+
+            armature.matrices[bone.index] = bone.hautMatrix();
+            ketteSet.add(bone);
         }
     }
 
+    /** Getriebene Custom Properties (Regler treibt Regler) — typgerecht wie Blender. */
+    private void eigenschaftsTreiber()
+    {
+        for (MapType p : this.propTreiber)
+        {
+            String bone = p.getString("bone");
+            String prop = p.getString("prop");
+            float alt = this.treiber.regler.wertVon(bone, prop, 0F);
+            float v = this.treiber.wert(p.getMap("treiber"), alt);
+            String art = this.treiber.regler.artVon(bone, prop);
+            MapType schema = this.treiber.regler.reglerVon(bone).get(prop);
+
+            /* Custom Properties tragen ihren harten Bereich (id_properties_ui min/max). */
+            if (schema != null && schema.has("min"))
+            {
+                v = Math.max(schema.getFloat("min", -Float.MAX_VALUE), v);
+            }
+
+            if (schema != null && schema.has("max"))
+            {
+                v = Math.min(schema.getFloat("max", Float.MAX_VALUE), v);
+            }
+
+            if ("int".equals(art))
+            {
+                v = (int) v;
+            }
+            else if ("bool".equals(art))
+            {
+                v = v > RigTreiber.BOOL_SCHWELLE ? 1F : 0F;
+            }
+
+            if (!this.treiber.regler.setze(bone, prop, v))
+            {
+                this.unbekannt.merge("prop-treiber:" + bone + "." + prop, 1, Integer::sum);
+            }
+        }
+    }
 
     /**
-     * Einen getriebenen Kanalwert in die Pose schreiben — Blenders Treiber ERSETZT den
-     * Kanal, er addiert nicht.
-     *
+     * Einen getriebenen Kanalwert in die Pose schreiben — Blenders Treiber ERSETZT den Kanal.
      * ⛔ Ein {@code rotation_euler}-Treiber wirkt in Blender nicht, wenn der Knochen im
      * Quaternion-Modus steht; darum bringt der Export den Modus mit.
      */
@@ -173,123 +412,216 @@ public final class RigMechanik implements BOBJArmature.Zwang
         }
     }
 
-    @Override
-    public boolean auswerten(BOBJArmature armature)
+    /** B-Bone-Kanal der Pose- oder Knochen-Ebene, getrieben (Rigifys rubber_tweak). */
+    private static void bboneSetzen(BOBJBone bone, MapType k, float wert)
     {
-        /* TRANSFORMS-Variablen lesen Knochenlagen — der Treiber braucht dafuer die
-         * Armature, an der er gerade rechnet. */
-        this.treiber.knochen = armature;
+        BOBJBBone d = bone.bbone;
 
-        for (String name : this.reihenfolge)
+        if (d == null)
         {
-            BOBJBone bone = armature.bones.get(name);
+            return;
+        }
 
-            if (bone == null)
+        boolean ruhe = k.getBool("ruhe", false);
+        int achse = Math.max(0, Math.min(2, k.getInt("achse", 0)));
+
+        switch (k.getString("feld", ""))
+        {
+            case "bbone_easein" -> (ruhe ? d.ruheEase : d.poseEase)[0] = wert;
+            case "bbone_easeout" -> (ruhe ? d.ruheEase : d.poseEase)[1] = wert;
+            case "bbone_rollin" -> (ruhe ? d.ruheRoll : d.poseRoll)[0] = wert;
+            case "bbone_rollout" -> (ruhe ? d.ruheRoll : d.poseRoll)[1] = wert;
+            case "bbone_curveinx" -> (ruhe ? d.ruheKurveIn : d.poseKurveIn)[0] = wert;
+            case "bbone_curveinz" -> (ruhe ? d.ruheKurveIn : d.poseKurveIn)[1] = wert;
+            case "bbone_curveoutx" -> (ruhe ? d.ruheKurveOut : d.poseKurveOut)[0] = wert;
+            case "bbone_curveoutz" -> (ruhe ? d.ruheKurveOut : d.poseKurveOut)[1] = wert;
+            case "bbone_scalein" -> (ruhe ? d.ruheSkalaIn : d.poseSkalaIn)[achse] = wert;
+            case "bbone_scaleout" -> (ruhe ? d.ruheSkalaOut : d.poseSkalaOut)[achse] = wert;
+            default ->
+            {}
+        }
+    }
+
+    /** {@code BKE_constraints_solve} auf dem Stapel EINES Knochens, in Blenders Weltraum. */
+    private void zwaenge(BOBJArmature armature, BOBJBone bone, List<MapType> liste)
+    {
+        float[] cob = this.rahmen.weltMat(bone);
+        float[] kopfVorher = RigMathe.ort(cob);
+        Matrix4f vorher = new Matrix4f(bone.mat);
+
+        for (MapType c : liste)
+        {
+            if (c.getBool("ungueltig", false) || this.treiber.abgeschaltet(c))
             {
                 continue;
             }
 
-            /* ⛔ VOR compute(): ein Kanal-Treiber schreibt die Pose des Knochens, und
-             * genau daraus rechnet compute() die Matrix. Danach waere es wirkungslos. */
-            List<MapType> kanaele = this.kanalTreiber == null ? null : this.kanalTreiber.get(name);
+            /* ⛔ Treiber ZUERST: der IK/FK-Wechsel ist ein Treiber auf DIESER Influence, und
+             * getriebene Felder (head_tail, eval_time, ...) stehen erst danach im Constraint. */
+            float enf = this.treiber.einfluss(c);
 
-            if (kanaele != null)
+            this.treiber.felderSetzen(c);
+
+            if (enf == 0F)
             {
-                for (MapType k : kanaele)
-                {
-                    kanalSetzen(bone, k, this.treiber.wert(k.getMap("treiber"), 0F));
-                }
+                continue;
             }
 
-            armature.matrices[bone.index] = bone.compute();
+            float[] eigenRaum = RigZiel.eigenRaum(this.rahmen, armature, c);
+            float[] oldmat = RigMathe.kopie(cob);
+            String eigen = c.getString("raum_o", "WORLD");
 
-            /* ⛔ null-fest: ein per Hotswap dazugekommenes Feld ist auf bestehenden
-             * Instanzen null, nicht sein Initialisierer. */
-            Matrix4f kanal = this.ruhekanal == null ? null : this.ruhekanal.get(name);
+            cob = RigRaum.wandle(this.rahmen, bone, bone, eigenRaum, cob, RigRaum.WELT, eigen, false);
 
-            if (kanal != null)
+            boolean einmal = this.anwenden(armature, bone, cob, c, eigenRaum);
+
+            if (!einmal)
             {
-                /* Der ausgelieferte Kanal wirkt wie Blenders matrix_basis: im eigenen
-                 * Ruheraum, VOR den Constraints, und die Kinder erben ihn ueber mat. */
-                bone.mat.mul(kanal);
-                bone.originMat.mul(kanal);
-                armature.matrices[bone.index] = bone.hautMatrix();
+                cob = RigRaum.wandle(this.rahmen, bone, bone, eigenRaum, cob, eigen, RigRaum.WELT, false);
             }
 
-            List<Zwang> liste = this.proBone.get(name);
-
-            /* ⛔ KEIN vorzeitiges continue mehr, wenn die Liste leer ist. Genau daran
-             * lief die IK ins Leere: die vier Knochen, die eine IK tragen, haben
-             * SONST keinen Constraint — ihre Liste ist also null, und der
-             * IK-Block darunter wurde nie erreicht (gemessen 2026-08-14:
-             * Ziel wanderte, Kette stand still). */
-            if (liste != null)
+            /* Einfluss < 1 mischt in Blender das ERGEBNIS mit dem Zustand davor — polar
+             * zerlegt, nicht elementweise (interp_m4_m4m4 seit 4.2). */
+            if (enf < 1F)
             {
-                Matrix4f vorher = new Matrix4f(bone.mat);
-
-                for (Zwang z : liste)
-                {
-                    BOBJBone ziel = z.ziel() == null ? bone : armature.bones.getOrDefault(z.ziel(), bone);
-
-                    /* ⛔ Treiber ZUERST. Der IK/FK-Wechsel ist kein Constraint, sondern
-                     * ein Treiber auf DIESER Influence: die ORG-Kette kopiert von der
-                     * FK- UND der IK-Kette, und der zweite laeuft auf 1-IK_FK. Steht er
-                     * fest auf 1, gewinnt IK immer und die FK-Controls sind tot. */
-                    z.jetzt()[0] = Math.min(1F,
-                        this.treiber.wert(z.daten().getMap("treiber"), z.einfluss()));
-
-                    if (z.jetzt()[0] > 0F && !this.abgeschaltet(z))
-                    {
-                        anwenden(armature, bone, ziel, z);
-                    }
-                }
-
-                /* ⛔ Ein VERBUNDENER Knochen klebt mit dem Kopf am Elternende: Blender
-                 * laesst einen Constraint ihn drehen, aber nicht verschieben. */
-                if (this.verbunden != null && this.verbunden.contains(name))
-                {
-                    bone.mat.setTranslation(vorher.getTranslation(new Vector3f()));
-                }
-
-                /* ⛔ originMat MUSS mitwandern. Das Mesh liest mat, die CONTROL-WIDGETS
-                 * lesen originMat (ModelInstance.captureMatrices -> MatrixCache.origin);
-                 * ohne das blieben genau die Child-Of-Controls stehen, waehrend die Figur
-                 * mit dem Master wegging (gemessen 2026-08-14). Derselbe Welt-Effekt auf
-                 * beide: das Delta, das die Constraints erzeugt haben. */
-                bone.originMat.set(new Matrix4f(bone.mat)
-                    .mul(vorher.invert())
-                    .mul(bone.originMat));
-
-                armature.matrices[bone.index] = bone.hautMatrix();
-            }
-
-            /* IK schreibt die GANZE Kette neu, also auch Knochen, die in dieser
-             * Reihenfolge schon dran waren — genau wie Blenders IK-Durchgang. */
-            if (this.ketten != null && this.ketten.hat(name))
-            {
-                for (BOBJBone kettenBone : this.ketten.loese(armature, name, this.treiber))
-                {
-                    armature.matrices[kettenBone.index] = kettenBone.hautMatrix();
-                }
+                cob = RigZerlegung.interpoliere(oldmat, cob, enf);
             }
         }
 
-        return true;
+        /* "prevent constraints breaking a chain": ein verbundener Kopf bleibt am Elternende. */
+        if (bone.verbunden)
+        {
+            RigMathe.setzeOrt(cob, kopfVorher);
+        }
+
+        this.rahmen.setzeWeltMat(bone, cob);
+
+        /* ⛔ originMat MUSS mitwandern: das Mesh liest mat, die Control-Widgets originMat. */
+        bone.originMat.set(new Matrix4f(bone.mat).mul(vorher.invert()).mul(bone.originMat));
     }
 
-    /** Blenders Constraints im Armature-Raum, auf die Matrix des Besitzers. */
-    /** Rohe Constraint-Daten eines Knochens, in Auswertungsreihenfolge — fuer {@link RigSnap}. */
-    public List<MapType> constraintsVon(String bone)
+    /** Ein Constraint auf {@code cob} (im Besitzerraum); true = Child Of hat SPACEONCE gesetzt. */
+    private boolean anwenden(BOBJArmature armature, BOBJBone bone, float[] cob, MapType c, float[] eigenRaum)
     {
-        List<Zwang> l = this.proBone.get(bone);
-        List<MapType> raus = new ArrayList<>();
+        String typ = c.getString("typ", "");
+        RigZwangBasis.Besitzer b = new RigZwangBasis.Besitzer(this.rahmen, bone, RigTreiber.ordnung(bone));
 
-        for (Zwang z : l == null ? List.<Zwang>of() : l)
+        switch (typ)
         {
-            raus.add(z.daten());
+            case "LIMIT_LOCATION" -> RigZwangGrenze.limitLocation(cob, c);
+            case "LIMIT_ROTATION" -> RigZwangGrenze.limitRotation(cob, c, b);
+            case "LIMIT_SCALE" -> RigZwangGrenze.limitScale(cob, c);
+            case "MAINTAIN_VOLUME" -> RigZwangLage.maintainVolume(cob, c);
+            case "ARMATURE" -> this.armatur(armature, bone, cob, c);
+            case "PIVOT" -> RigZwangLage.pivot(cob, this.ziel(armature, c, bone, eigenRaum, typ), c, b);
+            case "ACTION" ->
+            {
+                float[] m = RigZwangAction.actionMatrix(this.ziel(armature, c, bone, eigenRaum, typ), c, b, 0F);
+
+                if (m != null)
+                {
+                    RigZwangKopie.copyTransforms(cob, m, RigZwangBasis.text(c, "mix_mode", "mischung", "AFTER_FULL"), false);
+                }
+            }
+            default ->
+            {
+                RigZwangBasis.Ziel z = this.ziel(armature, c, bone, eigenRaum, typ);
+
+                if (z == null)
+                {
+                    return false;
+                }
+
+                return this.mitZiel(typ, cob, z, c, b, bone);
+            }
         }
 
-        return raus;
+        return false;
+    }
+
+    private boolean mitZiel(String typ, float[] cob, RigZwangBasis.Ziel z, MapType c, RigZwangBasis.Besitzer b, BOBJBone bone)
+    {
+        switch (typ)
+        {
+            case "COPY_LOCATION" -> RigZwangKopie.copyLocation(cob, z, c);
+            case "COPY_ROTATION" -> RigZwangKopie.copyRotation(cob, z, c, b);
+            case "COPY_SCALE" -> RigZwangKopie.copyScale(cob, z, c);
+            case "COPY_TRANSFORMS" -> RigZwangKopie.copyTransforms(cob, z.matrix(),
+                RigZwangBasis.text(c, "mix_mode", "mischung", "REPLACE"),
+                RigZwangBasis.flag(c, "remove_target_shear", null, false));
+            case "LIMIT_DISTANCE" -> RigZwangGrenze.limitDistance(cob, z, c);
+            case "TRACK_TO" -> RigZwangSpur.trackTo(cob, z, c);
+            case "LOCKED_TRACK" -> RigZwangSpur.lockedTrack(cob, z, c);
+            case "DAMPED_TRACK" -> RigZwangSpur.dampedTrack(cob, z, c);
+            case "STRETCH_TO" -> RigZwangStreck.stretchTo(cob, z, c, bone);
+            case "TRANSFORM" -> RigZwangTransform.transformation(cob, z, c, b);
+            case "FLOOR" -> RigZwangLage.floor(cob, z, c);
+            case "CHILD_OF" ->
+            {
+                RigZwangLage.childOf(cob, z, c, b);
+
+                return true;
+            }
+            default -> this.unbekannt.merge(typ, 1, Integer::sum);
+        }
+
+        return false;
+    }
+
+    /** {@code constraint_target_to_mat4} + Zielraum; null = kein gueltiges Ziel (Blender rechnet dann nicht). */
+    private RigZwangBasis.Ziel ziel(BOBJArmature armature, MapType c, BOBJBone besitzer, float[] eigenRaum, String typ)
+    {
+        String name = c.getString("ziel", "");
+        boolean objekt = c.getBool("ziel_objekt", false);
+        BOBJBone zb = name == null || name.isEmpty() ? null : armature.bones.get(name);
+
+        if (zb == null && !objekt)
+        {
+            return null;
+        }
+
+        float[] m = RigZiel.zielMatrix(this.rahmen, zb, besitzer, eigenRaum, c.getString("raum_z", "WORLD"),
+            RigZwangBasis.zahl(c, "head_tail", "kopf_schwanz", 0F), RigZwangBasis.flag(c, "use_bbone_shape", null, false),
+            "COPY_TRANSFORMS".equals(typ));
+
+        return new RigZwangBasis.Ziel(m, zb, zb == null ? "XYZ" : RigTreiber.ordnung(zb));
+    }
+
+    /** Armature-Constraint: gewichtete Verform-Matrizen der Ziele, Gewichte getrieben. */
+    private void armatur(BOBJArmature armature, BOBJBone bone, float[] cob, MapType c)
+    {
+        ListType ziele = c.getList("ziele");
+
+        if (ziele == null)
+        {
+            return;
+        }
+
+        List<BOBJBone> bs = new ArrayList<>(ziele.size());
+        float[] gewichte = new float[ziele.size()];
+
+        for (int i = 0; i < ziele.size(); i++)
+        {
+            MapType t = ziele.getMap(i);
+
+            gewichte[i] = RigTreiber.klemme("weight", this.treiber.wert(t.getMap("treiber"), t.getFloat("gewicht", 0F)));
+            bs.add(armature.bones.get(t.getString("bone", "")));
+        }
+
+        boolean quaternion = c.getBool("quaternion", RigZwangBasis.flag(c, "use_deform_preserve_volume", null, false));
+        boolean huellen = c.getBool("huellen", RigZwangBasis.flag(c, "use_bone_envelopes", null, false));
+        float[] eigenKopf = RigZwangBasis.flag(c, "use_current_location", null, false)
+            ? RigMathe.ort(cob) : RigMathe.ort(this.rahmen.zuWelt(bone.boneMat.get(new float[16])));
+
+        RigZwangArmature.armature(cob, bs, gewichte, this.rahmen, quaternion, huellen, eigenKopf);
+    }
+
+    /* ================== Schnittstelle fuer Snap, Regler, Zeichner ================== */
+
+    /** Rohe Constraint-Daten eines Knochens (ohne IK), in Stapelreihenfolge — fuer {@link RigSnap}. */
+    public List<MapType> constraintsVon(String bone)
+    {
+        return new ArrayList<>(this.proBone.getOrDefault(bone, List.of()));
     }
 
     /** Die topologische Auswertungsreihenfolge — Ziel vor Besitzer. */
@@ -298,11 +630,11 @@ public final class RigMechanik implements BOBJArmature.Zwang
         return this.reihenfolge;
     }
 
-    /** Schreibt die getriebenen Shape-Key-Werte in {@code ziel}, ⛔ NUR die getriebenen:
-     *  was der Animator selbst gesetzt hat, bleibt stehen. Gibt deren Anzahl zurueck. */
+    /** Schreibt die getriebenen Shape-Key-Werte in {@code ziel}, ⛔ NUR die getriebenen. */
     public int shapeKeys(BOBJArmature armature, mchorse.bbs_mod.obj.shapes.ShapeKeys ziel)
     {
         this.treiber.knochen = armature;
+        this.treiber.rahmen = this.rahmen;
 
         if (ziel == null || this.shapeTreiber.isEmpty())
         {
@@ -320,344 +652,14 @@ public final class RigMechanik implements BOBJArmature.Zwang
         return gesetzt;
     }
 
-    /** Ob dieses Rig ueberhaupt Shape Keys treibt — spart je Bild eine Kopie. */
     public boolean treibtShapeKeys()
     {
         return !this.shapeTreiber.isEmpty();
     }
 
-    /**
-     * Der Pol-Control, der an {@code bone} GERADE wirkt — oder {@code null}. Der Snap
-     * schwenkt danach anders: mit Pol ueber dessen Ort, ohne Pol ueber die Drehung des
-     * Basis-Controls (Rigifys zwei Zweige in {@code compute_base_rotation}).
-     */
+    /** Der Pol-Control, der an {@code bone} GERADE wirkt — oder {@code null}. */
     public String polVon(String bone)
     {
         return this.ketten == null ? null : this.ketten.polVon(bone, this.treiber);
     }
-
-    /**
-     * Getriebenes An/Aus. ⛔ {@code mute} und {@code enabled} sind gegenlaeufig —
-     * ohne das Feld schaltet Rigifys {@code pole_vector} den Constraint genau
-     * falsch herum. Fehlt der Treiber, gilt der feste Zustand aus der Datei.
-     */
-    private boolean abgeschaltet(Zwang z)
-    {
-        MapType t = z.daten().getMap("treiber_aus");
-
-        if (t == null)
-        {
-            return false;
-        }
-
-        float v = this.treiber.wert(t, 0F);
-
-        return "enabled".equals(t.getString("feld")) ? v < 0.5F : v >= 0.5F;
-    }
-
-    /**
-     * ⛔ EINFLUSS WIRD ZENTRAL GEMISCHT, NICHT JE ZWANG: Blender wertet jeden Zwang mit
-     * VOLLER Staerke aus und mischt danach das Ergebnis mit dem Zustand davor
-     * ({@code blend_m4_m4m4} am Ende von {@code BKE_constraints_solve}).
-     */
-    private static void anwenden(BOBJArmature armature, BOBJBone eigenBone,
-        BOBJBone zielBone, Zwang z)
-    {
-        float w = Math.min(1F, z.staerke());
-
-        if (w <= 0F)
-        {
-            return;
-        }
-
-        if (w < 1F)
-        {
-            Matrix4f vorher = new Matrix4f(eigenBone.mat);
-
-            vollAnwenden(armature, eigenBone, zielBone, z);
-            RigZwaenge.mische(eigenBone.mat, vorher, w);
-
-            return;
-        }
-
-        vollAnwenden(armature, eigenBone, zielBone, z);
-    }
-
-    private static void vollAnwenden(BOBJArmature armature, BOBJBone eigenBone,
-        BOBJBone zielBone, Zwang z)
-    {
-        Matrix4f eigen = eigenBone.mat;
-        Matrix4f ziel = zielBone.mat;
-        String typ = z.typ() == null ? "" : z.typ();
-
-        /* ⛔ LOKALER RAUM: Blender kopiert dann nicht die Weltlage, sondern die
-         * ABWEICHUNG VON DER RUHELAGE. Im Weltraum gerechnet faellt der Knochen auf
-         * die Stelle des Ziels, statt gleich weit auszulenken — sichtbar an Fingern
-         * und Zehen, die ineinanderfallen. */
-        if (!z.welt() && typ.startsWith("COPY_"))
-        {
-            Matrix4f basis = RigZwaenge.ruheBasis(eigenBone);
-            Matrix4f lokalEigen = new Matrix4f(basis).invert().mul(eigen);
-
-            kopieren(lokalEigen,
-                new Matrix4f(RigZwaenge.ruheBasis(zielBone)).invert().mul(ziel), z);
-            eigen.set(basis.mul(lokalEigen));
-
-            return;
-        }
-
-        switch (typ)
-        {
-            /* Armature traegt seine Ziele als gewichtete LISTE, nicht ueber z.ziel(). */
-            case "ARMATURE" -> armaturZwang(armature, eigen, z);
-            case "LIMIT_DISTANCE" -> abstandsZwang(armature, eigen, ziel, z);
-            /* Fuss-Rolle: der Ort des Roll-Cursors wird auf die Drehung der Fersen-
-             * und Zehenknochen abgebildet und danach je Achse geklemmt. */
-            case "TRANSFORM", "LIMIT_ROTATION", "LIMIT_LOCATION" ->
-                RigLokal.anwenden(eigenBone, zielBone, typ, z.daten());
-            /* Child Of: der Besitzer erbt die ABWEICHUNG des Ziels von dessen Ruhelage —
-             * Blenders inverse_matrix steht bei erzeugten Rigs in der Ruhepose. */
-            case "CHILD_OF" -> eigen.mulLocal(new Matrix4f(ziel).mul(zielBone.invBoneMat));
-            case "TRACK_TO", "LOCKED_TRACK" -> zielen(eigen, ziel, z);
-            case "DAMPED_TRACK" -> RigZwaenge.dampedTrack(eigen, spurZiel(ziel, z), z.spur(), 1F);
-            case "STRETCH_TO" ->
-            {
-                MapType d = z.daten();
-                /* ⛔ Blender misst gegen data->orglength, die Ruhelaenge des CONSTRAINTS,
-                 * nicht gegen die Knochenlaenge: Rigifys VIS_*-Zeiger sind 0,045 lang und
-                 * ueberspannen eine halbe Beinlaenge. ⛔ volumen ist ein ENUM-STRING; als
-                 * Float gelesen kam still 0 heraus, also NO_VOLUME fuer alle 144. */
-                float ruhe = d == null ? 0F : d.getFloat("ruhe_laenge", 0F);
-                String volumen = d == null ? "VOLUME_XZX" : d.getString("volumen", "VOLUME_XZX");
-
-                RigZwaenge.stretchTo(eigen, spurZiel(ziel, z), z.spur(),
-                    ruhe > 0F ? ruhe : eigenBone.restLength,
-                    "NO_VOLUME".equals(volumen) ? 0F : 1F, 1F);
-            }
-            default -> kopieren(eigen, ziel, z);
-        }
-    }
-
-    /**
-     * Armature-Constraint: gewichteter Blend der DEFORM-Matrizen der Ziele.
-     * {@code hautMatrix()} IST Blenders {@code chan_mat} — dieselbe Matrix, mit
-     * der die Haut gerechnet wird. Der Constraint tut nichts anderes als der
-     * Armature-MODIFIER, nur an einem Knochen statt an einem Vertex.
-     */
-    private static void armaturZwang(BOBJArmature armature, Matrix4f eigen, Zwang z)
-    {
-        ListType ziele = z.daten() == null ? null : z.daten().getList("ziele");
-
-        if (ziele == null)
-        {
-            return;
-        }
-
-        List<Matrix4f> deform = new ArrayList<>(ziele.size());
-        float[] gewichte = new float[ziele.size()];
-        int n = 0;
-
-        for (int i = 0; i < ziele.size(); i++)
-        {
-            MapType t = (MapType) ziele.get(i);
-            float w = t.getFloat("gewicht", 0F);
-
-            /* Gewicht 0 ueberspringt Blender GANZ — sein Ziel muss nicht einmal
-             * existieren. Genau so haengen Rigifys abgewaehlte Eltern da. */
-            if (w <= 0F)
-            {
-                continue;
-            }
-
-            BOBJBone b = armature.bones.get(t.getString("bone"));
-
-            /* Fehlt ein GEWICHTETES Ziel, laesst Blender den ganzen Constraint
-             * aus — nicht bloss dieses eine Ziel. */
-            if (b == null)
-            {
-                return;
-            }
-
-            deform.add(b.hautMatrix());
-            gewichte[n++] = w;
-        }
-
-        RigZwaenge.armature(eigen, deform, gewichte);
-    }
-
-    /** Limit Distance — bei Rigify im CUSTOM-Raum eines Knochens, siehe parse(). */
-    private static void abstandsZwang(BOBJArmature armature, Matrix4f eigen,
-        Matrix4f ziel, Zwang z)
-    {
-        String raumName = z.daten().getString("raum_bone", "");
-        BOBJBone raumBone = raumName.isEmpty() ? null : armature.bones.get(raumName);
-
-        /* Lieber gar nicht klemmen als im falschen Raum: eine Strecke ohne ihren
-         * Raum ist eine andere Strecke. */
-        if (!raumName.isEmpty() && raumBone == null)
-        {
-            return;
-        }
-
-        Matrix4f raum = raumBone == null ? new Matrix4f() : new Matrix4f(raumBone.mat);
-        Matrix4f rein = new Matrix4f(raum).invert();
-        Matrix4f lokal = new Matrix4f(rein).mul(eigen);
-
-        RigZwaenge.limitDistance(lokal, rein.transformPosition(zielPunkt(ziel, z)),
-            z.daten().getString("modus", "LIMITDIST_INSIDE"),
-            z.daten().getFloat("distanz", 0F), 1F);
-
-        eigen.set(raum.mul(lokal));
-    }
-
-    /** Copy Rotation an {@link RigZwaenge#copyRotation}. ⛔ {@code euler_ordnung} AUTO
-     *  heisst: die Ordnung des BESITZERS gilt — sie liegt als {@code eigner_ordnung}
-     *  daneben, weil ein Quaternion-Knochen in Blender auf XYZ zurueckfaellt. */
-    private static void drehZwang(Matrix4f eigen, Matrix4f ziel, Zwang z)
-    {
-        MapType d = z.daten();
-        String ord = d == null ? "AUTO" : d.getString("euler_ordnung", "AUTO");
-
-        if (ord == null || ord.isEmpty() || "AUTO".equals(ord))
-        {
-            ord = d == null ? "XYZ" : d.getString("eigner_ordnung", "XYZ");
-        }
-
-        RigZwaenge.copyRotation(eigen, ziel, ord,
-            new boolean[] {z.nutzX(), z.nutzY(), z.nutzZ()},
-            new boolean[] {d != null && d.getBool("inv_x", false),
-                           d != null && d.getBool("inv_y", false),
-                           d != null && d.getBool("inv_z", false)},
-            d == null ? "REPLACE" : d.getString("mischung", "REPLACE"), 1F);
-    }
-
-    /** Der Kopier-Kern — im Welt- wie im Lokalraum derselbe, nur mit anderen Matrizen. */
-    private static void kopieren(Matrix4f eigen, Matrix4f ziel, Zwang z)
-    {
-        /* Volle Staerke — der Einfluss wird zentral in anwenden() gemischt. */
-        Vector3f t = eigen.getTranslation(new Vector3f());
-        Vector3f zt = zielPunkt(ziel, z);
-
-        switch (z.typ())
-        {
-            case "COPY_TRANSFORMS" ->
-            {
-                /* ⛔ Blender KOPIERT die Matrix (translike_evaluate), es zerlegt sie
-                 * nicht: ueber Ort/Drehung/Groesse zerlegt geht die SCHERUNG verloren,
-                 * die ein STRETCH_TO erzeugt hat. */
-                eigen.set(ziel).setTranslation(zt);
-            }
-            case "COPY_LOCATION" ->
-            {
-                /* ⛔ Blender setzt NUR die Ortsspalte (`copy_v3_v3(cob->matrix[3], ...)`).
-                 * Der Weg ueber translationRotateScale baute die Matrix neu zusammen und
-                 * warf dabei jede Scherung weg, die ein STRETCH_TO davor erzeugt hatte. */
-                ortKopieren(t, zt, z.daten(), z);
-                eigen.setTranslation(t);
-            }
-            case "COPY_SCALE" ->
-            {
-                MapType d = z.daten();
-
-                RigZwaenge.copyScale(eigen, ziel,
-                    new boolean[] {z.nutzX(), z.nutzY(), z.nutzZ()},
-                    d != null && d.getBool("uniform", false),
-                    d != null && d.getBool("versatz", false),
-                    d == null || d.getBool("multiplizieren", true),
-                    d == null ? 1F : d.getFloat("potenz", 1F), 1F);
-            }
-            case "COPY_ROTATION" ->
-            {
-                /* ⛔ Kein Slerp: Blender rechnet in Euler-Winkeln, je Achse einzeln,
-                 * mit vier Mischmodi. Die nutz_*- und inv_*-Flags lagen bis
-                 * 2026-08-14 ungelesen im Zwang-Record. */
-                drehZwang(eigen, ziel, z);
-            }
-            default ->
-            {
-            }
-        }
-    }
-
-    /** Track To / Locked Track — die Rechnung liegt in {@link RigZwaenge#trackTo}. */
-    private static void zielen(Matrix4f eigen, Matrix4f ziel, Zwang z)
-    {
-        MapType d = z.daten();
-        ListType hoch = d == null ? null : d.getList("hoch_vektor");
-
-        /* Track To legt den Roll ueber die Hoch-Achse fest; ohne den Vektor (alte
-         * Exportdatei) bleibt es beim bisherigen Weg. */
-        if ("TRACK_TO".equals(z.typ()) && hoch != null && hoch.size() >= 3)
-        {
-            /* "Target Z": die Hoch-Referenz ist die Z-Achse des ZIELS, nicht die
-             * Weltachse — beide Fremd-Rigs setzen das an ihren Zehen-Trackern. */
-            Vector3f auf = d.getBool("ziel_z", false)
-                ? new Vector3f(ziel.m20(), ziel.m21(), ziel.m22()).normalize()
-                : new Vector3f(hoch.getFloat(0), hoch.getFloat(1), hoch.getFloat(2));
-
-            RigZwaenge.trackToBasis(eigen, zielPunkt(ziel, z), z.spur(),
-                d.getString("hoch_achse", "UP_Z"), auf);
-
-            return;
-        }
-
-        RigZwaenge.trackTo(eigen, zielPunkt(ziel, z), z.spur(),
-            "LOCKED_TRACK".equals(z.typ()) ? z.sperre().replace("LOCK_", "TRACK_") : null);
-    }
-
-    /** Zielmatrix mit dem Kopf-Schwanz-Punkt als Ort — Blenders {@code head_tail}.
-     *  ⛔ Ohne ihn zielen die Spur-Constraints auf den KOPF, und Rigifys tweak-Knochen
-     *  sitzen per Copy Location genau dort: sie zielten auf sich selbst. */
-    private static Matrix4f spurZiel(Matrix4f ziel, Zwang z)
-    {
-        return new Matrix4f(ziel).setTranslation(zielPunkt(ziel, z));
-    }
-
-    private static Vector3f zielPunkt(Matrix4f ziel, Zwang z)
-    {
-        ListType o = z.daten() == null ? null : z.daten().getList("ziel_offset");
-
-        if (o == null || o.size() < 3)
-        {
-            return ziel.getTranslation(new Vector3f());
-        }
-
-        return ziel.transformPosition(new Vector3f(o.getFloat(0), o.getFloat(1), o.getFloat(2)));
-    }
-
-    /** Ruhe-Basis des Knochens im Armature-Raum: Eltern-Weltmatrix x Ruhelage-relativ. */
-
-    /** Blenders {@code loclike_evaluate}: je Achse kopieren, wahlweise NEGIEREN,
-     *  wahlweise auf den eigenen Ort ADDIEREN (invert_* und use_offset). */
-    private static void ortKopieren(Vector3f eigen, Vector3f ziel, MapType d, Zwang z)
-    {
-        boolean versatz = d != null && d.getBool("versatz", false);
-        float[] eigenAlt = {eigen.x, eigen.y, eigen.z};
-        float[] neu = {ziel.x, ziel.y, ziel.z};
-
-        for (int a = 0; a < 3; a++)
-        {
-            String achse = "xyz".substring(a, a + 1);
-
-            if (!(a == 0 ? z.nutzX() : a == 1 ? z.nutzY() : z.nutzZ()))
-            {
-                neu[a] = eigenAlt[a];
-
-                continue;
-            }
-
-            if (d != null && d.getBool("inv_" + achse, false))
-            {
-                neu[a] = -neu[a];
-            }
-
-            if (versatz)
-            {
-                neu[a] += eigenAlt[a];
-            }
-        }
-
-        eigen.set(neu[0], neu[1], neu[2]);
-    }
-
 }

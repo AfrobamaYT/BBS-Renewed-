@@ -15,21 +15,26 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Liest {@code rig.json} und baut daraus eine {@link RigMechanik}. Getrennt von ihr,
- * weil das EINLESEN einer Datei etwas anderes ist als das Rechnen damit — die
- * Mechanik war mit beidem 856 Zeilen.
+ * weil das EINLESEN einer Datei etwas anderes ist als das Rechnen damit.
  */
 final class RigDatei
 {
+    /** Constraint-Typen, die {@link RigZwangBasis} rechnet; IK loest {@link RigIKKetten}. */
+    private static final Set<String> TYPEN = Set.of("COPY_LOCATION", "COPY_ROTATION", "COPY_SCALE",
+        "COPY_TRANSFORMS", "LIMIT_LOCATION", "LIMIT_ROTATION", "LIMIT_SCALE", "LIMIT_DISTANCE",
+        "TRACK_TO", "LOCKED_TRACK", "DAMPED_TRACK", "STRETCH_TO", "CHILD_OF", "TRANSFORM",
+        "MAINTAIN_VOLUME", "FLOOR", "PIVOT", "ACTION", "ARMATURE");
+
     /** modellId -> Mechanik; leerer Eintrag = Modell hat keine. Lazy (hotswap-sicher). */
     private static Map<String, RigMechanik> proModell;
 
     private RigDatei()
     {}
 
-    /** Beim Models-Reload rufen. */
     static void leeren()
     {
         proModell = null;
@@ -49,11 +54,9 @@ final class RigDatei
 
         RigMechanik mechanik = null;
 
-        try (InputStream rein = BBSMod.getProvider()
-            .getAsset(Link.assets("models/" + modellId + "/rig.json")))
+        try (InputStream rein = BBSMod.getProvider().getAsset(Link.assets("models/" + modellId + "/rig.json")))
         {
-            mechanik = parse((MapType) DataToString.fromString(
-                new String(rein.readAllBytes(), StandardCharsets.UTF_8)));
+            mechanik = parse((MapType) DataToString.fromString(new String(rein.readAllBytes(), StandardCharsets.UTF_8)));
         }
         catch (Exception e)
         {
@@ -82,28 +85,30 @@ final class RigDatei
             reihenfolge.add(ordnung.getString(i));
         }
 
-        Map<String, List<RigMechanik.Zwang>> proBone = new HashMap<>();
+        Map<String, List<MapType>> proBone = new HashMap<>();
         RigMechanik gebaut = new RigMechanik(reihenfolge, proBone);
+
+        gebaut.rahmen = RigRahmen.lesen(wurzel.getList("G"), wurzel.getList("W"));
+        gebaut.ruhelage = "REST".equals(wurzel.getString("pose_position", "POSE"));
+
         MapType flags = wurzel.getMap("knochen");
 
         for (String name : flags == null ? List.<String>of() : flags.keys())
         {
             gebaut.knochenFlags.put(name, flags.getMap(name));
-
-            if (flags.getMap(name).getBool("verbunden", false))
-            {
-                gebaut.verbunden.add(name);
-            }
         }
 
-        ListType kanalTreiber = wurzel.getList("kanal_treiber");
+        MapType huellen = wurzel.getMap("huellen");
 
-        for (int i = 0; kanalTreiber != null && i < kanalTreiber.size(); i++)
+        for (String name : huellen == null ? List.<String>of() : huellen.keys())
         {
-            MapType k = kanalTreiber.getMap(i);
-
-            gebaut.kanalTreiber.computeIfAbsent(k.getString("bone"), x -> new ArrayList<>()).add(k);
+            gebaut.huellen.put(name, huellen.getMap(name));
         }
+
+        listen(wurzel.getList("kanal_treiber"), k -> gebaut.kanalTreiber
+            .computeIfAbsent(k.getString("bone"), x -> new ArrayList<>()).add(k));
+        listen(wurzel.getList("prop_treiber"), gebaut.propTreiber::add);
+        listen(wurzel.getList("bbone_treiber"), gebaut.bboneTreiber::add);
 
         MapType kanaele = wurzel.getMap("ruhekanal");
 
@@ -114,65 +119,31 @@ final class RigDatei
             ListType quat = k.getList("quat");
             ListType skala = k.getList("skala");
 
-            /* Dieselbe Reihenfolge wie BOBJBone.applyTransformations: Ort, Drehung,
-             * Groesse. Blender legt das Quaternion als (w,x,y,z) ab, JOML als (x,y,z,w). */
+            /* Blender legt das Quaternion als (w,x,y,z) ab, JOML als (x,y,z,w). */
             gebaut.ruhekanal.put(name, new Matrix4f()
                 .translate(ort.getFloat(0), ort.getFloat(1), ort.getFloat(2))
-                .rotate(new Quaternionf(quat.getFloat(1), quat.getFloat(2),
-                    quat.getFloat(3), quat.getFloat(0)))
+                .rotate(new Quaternionf(quat.getFloat(1), quat.getFloat(2), quat.getFloat(3), quat.getFloat(0)))
                 .scale(skala.getFloat(0), skala.getFloat(1), skala.getFloat(2)));
         }
 
         for (int i = 0; i < mechanik.size(); i++)
         {
-            MapType c = (MapType) mechanik.get(i);
-            String typ = c.getString("typ");
-            String ziel = c.getString("ziel");
-            float einfluss = c.getFloat("einfluss", 1F);
+            MapType c = mechanik.getMap(i);
+            String typ = c.getString("typ", "");
 
-            /* IK loest der portierte Blender-Solver, unten als eigene Kette. */
             if ("IK".equals(typ))
             {
                 continue;
             }
 
-            boolean welt = armaturRaum(c.getString("raum_o", "WORLD"))
-                && armaturRaum(c.getString("raum_z", "WORLD"));
-
-            /* Die COPY_-Typen kann BBS laengst — bisher scheiterten sie nur am RAUM.
-             * Blenders LOCAL heisst: die Abweichung von der Ruhelage, im Elternraum. */
-            boolean kopie = typ != null && typ.startsWith("COPY_");
-            boolean lokal = "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ)
-                || "LIMIT_LOCATION".equals(typ) || kopie;
-            /* CUSTOM-Raum: ein benannter Knochen IST der Raum. Rigify rechnet
-             * Limit Distance dort, und dort muss es auch gerechnet werden — eine
-             * Strecke in einem skalierten Raum ist eine andere Strecke. */
-            boolean eigenraum = !c.getString("raum_bone", "").isEmpty();
-            /* Limit Rotation klemmt nur sich selbst, Armature traegt seine Ziele
-             * in einer Liste — beide haben kein einzelnes ziel-Feld. */
-            boolean brauchtZiel = !"LIMIT_ROTATION".equals(typ) && !"LIMIT_LOCATION".equals(typ)
-                && !"ARMATURE".equals(typ);
-            /* Blenders Quaternion-/Huellen-Modus des Armature-Constraints ist
-             * eine ANDERE Mathematik (Dual-Quaternionen, Huellgewichte) und nicht
-             * portiert. Laut zaehlen statt still linear rechnen. */
-            boolean andereMathe = "ARMATURE".equals(typ)
-                && (c.getBool("quaternion", false) || c.getBool("huellen", false));
-
-            String warum = !kann(typ) ? "" : andereMathe ? "/mathe"
-                : !(welt || lokal || eigenraum) ? "/raum" : null;
-
-            if (warum != null || (brauchtZiel && (ziel == null || ziel.isEmpty())))
+            if (!TYPEN.contains(typ))
             {
-                gebaut.unbekannt.merge(typ + (warum == null ? "" : warum), 1, Integer::sum);
+                gebaut.unbekannt.merge(typ, 1, Integer::sum);
 
                 continue;
             }
 
-            proBone.computeIfAbsent(c.getString("bone"), k -> new ArrayList<RigMechanik.Zwang>())
-                .add(new RigMechanik.Zwang(typ, ziel, einfluss, welt,
-                    c.getBool("nutz_x", true), c.getBool("nutz_y", true), c.getBool("nutz_z", true),
-                    c.getString("spur_achse", "TRACK_Y"), c.getString("sperr_achse", "LOCK_Y"), c,
-                    new float[] {einfluss}));
+            proBone.computeIfAbsent(c.getString("bone"), k -> new ArrayList<>()).add(c);
         }
 
         MapType shapes = wurzel.getMap("shape_treiber");
@@ -182,27 +153,17 @@ final class RigDatei
             gebaut.shapeTreiber.put(name, shapes.getMap(name));
         }
 
-        gebaut.ketten = RigIKKetten.lesen(mechanik, wurzel.getMap("ik_gelenke"));
+        gebaut.ketten = RigIKKetten.lesen(mechanik, wurzel.getMap("ik_gelenke"), wurzel.getList("ik_gruppen"));
         gebaut.treiber.lade(wurzel.getMap("regler"));
 
         return gebaut;
     }
 
-    /** BBS' bone.mat ist Armature-Raum — Blenders POSE. WORLD faellt hier zusammen,
-     *  weil der Exporter Objekt- und Achsenmatrix in die Ruhelagen gebacken hat. */
-    private static boolean armaturRaum(String raum)
+    private static void listen(ListType l, java.util.function.Consumer<MapType> ziel)
     {
-        return "WORLD".equals(raum) || "POSE".equals(raum);
-    }
-
-    private static boolean kann(String typ)
-    {
-        return "COPY_TRANSFORMS".equals(typ) || "COPY_LOCATION".equals(typ)
-            || "COPY_ROTATION".equals(typ) || "COPY_SCALE".equals(typ)
-            || "CHILD_OF".equals(typ) || "TRACK_TO".equals(typ) || "LOCKED_TRACK".equals(typ)
-            || "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ)
-            || "LIMIT_LOCATION".equals(typ)
-            || "DAMPED_TRACK".equals(typ) || "STRETCH_TO".equals(typ)
-            || "ARMATURE".equals(typ) || "LIMIT_DISTANCE".equals(typ);
+        for (int i = 0; l != null && i < l.size(); i++)
+        {
+            ziel.accept(l.getMap(i));
+        }
     }
 }

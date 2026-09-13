@@ -312,6 +312,21 @@ public class BOBJModelVAO implements IModelVAO
         return gerechnet ? this.verzogen : basis;
     }
 
+    /** B-Bone-Segmentwahl je Vertex-Gewicht, einmal aus der Ruhelage (siehe {@code BOBJHaut}). */
+    private mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente;
+
+    private mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente()
+    {
+        if (this.segmente == null)
+        {
+            this.segmente = new mchorse.bbs_mod.bobj.BOBJHaut.Segmente();
+        }
+
+        this.segmente.sichern(this.count);
+
+        return this.segmente;
+    }
+
     public void updateMesh(StencilMap stencilMap, Matrix4f[] matrices)
     {
         /* ⛔ NUR HAEUTEN UND HOCHLADEN, WENN SICH DIE MATRIZEN GEAENDERT HABEN. Gemessen am
@@ -334,9 +349,7 @@ public class BOBJModelVAO implements IModelVAO
         this.letzteMeshSignatur = signatur;
         this.meshGueltig = true;
 
-        Vector4f sum = new Vector4f();
         Vector4f result = new Vector4f(0F, 0F, 0F, 0F);
-        Vector3f sumNormal = new Vector3f();
         Vector3f resultNormal = new Vector3f();
 
         float[] oldVertices = this.ausgangslagen();
@@ -346,45 +359,9 @@ public class BOBJModelVAO implements IModelVAO
 
         for (int i = 0, c = this.count; i < c; i++)
         {
-            int count = 0;
-            float maxWeight = -1;
-            int lightBone = -1;
-
-            for (int w = 0; w < 4; w++)
-            {
-                float weight = this.data.weightData[i * 4 + w];
-
-                if (weight > 0)
-                {
-                    int index = this.data.boneIndexData[i * 4 + w];
-
-                    sum.set(oldVertices[i * 3], oldVertices[i * 3 + 1], oldVertices[i * 3 + 2], 1F);
-                    matrices[index].transform(sum);
-                    result.add(sum.mul(weight));
-
-                    sumNormal.set(oldNormals[i * 3], oldNormals[i * 3 + 1], oldNormals[i * 3 + 2]);
-                    Matrices.TEMP_3F.set(matrices[index]).transform(sumNormal);
-                    resultNormal.add(sumNormal.mul(weight));
-
-                    count++;
-
-                    if (weight > maxWeight)
-                    {
-                        lightBone = index;
-                        maxWeight = weight;
-                    }
-                }
-            }
-
-            if (count == 0)
-            {
-                result.set(oldVertices[i * 3], oldVertices[i * 3 + 1], oldVertices[i * 3 + 2], 1F);
-                resultNormal.set(oldNormals[i * 3], oldNormals[i * 3 + 1], oldNormals[i * 3 + 2]);
-            }
-
-            result.x /= result.w;
-            result.y /= result.w;
-            result.z /= result.w;
+            /* Haeuten wie Blender — EINE Stelle fuer Zeichnen und Messung (BOBJHaut). */
+            int lightBone = mchorse.bbs_mod.bobj.BOBJHaut.vertex(this.armature, oldVertices, oldNormals,
+                this.data.weightData, this.data.boneIndexData, matrices, i, this.segmente(), result, resultNormal);
 
             newVertices[i * 3] = result.x;
             newVertices[i * 3 + 1] = result.y;
@@ -393,9 +370,6 @@ public class BOBJModelVAO implements IModelVAO
             newNormals[i * 3] = resultNormal.x;
             newNormals[i * 3 + 1] = resultNormal.y;
             newNormals[i * 3 + 2] = resultNormal.z;
-
-            result.set(0F, 0F, 0F, 0F);
-            resultNormal.set(0F, 0F, 0F);
 
             if (stencilMap != null)
             {

@@ -152,18 +152,19 @@ public class BOBJModel implements IModel
                  * for gizmo/IK. Mirrors Model.applyPose. */
                 if (bone.orient == null)
                 {
-                    bone.orient = Matrices.toLocalRotationZYXRadians(bone.transform.rotate);
+                    bone.orient = bone.eulerQuaternion(bone.transform.rotate);
                 }
 
                 bone.orient.mul(transform.createRotation());
-                bone.transform.rotate.add(Matrices.toEulerZYXRadians(transform.quat, new Vector3f()));
+                bone.transform.rotate.add(bone.eulerAus(transform.quat, new Vector3f(), new Vector3f()));
             }
             else
             {
                 bone.transform.rotate.add(transform.rotate);
 
                 /* Compose the pose rotation into the orientation quaternion (radians). */
-                bone.composeOrient(Matrices.toQuaternionZYXRadians(transform.rotate.x, transform.rotate.y, transform.rotate.z));
+                /* In Blenders Euler-Ordnung DIESES Knochens (Rigifys Tweaks: ZXY), nicht fest XYZ. */
+                bone.composeOrient(bone.eulerQuaternion(transform.rotate));
             }
         }
     }

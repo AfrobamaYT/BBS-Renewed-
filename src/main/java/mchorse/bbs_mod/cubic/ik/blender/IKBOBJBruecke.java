@@ -1,27 +1,34 @@
 /* Uebersetzt aus Blenders source/blender/ikplugin/intern/iksolver_plugin.cc
- * (execute_posetree / make_dmats / where_is_ik_bone).
+ * (execute_posetree / make_dmats / where_is_ik_bone) und IK_Solver.cpp.
  * SPDX-License-Identifier: GPL-2.0-or-later */
 package mchorse.bbs_mod.cubic.ik.blender;
 
-import mchorse.bbs_mod.bobj.BOBJArmature;
 import mchorse.bbs_mod.bobj.BOBJBone;
+import mchorse.bbs_mod.cubic.ik.RigMathe;
+import mchorse.bbs_mod.cubic.ik.RigZerlegung;
+import mchorse.bbs_mod.cubic.ik.RigVektor;
+import mchorse.bbs_mod.cubic.ik.RigQuaternion;
+import mchorse.bbs_mod.cubic.ik.RigMatrix3;
+import mchorse.bbs_mod.cubic.ik.RigRahmen;
 
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Setzt eine BOBJ-Knochenkette in Blenders Segmentmodell um, loest sie mit dem
- * portierten Solver und schreibt das Ergebnis zurueck.
+ * Loest einen ganzen IK-BAUM (Blenders {@code PoseTree}: mehrere Ketten mit gemeinsamer
+ * Wurzel, mehrere Ziele) mit dem portierten Solver und schreibt das Ergebnis zurueck.
  *
- * ⛔ Das ist die Stelle, an der Paritaet entsteht oder verlorengeht. Blenders
- * Reihenfolge ist bindend und steht hier Schritt fuer Schritt:
- * Delta-Matrizen VOR dem Loesen sichern, Segmente in ELTERN-Raum aufbauen,
- * Ziele in den Raum der Kettenwurzel legen, loesen, dann
- * {@code mat = elter.mat * delta * ikMat} von der Wurzel zur Spitze.
+ * ⛔ Das ist die Stelle, an der Paritaet entsteht oder verlorengeht. Blenders Reihenfolge ist
+ * bindend: Segmente aus den POSE-Matrizen (Blender-Pose-Raum ueber {@link RigRahmen}), Ziele in
+ * den Raum der Wurzel (Elternmatrix normalisiert, Ort = Wurzelkopf), Einfluss ohne Pol als
+ * Zielmischung, mit Pol als Ergebnismischung, danach {@code make_dmats} und
+ * {@code where_is_ik_bone} samt der Kompensation fuer ungleichmaessige Skalierung.
  */
 public final class IKBOBJBruecke
 {
@@ -30,189 +37,491 @@ public final class IKBOBJBruecke
                          double[] min, double[] max, double dehnung)
     {}
 
+    /** Blenders {@code PoseTarget} samt der in DIESEM Bild ausgewerteten Constraint-Felder. */
+    public record Ziel(int tip, float[] zielWelt, float[] polWelt, float einfluss, boolean aus,
+                       boolean position, boolean rotation, float gewicht, float orientGewicht,
+                       double polWinkel)
+    {}
+
+    /** Blenders {@code PoseTree}: Kanaele wurzel-zuerst, Elternindex je Kanal, Ziele. */
+    public static final class Baum
+    {
+        public final List<BOBJBone> pchan = new ArrayList<>();
+        public final List<Integer> parent = new ArrayList<>();
+        public final List<Ziel> ziele = new ArrayList<>();
+        public int iterations;
+        public boolean stretch;
+
+        public boolean wirkt()
+        {
+            for (Ziel z : this.ziele)
+            {
+                if (!z.aus() && z.einfluss() != 0F)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
     private IKBOBJBruecke()
     {}
 
     /**
-     * @param kettenLaenge Anzahl Knochen ab der Spitze aufwaerts (Blenders chain_count)
-     * @param gelenke      je Knochenname; fehlt einer, ist er ein freies Kugelgelenk
-     * @param dehnen       Blenders {@code use_stretch} am IK-Constraint
+     * {@code iksolver_execute_tree}, Schritte 5 und 6, fuer einen Baum, dessen Knochen alle
+     * schon ihre Pose (samt Constraints) haben.
+     *
      * @return true, wenn der Solver konvergiert ist
      */
-    public static boolean loese(BOBJArmature armature, String spitzeName, int kettenLaenge,
-                                Matrix4f zielMat, Matrix4f polMat, double polWinkel,
-                                double gewicht, Map<String, Gelenk> gelenke, boolean dehnen,
-                                int iterationen)
+    public static boolean loese(RigRahmen rahmen, Baum baum, Map<String, Gelenk> gelenke)
     {
-        List<BOBJBone> kette = sammleKette(armature, spitzeName, kettenLaenge);
+        int n = baum.pchan.size();
 
-        if (kette.size() < 2)
+        if (n == 0)
         {
             return false;
         }
 
-        /* ⛔ ERST FRAGEN, OB SICH UEBERHAUPT ETWAS GEAENDERT HAT. Gemessen am 2026-08-21
-         * mit async-profiler: der Solver alloziert ~700 MB/s (4,0 GB double[] und 3,1 GB
-         * Matrix4f in 20 s), 88,7 % aller Allokationen des Prozesses. Folge: Old Gen bei
-         * 91,75 %, ~32 % CPU im G1-Concurrent-Mark, und Routen liefen in 5-Sekunden-
-         * Timeouts, die wie ein Freeze aussahen.
-         *
-         * Der Grund war NICHT teure Mathematik, sondern dass sie lief, waehrend nichts
-         * passierte: bei stehendem Film (`getCursor() == 0`) alle ~350 ms ein voller
-         * Jacobian-Lauf je Kette, mit identischer Eingabe und identischem Ergebnis.
-         *
-         * Deshalb hier ein Ergebnis-Cache statt einer In-Place-Umstellung von IKMat3:
-         * gleiche Eingaben -> das gespeicherte Ergebnis zurueckschreiben, ohne Segmente,
-         * Solver und Iterationen. Das spart den ganzen Lauf, nicht nur seine Allokationen. */
-        long signatur = signatur(kette, zielMat, polMat, polWinkel, gewicht, dehnen, iterationen);
-        Ergebnis zwischen = cache().get(spitzeName);
+        /* ⛔ ERST FRAGEN, OB SICH UEBERHAUPT ETWAS GEAENDERT HAT. Gemessen 2026-08-21 mit
+         * async-profiler: ~700 MB/s Allokation, 88,7 % des Prozesses, bei STEHENDEM Film —
+         * identische Eingabe, identisches Ergebnis, alle ~350 ms ein voller Jacobian-Lauf.
+         * Gleiche Eingaben -> gespeichertes Ergebnis zurueckschreiben. */
+        long signatur = signatur(baum, gelenke);
+        String schluessel = schluessel(baum);
+        Ergebnis zwischen = cache().get(schluessel);
 
-        if (zwischen != null && zwischen.signatur == signatur && zwischen.passt(kette))
+        if (zwischen != null && zwischen.signatur == signatur && zwischen.passt(baum.pchan))
         {
-            zwischen.anwenden(kette);
+            zwischen.anwenden(baum.pchan);
 
             return zwischen.geloest;
         }
 
-        /* make_dmats: das lokale Delta JEDES Knochens sichern, bevor der Solver
-         * die Matrizen anfasst — das Rueckschreiben braucht den Vorher-Zustand.
-         * Aus demselben Grund stehen Laengen und Dehnfaktoren HIER und nicht im
-         * Rueckschreiben: dort ist b.mat schon ueberschrieben. */
-        List<Matrix4f> deltas = new ArrayList<>();
-        double[] laengen = new double[kette.size()];
-        double[] dehnungen = new double[kette.size()];
+        float[][] pose = new float[n][];
+        Map<BOBJBone, float[]> alt = new IdentityHashMap<>();
 
-        for (int a = 0; a < kette.size(); a++)
+        for (int a = 0; a < n; a++)
         {
-            BOBJBone b = kette.get(a);
-            Gelenk g = gelenke == null ? null : gelenke.get(b.name);
-
-            deltas.add(b.parentBone == null
-                ? new Matrix4f(b.mat)
-                : new Matrix4f(b.parentBone.mat).invert().mul(b.mat));
-
-            laengen[a] = b.restLength * IKUmrechnung.ySpaltenLaenge(IKUmrechnung.zuMat3(b.mat));
-
-            /* Blenders {@code tree->stretch && pchan->ikstretch > 0}: erst wenn
-             * BEIDES gesetzt ist, bekommt das Glied den vierten Freiheitsgrad. */
-            dehnungen[a] = dehnen && g != null ? g.dehnung() : 0D;
+            pose[a] = rahmen.poseMat(baum.pchan.get(a));
+            alt.put(baum.pchan.get(a), pose[a]);
         }
 
-        List<IKQSegment> segmente = baueSegmente(kette, gelenke, laengen, dehnungen);
+        IKQSegment[] segs = new IKQSegment[n];
+        double[] laengen = new double[n];
+        double[] dehnungen = new double[n];
 
-        if (segmente == null)
+        if (!baueSegmente(rahmen, baum, gelenke, pose, alt, segs, laengen, dehnungen))
         {
             return false;
         }
 
-        /* rootmat: Drehteil des Elters der Kettenwurzel, Verschiebung deren Kopf.
-         * Das Ziel wird da hineingerechnet, damit die Drehung des Elters NICHT
-         * Teil der Segmentbasis wird — sonst greifen Gelenkgrenzen im falschen
-         * Raum (Blenders eigener Kommentar an dieser Stelle). */
-        BOBJBone wurzel = kette.get(0);
-        Matrix4f wurzelMat = wurzel.parentBone == null
-            ? new Matrix4f()
-            : normalisiert(new Matrix4f(wurzel.parentBone.mat));
+        /* rootmat: Drehteil des Elters der Wurzel (normalisiert, damit dessen Skala nicht
+         * in die Segmentbasis geraet — Blenders #31008), Ort = Kopf der Wurzel. */
+        BOBJBone wurzel = baum.pchan.get(0);
+        float[] rootmat = RigMathe.einheit();
 
-        wurzelMat.setTranslation(wurzel.mat.getTranslation(new Vector3f()));
-
-        Matrix4f zielInv = new Matrix4f(wurzelMat).invert();
-        Vector3f ziel = new Matrix4f(zielInv).mul(zielMat).getTranslation(new Vector3f());
-
-        /* ⛔ Bei einem gedehnten Glied ist die SPITZE das Composite: dort sitzt
-         * die Laenge, also auch das Kettenende. Wer aufs Drehsegment zielt,
-         * zielt einen ganzen Knochen zu frueh (Blenders eigener Kommentar an
-         * IK_SolverAddGoal). */
-        IKQSegment spitzeSeg = segmente.get(segmente.size() - 1);
-
-        if (spitzeSeg.composite() != null)
+        if (wurzel.parentBone != null)
         {
-            spitzeSeg = spitzeSeg.composite();
+            rootmat = RigMathe.kopie(elternPose(wurzel, alt, rahmen));
+            RigMathe.normalisiere(rootmat);
         }
 
+        RigMathe.setzeOrt(rootmat, RigMathe.ort(pose[0]));
+
+        float[] goalinv = RigMathe.invertiert(RigMathe.mul(rahmen.welt, rootmat));
         IKQJacobianSolver solver = new IKQJacobianSolver();
-
         List<IKQTask> aufgaben = new ArrayList<>();
-        IKQTask.Position aufgabe = new IKQTask.Position(true, spitzeSeg, IKUmrechnung.zuVec3(ziel));
+        boolean resultblend = false;
+        float resultinf = 0F;
 
-        aufgabe.setzeGewicht(gewicht);
-        aufgaben.add(aufgabe);
-
-        if (!solver.aufbauen(segmente.get(0), aufgaben))
+        for (Ziel z : baum.ziele)
         {
-            return false;
+            float[] goal = RigMathe.mul(goalinv, z.zielWelt());
+            float[] goalpos = RigMathe.ort(goal);
+            float[] goalrot = RigMatrix3.normalisiere3(RigMathe.drei(goal));
+            float[] polepos = null;
+
+            if (z.polWelt() != null)
+            {
+                polepos = RigMathe.ort(RigMathe.mul(goalinv, z.polWelt()));
+                /* Mit Pol wird das ERGEBNIS gemischt, nicht das Ziel — sonst gibt es keinen
+                 * weichen Uebergang (Blenders eigener Kommentar). */
+                resultblend = true;
+                resultinf = z.aus() ? 0F : z.einfluss();
+            }
+
+            if (!resultblend && (z.aus() || z.einfluss() != 1F))
+            {
+                float fac = z.aus() ? 0F : z.einfluss();
+                float mfac = 1F - fac;
+                BOBJBone spitze = baum.pchan.get(z.tip());
+                float[] endPose = RigMathe.kopie(pose[z.tip()]);
+
+                RigMathe.setzeOrt(endPose, schwanz(endPose, spitze.restLength));
+
+                float[] worldPose = RigMathe.mul(RigMathe.mul(goalinv, rahmen.welt), endPose);
+
+                for (int i = 0; i < 3; i++)
+                {
+                    goalpos[i] = fac * goalpos[i] + mfac * worldPose[12 + i];
+                }
+
+                float[] q = RigQuaternion.slerp(RigQuaternion.quaternion3(goalrot), RigQuaternion.quaternion(worldPose), mfac);
+
+                goalrot = RigQuaternion.quaternionZuMatrix(q);
+            }
+
+            IKQSegment spitze = segs[z.tip()];
+
+            /* Bei Dehnung ist die SPITZE das Composite: dort sitzt die Laenge. */
+            if (spitze.composite() != null)
+            {
+                spitze = spitze.composite();
+            }
+
+            if (z.position() && z.gewicht() != 0F)
+            {
+                if (polepos != null)
+                {
+                    solver.setzePolZwang(spitze, vec(goalpos), vec(polepos), z.polWinkel(), false);
+                }
+
+                IKQTask.Position p = new IKQTask.Position(true, spitze, vec(goalpos));
+
+                p.setzeGewicht(z.gewicht());
+                aufgaben.add(p);
+            }
+
+            if (z.rotation() && z.orientGewicht() != 0F)
+            {
+                IKQTask.Orientierung o = new IKQTask.Orientierung(true, spitze, zuIK(goalrot));
+
+                o.setzeGewicht(z.orientGewicht());
+                aufgaben.add(o);
+            }
         }
 
-        if (polMat != null)
-        {
-            Vector3f pol = new Matrix4f(zielInv).mul(polMat).getTranslation(new Vector3f());
-
-            solver.setzePolZwang(spitzeSeg, IKUmrechnung.zuVec3(ziel),
-                IKUmrechnung.zuVec3(pol), polWinkel, false);
-        }
-
-        /* ⛔ Die Bruecke schreibt ihre EIGENEN Eingaben heraus — nicht ein zweites
-         * Skript, das sie nachrechnet. Genau daran sind meine Vergleichsapparaturen
-         * gescheitert (zwei Beschreibungen derselben Geometrie). Aus ist der Normalfall;
-         * das Feld setzt nur die Messung. */
         if (mitschrift != null)
         {
-            schreibeGeometrie(segmente, dehnungen, gelenke, kette, ziel, gewicht, iterationen);
+            schreibeGeometrie(baum, segs, dehnungen, gelenke);
         }
 
-        boolean geloest = solver.loesen(segmente.get(0), aufgaben, iterationen);
+        if (!solver.aufbauen(segs[0], aufgaben))
+        {
+            return false;
+        }
 
-        schreibeZurueck(kette, deltas, segmente, laengen, dehnungen);
+        boolean geloest = solver.loesen(segs[0], aufgaben, baum.iterations);
 
-        cache().put(spitzeName, new Ergebnis(signatur, kette, geloest));
+        schreibeZurueck(rahmen, baum, segs, laengen, dehnungen, pose, alt, resultblend, resultinf);
+        cache().put(schluessel, new Ergebnis(signatur, baum.pchan, geloest));
 
         return geloest;
     }
 
+    /** Blenders Segmentaufbau aus {@code execute_posetree}, Kanal fuer Kanal. */
+    private static boolean baueSegmente(RigRahmen rahmen, Baum baum, Map<String, Gelenk> gelenke, float[][] pose,
+                                        Map<BOBJBone, float[]> alt, IKQSegment[] segs, double[] laengen,
+                                        double[] dehnungen)
+    {
+        for (int a = 0; a < baum.pchan.size(); a++)
+        {
+            BOBJBone b = baum.pchan.get(a);
+            Gelenk g = gelenke == null ? null : gelenke.get(b.name);
+            /* Blenders {@code tree->stretch && pchan->ikstretch > 0}: erst wenn BEIDES gesetzt
+             * ist, bekommt das Glied den vierten Freiheitsgrad. */
+            boolean dehnbar = baum.stretch && g != null && g.dehnung() > 0D;
+            IKQSegment seg;
+
+            try
+            {
+                seg = g == null ? new IKQSphericalSegment()
+                    : IKUmrechnung.segment(g.sperre()[0], g.sperre()[1], g.sperre()[2], dehnbar);
+            }
+            catch (UnsupportedOperationException e)
+            {
+                System.err.println("[Blender-IK] " + b.name + ": " + e.getMessage());
+
+                return false;
+            }
+
+            /* An das COMPOSITE des Elters haengen, wo es eines gibt (IK_SetParent). */
+            IKQSegment elter = a == 0 ? null : segs[baum.parent.get(a)];
+
+            seg.setzeElter(elter != null && elter.composite() != null ? elter.composite() : elter);
+
+            float[] bonemat = RigMathe.drei(pose[a]);
+            float[] parmat = b.parentBone == null ? RigMatrix3.einheit3() : RigMathe.drei(elternPose(b, alt, rahmen));
+            float[] start = new float[3];
+
+            if (b.parentBone != null && a > 0)
+            {
+                float[] pp = elternPose(b, alt, rahmen);
+
+                start = RigVektor.differenz(RigMathe.ort(pose[a]), schwanz(pp, b.parentBone.restLength));
+            }
+
+            double laenge = b.restLength * RigVektor.laenge(RigMathe.spalte(pose[a], 1));
+
+            bonemat = RigMatrix3.normalisiere3(bonemat);
+            parmat = RigMatrix3.normalisiere3(parmat);
+
+            float[] rest = RigMathe.drei(b.relBoneMat.get(new float[16]));
+            float[] iparmat = RigMatrix3.invertiert3(parmat);
+            float[] basis = RigMatrix3.mul3(RigMatrix3.transponiert3(rest), RigMatrix3.mul3(iparmat, bonemat));
+            IKVec3 startLokal = vec(RigMatrix3.mul3v(iparmat, start));
+
+            /* ⛔ Bei Dehnung geht die LAENGE ans Composite und das Drehsegment bekommt 0 —
+             * sonst zaehlt die Kette jeden Knochen doppelt. */
+            if (dehnbar && seg.composite() != null)
+            {
+                seg.setzeTransform(startLokal, zuIK(rest), zuIK(basis), 0D);
+                seg.composite().setzeTransform(new IKVec3(), IKMat3.identitaet(), IKMat3.identitaet(), laenge);
+            }
+            else
+            {
+                /* Auch das reine Verschiebe-Glied (alle Drehachsen gesperrt) traegt die Laenge selbst. */
+                seg.setzeTransform(startLokal, zuIK(rest), zuIK(basis), laenge);
+            }
+
+            if (g != null)
+            {
+                for (int achse = 0; achse < 3; achse++)
+                {
+                    if (g.grenze()[achse])
+                    {
+                        IKUmrechnung.grenze(seg, achse, g.min()[achse], g.max()[achse]);
+                    }
+
+                    IKUmrechnung.steifigkeit(seg, achse, g.steifigkeit()[achse]);
+                }
+            }
+
+            if (dehnbar)
+            {
+                IKUmrechnung.steifigkeit(seg, 4, 1D - g.dehnung() * g.dehnung());
+                IKUmrechnung.grenze(seg, 4, IKUmrechnung.DEHN_MIN, IKUmrechnung.DEHN_MAX);
+            }
+
+            segs[a] = seg;
+            laengen[a] = laenge;
+            dehnungen[a] = dehnbar ? g.dehnung() : 0D;
+        }
+
+        return true;
+    }
+
+    /** Basisaenderungen einsammeln, {@code make_dmats}, {@code where_is_ik_bone}. */
+    private static void schreibeZurueck(RigRahmen rahmen, Baum baum, IKQSegment[] segs, double[] laengen,
+                                        double[] dehnungen, float[][] pose, Map<BOBJBone, float[]> alt,
+                                        boolean resultblend, float resultinf)
+    {
+        int n = baum.pchan.size();
+        float[][] bc = new float[n][];
+        double[] ikstretch = new double[n];
+        boolean hasstretch = false;
+
+        for (double d : dehnungen)
+        {
+            hasstretch |= d > 0D;
+        }
+
+        for (int a = 0; a < n; a++)
+        {
+            bc[a] = ausIK(segs[a].basisAenderung());
+
+            if (hasstretch)
+            {
+                /* "have to compensate for scaling received from parent" */
+                int p = baum.parent.get(a);
+                double parentstretch = p >= 0 ? ikstretch[p] : 1D;
+
+                IKQSegment schub = segs[a].composite() != null ? segs[a].composite() : segs[a];
+
+                if (dehnungen[a] > 0D && schub.translational())
+                {
+                    /* IK_GetTranslationChange: das Composite, sonst das Glied selbst. */
+                    double trans = schub.translationsAenderung().y;
+
+                    ikstretch[a] = laengen[a] == 0D ? 1D : (trans + laengen[a]) / laengen[a];
+                }
+                else
+                {
+                    ikstretch[a] = 1D;
+                }
+
+                double stretch = parentstretch == 0D ? 1D : ikstretch[a] / parentstretch;
+
+                for (int k = 0; k < 9; k++)
+                {
+                    bc[a][k] *= (float) stretch;
+                }
+            }
+
+            if (resultblend && resultinf != 1F)
+            {
+                bc[a] = RigZerlegung.mische3(RigMatrix3.einheit3(), bc[a], resultinf);
+            }
+        }
+
+        /* make_dmats: das Delta jedes Kanals aus den Matrizen VOR dem Loesen. */
+        float[][] chan = new float[n][];
+
+        for (int a = 0; a < n; a++)
+        {
+            BOBJBone b = baum.pchan.get(a);
+
+            chan[a] = b.parentBone == null ? pose[a]
+                : RigMathe.mul(RigMathe.invertiert(elternPose(b, alt, rahmen)), pose[a]);
+        }
+
+        Map<BOBJBone, float[]> neu = new IdentityHashMap<>();
+
+        for (int a = 0; a < n; a++)
+        {
+            BOBJBone b = baum.pchan.get(a);
+            float[] p = b.parentBone == null ? RigMathe.kopie(chan[a])
+                : RigMathe.mul(neu.getOrDefault(b.parentBone, elternPose(b, alt, rahmen)), chan[a]);
+
+            /* USE_NONUNIFORM_SCALE: der Solver kennt nur gleichmaessige Skalierung, also
+             * X und Z vorher auf die Y-Skala setzen und danach wieder herausrechnen. */
+            float[] scale = RigMathe.groesse(p);
+
+            RigMathe.setzeSpalte(p, 0, normLaenge(RigMathe.spalte(p, 0), scale[1]));
+            RigMathe.setzeSpalte(p, 2, normLaenge(RigMathe.spalte(p, 2), scale[1]));
+            p = RigMathe.mul(p, RigMathe.vier(bc[a]));
+
+            float[] ikScale = RigMatrix3.groesse3(bc[a]);
+
+            RigMathe.setzeSpalte(p, 0, normLaenge(RigMathe.spalte(p, 0), scale[0] * ikScale[0]));
+            RigMathe.setzeSpalte(p, 2, normLaenge(RigMathe.spalte(p, 2), scale[2] * ikScale[2]));
+            neu.put(b, p);
+
+            /* ⛔ originMat MUSS denselben Weltversatz mitgehen: das Mesh liest mat, die
+             * Control-Gizmos und das Picking lesen originMat (gemessen 2026-08-14: die vier
+             * IK-Spitzen standen bis zu 0,3465 daneben). */
+            Matrix4f vorher = new Matrix4f(b.mat);
+
+            b.mat.set(RigMathe.zuJoml(rahmen.ausPose(p)));
+            b.originMat.set(new Matrix4f(b.mat).mul(vorher.invert()).mul(b.originMat));
+        }
+    }
+
+    private static float[] elternPose(BOBJBone b, Map<BOBJBone, float[]> alt, RigRahmen rahmen)
+    {
+        float[] p = alt.get(b.parentBone);
+
+        return p != null ? p : rahmen.poseMat(b.parentBone);
+    }
+
+    private static float[] schwanz(float[] mat, float laenge)
+    {
+        return RigVektor.summe(RigMathe.ort(mat), RigVektor.mal(RigMathe.spalte(mat, 1), laenge));
+    }
+
+    /** {@code normalize_v3_length}. */
+    private static float[] normLaenge(float[] v, float laenge)
+    {
+        float d = RigVektor.punktprodukt(v, v);
+
+        if (d > 1.0E-35F)
+        {
+            return RigVektor.mal(v, laenge / (float) Math.sqrt(d));
+        }
+
+        return new float[3];
+    }
+
+    private static IKVec3 vec(float[] v)
+    {
+        return new IKVec3(v[0], v[1], v[2]);
+    }
+
+    /** Blenders Spaltenlayout (float[9]) -> zeilenmajores IKMat3 (wie {@code IK_SetTransform}). */
+    static IKMat3 zuIK(float[] m)
+    {
+        return IKMat3.von(m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]);
+    }
+
+    /** Zeilenmajores IKMat3 -> Blenders Spaltenlayout (wie {@code IK_GetBasisChange}). */
+    static float[] ausIK(IKMat3 m)
+    {
+        float[] r = new float[9];
+
+        for (int c = 0; c < 3; c++)
+        {
+            for (int z = 0; z < 3; z++)
+            {
+                r[c * 3 + z] = (float) m.get(z, c);
+            }
+        }
+
+        return r;
+    }
+
     /* ================== Ergebnis-Cache ================== */
 
-    /**
-     * Letztes Solver-Ergebnis je Kettenspitze.
-     *
-     * <p>Kein Initialisierer am Feld waere hier falsch — die Klasse wird beim Start geladen,
-     * nicht per Hotswap eingefuegt. Bei einem spaeteren Swap ist die Map null und wird beim
-     * ersten Zugriff neu angelegt; deshalb die Pruefung in {@link #cache()}.</p>
-     */
-    private static Map<String, Ergebnis> CACHE = new java.util.HashMap<>();
+    /** Kein Initialisierer am Feld: nach einem Hotswap ist die Map null, siehe {@link #cache()}. */
+    private static Map<String, Ergebnis> CACHE = new HashMap<>();
 
     private static Map<String, Ergebnis> cache()
     {
         if (CACHE == null)
         {
-            CACHE = new java.util.HashMap<>();
+            CACHE = new HashMap<>();
         }
 
         return CACHE;
     }
 
+    private static String schluessel(Baum baum)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        for (BOBJBone b : baum.pchan)
+        {
+            sb.append(b.name).append('/');
+        }
+
+        return sb.toString();
+    }
+
     /**
-     * Fingerabdruck der Solver-Eingaben.
-     *
-     * <p>⛔ Die Ausgangs-Matrizen der Kette gehoeren DAZU. `setupMatrices` baut die Pose vor
-     * jedem IK-Lauf aus den Keyframes neu auf; ohne sie im Fingerabdruck wuerde der Cache
-     * eine alte Loesung auf eine neue Pose schreiben — ein falsch stehendes Bein, das
-     * niemand mehr dem Cache zuordnet.</p>
+     * Fingerabdruck ALLER Solver-Eingaben. ⛔ Die Ausgangs-Matrizen der Kette gehoeren dazu:
+     * ohne sie schriebe der Cache eine alte Loesung auf eine neue Pose.
      */
-    private static long signatur(List<BOBJBone> kette, Matrix4f zielMat, Matrix4f polMat,
-                                 double polWinkel, double gewicht, boolean dehnen, int iterationen)
+    private static long signatur(Baum baum, Map<String, Gelenk> gelenke)
     {
         long h = 17L;
 
-        h = h * 31L + zielMat.hashCode();
-        h = h * 31L + (polMat == null ? 0 : polMat.hashCode());
-        h = h * 31L + Double.hashCode(polWinkel);
-        h = h * 31L + Double.hashCode(gewicht);
-        h = h * 31L + (dehnen ? 1L : 0L);
-        h = h * 31L + iterationen;
+        h = h * 31L + baum.iterations;
+        h = h * 31L + (baum.stretch ? 1L : 0L);
 
-        for (BOBJBone b : kette)
+        for (BOBJBone b : baum.pchan)
         {
             h = h * 31L + b.mat.hashCode();
+
+            Gelenk g = gelenke == null ? null : gelenke.get(b.name);
+
+            if (g != null)
+            {
+                h = h * 31L + Arrays.hashCode(g.sperre()) + Arrays.hashCode(g.grenze());
+                h = h * 31L + Arrays.hashCode(g.steifigkeit()) + Arrays.hashCode(g.min()) + Arrays.hashCode(g.max());
+                h = h * 31L + Double.hashCode(g.dehnung());
+            }
+        }
+
+        for (Ziel z : baum.ziele)
+        {
+            h = h * 31L + z.tip();
+            h = h * 31L + Arrays.hashCode(z.zielWelt());
+            h = h * 31L + (z.polWelt() == null ? 0 : Arrays.hashCode(z.polWelt()));
+            h = h * 31L + Float.hashCode(z.einfluss()) + (z.aus() ? 7L : 0L);
+            h = h * 31L + (z.position() ? 1L : 0L) + (z.rotation() ? 2L : 0L);
+            h = h * 31L + Float.hashCode(z.gewicht()) + Float.hashCode(z.orientGewicht());
+            h = h * 31L + Double.hashCode(z.polWinkel());
         }
 
         return h;
@@ -225,6 +534,7 @@ public final class IKBOBJBruecke
         final boolean geloest;
         final String[] namen;
         final Matrix4f[] matrizen;
+        final Matrix4f[] origin;
 
         Ergebnis(long signatur, List<BOBJBone> kette, boolean geloest)
         {
@@ -232,15 +542,16 @@ public final class IKBOBJBruecke
             this.geloest = geloest;
             this.namen = new String[kette.size()];
             this.matrizen = new Matrix4f[kette.size()];
+            this.origin = new Matrix4f[kette.size()];
 
             for (int i = 0; i < kette.size(); i++)
             {
                 this.namen[i] = kette.get(i).name;
                 this.matrizen[i] = new Matrix4f(kette.get(i).mat);
+                this.origin[i] = new Matrix4f(kette.get(i).originMat);
             }
         }
 
-        /** Dieselbe Kette wie beim Speichern? Modellwechsel darf nicht durchrutschen. */
         boolean passt(List<BOBJBone> kette)
         {
             if (kette.size() != this.namen.length)
@@ -264,35 +575,29 @@ public final class IKBOBJBruecke
             for (int i = 0; i < this.matrizen.length; i++)
             {
                 kette.get(i).mat.set(this.matrizen[i]);
+                kette.get(i).originMat.set(this.origin[i]);
             }
         }
     }
 
-    /**
-     * Wohin die Eingaben geschrieben werden, wenn jemand messen will. {@code null} =
-     * aus. Kein Initialisierer, damit ein Hotswap nichts kaputtmacht.
-     */
+    /* ================== Mitschrift fuer tools/ikref ================== */
+
+    /** Wohin die Eingaben geschrieben werden, wenn jemand messen will; {@code null} = aus. */
     public static String mitschrift;
 
     /**
-     * Die Eingaben dieser Loesung im Format von {@code tools/ikref/ikref.cpp}, damit
-     * DIESELBE Datei durch Blenders eigene Loeser-Bibliothek und durch diesen Port
-     * laufen kann.
-     *
-     * <p>⛔ Matrizen gehen TRANSPONIERT hinaus: Blenders {@code IK_SetTransform} liest
-     * spaltenweise ({@code rest[0][0], rest[1][0], rest[2][0]} wird seine erste ZEILE),
-     * unser {@link IKMat3} ist zeilenweise.
+     * Die Eingaben dieser Loesung im Format von {@code tools/ikref/ikref.cpp}, damit DIESELBE
+     * Datei durch Blenders eigene Loeser-Bibliothek und durch diesen Port laufen kann.
+     * ⛔ Matrizen gehen TRANSPONIERT hinaus: {@code IK_SetTransform} liest spaltenweise.
      */
-    private static void schreibeGeometrie(List<IKQSegment> segmente, double[] dehnungen,
-        Map<String, Gelenk> gelenke, List<BOBJBone> kette, Vector3f ziel, double gewicht,
-        int iterationen)
+    private static void schreibeGeometrie(Baum baum, IKQSegment[] segs, double[] dehnungen, Map<String, Gelenk> gelenke)
     {
-        StringBuilder sb = new StringBuilder(segmente.size() + "\n");
+        StringBuilder sb = new StringBuilder(segs.length + "\n");
 
-        for (int a = 0; a < segmente.size(); a++)
+        for (int a = 0; a < segs.length; a++)
         {
-            IKQSegment seg = segmente.get(a);
-            Gelenk g = gelenke == null ? null : gelenke.get(kette.get(a).name);
+            IKQSegment seg = segs[a];
+            Gelenk g = gelenke == null ? null : gelenke.get(baum.pchan.get(a).name);
             int flag = 0;
 
             for (int achse = 0; achse < 3; achse++)
@@ -303,10 +608,7 @@ public final class IKBOBJBruecke
                 }
             }
 
-            sb.append(flag).append(' ').append(a - 1);
-            /* Felder statt Gettern: dieselbe Paketebene, und es ist genau der Zustand,
-             * den setzeTransform gerade hineingelegt hat. origBasis, weil `basis` beim
-             * Loesen fortgeschrieben wird. Die LAENGE steckt bei Dehnung im Composite. */
+            sb.append(flag).append(' ').append(baum.parent.get(a));
             anhaengen(sb, seg.start);
             anhaengenT(sb, seg.restBasis);
             anhaengenT(sb, seg.origBasis);
@@ -316,31 +618,25 @@ public final class IKBOBJBruecke
             sb.append('\n');
         }
 
-        sb.append(String.format(java.util.Locale.ROOT, "%.7f %.7f %.7f %.7f 0.0 %d\n",
-            ziel.x, ziel.y, ziel.z, gewicht, iterationen));
+        Ziel erstes = baum.ziele.isEmpty() ? null : baum.ziele.get(0);
 
-        /* ⛔ EINE DATEI JE KETTE, benannt nach ihrer Spitze. Bei einem gemeinsamen
-         * Namen gewinnt die zuletzt geloeste Kette, und man misst eine beliebige, ohne
-         * es zu merken (einmal passiert: gemessen wurde das Vorderbein statt der
-         * gesuchten Kette). */
-        String datei = mitschrift + "-" + kette.get(kette.size() - 1).name.replace('/', '_');
+        sb.append(String.format(java.util.Locale.ROOT, "%d ziele, iterationen %d, gewicht %.7f\n",
+            baum.ziele.size(), baum.iterations, erstes == null ? 0F : erstes.gewicht()));
+
+        String datei = mitschrift + "-" + baum.pchan.get(baum.pchan.size() - 1).name.replace('/', '_');
 
         try
         {
             java.nio.file.Files.writeString(java.nio.file.Path.of(datei + ".txt"), sb.toString());
 
-            /* ⛔ Daneben, WELCHE Kette das war. Ohne das misst man eine Kette und weiss
-             * nicht welche — der Loeser schreibt bei jedem Aufruf, es gewinnt der
-             * letzte. Nicht in die Geometriedatei: ikrefs fscanf kennt keine Kommentare. */
             StringBuilder namen = new StringBuilder();
 
-            for (BOBJBone b : kette)
+            for (BOBJBone b : baum.pchan)
             {
                 namen.append(b.name).append(' ').append(b.restLength).append('\n');
             }
 
-            java.nio.file.Files.writeString(java.nio.file.Path.of(datei + ".ketten"),
-                namen.toString());
+            java.nio.file.Files.writeString(java.nio.file.Path.of(datei + ".ketten"), namen.toString());
         }
         catch (java.io.IOException e)
         {
@@ -361,181 +657,6 @@ public final class IKBOBJBruecke
             {
                 sb.append(String.format(java.util.Locale.ROOT, " %.7f", m.get(c, r)));
             }
-        }
-    }
-
-    /** Kette von der Spitze aufwaerts, zurueckgegeben WURZEL zuerst wie bei Blender. */
-    private static List<BOBJBone> sammleKette(BOBJArmature armature, String spitzeName, int laenge)
-    {
-        List<BOBJBone> kette = new ArrayList<>();
-        BOBJBone b = armature.bones.get(spitzeName);
-
-        for (int i = 0; b != null && i < laenge; i++)
-        {
-            kette.add(0, b);
-            b = b.parentBone;
-        }
-
-        return kette;
-    }
-
-    private static List<IKQSegment> baueSegmente(List<BOBJBone> kette, Map<String, Gelenk> gelenke,
-                                                 double[] laengen, double[] dehnungen)
-    {
-        List<IKQSegment> segmente = new ArrayList<>();
-
-        for (int a = 0; a < kette.size(); a++)
-        {
-            BOBJBone b = kette.get(a);
-            Gelenk g = gelenke == null ? null : gelenke.get(b.name);
-            boolean dehnbar = dehnungen[a] > 0D;
-
-            IKQSegment seg;
-
-            try
-            {
-                seg = g == null
-                    ? new IKQSphericalSegment()
-                    : IKUmrechnung.segment(g.sperre[0], g.sperre[1], g.sperre[2], dehnbar);
-            }
-            catch (UnsupportedOperationException e)
-            {
-                System.err.println("[Blender-IK] " + b.name + ": " + e.getMessage());
-
-                return null;
-            }
-
-            /* An das COMPOSITE des Elters haengen, wo es eines gibt (IK_SetParent):
-             * dort sitzt dessen Laenge, also auch der Ansatzpunkt dieses Glieds. */
-            IKQSegment elter = a == 0 ? null : segmente.get(a - 1);
-
-            seg.setzeElter(elter != null && elter.composite() != null
-                ? elter.composite() : elter);
-
-            IKMat3 bonemat = IKUmrechnung.zuMat3(b.mat);
-            IKMat3 parmat = b.parentBone == null
-                ? IKMat3.identitaet()
-                : IKUmrechnung.zuMat3(b.parentBone.mat);
-
-            /* Knochenversatz: Kopf dieses Knochens minus Ende des Elters. Nur
-             * innerhalb der Kette — die Wurzel sitzt per Definition im Ursprung
-             * ihres eigenen Raums. */
-            IKVec3 start = new IKVec3();
-
-            if (a > 0 && b.parentBone != null)
-            {
-                Vector3f kopf = b.mat.getTranslation(new Vector3f());
-                Vector3f elterEnde = ende(b.parentBone);
-
-                start = IKUmrechnung.zuVec3(kopf.sub(elterEnde));
-            }
-
-            bonemat = IKUmrechnung.normalisiert(bonemat);
-            parmat = IKUmrechnung.normalisiert(parmat);
-
-            IKMat3 restBasis = IKUmrechnung.zuMat3(b.relBoneMat);
-            IKMat3 parmatInv = parmat.transponiert();
-            IKMat3 basis = restBasis.transponiert().mal(parmatInv.mal(bonemat));
-
-            /* ⛔ Bei Dehnung geht die LAENGE ans Composite und das Drehsegment
-             * bekommt 0 — sonst zaehlt die Kette jeden Knochen doppelt. */
-            if (dehnbar)
-            {
-                seg.setzeTransform(parmatInv.mal(start), restBasis, basis, 0D);
-                seg.composite().setzeTransform(new IKVec3(), IKMat3.identitaet(),
-                    IKMat3.identitaet(), laengen[a]);
-            }
-            else
-            {
-                seg.setzeTransform(parmatInv.mal(start), restBasis, basis, laengen[a]);
-            }
-
-            if (g != null)
-            {
-                for (int achse = 0; achse < 3; achse++)
-                {
-                    if (g.grenze()[achse])
-                    {
-                        IKUmrechnung.grenze(seg, achse, g.min()[achse], g.max()[achse]);
-                    }
-
-                    IKUmrechnung.steifigkeit(seg, achse, g.steifigkeit()[achse]);
-                }
-            }
-
-            if (dehnbar)
-            {
-                /* Steifigkeit 1-s² heisst Gewicht s²: je groesser ik_stretch,
-                 * desto lieber laengt die Kette statt zu drehen. */
-                IKUmrechnung.steifigkeit(seg, 4, 1D - dehnungen[a] * dehnungen[a]);
-                IKUmrechnung.grenze(seg, 4, IKUmrechnung.DEHN_MIN, IKUmrechnung.DEHN_MAX);
-            }
-
-            segmente.add(seg);
-        }
-
-        return segmente;
-    }
-
-    /** Ende eines Knochens in der aktuellen Pose: Kopf + Y-Richtung mal Ruhelaenge. */
-    private static Vector3f ende(BOBJBone b)
-    {
-        Matrix4f m = b.mat;
-        Vector3f y = new Vector3f(m.get(1, 0), m.get(1, 1), m.get(1, 2));
-
-        return m.getTranslation(new Vector3f()).add(y.mul(b.restLength));
-    }
-
-    private static Matrix4f normalisiert(Matrix4f m)
-    {
-        return IKUmrechnung.zuJoml(IKUmrechnung.normalisiert(IKUmrechnung.zuMat3(m)))
-            .setTranslation(m.getTranslation(new Vector3f()));
-    }
-
-    /** where_is_ik_bone: mat = elter.mat * delta * ikMat, Wurzel zuerst. */
-    private static void schreibeZurueck(List<BOBJBone> kette, List<Matrix4f> deltas,
-                                        List<IKQSegment> segmente, double[] laengen,
-                                        double[] dehnungen)
-    {
-        double[] dehnFaktor = new double[kette.size()];
-
-        for (int a = 0; a < kette.size(); a++)
-        {
-            BOBJBone b = kette.get(a);
-            IKQSegment seg = segmente.get(a);
-            Matrix4f ikMat = IKUmrechnung.zuJoml(seg.basisAenderung());
-
-            /* Wie weit ist DIESES Glied laenger geworden? Die Y-Translation des
-             * Composite steckt im gedehnten Fall die ganze Laenge. */
-            dehnFaktor[a] = dehnungen[a] > 0D && seg.composite() != null && laengen[a] != 0D
-                ? (seg.composite().translationsAenderung().y + laengen[a]) / laengen[a]
-                : 1D;
-
-            /* ⛔ Nur die RELATIVE Dehnung darf in die Matrix: die des Elters
-             * steckt schon in dessen mat und kaeme sonst ein zweites Mal mit.
-             * Genau das meint Blenders "compensate for scaling received from
-             * parent"; ohne die Division waechst die Kette exponentiell. */
-            double relativ = a == 0 || dehnFaktor[a - 1] == 0D
-                ? dehnFaktor[a] : dehnFaktor[a] / dehnFaktor[a - 1];
-
-            if (relativ != 1D)
-            {
-                ikMat.scale((float) relativ);
-            }
-
-            Matrix4f neu = b.parentBone == null
-                ? new Matrix4f(deltas.get(a))
-                : new Matrix4f(b.parentBone.mat).mul(deltas.get(a));
-
-            /* ⛔ originMat MUSS denselben Weltversatz mitgehen. Das Mesh liest
-             * mat, aber die Control-Gizmos (ModelPivotFrames) und das Picking
-             * (ModelInstance.captureMatrices) lesen originMat — ohne das sitzt
-             * der Griff neben dem Knochen, den er bewegt. Gemessen 2026-08-14:
-             * die vier IK-Spitzen standen bis zu 0,3465 daneben. */
-            Matrix4f vorher = new Matrix4f(b.mat);
-
-            b.mat.set(neu.mul(ikMat));
-            b.originMat.set(new Matrix4f(b.mat).mul(vorher.invert()).mul(b.originMat));
         }
     }
 }
