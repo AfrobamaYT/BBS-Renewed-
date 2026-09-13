@@ -122,7 +122,10 @@ public class RunnerCameraController extends CameraWorkCameraController
             /* kms */
             boolean free = this.panel.getController().getPovMode() == UIFilmController.CAMERA_MODE_FREE;
 
-            this.apply(free ? null : camera, this.ticks, this.context.playing ? transition : 0F);
+            /* Pausiert ist der Partial-Tick 0 — ausser eine Sub-Tick-Fahrt (WeltbildFahrt mit
+             * fps != 20) erzwingt den Rest t−⌊t⌋, damit der Welt-Frame ZWISCHEN zwei Ticks
+             * liegt. Ohne Fahrt liefert SubTick.oder(0F) genau die alte Null. */
+            this.apply(free ? null : camera, this.ticks, this.context.playing ? transition : com.mcstudio.see.SubTick.oder(0F));
         }
 
         this.panel.getController().handleCamera(camera, transition);

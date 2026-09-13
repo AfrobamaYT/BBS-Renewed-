@@ -27,11 +27,35 @@ public final class WeltbildFahrt
 	}
 
 	/**
-	 * Den Sweep fahren. Aufrufer-Thread (HTTP oder Orchestrierung) — NIE der Render-Thread
-	 * ({@link WorldShot#fangen} wartet auf einen echten Frame und wuerde dort deadlocken).
+	 * Den Sweep fahren, ein Welt-Frame je TICK (fps 20 — Ausgabeframe == Tick). Aufrufer-Thread
+	 * (HTTP oder Orchestrierung) — NIE der Render-Thread ({@link WorldShot#fangen} wartet auf
+	 * einen echten Frame und wuerde dort deadlocken).
 	 */
 	public static String fahren(String basis, int start, int frames, String wunschFilm)
 	{
+		return fahren(basis, start, frames, wunschFilm, 20);
+	}
+
+	/**
+	 * SUB-TICK-FAHRT (§3 Zeitbasis, REDACTED Abnahme 1 bei 24/30/60 fps): ein Welt-Frame je
+	 * AUSGABEFRAME. {@code start} und {@code frames} zaehlen Ausgabeframes j; der Zeitpunkt von
+	 * j ist t = j·20/fps Ticks. Der Cursor steht auf ⌊t⌋, der Rest t−⌊t⌋ geht als erzwungener
+	 * Partial-Tick ueber {@link SubTick} an die Kamera ({@code RunnerCameraController.setup})
+	 * und die Actor-Pose ({@code FilmEditorController.getTransition}) — dieselbe Interpolation,
+	 * die das Spiel beim Abspielen zwischen zwei Ticks rechnet. Die Datei heisst nach j, nicht
+	 * nach dem Tick (bei 60 fps teilen sich drei Frames einen Tick). Bei fps 20 ist j == Tick,
+	 * der Rest 0 und die Fahrt exakt die alte.
+	 *
+	 * <p>Ganzzahlig gerechnet ({@code j·20 = tick·fps + rest·fps}), damit t = 5,0 nie zu
+	 * 4,999… wird und Cursor/Dateiname um einen Tick verrutschen.</p>
+	 */
+	public static String fahren(String basis, int start, int frames, String wunschFilm, int fps)
+	{
+		if (fps <= 0)
+		{
+			return "{\"error\":\"fps muss > 0 sein (bekommen: " + fps + ")\"}";
+		}
+
 		UIFilmPanel panel = film();
 
 		if (panel == null)
@@ -70,7 +94,17 @@ public final class WeltbildFahrt
 		{
 			for (int i = 0; i < frames; i++)
 			{
-				final int tick = start + i;
+				final int index = start + i;
+				int zaehler = index * 20;
+				final int tick = zaehler / fps;
+				float rest = (zaehler % fps) / (float) fps;
+
+				/* Rest VOR dem Scrub setzen (volatile, vom Fahrt-Thread): der Scrub laeuft am
+				 * Tick-Ende auf dem Render-Thread, der Fang wartet auf den NAECHSTEN echten Frame
+				 * — der sieht Tick und Rest zusammen. Bewusst NICHT in der Lambda unten: deren
+				 * Fang-Menge und -Signatur bleiben so identisch zur geladenen Fassung (Skill
+				 * /hotswap: Lambda-Menge aendern bricht den Swap still). */
+				SubTick.setzen(rest);
 
 				/* Scrub auf dem Render-Thread; der Rueckgabewert ist egal, submit synchronisiert. */
 				RenderThread.submit(() ->
@@ -80,7 +114,7 @@ public final class WeltbildFahrt
 					return "";
 				});
 
-				File ziel = new File(dir, basis + "_" + String.format("%04d", tick) + ".png");
+				File ziel = new File(dir, basis + "_" + String.format("%04d", index) + ".png");
 				String json = WorldShot.fangen(ziel.getAbsolutePath());
 
 				if (json.contains("\"path\""))
@@ -95,6 +129,9 @@ public final class WeltbildFahrt
 		}
 		finally
 		{
+			/* Erst den Rest loesen, dann den Cursor zurueck — der Editor scrubbt danach wieder
+			 * mit Partial-Tick 0, wie vor der Fahrt. */
+			SubTick.loesen();
 			klammer.zuruecknehmen(cursorVorher);
 		}
 
@@ -107,6 +144,7 @@ public final class WeltbildFahrt
 			.append(",\"film\":\"").append(escape(offen)).append('"')
 			.append(",\"start\":").append(start)
 			.append(",\"frames\":").append(frames)
+			.append(",\"fps\":").append(fps)
 			.append(",\"written\":").append(geschrieben)
 			.append(",\"dir\":\"").append(escape(dir.getAbsolutePath())).append('"')
 			.append(",\"pattern\":\"").append(escape(basis)).append("_%04d.png\"")

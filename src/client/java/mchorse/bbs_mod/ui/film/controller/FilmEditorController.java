@@ -119,7 +119,10 @@ public class FilmEditorController extends BaseFilmController
     protected float getTransition(IEntity entity, float transition)
     {
         boolean current = this.isCurrent(entity) && this.controller.isControlling();
-        float delta = !this.controller.isPlaying() && !current ? 0F : transition;
+        /* Pausiert 0F — ausser eine Sub-Tick-Fahrt erzwingt den Rest t−⌊t⌋ (siehe
+         * com.mcstudio.see.SubTick): dann werden die Actor-Eigenschaften (Pose) zum selben
+         * Zwischen-Tick ausgewertet wie die Kamera. Ohne Fahrt bleibt es die alte Null. */
+        float delta = !this.controller.isPlaying() && !current ? com.mcstudio.see.SubTick.oder(0F) : transition;
 
         return delta;
     }
