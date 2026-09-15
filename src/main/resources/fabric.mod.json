@@ -34,7 +34,7 @@
     "homepage": "https://github.com/AfrobamaYT/bbs-neu2",
     "sources": "https://github.com/AfrobamaYT/bbs-neu2"
   },
-  "license": "MIT",
+  "license": "GPL-2.0-or-later",
   "icon": "assets/bbs/icon.png",
   "environment": "*",
   "entrypoints": {

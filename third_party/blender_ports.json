@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "source": {
+    "name": "Blender",
+    "repository": "https://projects.blender.org/blender/blender"
+  },
+  "scan_roots": [
+    "src",
+    "dev/src",
+    "blender",
+    "tools"
+  ],
+  "ports": [
+    {
+      "id": "legacy-ik-solver",
+      "kind": "direct-port",
+      "status": "legacy-unresolved",
+      "local_globs": [
+        "src/main/java/mchorse/bbs_mod/cubic/ik/blender/*.java"
+      ],
+      "upstream_commit": null,
+      "upstream_paths": [
+        "intern/iksolver/intern/IK_Math.h",
+        "intern/iksolver/intern/IK_QJacobian.cpp",
+        "intern/iksolver/intern/IK_QJacobianSolver.cpp",
+        "intern/iksolver/intern/IK_QSegment.cpp",
+        "intern/iksolver/intern/IK_QTask.cpp",
+        "intern/iksolver/intern/IK_Solver.h",
+        "source/blender/ikplugin/intern/iksolver_plugin.cc",
+        "source/blender/blenkernel/intern/constraint.cc"
+      ],
+      "license": "GPL-2.0-or-later",
+      "copyright": [
+        "2001-2002 NaN Holding BV. All rights reserved."
+      ],
+      "modified": "2026-08-14",
+      "parity_evidence": "docs/FEATURES-RELEASE.md: Blender IK parity, maximum deviation 7e-06",
+      "unresolved": "The exact Blender upstream commit used for the translation was not recorded."
+    }
+  ]
+}

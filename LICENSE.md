@@ -11,46 +11,40 @@ besonders den Abschnitt zu den Assets.
 
 ---
 
-## 1 · Zwei Lizenzen, und warum
+## 1 · Komponentenlizenzen und Lizenz des Gesamtpakets
 
-**Das Ziel dieses Forks ist MIT** — wie beim ursprünglichen BBS mod und wie bei
-praktisch allen anderen BBS-Forks. Damit kann die Community übernehmen, was sie
-gebrauchen kann, und dieser Fork gibt zurück, statt nur zu nehmen.
+Die geerbten BBS-Dateien behalten ihre MIT-Lizenz und bleiben einzeln unter MIT nutzbar.
+Fuer das **kombiniert ausgelieferte BBS-CML-Edition-Paket** wurde am 2026-09-15 bewusst
+GPL-2.0-or-later gewaehlt. Das fruehere Ziel, den Blender-Port nur fuer ein MIT-Gesamtpaket
+abzuspalten, wird nicht weiterverfolgt.
 
-Dem steht ein Teil entgegen: Der IK-Löser unter `mchorse/bbs_mod/cubic/ik/blender/`
-(18 Dateien, 3.341 Zeilen) ist **zeilenweise aus Blenders Quelle übersetzt** — die
-Datei `IKMath.java` sagt es selbst: „Zeile für Zeile aus IK_Math.h". Die betroffenen
+Grund ist der IK-Löser unter `mchorse/bbs_mod/cubic/ik/blender/`
+(21 Java-Dateien, gemessen am 2026-09-15). Er ist **zeilenweise aus Blenders Quelle
+übersetzt** — die Datei `IKMath.java` sagt es selbst: „Zeile für Zeile aus IK_Math.h".
+Die betroffenen
 Blender-Dateien tragen `GPL-2.0-or-later` (an der Quelle geprüft:
 `intern/iksolver/intern/IK_Math.h` und `source/blender/blenkernel/intern/constraint.cc`,
 beide „SPDX-FileCopyrightText: 2001-2002 NaN Holding BV"). Ein daraus abgeleitetes Werk
 kann nicht schwächer lizenziert sein.
 
-**Angestrebte Aufteilung:**
+**Komponenten und Gesamtpaket:**
 
 | Teil | Lizenz |
 |---|---|
-| Der Mod — alles außer dem IK-Löser | **MIT** |
+| Geerbte und eigenstaendig unter MIT lizenzierte Quelldateien | **MIT**, einzeln weiter nutzbar |
 | `cubic/ik/blender/` — der aus Blender übersetzte Löser | **GPL-2.0-or-later** ([`COPYING`](COPYING)) |
+| Kombiniert gebautes und verteiltes BBS-CML-Edition-Paket | **GPL-2.0-or-later** |
 
-Das Paket ist dafür günstig geschnitten: Es hat genau **eine** Anbindung an den Rest
-(`RigIKKetten.java`).
+Direkte kuenftige Blender-Ports werden nicht pauschal als GPL-2.0-or-later angenommen.
+Ihre exakten Quelldateien, Abhaengigkeiten und SPDX-Angaben entscheiden, ob fuer den
+Gesamtrelease eine strengere GPL-Fassung gelten muss. Das verbindliche Verfahren steht in
+[`docs/BLENDER-PORT-GATE.md`](docs/BLENDER-PORT-GATE.md).
 
-⛔ **Ist-Zustand, ehrlich:** Diese Trennung ist **dokumentiert, aber noch nicht gebaut.**
-Solange Löser und Mod in einem JAR ausgeliefert werden, sind sie ein Werk — und für
-dieses Gesamtwerk gilt dann **GPL-2.0-or-later**, nicht MIT. Die MIT-Teile bleiben davon
-unberührt und einzeln weiter unter MIT nutzbar; betroffen ist nur das ausgelieferte
-Ganze. Was zu tun ist, steht in
-[`docs/VOR-VEROEFFENTLICHUNG.md`](docs/VOR-VEROEFFENTLICHUNG.md).
-
-Ob ein separat ausgeliefertes JAR juristisch als eigenständiges Werk gilt oder als
-abgeleitetes, ist bei Java umstritten. Diese Datei dokumentiert die Absicht und die
-Herkunft — sie entscheidet die Frage nicht.
-
-Nicht abgeleitet und daher **nicht** betroffen: die Rig-Laufzeit (`cubic/ik/Rig*.java`)
+Nicht aus Blender-Quellcode abgeleitet sind die Rig-Laufzeit (`cubic/ik/Rig*.java`)
 und das Transform-Verhalten (`input/drag/`). Beide sind nach beobachtetem Verhalten
 nachgebaut und gegen Blender **gemessen**, nicht aus dessen Quelltext übersetzt — die
-Dateien belegen das selbst durchgehend mit Messwerten. Funktionalität als solche ist
-nicht urheberrechtlich geschützt, nur konkreter Code.
+Dateien belegen das selbst durchgehend mit Messwerten. Sie werden als Teil des kombinierten
+Pakets GPL-kompatibel verteilt; das macht sie nicht nachtraeglich zu Blender-Derivaten.
 
 ## 2 · ⛔ Assets sind ausdrücklich AUSGENOMMEN
 
@@ -120,9 +114,9 @@ Damit nachvollziehbar bleibt, was woher stammt:
 
 | Teil | Ort im Baum | Herkunft | Lizenz |
 |---|---|---|---|
-| IK-Löser (Jacobi, SDLS, SVD, Pol-Zwang, Segmenttypen) | `mchorse/bbs_mod/cubic/ik/blender/` (18 Dateien) | Aus Blenders `intern/iksolver` übersetzt — `IK_Math.h`, `IK_QJacobianSolver.cpp`, `IK_QSegment.cpp`, `IK_QJacobian.cpp`, `IK_QTask.cpp`, `IK_Solver.h` | **GPL-2.0-or-later** |
-| Constraint-Auswertung und Rig-Mechanik | `mchorse/bbs_mod/cubic/ik/Rig*.java` | Blenders Constraint-Semantik aus `constraint.cc`, `armature.cc` | **GPL-2.0-or-later** |
-| Transform-Verhalten (Griff, Strähne, Achsenrasten, Präzision) | `ui/framework/elements/input/drag/`, `UITransformHandler` | Blenders `transform_input.cc`, `transform_constraints.cc`, `transform_mode_resize.cc`, `transform_draw_cursors.cc` | **GPL-2.0-or-later** |
+| IK-Löser (Jacobi, SDLS, SVD, Pol-Zwang, Segmenttypen) | `mchorse/bbs_mod/cubic/ik/blender/` (21 Java-Dateien am 2026-09-15) | Aus Blenders `intern/iksolver` übersetzt — `IK_Math.h`, `IK_QJacobianSolver.cpp`, `IK_QSegment.cpp`, `IK_QJacobian.cpp`, `IK_QTask.cpp`, `IK_Solver.h` | **GPL-2.0-or-later** |
+| Constraint-Auswertung und Rig-Mechanik | `mchorse/bbs_mod/cubic/ik/Rig*.java` | Eigenentwicklung nach gemessener Blender-Constraint-Semantik aus `constraint.cc`, `armature.cc` | Im Gesamtpaket **GPL-2.0-or-later** |
+| Transform-Verhalten (Griff, Strähne, Achsenrasten, Präzision) | `ui/framework/elements/input/drag/`, `UITransformHandler` | Eigenentwicklung nach gemessenem Blender-Verhalten | Im Gesamtpaket **GPL-2.0-or-later** |
 | BBS-Kern, UI-Grundgerüst, Formen, Film, Export | `mchorse/bbs_mod/…` (der Rest) | McHorse, Wemppy | MIT, siehe oben |
 | Blender-Addon der Render-Brücke | `blender/addon/blender_bbs_bridge` | in diesem Fork geschrieben; läuft **in** Blender | GPL-2.0-or-later |
 
