@@ -9,6 +9,7 @@ import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
@@ -53,10 +54,10 @@ public class ModelVAORenderer
      * einer {@code mat3} landet nicht dort, wo man es naiv erwartet, und die Folge waere
      * ein falsches Bild ohne Fehlermeldung. Darum steht hier alles als volle 16-Byte-Zeile:
      * die Normalenmatrix als drei Zeilen, Licht und Overlay zusammen in einer vierten,
-     * die Durchgangsart in einer fuenften. Kein Feld braucht Fuellbytes, kein Offset ist
-     * geraten.
+     * die Durchgangsart in einer fuenften und die Materialparameter in einer sechsten.
+     * Kein Feld braucht Fuellbytes, kein Offset ist geraten.
      */
-    private static final int BLOCK_GROESSE = 5 * 16;
+    private static final int BLOCK_GROESSE = 6 * 16;
 
     /**
      * ⛔ RINGPUFFER STATT EINEM BLOCK (2026-08-04 gemessen).
@@ -119,7 +120,12 @@ public class ModelVAORenderer
      */
     public static void render(RenderPipeline pipeline, IModelVAO modelVAO, PoseStack stack, float r, float g, float b, float a, int light, int overlay, mchorse.bbs_mod.graphics.texture.Texture textur, int kennung)
     {
-        render(pipeline, modelVAO, captureModelView(stack), stack.last().normal(), r, g, b, a, light, overlay, 0, kennung, textur);
+        render(pipeline, modelVAO, stack, r, g, b, a, light, overlay, textur, kennung, 0F);
+    }
+
+    public static void render(RenderPipeline pipeline, IModelVAO modelVAO, PoseStack stack, float r, float g, float b, float a, int light, int overlay, mchorse.bbs_mod.graphics.texture.Texture textur, int kennung, float emission)
+    {
+        render(pipeline, modelVAO, captureModelView(stack), stack.last().normal(), r, g, b, a, light, overlay, 0, kennung, textur, emission);
     }
 
     public static void render(RenderPipeline pipeline, IModelVAO modelVAO, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, int passMode)
@@ -158,6 +164,11 @@ public class ModelVAORenderer
      * scheitert -- nicht, weil das Modell sie unbedingt braeuchte.
      */
     public static void render(RenderPipeline pipeline, IModelVAO modelVAO, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, int passMode, int kennung, mchorse.bbs_mod.graphics.texture.Texture textur)
+    {
+        render(pipeline, modelVAO, modelView, normalMat, r, g, b, a, light, overlay, passMode, kennung, textur, 0F);
+    }
+
+    public static void render(RenderPipeline pipeline, IModelVAO modelVAO, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, int passMode, int kennung, mchorse.bbs_mod.graphics.texture.Texture textur, float emission)
     {
         if (modelVAO.eckenZahl() <= 0)
         {
@@ -284,7 +295,7 @@ public class ModelVAORenderer
 
         /* Den ZURUECKGEGEBENEN Block binden, nicht ein globales Feld: seit dem Ringpuffer
          * ist es je Zeichenaufruf ein anderer. */
-        GpuBuffer block = blockFuer(normalMat, light, overlay, passMode, kennung);
+        GpuBuffer block = blockFuer(normalMat, light, overlay, passMode, kennung, emission);
 
         /* Messfuehler 2026-08-02: der Auswahlpuffer traegt Alpha (100928 Punkte gemessen),
          * aber RGB = 0 — die Kennung kommt also nicht an, obwohl der Durchgang laeuft.
@@ -396,6 +407,11 @@ public class ModelVAORenderer
      */
     public static GpuBuffer blockFuer(Matrix3f normalMat, int light, int overlay, int passMode, int kennung)
     {
+        return blockFuer(normalMat, light, overlay, passMode, kennung, 0F);
+    }
+
+    public static GpuBuffer blockFuer(Matrix3f normalMat, int light, int overlay, int passMode, int kennung, float emission)
+    {
         if (bloecke == null)
         {
             bloecke = new GpuBuffer[RING];
@@ -442,6 +458,10 @@ public class ModelVAORenderer
              * Beim normalen Zeichnen ist sie 0 und wird nicht gelesen; die Picker-Shader
              * bauen daraus die Zahl, die der Klick zurueckliest. */
             roh.putInt(passMode).putInt(kennung).putInt(0).putInt(0);
+
+            /* Blender material parity: x is the Mix Shader share of the Emission branch.
+             * The remaining values stay reserved so the std140 layout remains explicit. */
+            roh.putFloat(MathUtils.clamp(emission, 0F, 1F)).putFloat(0F).putFloat(0F).putFloat(0F);
 
             /* ⚠️ IViewRotMat steht bewusst NICHT im Block. Der alte Shader deklarierte es
              * ({@code uniform mat3 IViewRotMat}), benutzte es in main() aber nirgends —

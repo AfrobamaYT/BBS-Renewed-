@@ -6,9 +6,12 @@ import mchorse.bbs_mod.cubic.model.View;
 import mchorse.bbs_mod.cubic.weld.ModelWeld;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.settings.values.core.ValueGroup;
+import mchorse.bbs_mod.settings.values.core.ValueData;
 import mchorse.bbs_mod.settings.values.core.ValueLink;
 import mchorse.bbs_mod.settings.values.core.ValueList;
 import mchorse.bbs_mod.settings.values.core.ValuePose;
@@ -65,6 +68,8 @@ public class ModelConfig extends ValueGroup
     public final ArmorSlotsValue armorSlots = new ArmorSlotsValue("armor_slots");
     public final ValueStringMap flippedParts = new ValueStringMap("flipped_parts");
     public final ValueStringMap pickingOverrides = new ValueStringMap("picking_overrides");
+    /** Per-material Blender emission mix (0 = world-lit, 1 = unlit texture). */
+    public final ValueData materialEmission = new ValueData("material_emission");
     public final ArmorSlotValue fpMain = new ArmorSlotValue("fp_main");
     public final ArmorSlotValue fpOffhand = new ArmorSlotValue("fp_offhand");
 
@@ -98,10 +103,22 @@ public class ModelConfig extends ValueGroup
         this.add(this.armorSlots);
         this.add(this.flippedParts);
         this.add(this.pickingOverrides);
+        this.add(this.materialEmission);
         this.add(this.fpMain);
         this.add(this.fpOffhand);
 
         this.rebuild();
+    }
+
+    /** Blender Diffuse-to-Emission Mix share; absent on old models and therefore zero. */
+    public float getMaterialEmission(String material)
+    {
+        if (!(this.materialEmission.get() instanceof MapType values))
+        {
+            return 0F;
+        }
+
+        return MathUtils.clamp(values.getFloat(material, 0F), 0F, 1F);
     }
 
     @Override
@@ -124,6 +141,7 @@ public class ModelConfig extends ValueGroup
         if (value == this.itemsOff) return this.itemsOff.hasActive();
         if (value == this.flippedParts) return !this.flippedParts.get().isEmpty();
         if (value == this.pickingOverrides) return !this.pickingOverrides.get().isEmpty();
+        if (value == this.materialEmission) return this.materialEmission.get() != null;
         if (value == this.armorSlots) return this.armorSlots.hasActive();
 
         return super.canPersist(value);

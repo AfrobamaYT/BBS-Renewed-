@@ -379,14 +379,25 @@ public class FormTranslucentQueue
         private final float r, g, b, a;
         private final int light;
         private final int overlay;
+        private final float emission;
 
         /** The two-pass translucent replay (BBS model shader). */
         public BOBJCommand(BOBJModelVAO vao, Matrix4f[] armatureSnapshot, int uploadCount, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, boolean cull)
         {
-            this(vao, BBSShaders::getModel, PASS_TRANSLUCENT, false, armatureSnapshot, uploadCount, texture, modelView, normalMat, r, g, b, a, light, overlay, cull);
+            this(vao, armatureSnapshot, uploadCount, texture, modelView, normalMat, r, g, b, a, light, overlay, 0F, cull);
+        }
+
+        public BOBJCommand(BOBJModelVAO vao, Matrix4f[] armatureSnapshot, int uploadCount, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, float emission, boolean cull)
+        {
+            this(vao, BBSShaders::getModel, PASS_TRANSLUCENT, false, armatureSnapshot, uploadCount, texture, modelView, normalMat, r, g, b, a, light, overlay, emission, cull);
         }
 
         public BOBJCommand(BOBJModelVAO vao, Supplier<RenderPipeline> pipeline, int passMode, boolean depthWrite, Matrix4f[] armatureSnapshot, int uploadCount, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, boolean cull)
+        {
+            this(vao, pipeline, passMode, depthWrite, armatureSnapshot, uploadCount, texture, modelView, normalMat, r, g, b, a, light, overlay, 0F, cull);
+        }
+
+        public BOBJCommand(BOBJModelVAO vao, Supplier<RenderPipeline> pipeline, int passMode, boolean depthWrite, Matrix4f[] armatureSnapshot, int uploadCount, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, float emission, boolean cull)
         {
             super(modelView.getTranslation(new Vector3f()), cull, depthWrite);
 
@@ -404,6 +415,7 @@ public class FormTranslucentQueue
             this.a = a;
             this.light = light;
             this.overlay = overlay;
+            this.emission = emission;
         }
 
         @Override
@@ -430,7 +442,7 @@ public class FormTranslucentQueue
              * ModelVAORenderer greift hier bewusst NICHT als Entwurf: zwischen Einreihen und
              * Zeichnen liegt der Rest des Bildes, die globale Bindung waere dann geraten. */
             ModelVAORenderer.render(this.pipeline.get(), this.vao, this.modelView, this.normalMat,
-                this.r, this.g, this.b, this.a, this.light, this.overlay, this.passMode, 0, this.texture);
+                this.r, this.g, this.b, this.a, this.light, this.overlay, this.passMode, 0, this.texture, this.emission);
         }
     }
 

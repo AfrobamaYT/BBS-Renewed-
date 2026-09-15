@@ -19,6 +19,7 @@ layout(std140) uniform ModelInfo {
     vec4 NormalMat2;
     ivec4 LichtOverlay;
     ivec4 Modus;
+    vec4 Material;
 };
 
 uniform sampler2D Sampler1;
@@ -31,6 +32,8 @@ in vec3 Normal;
 out float sphericalVertexDistance;
 out float cylindricalVertexDistance;
 out vec4 vertexColor;
+out vec4 unlitColor;
+out float emissionMix;
 out vec4 lightMapColor;
 out vec4 overlayColor;
 out vec2 texCoord0;
@@ -53,6 +56,8 @@ void main()
      * ⚠️ Darum darf der Fragmentshader NICHT noch einmal mit ColorModulator multiplizieren
      * — die Farbe steckt bereits in vertexColor. */
     vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, fixNormal, ColorModulator);
+    unlitColor = ColorModulator;
+    emissionMix = Material.x;
 
     /* Licht und Overlay waren frueher konstante Vertexattribute (UV2/UV1). Ein Attribut
      * ohne Puffer gibt es in 26.2 nicht — die Koordinaten stehen jetzt im Block. */

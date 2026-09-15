@@ -8,6 +8,7 @@ layout(std140) uniform ModelInfo {
     vec4 NormalMat2;
     ivec4 LichtOverlay;
     ivec4 Modus;
+    vec4 Material;
 };
 
 uniform sampler2D Sampler0;

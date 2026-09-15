@@ -729,7 +729,7 @@ public class ModelInstance implements IModelInstance
                 /* One draw per mesh; bind that mesh's resolved texture (mesh name = material). */
                 for (BOBJModelVAO vao : vaos)
                 {
-                    Texture texture = null;
+                    Texture texture = null; float emission = this.config.getMaterialEmission(vao.data.mesh.name);
 
                     if (textureResolver != null)
                     {
@@ -772,9 +772,9 @@ public class ModelInstance implements IModelInstance
                         /* Die Textur GEHT MIT: seit 26.2 liest der Zug sie nicht mehr aus
                          * einer globalen Bindung, sie muss an Sampler0 des Durchgangs. Ohne
                          * das zeichnet das Modell weiss (gemessen, Aufgabe 99). */
-                        ModelVAORenderer.render(shader, vao, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, FormTranslucentQueue.PASS_OPAQUE, stencilMap == null ? 0 : stencilMap.aktuelleBasis, texture);
+                        ModelVAORenderer.render(shader, vao, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, FormTranslucentQueue.PASS_OPAQUE, stencilMap == null ? 0 : stencilMap.aktuelleBasis, texture, emission);
 
-                        FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, vao.snapshotArmature(), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, this.isCulling()));
+                        FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, vao.snapshotArmature(), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, emission, this.isCulling()));
                     }
                     else if (FormTranslucentQueue.needsWholeDefer(shader, stencilMap, color.a))
                     {
@@ -783,14 +783,14 @@ public class ModelInstance implements IModelInstance
                         Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
                         Matrix3f normalMat = new Matrix3f(stack.last().normal());
 
-                        FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, () -> shader, FormTranslucentQueue.PASS_SINGLE, true, vao.snapshotArmature(), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, this.isCulling()));
+                        FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, () -> shader, FormTranslucentQueue.PASS_SINGLE, true, vao.snapshotArmature(), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, emission, this.isCulling()));
                     }
                     else
                     {
                         /* Der Weg des Auswahl-Durchgangs: beide Zweige darueber verlangen
                          * stencilMap == null, hier landet das Picken also immer. Der
                          * Grundindex der Form muss darum HIER mit, nicht nur oben. */
-                        ModelVAORenderer.render(shader, vao, stack, color.r, color.g, color.b, color.a, light, overlay, texture, stencilMap == null ? 0 : stencilMap.aktuelleBasis);
+                        ModelVAORenderer.render(shader, vao, stack, color.r, color.g, color.b, color.a, light, overlay, texture, stencilMap == null ? 0 : stencilMap.aktuelleBasis, emission);
                     }
                 }
 
