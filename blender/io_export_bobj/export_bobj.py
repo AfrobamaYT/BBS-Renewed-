@@ -370,7 +370,7 @@ def _write(context, filepath,
         progress.leave_substeps()
 
 
-def write_shape_keys(fw, ob, totverts):
+def write_shape_keys(fw, ob, totverts, global_matrix):
     """Shape Keys als `sk`/`skv`-Bloecke — BBS mischt sie vor dem Skinning.
 
     ⛔ Die Lagen kommen vom ORIGINAL-Mesh, nicht von der ausgewerteten Kopie: auf der
@@ -397,7 +397,10 @@ def write_shape_keys(fw, ob, totverts):
             b = basis[i].co
 
             if (punkt.co - b).length > 1e-6:
-                fw('skv %d %.6f %.6f %.6f\n' % (totverts + i, punkt.co[0], punkt.co[1], punkt.co[2]))
+                # Shape positions use the same object/world and axis conversion
+                # as the base vertices written above, including translation.
+                co = global_matrix @ punkt.co
+                fw('skv %d %.6f %.6f %.6f\n' % (totverts + i, co.x, co.y, co.z))
 
 
 def write_file(context, filepath, objects, depsgraph, scene,
@@ -461,7 +464,8 @@ def write_file(context, filepath, objects, depsgraph, scene,
                             if ob.type == 'ARMATURE':
                                 write_armature(fw, ob, EXPORT_GLOBAL_MATRIX)
                                 # Warn about non-XYZ rotation modes
-                                _warn_rotation_modes(ob)
+                                if EXPORT_KEYFRAMES:
+                                    _warn_rotation_modes(ob)
 
                             ob_for_convert = ob.original
 
@@ -472,6 +476,13 @@ def write_file(context, filepath, objects, depsgraph, scene,
 
                             if me is None:
                                 continue
+
+                            # to_mesh() can share its Key datablock with the source.
+                            # A BMesh roundtrip would then overwrite the ORIGINAL
+                            # shape keys with transformed coordinates. ID.copy()
+                            # gives the export mesh its own keys as well.
+                            me = me.copy()
+                            ob_for_convert.to_mesh_clear()
 
                             # Apply transforms and triangulate
                             me.transform(EXPORT_GLOBAL_MATRIX @ ob_mat)
@@ -491,7 +502,7 @@ def write_file(context, filepath, objects, depsgraph, scene,
                             ]
 
                             if not (len(face_index_pairs) + len(me.vertices)):
-                                ob_for_convert.to_mesh_clear()
+                                bpy.data.meshes.remove(me)
                                 continue
 
                             # ----------------------------------------------------------------
@@ -529,7 +540,7 @@ def write_file(context, filepath, objects, depsgraph, scene,
                                         vgroup.weight,
                                     ))
 
-                            write_shape_keys(fw, ob, totverts)
+                            write_shape_keys(fw, ob, totverts, EXPORT_GLOBAL_MATRIX @ ob_mat)
 
                             subprogress2.step()
 
@@ -608,7 +619,7 @@ def write_file(context, filepath, objects, depsgraph, scene,
                             totuvco += uv_unique_count
                             totno += no_unique_count
 
-                            ob_for_convert.to_mesh_clear()
+                            bpy.data.meshes.remove(me)
 
                     subprogress1.leave_substeps(
                         "Finished writing geometry of '%s'." % ob_main.name
