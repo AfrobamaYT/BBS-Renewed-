@@ -56,7 +56,13 @@ public class BOBJModelVAO implements IModelVAO
     private float[] tmpVertices;
     private float[] tmpNormals;
     private int[] tmpLight;
+    /** Dominanter Knochen je Ecke. Haengt nur von den importierten Gewichten ab. */
+    private int[] pickingBones;
     private float[] tmpTangents;
+
+    /** Picking-Licht hat einen eigenen Dirty-Zustand; eine Stencil-Passage bewegt kein Mesh. */
+    private boolean lichtGueltig;
+    private boolean lichtMitKnochen;
 
     /**
      * Bumped on every VBO upload. The VBO is shared between actors using the same model, so a
@@ -84,7 +90,13 @@ public class BOBJModelVAO implements IModelVAO
         this.tmpVertices = new float[this.data.posData.length];
         this.tmpNormals = new float[this.data.normData.length];
         this.tmpLight = new int[this.count * 2];
+        this.pickingBones = new int[this.count];
         this.tmpTangents = new float[this.count * 4];
+
+        for (int i = 0; i < this.count; i++)
+        {
+            this.pickingBones[i] = this.dominanterKnochen(i);
+        }
 
         this.position = puffer("bobj-position", this.data.posData);
         this.normale = puffer("bobj-normale", this.data.normData);
@@ -336,65 +348,102 @@ public class BOBJModelVAO implements IModelVAO
          * und dann sind sowohl das Skinning ueber alle Ecken als auch der Upload umsonst:
          * im Puffer steht bereits genau das Ergebnis.
          *
-         * Der Fingerabdruck laeuft ueber die Bone-Matrizen. `stencilMap` gehoert dazu, weil
-         * der Auswahl-Durchgang zusaetzlich das knochenabhaengige Licht schreibt — ohne das
-         * im Abdruck faende ein Klick nach dem ersten uebersprungenen Bild keinen Knochen. */
-        long signatur = signatur(matrices, stencilMap);
-
-        if (signatur == this.letzteMeshSignatur && this.meshGueltig)
+         * Der Fingerabdruck laeuft nur ueber Daten, die die Geometrie wirklich aendern.
+         * Picking-Licht hat unten einen eigenen Cache. Damit kann der Stencil-Durchgang
+         * dieselbe ausgewertete Geometrie verwenden, statt sie ein zweites Mal zu haeuten. */
+        long signatur = signatur(matrices);
+        if (signatur != this.letzteMeshSignatur || !this.meshGueltig)
         {
-            return;
-        }
+            this.letzteMeshSignatur = signatur;
+            this.meshGueltig = true;
 
-        this.letzteMeshSignatur = signatur;
-        this.meshGueltig = true;
+            Vector4f result = new Vector4f(0F, 0F, 0F, 0F);
+            Vector3f resultNormal = new Vector3f();
 
-        Vector4f result = new Vector4f(0F, 0F, 0F, 0F);
-        Vector3f resultNormal = new Vector3f();
+            float[] oldVertices = this.ausgangslagen();
+            float[] newVertices = this.tmpVertices;
+            float[] oldNormals = this.data.normData;
+            float[] newNormals = this.tmpNormals;
 
-        float[] oldVertices = this.ausgangslagen();
-        float[] newVertices = this.tmpVertices;
-        float[] oldNormals = this.data.normData;
-        float[] newNormals = this.tmpNormals;
-
-        for (int i = 0, c = this.count; i < c; i++)
-        {
-            /* Haeuten wie Blender — EINE Stelle fuer Zeichnen und Messung (BOBJHaut). */
-            int lightBone = mchorse.bbs_mod.bobj.BOBJHaut.vertex(this.armature, oldVertices, oldNormals,
-                this.data.weightData, this.data.boneIndexData, matrices, i, this.segmente(), result, resultNormal);
-
-            newVertices[i * 3] = result.x;
-            newVertices[i * 3 + 1] = result.y;
-            newVertices[i * 3 + 2] = result.z;
-
-            newNormals[i * 3] = resultNormal.x;
-            newNormals[i * 3 + 1] = resultNormal.y;
-            newNormals[i * 3 + 2] = resultNormal.z;
-
-            if (stencilMap != null)
+            for (int i = 0, c = this.count; i < c; i++)
             {
-                this.tmpLight[i * 2] = Math.max(0, stencilMap.increment ? lightBone : 0);
-                this.tmpLight[i * 2 + 1] = 0;
+                /* Haeuten wie Blender — EINE Stelle fuer Zeichnen und Messung (BOBJHaut). */
+                mchorse.bbs_mod.bobj.BOBJHaut.vertex(this.armature, oldVertices, oldNormals,
+                    this.data.weightData, this.data.boneIndexData, matrices, i, this.segmente(), result, resultNormal);
+
+                newVertices[i * 3] = result.x;
+                newVertices[i * 3 + 1] = result.y;
+                newVertices[i * 3 + 2] = result.z;
+
+                newNormals[i * 3] = resultNormal.x;
+                newNormals[i * 3 + 1] = resultNormal.y;
+                newNormals[i * 3 + 2] = resultNormal.z;
             }
+
+            this.processData(newVertices, newNormals, matrices);
+
+            this.uploadCount += 1;
+
+            /* 26.2: Inhalt ersetzen statt Puffer neu anzulegen. Die Groesse aendert sich beim
+             * Skinning nie -- es bewegen sich nur die Ecken. */
+            schreiben(this.position, newVertices);
+            schreiben(this.normale, newNormals);
         }
-
-        this.processData(newVertices, newNormals, matrices);
-
-        this.uploadCount += 1;
-
-        /* 26.2: Inhalt ersetzen statt Puffer neu anzulegen. Die Groesse aendert sich beim
-         * Skinning nie -- es bewegen sich nur die Ecken. */
-        schreiben(this.position, newVertices);
-        schreiben(this.normale, newNormals);
 
         /* ⚠️ Tangenten (Iris) bleiben geparkt (keine Bindung, 26.2-Ausschluss). Das
          * knochenabhaengige Licht ist seit 2026-08-13 zurueck: BINDUNG_LICHT traegt den
          * Knochenteil der Pick-Kennung je Ecke — ohne ihn kannte der Auswahlpuffer nur
          * die Replay-Basis, ein Klick fand nie einen Knochen. */
-        if (stencilMap != null)
+        this.lichtAktualisieren(stencilMap);
+    }
+
+    /**
+     * Aktualisiert nur die Picking-Kennung. Sie ist keine ausgewertete Geometrie und darf
+     * deshalb keinen Skinning-Durchgang oder Positions-/Normalen-Upload ungueltig machen.
+     */
+    private void lichtAktualisieren(StencilMap stencilMap)
+    {
+        if (stencilMap == null)
         {
-            schreibenInt(this.licht, this.tmpLight);
+            return;
         }
+
+        boolean mitKnochen = stencilMap.increment;
+
+        if (this.lichtGueltig && this.lichtMitKnochen == mitKnochen)
+        {
+            return;
+        }
+
+        for (int i = 0; i < this.count; i++)
+        {
+            this.tmpLight[i * 2] = mitKnochen ? this.pickingBones[i] : 0;
+            this.tmpLight[i * 2 + 1] = 0;
+        }
+
+        schreibenInt(this.licht, this.tmpLight);
+        this.lichtMitKnochen = mitKnochen;
+        this.lichtGueltig = true;
+    }
+
+    /** Gleiche Tie-Break-Regel wie BOBJHaut.vertex, aber einmalig statt pro Bild. */
+    private int dominanterKnochen(int vertex)
+    {
+        float maxWeight = -1F;
+        int bone = -1;
+
+        for (int k = 0; k < 4; k++)
+        {
+            float weight = this.data.weightData[vertex * 4 + k];
+
+            if (weight > 0F && weight > maxWeight)
+            {
+                bone = this.data.boneIndexData[vertex * 4 + k];
+                maxWeight = weight;
+            }
+        }
+
+        return Math.max(0, bone);
     }
 
     protected void processData(float[] newVertices, float[] newNormals, Matrix4f[] matrices)
@@ -444,9 +493,9 @@ public class BOBJModelVAO implements IModelVAO
         this.meshGueltig = false;
     }
 
-    private static long signatur(Matrix4f[] matrices, StencilMap stencilMap)
+    private static long signatur(Matrix4f[] matrices)
     {
-        long h = stencilMap == null ? 17L : 19L;
+        long h = 17L;
 
         if (matrices != null)
         {
