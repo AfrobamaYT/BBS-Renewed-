@@ -1,13 +1,12 @@
 package mchorse.bbs_mod.mixin.client;
 
-import com.afrobama.bbstools.client.blender.MixinBruecke;
+import com.afrobama.blendertransform.FensterGroesseLogik;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.mojang.blaze3d.platform.Window;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Window.class)
 public class WindowMixin
@@ -64,73 +63,43 @@ public class WindowMixin
     private int bbs$overrideScaleFactor(int scaleFactor)
     {
         /* framebufferWidth/Height sind @Shadow — sie gehen als wert rueber, nicht als feld. */
-        return (Integer) MixinBruecke.rufe("FensterGroesseLogik", "skalierung",
+        return FensterGroesseLogik.skalierung(
             scaleFactor, this.framebufferWidth, this.framebufferHeight);
     }
 
-    @Inject(method = "getScreenWidth", at = @At("HEAD"), cancellable = true)
-    public void onGetWidth(CallbackInfoReturnable<Integer> info)
+    @ModifyReturnValue(method = "getScreenWidth", at = @At("RETURN"))
+    private int bbs$overrideScreenWidth(int original)
     {
-        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "bildschirmBreite");
-
-        if (wert != null)
-        {
-            info.setReturnValue(wert);
-        }
+        return FensterGroesseLogik.bildschirmBreite(original);
     }
 
-    @Inject(method = "getScreenHeight", at = @At("HEAD"), cancellable = true)
-    public void onGetHeight(CallbackInfoReturnable<Integer> info)
+    @ModifyReturnValue(method = "getScreenHeight", at = @At("RETURN"))
+    private int bbs$overrideScreenHeight(int original)
     {
-        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "bildschirmHoehe");
-
-        if (wert != null)
-        {
-            info.setReturnValue(wert);
-        }
+        return FensterGroesseLogik.bildschirmHoehe(original);
     }
 
-    @Inject(method = "getWidth", at = @At("HEAD"), cancellable = true)
-    public void onGetFramebufferWidth(CallbackInfoReturnable<Integer> info)
+    @ModifyReturnValue(method = "getWidth", at = @At("RETURN"))
+    private int bbs$overrideFramebufferWidth(int original)
     {
-        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "pufferBreite");
-
-        if (wert != null)
-        {
-            info.setReturnValue(wert);
-        }
+        return FensterGroesseLogik.pufferBreite(original);
     }
 
-    @Inject(method = "getHeight", at = @At("HEAD"), cancellable = true)
-    public void onGetFramebufferHeight(CallbackInfoReturnable<Integer> info)
+    @ModifyReturnValue(method = "getHeight", at = @At("RETURN"))
+    private int bbs$overrideFramebufferHeight(int original)
     {
-        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "pufferHoehe");
-
-        if (wert != null)
-        {
-            info.setReturnValue(wert);
-        }
+        return FensterGroesseLogik.pufferHoehe(original);
     }
 
-    @Inject(method = "getGuiScaledWidth", at = @At("HEAD"), cancellable = true)
-    public void onGetScaledWidth(CallbackInfoReturnable<Integer> info)
+    @ModifyReturnValue(method = "getGuiScaledWidth", at = @At("RETURN"))
+    private int bbs$overrideScaledWidth(int original)
     {
-        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "skalierteBreite", this.guiScale);
-
-        if (wert != null)
-        {
-            info.setReturnValue(wert);
-        }
+        return FensterGroesseLogik.skalierteBreite(original, this.guiScale);
     }
 
-    @Inject(method = "getGuiScaledHeight", at = @At("HEAD"), cancellable = true)
-    public void onGetScaledHeight(CallbackInfoReturnable<Integer> info)
+    @ModifyReturnValue(method = "getGuiScaledHeight", at = @At("RETURN"))
+    private int bbs$overrideScaledHeight(int original)
     {
-        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "skalierteHoehe", this.guiScale);
-
-        if (wert != null)
-        {
-            info.setReturnValue(wert);
-        }
+        return FensterGroesseLogik.skalierteHoehe(original, this.guiScale);
     }
 }
