@@ -22,7 +22,10 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.function.Supplier;
 
 /**
@@ -46,6 +49,8 @@ public class FormTranslucentQueue
     public static final int PASS_TRANSLUCENT = 2;
 
     private static final List<DrawCommand> commands = new ArrayList<>();
+    /** Freigegebene, unveraenderliche Pose-Snapshots je VAO; nur der Render-Thread greift zu. */
+    private static final Map<BOBJModelVAO, ArrayDeque<Matrix4f[]>> armatureSnapshots = new WeakHashMap<>();
     private static boolean active;
 
     /**
@@ -168,6 +173,51 @@ public class FormTranslucentQueue
             command.draw();
             command.release();
         }
+    }
+
+    /** Capture private storage for one deferred command; {@link BOBJCommand#release()} returns it. */
+    public static Matrix4f[] captureArmature(BOBJModelVAO vao)
+    {
+        Matrix4f[] source = vao.armature.matrices;
+        ArrayDeque<Matrix4f[]> pool = armatureSnapshots.get(vao);
+
+        if (pool == null)
+        {
+            pool = new ArrayDeque<>();
+            armatureSnapshots.put(vao, pool);
+        }
+
+        Matrix4f[] snapshot = pool.pollFirst();
+
+        if (snapshot == null || snapshot.length != source.length)
+        {
+            snapshot = new Matrix4f[source.length];
+        }
+
+        for (int i = 0; i < source.length; i++)
+        {
+            Matrix4f matrix = source[i];
+
+            if (matrix == null)
+            {
+                snapshot[i] = null;
+            }
+            else if (snapshot[i] == null)
+            {
+                snapshot[i] = new Matrix4f(matrix);
+            }
+            else
+            {
+                snapshot[i].set(matrix);
+            }
+        }
+
+        return snapshot;
+    }
+
+    private static void releaseArmature(BOBJModelVAO vao, Matrix4f[] snapshot)
+    {
+        armatureSnapshots.get(vao).addFirst(snapshot);
     }
 
     public static void begin()
@@ -443,6 +493,12 @@ public class FormTranslucentQueue
              * Zeichnen liegt der Rest des Bildes, die globale Bindung waere dann geraten. */
             ModelVAORenderer.render(this.pipeline.get(), this.vao, this.modelView, this.normalMat,
                 this.r, this.g, this.b, this.a, this.light, this.overlay, this.passMode, 0, this.texture, this.emission);
+        }
+
+        @Override
+        public void release()
+        {
+            releaseArmature(this.vao, this.armatureSnapshot);
         }
     }
 

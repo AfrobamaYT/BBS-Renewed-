@@ -735,7 +735,7 @@ public class ModelInstance implements IModelInstance
                          * das zeichnet das Modell weiss (gemessen, Aufgabe 99). */
                         ModelVAORenderer.render(shader, vao, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, FormTranslucentQueue.PASS_OPAQUE, stencilMap == null ? 0 : stencilMap.aktuelleBasis, texture, emission);
 
-                        FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, vao.snapshotArmature(), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, emission, this.isCulling()));
+                        FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, FormTranslucentQueue.captureArmature(vao), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, emission, this.isCulling()));
                     }
                     else if (FormTranslucentQueue.needsWholeDefer(shader, stencilMap, color.a))
                     {
@@ -744,7 +744,7 @@ public class ModelInstance implements IModelInstance
                         Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
                         Matrix3f normalMat = new Matrix3f(stack.last().normal());
 
-                        FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, () -> shader, FormTranslucentQueue.PASS_SINGLE, true, vao.snapshotArmature(), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, emission, this.isCulling()));
+                        FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, () -> shader, FormTranslucentQueue.PASS_SINGLE, true, FormTranslucentQueue.captureArmature(vao), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, emission, this.isCulling()));
                     }
                     else
                     {
