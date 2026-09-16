@@ -968,8 +968,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     public void collectMatrices(IEntity entity, PoseStack stack, MatrixCache matrices, String prefix, float transition)
     {
         ModelInstance model = this.getModel();
-        Matrix4f mm = new Matrix4f();
-        Matrix4f oo = new Matrix4f();
+        MatrixCacheEntry root = matrices.acquire(prefix);
+        Matrix4f mm = root.matrix(), oo = root.origin();
 
         stack.pushPose();
         this.applyTransforms(stack, true, transition);
@@ -979,8 +979,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         stack.pushPose();
         this.applyTransforms(stack, false, transition);
         mm.set(stack.last().pose());
-
-        matrices.put(prefix, mm, oo);
 
         /* Collect bones and add them to matrix list */
         if (this.animator != null && model != null)
@@ -1000,8 +998,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         for (Map.Entry<String, MatrixCacheEntry> entry : this.bones.entrySet())
         {
-            Matrix4f matrix = new Matrix4f();
-            Matrix4f o = new Matrix4f();
+            MatrixCacheEntry captured = matrices.acquire(StringUtils.combinePaths(prefix, entry.getKey()));
+            Matrix4f matrix = captured.matrix(), o = captured.origin();
 
             stack.pushPose();
             MatrixStackUtils.multiply(stack, entry.getValue().matrix());
@@ -1013,7 +1011,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             o.set(stack.last().pose());
             stack.popPose();
 
-            matrices.put(StringUtils.combinePaths(prefix, entry.getKey()), matrix, o, entry.getValue().evaluatedRotation());
+            captured.setEvaluatedRotation(entry.getValue().evaluatedRotation());
         }
 
         int i = 0;
