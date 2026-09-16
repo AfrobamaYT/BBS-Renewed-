@@ -14,11 +14,13 @@ import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.film.replays.FormProperties;
 import mchorse.bbs_mod.film.replays.Inventory;
+import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.MobForm;
+import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.morphing.Morph;
@@ -40,6 +42,7 @@ import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Recorder extends WorldFilmController
 {
@@ -66,6 +69,9 @@ public class Recorder extends WorldFilmController
 
     public int countdown;
     public final int initialTick;
+
+    /** Last value committed to the existing FormProperties model/mobId recording track. */
+    private String lastFormTrackValue;
 
     public static void renderCameraPreview(Position position, CameraRenderState camera, PoseStack stack,
         net.minecraft.client.renderer.SubmitNodeCollector sammler)
@@ -202,10 +208,63 @@ public class Recorder extends WorldFilmController
             Morph morph = Morph.getMorph(player);
 
             this.keyframes.record(this.tick, morph.entity, null);
+            this.recordFormTrack(morph == null ? null : morph.getForm());
             this.recordMobs();
         }
 
         super.update();
+    }
+
+    /**
+     * Record the existing string property track that BBS' replay editor labels as Model.
+     * ModelForm uses {@code model}; MobForm has the equivalent {@code mobId}. The target replay's
+     * form class is authoritative because {@link mchorse.bbs_mod.ui.film.UIFilmPanel#applyRecordedKeyframes}
+     * copies these channels into that form after stop. Cross-class switches cannot be represented
+     * by either property and are deliberately skipped instead of writing an unusable channel.
+     */
+    private void recordFormTrack(Form current)
+    {
+        Replay replay = this.exception >= 0 && this.exception < this.film.replays.getList().size()
+            ? this.film.replays.getList().get(this.exception) : null;
+        Form target = replay == null ? null : replay.form.get();
+        String key;
+        String value;
+
+        if (target instanceof ModelForm && current instanceof ModelForm model)
+        {
+            key = "model";
+            value = model.model.get();
+        }
+        else if (target instanceof MobForm && current instanceof MobForm mob)
+        {
+            key = "mobId";
+            value = mob.mobID.get();
+        }
+        else
+        {
+            return;
+        }
+
+        if (Objects.equals(this.lastFormTrackValue, value))
+        {
+            return;
+        }
+
+        mchorse.bbs_mod.utils.keyframes.KeyframeChannel channel =
+            this.properties.getOrCreate(target, key);
+
+        if (channel != null)
+        {
+            int index = channel.insert(this.tick, value);
+            mchorse.bbs_mod.utils.keyframes.Keyframe keyframe = channel.get(index);
+
+            if (keyframe != null)
+            {
+                keyframe.getInterpolation().setInterp(mchorse.bbs_mod.utils.interps.Interpolations.CONST);
+            }
+
+            this.lastFormTrackValue = value;
+        }
     }
 
     /**
