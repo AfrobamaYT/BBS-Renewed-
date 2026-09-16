@@ -61,6 +61,16 @@ public final class RigWidgets
     private static final Vector3f P1 = new Vector3f();
     private static final Vector3f P2 = new Vector3f();
 
+    /**
+     * Wiederverwendbarer Arbeitsbereich fuer {@link #kette}. Die Methode laeuft im
+     * Render-Thread und wurde vorher bei jedem Control aus Arrays und mehreren Dutzend
+     * {@link Vector3f}-Objekten neu aufgebaut. Die Geometrie bleibt identisch; nur die
+     * temporaeren Objekte ueberleben jetzt bis zum naechsten Aufruf.
+     *
+     * <p>Lazy statt final: nach einem Klassen-Hotswap sind neue statische Felder null.
+     */
+    private static KettenScratch kettenScratch;
+
     /** Video-zu-Anzeige-Verhaeltnis: die px-Konstanz der Baender gilt im RENDERZIEL
      *  (Video, z.B. 3840), das aufs Vorschaufeld (z.B. 454px) verkleinert wird — ohne
      *  diesen Faktor schrumpfen 2.7px auf unter 1px Anzeige. Setzt der Editor-Pass je
@@ -225,39 +235,57 @@ public final class RigWidgets
             return;
         }
 
-        Vector3f[] pkt = new Vector3f[n];
+        KettenScratch scratch = kettenScratch;
+
+        if (scratch == null)
+        {
+            scratch = new KettenScratch();
+            kettenScratch = scratch;
+        }
+
+        scratch.ensure(n);
+
+        Vector3f[] pkt = scratch.punkte;
 
         for (int i = 0; i < n; i++)
         {
-            pkt[i] = new Vector3f(xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2]);
+            pkt[i].set(xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2]);
             kombi.transformPosition(pkt[i]);
         }
 
         boolean zyklus = pkt[0].distanceSquared(pkt[n - 1]) < 1.0E-10F && n > 2;
-        Vector3f[] norm = new Vector3f[n - 1];
+        Vector3f[] norm = scratch.normalen;
 
         for (int i = 0; i < n - 1; i++)
         {
-            Vector3f d = new Vector3f(pkt[i + 1]).sub(pkt[i]);
-            Vector3f mitte = new Vector3f(pkt[i]).add(pkt[i + 1]).mul(0.5F);
-            Vector3f seite = new Vector3f(d).cross(mitte);
+            Vector3f d = scratch.segment.set(pkt[i + 1]).sub(pkt[i]);
+            Vector3f mitte = scratch.mitte.set(pkt[i]).add(pkt[i + 1]).mul(0.5F);
+            Vector3f seite = scratch.seite.set(d).cross(mitte);
             float l = seite.length();
 
             /* Edge-on: projiziert punktfoermig, seite/l waere Rundungs-Rauschen. */
-            norm[i] = l < 1.0E-3F * d.length() * mitte.length() || l < 1.0E-9F
-                ? null : seite.mul(1F / l);
+            scratch.normGueltig[i] = !(l < 1.0E-3F * d.length() * mitte.length() || l < 1.0E-9F);
+
+            if (scratch.normGueltig[i])
+            {
+                norm[i].set(seite).mul(1F / l);
+            }
         }
 
         float ui = (float) net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale();
         float dick = breite * Math.max(ui, 1F);
-        Vector3f[] richtung = new Vector3f[n];
-        float[] streckung = new float[n];
+        Vector3f[] richtung = scratch.richtungen;
+        float[] streckung = scratch.streckung;
 
         for (int i = 0; i < n; i++)
         {
-            Vector3f vor = i > 0 ? norm[i - 1] : (zyklus ? norm[n - 2] : null);
-            Vector3f nach = i < n - 1 ? norm[i] : (zyklus ? norm[0] : null);
+            Vector3f vor = i > 0 && scratch.normGueltig[i - 1]
+                ? norm[i - 1] : (zyklus && scratch.normGueltig[n - 2] ? norm[n - 2] : null);
+            Vector3f nach = i < n - 1 && scratch.normGueltig[i]
+                ? norm[i] : (zyklus && scratch.normGueltig[0] ? norm[0] : null);
             Vector3f basis = nach != null ? nach : vor;
+
+            scratch.richtungGueltig[i] = false;
 
             if (basis == null)
             {
@@ -270,14 +298,15 @@ public final class RigWidgets
                  * Damit stossen die Baender an der Ecke exakt aneinander — ohne Luecke
                  * UND ohne Ueberlappung. Gedeckelt, damit spitze Winkel keine Stacheln
                  * werfen (Blenders Polyline-Geometrie macht dasselbe). */
-                Vector3f m = new Vector3f(vor).add(nach);
+                Vector3f m = scratch.gehrung.set(vor).add(nach);
                 float ml = m.length();
 
                 if (ml > 1.0E-6F)
                 {
                     m.mul(1F / ml);
                     float cos = m.dot(nach);
-                    richtung[i] = m;
+                    richtung[i].set(m);
+                    scratch.richtungGueltig[i] = true;
                     /* ⛔ Gehrungsgrenze 2, nicht 5. Bei spitzen Ecken waechst 1/cos
                      * unbegrenzt; mit 5 wird die Linie an solchen Stellen fuenffach so
                      * breit. Genau dort faellt es auf, wo ein Glied gestreckt wird (die
@@ -290,13 +319,14 @@ public final class RigWidgets
                 }
             }
 
-            richtung[i] = new Vector3f(basis);
+            richtung[i].set(basis);
+            scratch.richtungGueltig[i] = true;
             streckung[i] = 1F;
         }
 
         for (int i = 0; i < n - 1; i++)
         {
-            if (richtung[i] == null || richtung[i + 1] == null)
+            if (!scratch.richtungGueltig[i] || !scratch.richtungGueltig[i + 1])
             {
                 continue;
             }
@@ -312,6 +342,51 @@ public final class RigWidgets
             quer(builder, pkt[i], pkt[i + 1], r1, a1, r2, a2, r1, k1, r2, k2, col, 0F, a);
             quer(builder, pkt[i], pkt[i + 1], r1, k1, r2, k2, r1, -k1, r2, -k2, col, a, a);
             quer(builder, pkt[i], pkt[i + 1], r1, -k1, r2, -k2, r1, -a1, r2, -a2, col, a, 0F);
+        }
+    }
+
+    /** Nur bei einer groesseren Control-Linie wachsen; im Normalbetrieb bleibt der Speicher stehen. */
+    private static final class KettenScratch
+    {
+        private Vector3f[] punkte = new Vector3f[0];
+        private Vector3f[] normalen = new Vector3f[0];
+        private Vector3f[] richtungen = new Vector3f[0];
+        private boolean[] normGueltig = new boolean[0];
+        private boolean[] richtungGueltig = new boolean[0];
+        private float[] streckung = new float[0];
+        private final Vector3f segment = new Vector3f();
+        private final Vector3f mitte = new Vector3f();
+        private final Vector3f seite = new Vector3f();
+        private final Vector3f gehrung = new Vector3f();
+
+        private void ensure(int benoetigt)
+        {
+            if (this.punkte.length >= benoetigt)
+            {
+                return;
+            }
+
+            int alt = this.punkte.length;
+            int kapazitaet = Math.max(8, alt);
+
+            while (kapazitaet < benoetigt)
+            {
+                kapazitaet *= 2;
+            }
+
+            this.punkte = java.util.Arrays.copyOf(this.punkte, kapazitaet);
+            this.normalen = java.util.Arrays.copyOf(this.normalen, kapazitaet);
+            this.richtungen = java.util.Arrays.copyOf(this.richtungen, kapazitaet);
+            this.normGueltig = java.util.Arrays.copyOf(this.normGueltig, kapazitaet);
+            this.richtungGueltig = java.util.Arrays.copyOf(this.richtungGueltig, kapazitaet);
+            this.streckung = java.util.Arrays.copyOf(this.streckung, kapazitaet);
+
+            for (int i = alt; i < kapazitaet; i++)
+            {
+                this.punkte[i] = new Vector3f();
+                this.normalen[i] = new Vector3f();
+                this.richtungen[i] = new Vector3f();
+            }
         }
     }
 
