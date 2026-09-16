@@ -29,6 +29,9 @@ public class RigCtrlZeichner
     /** Klickziel-Halbbreite bei 5m Abstand — skaliert screen-konstant mit der Distanz. */
     private static final float PICK_HALB = 0.011F;
 
+    /** Ausschliesslich vom Render-Thread benutzt; dieselben Picking-Vektoren fuer jedes Bild. */
+    private static final StencilScratch STENCIL = new StencilScratch();
+
     public static void weltPass(BufferBuilder wire, Matrix4f sicht, Vec3 kamera,
         IntObjectMap<IEntity> entities, IEntity entity, Replay replay,
         Iterable<RigCtrl.Eintrag> rig, String selectedBone, float a, float transition)
@@ -130,8 +133,9 @@ public class RigCtrlZeichner
         Form form, BOBJArmature armature, Iterable<RigCtrl.Eintrag> rig)
     {
         Matrix4f pose = stack.last().pose();
-        Vector3f p1 = new Vector3f();
-        Vector3f p2 = new Vector3f();
+        Vector3f p1 = STENCIL.p1;
+        Vector3f p2 = STENCIL.p2;
+        float[] col = STENCIL.color;
 
         for (RigCtrl.Eintrag e : rig)
         {
@@ -151,11 +155,13 @@ public class RigCtrlZeichner
                     continue;
                 }
 
-                mat = new Matrix4f(pose).mul(bone.mat);
+                mat = STENCIL.matrix.set(pose).mul(bone.mat);
             }
 
             int id = stencilMap.objectIndex;
-            float[] col = {(id & 0xFF) / 255F, (id >> 8 & 0xFF) / 255F, (id >> 16 & 0xFF) / 255F};
+            col[0] = (id & 0xFF) / 255F;
+            col[1] = (id >> 8 & 0xFF) / 255F;
+            col[2] = (id >> 16 & 0xFF) / 255F;
 
             /* Der Master liegt FLACH am Boden — seine duennen Linien-Quads kommen dort
              * nicht zuverlaessig im Puffer an (gemessen: deckung=0 trotz Builder-Lauf).
@@ -191,7 +197,7 @@ public class RigCtrlZeichner
     /** Zwei senkrecht gekreuzte Quads laengs p1->p2 — aus jeder Blickrichtung Flaeche. */
     private static void kreuzQuad(BufferBuilder builder, Vector3f p1, Vector3f p2, float[] col)
     {
-        Vector3f d = new Vector3f(p2).sub(p1);
+        Vector3f d = STENCIL.direction.set(p2).sub(p1);
 
         if (d.lengthSquared() < 1.0E-10F)
         {
@@ -201,10 +207,11 @@ public class RigCtrlZeichner
         /* Screen-konstant wie die sichtbaren Baender — ferne/kleine Ringe waren sonst
          * im Puffer unter einem Texel breit und unklickbar (User-Abnahme R2). Der
          * Stencil-Raum ist kamera-relativ: |mitte| IST die Distanz. */
-        float halb = PICK_HALB * RigWidgets.screenSkala(new Vector3f(p1).add(p2).mul(0.5F).length());
-        Vector3f hilf = Math.abs(d.y) < 0.9F * d.length() ? new Vector3f(0F, 1F, 0F) : new Vector3f(1F, 0F, 0F);
-        Vector3f s1 = new Vector3f(d).cross(hilf).normalize().mul(halb);
-        Vector3f s2 = new Vector3f(d).cross(s1).normalize().mul(halb);
+        float halb = PICK_HALB * RigWidgets.screenSkala(STENCIL.middle.set(p1).add(p2).mul(0.5F).length());
+        boolean horizontal = Math.abs(d.y) < 0.9F * d.length();
+        Vector3f hilf = STENCIL.helper.set(horizontal ? 0F : 1F, horizontal ? 1F : 0F, 0F);
+        Vector3f s1 = STENCIL.side1.set(d).cross(hilf).normalize().mul(halb);
+        Vector3f s2 = STENCIL.side2.set(d).cross(s1).normalize().mul(halb);
 
         quad(builder, p1, p2, s1, col);
         quad(builder, p1, p2, s2, col);
@@ -242,5 +249,18 @@ public class RigCtrlZeichner
     private static float linear(float c)
     {
         return c <= 0.04045F ? c / 12.92F : (float) Math.pow((c + 0.055F) / 1.055F, 2.4);
+    }
+
+    private static final class StencilScratch
+    {
+        private final Matrix4f matrix = new Matrix4f();
+        private final Vector3f p1 = new Vector3f();
+        private final Vector3f p2 = new Vector3f();
+        private final Vector3f direction = new Vector3f();
+        private final Vector3f middle = new Vector3f();
+        private final Vector3f helper = new Vector3f();
+        private final Vector3f side1 = new Vector3f();
+        private final Vector3f side2 = new Vector3f();
+        private final float[] color = new float[3];
     }
 }
