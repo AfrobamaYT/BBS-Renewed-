@@ -365,9 +365,15 @@ public abstract class FormRenderer <T extends Form>
 
     public MatrixCache collectMatrices(IEntity entity, float transition)
     {
-        MatrixCache map = new MatrixCache();
+        return this.collectMatrices(entity, transition, new MatrixCache());
+    }
+
+    /** Evaluate into caller-owned storage so a frame cache can retain its matrix slots. */
+    public MatrixCache collectMatrices(IEntity entity, float transition, MatrixCache map)
+    {
         PoseStack stack = new PoseStack();
 
+        map.clear();
         this.collectMatrices(entity, stack, map, "", transition);
 
         return map;

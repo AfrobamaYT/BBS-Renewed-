@@ -3,6 +3,7 @@ package mchorse.bbs_mod.forms.renderers.utils;
 
 public final class BildFrameCache
 {
+    private static final FormFrameCache WIEDERVERWENDET = new FormFrameCache();
     private static FormFrameCache aktuell;
 
     private BildFrameCache()
@@ -11,7 +12,8 @@ public final class BildFrameCache
     /** Ab hier teilen sich alle Aufrufe einen Cache. Immer mit {@link #frei()} paaren. */
     public static FormFrameCache anlegen()
     {
-        aktuell = new FormFrameCache();
+        WIEDERVERWENDET.reset();
+        aktuell = WIEDERVERWENDET;
 
         return aktuell;
     }

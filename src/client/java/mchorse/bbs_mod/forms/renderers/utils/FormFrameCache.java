@@ -5,6 +5,8 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 
 import java.util.IdentityHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,6 +37,20 @@ import java.util.Map;
 public final class FormFrameCache
 {
     private final Map<Form, Entry> entries = new IdentityHashMap<>();
+    private final List<Entry> pool = new ArrayList<>();
+    private int nextEntry;
+
+    /** Start a new validity span while retaining only the allocated matrix storage. */
+    public void reset()
+    {
+        for (Entry entry : this.pool)
+        {
+            entry.entity = null;
+        }
+
+        this.entries.clear();
+        this.nextEntry = 0;
+    }
 
     /**
      * Evaluate {@code form} for {@code entity}, reusing {@code cache}'s result when it already holds one for
@@ -62,13 +78,26 @@ public final class FormFrameCache
             return entry.matrices;
         }
 
-        MatrixCache matrices = FormUtilsClient.getRenderer(form).collectMatrices(entity, transition);
+        if (this.nextEntry >= this.pool.size())
+        {
+            this.pool.add(new Entry());
+        }
 
-        this.entries.put(form, new Entry(entity, transition, matrices));
+        Entry next = this.pool.get(this.nextEntry++);
 
-        return matrices;
+        FormUtilsClient.getRenderer(form).collectMatrices(entity, transition, next.matrices);
+        next.entity = entity;
+        next.transition = transition;
+
+        this.entries.put(form, next);
+
+        return next.matrices;
     }
 
-    private record Entry(IEntity entity, float transition, MatrixCache matrices)
-    {}
+    private static final class Entry
+    {
+        private IEntity entity;
+        private float transition;
+        private final MatrixCache matrices = new MatrixCache();
+    }
 }
