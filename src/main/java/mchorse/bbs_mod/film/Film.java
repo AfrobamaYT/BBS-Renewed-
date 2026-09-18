@@ -1,6 +1,8 @@
 package mchorse.bbs_mod.film;
 
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.film.markers.Markers;
 import mchorse.bbs_mod.film.replays.Inventory;
 import mchorse.bbs_mod.film.replays.Replay;
@@ -51,6 +53,9 @@ public class Film extends ValueGroup
     /** Time spent editing with recent input (excludes AFK idle in the film editor). */
     public final ValueLong timeSpentActive = new ValueLong("time_spent_active", 0L);
 
+    /** Durable bridge metadata is not an editable Value and never enters channel undo records. */
+    public String bridgeJournal = "";
+
     public Film()
     {
         super("");
@@ -70,6 +75,27 @@ public class Film extends ValueGroup
         this.add(this.description);
         this.add(this.createdAt);
         this.add(this.timeSpentActive);
+    }
+
+    @Override
+    public BaseType toData()
+    {
+        MapType data = super.toData().asMap();
+        if (!this.bridgeJournal.isEmpty())
+        {
+            data.putString("bridge_journal", this.bridgeJournal);
+        }
+        return data;
+    }
+
+    @Override
+    public void fromData(BaseType data)
+    {
+        super.fromData(data);
+        if (data.isMap() && data.asMap().has("bridge_journal"))
+        {
+            this.bridgeJournal = data.asMap().getString("bridge_journal");
+        }
     }
 
     public void stampCreationTimeNow()
