@@ -28,7 +28,8 @@ public class FilmManager extends BaseManager<Film>
             File file = this.getFile(id);
             if (file.exists())
             {
-                String previous = this.storage.load(file).getString("bridge_journal");
+                MapType previousData = this.storage.load(file);
+                String previous = previousData.getString("bridge_journal");
                 if (!previous.isEmpty())
                 {
                     JsonObject old = JsonParser.parseString(previous).getAsJsonObject();
@@ -44,6 +45,10 @@ public class FilmManager extends BaseManager<Film>
                         throw new IllegalStateException("stale save would roll back the durable film journal");
                     }
                 }
+
+                this.checkBridgePathRevisions(
+                    previousData.getString("bridge_path_revisions"),
+                    data.getString("bridge_path_revisions"));
             }
             return super.save(id, data);
         }
@@ -51,6 +56,29 @@ public class FilmManager extends BaseManager<Film>
         {
             exception.printStackTrace();
             return false;
+        }
+    }
+
+    private void checkBridgePathRevisions(String previous, String incoming)
+    {
+        if (previous.isEmpty())
+        {
+            return;
+        }
+        if (incoming.isEmpty())
+        {
+            throw new IllegalStateException("stale save lacks bridge path revisions");
+        }
+
+        JsonObject old = JsonParser.parseString(previous).getAsJsonObject();
+        JsonObject next = JsonParser.parseString(incoming).getAsJsonObject();
+
+        for (String path : old.keySet())
+        {
+            if (!next.has(path) || next.get(path).getAsLong() < old.get(path).getAsLong())
+            {
+                throw new IllegalStateException("stale save would roll back a bridge path revision");
+            }
         }
     }
 

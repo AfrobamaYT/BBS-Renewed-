@@ -59,6 +59,8 @@ public class Film extends ValueGroup
 
     /** Durable bridge metadata is not an editable Value and never enters channel undo records. */
     public String bridgeJournal = "";
+    /** Per-protected-path native edit generations used to fence compensating bridge undo. */
+    public String bridgePathRevisions = "";
 
     public Film()
     {
@@ -99,6 +101,10 @@ public class Film extends ValueGroup
         {
             data.putString("bridge_journal", this.bridgeJournal);
         }
+        if (!this.bridgePathRevisions.isEmpty())
+        {
+            data.putString("bridge_path_revisions", this.bridgePathRevisions);
+        }
         return data;
     }
 
@@ -109,6 +115,10 @@ public class Film extends ValueGroup
         if (data.isMap() && data.asMap().has("bridge_journal"))
         {
             this.bridgeJournal = data.asMap().getString("bridge_journal");
+        }
+        if (data.isMap() && data.asMap().has("bridge_path_revisions"))
+        {
+            this.bridgePathRevisions = data.asMap().getString("bridge_path_revisions");
         }
     }
 
