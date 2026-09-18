@@ -21,9 +21,13 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Locale;
+import java.util.function.BiConsumer;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
 
 public class Film extends ValueGroup
 {
+    /** Optional runtime mutation policy. Never serialized with film content. */
+    public static BiConsumer<Film, BaseValue> editGuard;
     public final Clips camera = new Clips("camera", BBSMod.getFactoryCameraClips());
     public final Replays replays = new Replays("replays");
     /**
@@ -75,6 +79,16 @@ public class Film extends ValueGroup
         this.add(this.description);
         this.add(this.createdAt);
         this.add(this.timeSpentActive);
+    }
+
+    @Override
+    public void preNotify(BaseValue value, int flag)
+    {
+        if (editGuard != null)
+        {
+            editGuard.accept(this, value);
+        }
+        super.preNotify(value, flag);
     }
 
     @Override

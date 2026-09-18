@@ -73,7 +73,10 @@ public class UIScreen extends Screen implements IFileDropListener
 
     public void update()
     {
-        this.menu.update();
+        {
+            this.menu.update();
+            return true;
+        });
     }
 
     public void renderInWorld(LevelRenderContext context)
@@ -170,31 +173,26 @@ public class UIScreen extends Screen implements IFileDropListener
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
-        return this.menu.mouseClicked((int) event.x(), (int) event.y(), event.button());
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount)
     {
-        return this.menu.mouseScrolled((int) mouseX, (int) mouseY, horizontalAmount, verticalAmount);
     }
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event)
     {
-        return this.menu.mouseReleased((int) event.x(), (int) event.y(), event.button());
     }
 
     @Override
     public boolean keyPressed(KeyEvent event)
     {
-        return this.menu.handleKey(event.key(), event.scancode(), BBSRendering.lastAction, event.modifiers());
     }
 
     @Override
     public boolean keyReleased(KeyEvent event)
     {
-        return this.menu.handleKey(event.key(), event.scancode(), GLFW.GLFW_RELEASE, event.modifiers());
     }
 
     @Override
@@ -202,7 +200,10 @@ public class UIScreen extends Screen implements IFileDropListener
     {
         /* 26.2 delivers a codepoint instead of a char; BBS' text input is char based, so
          * anything outside the BMP (surrogate pairs) is not representable here. */
-        this.menu.handleTextInput((char) event.codepoint());
+        {
+            this.menu.handleTextInput((char) event.codepoint());
+            return true;
+        });
 
         return true;
     }
@@ -232,10 +233,13 @@ public class UIScreen extends Screen implements IFileDropListener
          * (ein volatile-read). Nur waehrend eines programmatischen zuges liefern sie die
          * gesetzte position — ohne das koennte kein test etwas ZIEHEN, weil ziehende elemente
          * die maus pro frame hier neu lesen. Siehe VirtuelleMaus. */
-        this.menu.renderMenu(this.context,
-            mchorse.bbs_mod.sonden.Sonden.eingabe.mausX(mouseX),
-            mchorse.bbs_mod.sonden.Sonden.eingabe.mausY(mouseY));
-        this.menu.context.render.executeRunnables();
+        {
+            this.menu.renderMenu(this.context,
+                mchorse.bbs_mod.sonden.Sonden.eingabe.mausX(mouseX),
+                mchorse.bbs_mod.sonden.Sonden.eingabe.mausY(mouseY));
+            this.menu.context.render.executeRunnables();
+            return true;
+        });
     }
 
     @Override

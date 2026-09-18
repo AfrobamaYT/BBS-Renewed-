@@ -2,6 +2,7 @@ package mchorse.bbs_mod.utils.undo;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * Undo manager
@@ -17,6 +18,7 @@ public class UndoManager<T>
     private int limit = 20;
     private IUndoListener<T> callback;
     private boolean simpleMerge;
+    private BiConsumer<IUndo<T>, Boolean> guard;
 
     /* P8d: "Stack geaendert" (push/merge/trim/undo/redo) ist ein EIGENES Ereignis —
      * der callback-Slot bedeutet "undo/redo ANGEWENDET", feuert bei pushUndo nicht
@@ -41,6 +43,11 @@ public class UndoManager<T>
     {
         this.limit = limit;
         this.callback = callback;
+    }
+
+    public void setGuard(BiConsumer<IUndo<T>, Boolean> guard)
+    {
+        this.guard = guard;
     }
 
     public UndoManager<T> simpleMerge()
@@ -207,6 +214,10 @@ public class UndoManager<T>
 
         IUndo<T> undo = this.undos.get(this.position);
 
+        if (this.guard != null)
+        {
+            this.guard.accept(undo, false);
+        }
         undo.undo(context);
         this.position -= 1;
 
@@ -232,6 +243,10 @@ public class UndoManager<T>
 
         IUndo<T> undo = this.undos.get(this.position + 1);
 
+        if (this.guard != null)
+        {
+            this.guard.accept(undo, true);
+        }
         undo.redo(context);
         this.position += 1;
 

@@ -25,6 +25,13 @@ public class UIFilmUndoHandler extends UIFormUndoHandler
     }
 
     @Override
+    public void reset()
+    {
+        super.reset();
+            ((UIFilmPanel) this.uiElement).getData(), undo));
+    }
+
+    @Override
     protected void handleValue(BaseValue value)
     {
         super.handleValue(value);
