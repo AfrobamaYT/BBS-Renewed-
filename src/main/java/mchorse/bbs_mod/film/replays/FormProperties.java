@@ -161,7 +161,7 @@ public class FormProperties extends ValueGroup
         {
             RigPropertyPath path = RigPropertyPath.parse(value.getId());
 
-            if (!this.properties.containsKey(this.toPosePropertyKey(path.formPath()))
+            if (!this.hasPoseAt(path.formPath(), tick)
                 && FormUtils.getForm(form, path.formPath()) instanceof ModelForm model)
             {
                 model.pose.setRuntimeValue(null);
@@ -180,9 +180,7 @@ public class FormProperties extends ValueGroup
                 {
                     processedForms.add(formPath);
 
-                    String poseKey = this.toPosePropertyKey(formPath);
-
-                    if (!this.properties.containsKey(poseKey))
+                    if (!this.hasPoseAt(formPath, tick))
                     {
                         Form targetForm = FormUtils.getForm(form, formPath);
 
@@ -327,6 +325,15 @@ public class FormProperties extends ValueGroup
         }
 
         return segment.createInterpolated();
+    }
+
+    private boolean hasPoseAt(String formPath, float tick)
+    {
+        KeyframeChannel channel = this.properties.get(this.toPosePropertyKey(formPath));
+
+        /* The editor registers empty channels. Only an evaluated whole-pose key
+         * resets the runtime pose before additive bone/control channels run. */
+        return channel != null && channel.find(tick) != null;
     }
 
     private String toPosePropertyKey(String formPath)
