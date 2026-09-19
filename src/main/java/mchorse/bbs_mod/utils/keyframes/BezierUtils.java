@@ -21,9 +21,10 @@ public class BezierUtils
         double y1 = aRy / h;
         double x2 = (w - bLx) / w;
         double y2 = (h + bLy) / h;
-        double e = 0.0005;
-
-        e = h == 0 ? e : Math.max(Math.min(e, 1 / h * e), 0.00001);
+        /* Invert the time curve accurately enough to match authored Blender FCurves. X inversion
+         * is independent of value-range height; the old height-scaled 5e-4 tolerance produced
+         * visible ~4e-4 scalar errors and made the exact same handles evaluate differently. */
+        double e = 0.0000001;
         x1 = MathUtils.clamp(x1, 0, 1);
         x2 = MathUtils.clamp(x2, 0, 1);
 

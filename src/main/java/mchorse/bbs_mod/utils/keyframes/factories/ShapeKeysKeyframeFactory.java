@@ -2,7 +2,11 @@ package mchorse.bbs_mod.utils.keyframes.factories;
 
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.obj.shapes.ShapeKeys;
+import mchorse.bbs_mod.utils.interps.AutoBezier;
 import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interpolations;
+import mchorse.bbs_mod.utils.keyframes.BezierUtils;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -41,6 +45,50 @@ public class ShapeKeysKeyframeFactory implements IKeyframeFactory<ShapeKeys>
     }
 
     @Override
+    public ShapeKeys interpolate(Keyframe<ShapeKeys> preA, Keyframe<ShapeKeys> a,
+        Keyframe<ShapeKeys> b, Keyframe<ShapeKeys> postB, IInterp interpolation, float x)
+    {
+        this.i.shapeKeys.clear();
+        keys.clear();
+
+        addKeys(preA.getValue());
+        addKeys(a.getValue());
+        addKeys(b.getValue());
+        addKeys(postB.getValue());
+
+        for (String key : keys)
+        {
+            float before = value(preA.getValue(), key);
+            float first = value(a.getValue(), key);
+            float second = value(b.getValue(), key);
+            float after = value(postB.getValue(), key);
+            float result;
+
+            if (interpolation.has(Interpolations.BEZIER))
+            {
+                result = (float) BezierUtils.get(first, second, a.getTick(), b.getTick(),
+                    a.rx, a.ry, b.lx, b.ly, x);
+            }
+            else if (interpolation.has(Interpolations.AUTO)
+                || interpolation.has(Interpolations.AUTO_CLAMPED))
+            {
+                result = (float) AutoBezier.get(before, first, second, after,
+                    preA.getTick(), a.getTick(), b.getTick(), postB.getTick(),
+                    interpolation.has(Interpolations.AUTO_CLAMPED), x);
+            }
+            else
+            {
+                result = (float) interpolation.interpolate(
+                    IInterp.context.set(before, first, second, after, x));
+            }
+
+            this.i.shapeKeys.put(key, result);
+        }
+
+        return this.i;
+    }
+
+    @Override
     public ShapeKeys interpolate(ShapeKeys preA, ShapeKeys a, ShapeKeys b, ShapeKeys postB, IInterp interpolation, float x)
     {
         this.i.shapeKeys.clear();
@@ -70,5 +118,18 @@ public class ShapeKeysKeyframeFactory implements IKeyframeFactory<ShapeKeys>
         }
 
         return this.i;
+    }
+
+    private static void addKeys(ShapeKeys shapes)
+    {
+        if (shapes != null)
+        {
+            keys.addAll(shapes.shapeKeys.keySet());
+        }
+    }
+
+    private static float value(ShapeKeys shapes, String key)
+    {
+        return shapes == null ? 0F : shapes.shapeKeys.getOrDefault(key, 0F);
     }
 }
