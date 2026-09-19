@@ -53,6 +53,13 @@ public final class RigMechanik implements BOBJArmature.Zwang
         this.proBone = proBone;
     }
 
+    @Override
+    public long eingabeSignatur()
+    {
+        return this.treiber.regler.eingabeSignatur() * 31L
+            + Float.floatToIntBits(this.treiber.bild);
+    }
+
     /** Beim Models-Reload rufen. */
     public static void leeren()
     {

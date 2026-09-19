@@ -107,6 +107,11 @@ public class BOBJModel implements IModel
     @Override
     public void resetPose()
     {
+        if (this.armature.zwang instanceof mchorse.bbs_mod.cubic.ik.RigMechanik rig)
+        {
+            rig.treiber.regler.reset();
+        }
+
         for (BOBJBone orderedBone : this.armature.orderedBones)
         {
             orderedBone.reset();
@@ -124,6 +129,11 @@ public class BOBJModel implements IModel
         for (Map.Entry<String, PoseTransform> entry : pose.transforms.entrySet())
         {
             PoseTransform transform = entry.getValue();
+            if (this.armature.zwang instanceof mchorse.bbs_mod.cubic.ik.RigMechanik rig)
+            {
+                transform.rigProperties.forEach((property, value) ->
+                    rig.treiber.regler.setze(entry.getKey(), property, value));
+            }
             BOBJBone bone = this.armature.bones.get(entry.getKey());
 
             if (bone == null)

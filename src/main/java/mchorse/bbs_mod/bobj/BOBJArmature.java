@@ -95,6 +95,12 @@ public class BOBJArmature
     public interface Zwang
     {
         boolean auswerten(BOBJArmature armature);
+
+        /** Inputs consumed by the solver in addition to bone transforms. */
+        default long eingabeSignatur()
+        {
+            return 0L;
+        }
     }
 
     public Zwang zwang;
@@ -165,6 +171,11 @@ public class BOBJArmature
             h = h * 31L + t.scale.hashCode();
             h = h * 31L + t.pivot.hashCode();
             h = h * 31L + t.quat.hashCode();
+        }
+
+        if (this.zwang != null)
+        {
+            h = h * 31L + this.zwang.eingabeSignatur();
         }
 
         return h;

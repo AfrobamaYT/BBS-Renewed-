@@ -68,6 +68,37 @@ public final class RigRegler
         return this.werte.isEmpty();
     }
 
+    /** Reset before evaluating another actor; shared models must not leak controls. */
+    public void reset()
+    {
+        for (Map.Entry<String, Map<String, MapType>> bone : this.schema.entrySet())
+        {
+            for (Map.Entry<String, MapType> property : bone.getValue().entrySet())
+            {
+                this.setze(bone.getKey(), property.getKey(), property.getValue().getFloat("wert", 0F));
+            }
+        }
+    }
+
+    /** Include custom properties in the evaluated-pose cache key. */
+    public long eingabeSignatur()
+    {
+        long hash = 17L;
+
+        for (Map.Entry<String, Map<String, MapType>> bone : this.schema.entrySet())
+        {
+            hash = hash * 31L + bone.getKey().hashCode();
+
+            for (String property : bone.getValue().keySet())
+            {
+                hash = hash * 31L + property.hashCode();
+                hash = hash * 31L + Float.floatToIntBits(this.wertVon(bone.getKey(), property, 0F));
+            }
+        }
+
+        return hash;
+    }
+
     /** Knochen mit Reglern, in Ladereihenfolge — die Gliederung fuers Bedienfeld. */
     public List<String> knochen()
     {
