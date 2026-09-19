@@ -62,6 +62,11 @@ public class FormProperties extends ValueGroup
             return channel;
         }
 
+        if (RigPropertyPath.parse(key) != null)
+        {
+            return this.registerChannel(key, KeyframeFactories.DOUBLE);
+        }
+
         if (property != null)
         {
             return this.create(property);
@@ -132,10 +137,15 @@ public class FormProperties extends ValueGroup
 
         float clampedBlend = MathUtils.clamp(blend, 0F, 1F);
         List<KeyframeChannel> poseBoneChannels = new ArrayList<>();
+        List<KeyframeChannel> rigChannels = new ArrayList<>();
 
         for (KeyframeChannel value : this.properties.values())
         {
-            if (!PerLimbService.isPoseBoneChannel(value.getId()))
+            if (RigPropertyPath.parse(value.getId()) != null)
+            {
+                rigChannels.add(value);
+            }
+            else if (!PerLimbService.isPoseBoneChannel(value.getId()))
             {
                 this.applyProperty(tick, form, value, clampedBlend);
             }
@@ -146,6 +156,17 @@ public class FormProperties extends ValueGroup
         }
 
         Set<String> processedForms = new HashSet<>();
+
+        for (KeyframeChannel value : rigChannels)
+        {
+            RigPropertyPath path = RigPropertyPath.parse(value.getId());
+
+            if (!this.properties.containsKey(this.toPosePropertyKey(path.formPath()))
+                && FormUtils.getForm(form, path.formPath()) instanceof ModelForm model)
+            {
+                model.pose.setRuntimeValue(null);
+            }
+        }
 
         for (KeyframeChannel value : poseBoneChannels)
         {
@@ -177,6 +198,36 @@ public class FormProperties extends ValueGroup
         for (KeyframeChannel value : poseBoneChannels)
         {
             this.applyProperty(tick, form, value, clampedBlend);
+        }
+
+        /* Controls apply last: a pose-bone channel must not erase its scalar controls. */
+        for (KeyframeChannel value : rigChannels)
+        {
+            RigPropertyPath path = RigPropertyPath.parse(value.getId());
+            KeyframeSegment segment = value.find(tick);
+
+            if (segment != null
+                && FormUtils.getForm(form, path.formPath()) instanceof ModelForm model)
+            {
+                if (model.pose.getRuntimeValue() == null)
+                {
+                    model.pose.setRuntimeValue(model.pose.getOriginalValue().copy());
+                }
+
+                PoseTransform transform = model.pose.get().get(path.bone());
+
+                if (transform == null)
+                {
+                    transform = new PoseTransform();
+                    model.pose.get().transforms.put(path.bone(), transform);
+                }
+
+                Map<String, Float> controls = transform.rigProperties;
+                float target = ((Number) segment.createInterpolated()).floatValue();
+                float current = controls.getOrDefault(path.property(), target);
+
+                controls.put(path.property(), current + (target - current) * clampedBlend);
+            }
         }
     }
 

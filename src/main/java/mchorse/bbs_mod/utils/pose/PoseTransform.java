@@ -8,6 +8,12 @@ import mchorse.bbs_mod.utils.interps.AutoBezier;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Lerps;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.ToDoubleFunction;
+
 public class PoseTransform extends Transform
 {
     private static PoseTransform DEFAULT = new PoseTransform();
@@ -15,6 +21,8 @@ public class PoseTransform extends Transform
     public float fix;
     public final Color color = new Color().set(Colors.WHITE);
     public float lighting;
+    /** Keyframeable custom properties of this bone, not shared model state. */
+    public final Map<String, Float> rigProperties = new HashMap<>();
 
     @Override
     public void identity()
@@ -24,6 +32,7 @@ public class PoseTransform extends Transform
         this.fix = 0F;
         this.color.set(Colors.WHITE);
         this.lighting = 0F;
+        this.rigProperties.clear();
     }
 
     @Override
@@ -39,6 +48,8 @@ public class PoseTransform extends Transform
             this.color.a = Lerps.lerp(this.color.a, pose.color.a, a);
 
             this.lighting = Lerps.lerp(this.lighting, pose.lighting, a);
+            this.blendRig(this, pose,
+                key -> Lerps.lerp(rigValue(this, key, pose), rigValue(pose, key, this), a));
         }
 
         super.lerp(transform, a);
@@ -65,6 +76,9 @@ public class PoseTransform extends Transform
             );
 
             this.lighting = (float) interp.interpolate(IInterp.context.set(preA1.lighting, a1.lighting, b1.lighting, postB1.lighting, x));
+            this.blendRig(a1, b1, key -> interp.interpolate(IInterp.context.set(
+                rigValue(preA1, key, a1), rigValue(a1, key, b1),
+                rigValue(b1, key, a1), rigValue(postB1, key, b1), x)));
         }
     }
 
@@ -89,6 +103,9 @@ public class PoseTransform extends Transform
             );
 
             this.lighting = (float) AutoBezier.get(preA1.lighting, a1.lighting, b1.lighting, postB1.lighting, pt, at, bt, qt, clamped, x);
+            this.blendRig(a1, b1, key -> AutoBezier.get(
+                rigValue(preA1, key, a1), rigValue(a1, key, b1),
+                rigValue(b1, key, a1), rigValue(postB1, key, b1), pt, at, bt, qt, clamped, x));
         }
     }
 
@@ -102,6 +119,7 @@ public class PoseTransform extends Transform
             result = result && this.fix == poseTransform.fix;
             result = result && this.color.equals(poseTransform.color);
             result = result && this.lighting == poseTransform.lighting;
+            result = result && this.rigProperties.equals(poseTransform.rigProperties);
         }
 
         return result;
@@ -120,11 +138,18 @@ public class PoseTransform extends Transform
     @Override
     public void copy(Transform transform)
     {
+        if (transform == this)
+        {
+            return;
+        }
+
+        this.rigProperties.clear();
         if (transform instanceof PoseTransform poseTransform)
         {
             this.fix = poseTransform.fix;
             this.color.copy(poseTransform.color);
             this.lighting = poseTransform.lighting;
+            this.rigProperties.putAll(poseTransform.rigProperties);
         }
 
         super.copy(transform);
@@ -140,6 +165,7 @@ public class PoseTransform extends Transform
             this.fix += pose.fix;
             this.color.mul(pose.color);
             this.lighting += pose.lighting;
+            this.rigProperties.putAll(pose.rigProperties);
         }
     }
 
@@ -151,6 +177,12 @@ public class PoseTransform extends Transform
         data.putFloat("fix", this.fix);
         data.putInt("color", this.color.getARGBColor());
         data.putFloat("lighting", this.lighting);
+        if (!this.rigProperties.isEmpty())
+        {
+            MapType properties = new MapType();
+            this.rigProperties.forEach(properties::putFloat);
+            data.put("rig", properties);
+        }
     }
 
     @Override
@@ -161,6 +193,34 @@ public class PoseTransform extends Transform
         this.fix = data.getFloat("fix");
         this.color.set(data.getInt("color", Colors.WHITE));
         this.lighting = data.getFloat("lighting");
+        this.rigProperties.clear();
+        MapType properties = data.getMap("rig");
+
+        for (String name : properties.keys())
+        {
+            this.rigProperties.put(name, properties.getFloat(name));
+        }
+    }
+
+    private static float rigValue(PoseTransform pose, String key, PoseTransform fallback)
+    {
+        return pose.rigProperties.getOrDefault(key, fallback.rigProperties.getOrDefault(key, 0F));
+    }
+
+    private void blendRig(PoseTransform a, PoseTransform b, ToDoubleFunction<String> interpolation)
+    {
+        Set<String> keys = new HashSet<>(a.rigProperties.keySet());
+        keys.addAll(b.rigProperties.keySet());
+        Map<String, Float> result = new HashMap<>();
+
+        for (String key : keys)
+        {
+            result.put(key, (float) interpolation.applyAsDouble(key));
+        }
+
+        /* Compute before clearing: this may alias one of the inputs. */
+        this.rigProperties.clear();
+        this.rigProperties.putAll(result);
     }
 
     @Override
