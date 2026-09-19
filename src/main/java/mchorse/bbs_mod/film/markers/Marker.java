@@ -4,6 +4,8 @@ import mchorse.bbs_mod.settings.values.core.ValueGroup;
 import mchorse.bbs_mod.settings.values.core.ValueString;
 import mchorse.bbs_mod.settings.values.numeric.ValueInt;
 
+import java.util.UUID;
+
 /**
  * Eine Merkstelle auf der Zeitleiste des Films.
  *
@@ -23,6 +25,9 @@ public class Marker extends ValueGroup
     public final ValueInt tick = new ValueInt("tick", 0);
     public final ValueString label = new ValueString("label", "");
     public final ValueInt color = new ValueInt("color", DEFAULT_COLOR).colorAlpha();
+    /** Stable bridge identity. Blender timeline markers cannot carry custom properties, so the
+     * add-on keeps this UUID in scene-level metadata while the native marker stays untouched. */
+    public final ValueString uuid = new ValueString("uuid", "");
 
     public Marker(String id)
     {
@@ -31,5 +36,7 @@ public class Marker extends ValueGroup
         this.add(this.tick);
         this.add(this.label);
         this.add(this.color);
+        this.add(this.uuid);
+        this.uuid.set(UUID.randomUUID().toString());
     }
 }
