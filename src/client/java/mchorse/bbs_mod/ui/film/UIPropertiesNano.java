@@ -336,6 +336,33 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		return String.format("%.1f°", wert);
 	}
 
+	private String transformStand(Replay replay, int tick)
+	{
+		if (replay == null || this.schiene != 0)
+		{
+			return "";
+		}
+
+		mchorse.bbs_mod.forms.forms.Form form = replay.form.get();
+		mchorse.bbs_mod.utils.pose.Transform transform = leseTransform(replay, form, tick);
+		String values = "|" + replay.keyframes.x.interpolate(tick, 0D)
+			+ "|" + replay.keyframes.y.interpolate(tick, 0D)
+			+ "|" + replay.keyframes.z.interpolate(tick, 0D)
+			+ "|" + replay.enabled.get();
+
+		if (form != null)
+		{
+			values += "|" + form.visible.get() + "|" + form.lighting.get();
+		}
+		if (transform != null)
+		{
+			values += "|" + transform.rotate.x + "|" + transform.rotate.y + "|" + transform.rotate.z
+				+ "|" + transform.scale.x + "|" + transform.scale.y + "|" + transform.scale.z;
+		}
+
+		return values;
+	}
+
 	@Override
 	public void auffrischen()
 	{
@@ -346,7 +373,8 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		String jetzt = (replay == null ? "leer"
 			: replay.getName() + "|" + tick + "|" + this.schiene
 				+ "|" + this.auf(0) + this.auf(1) + this.auf(2) + this.auf(3) + this.auf(4))
-			+ (this.angeheftet != null ? "|pin" : "");
+			+ (this.angeheftet != null ? "|pin" : "")
+			+ this.transformStand(replay, tick);
 
 		if (!jetzt.equals(this.stand))
 		{
