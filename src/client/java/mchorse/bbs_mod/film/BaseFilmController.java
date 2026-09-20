@@ -592,7 +592,7 @@ public abstract class BaseFilmController
         matrix.translate((float) x, (float) y, (float) z);
         matrix.rotateY(MathUtils.toRad(-bodyYaw));
 
-        return matrix;
+        return mchorse.bbs_mod.film.replays.ReplayScaleKeyframes.applyScale(matrix, entity, tickDelta);
     }
 
     /** Bone-Transform wie im Film-Viewport komponiert: dasselbe target, das renderEntity

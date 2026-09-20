@@ -40,6 +40,7 @@ public final class SpurGruppen
 		return switch (kern)
 		{
 			case "x", "y", "z", "yaw", "pitch", "headYaw", "bodyYaw", "vX", "vY", "vZ", "transform" -> true;
+			case "scale_x", "scale_y", "scale_z" -> true;
 			default -> false;
 		};
 	}

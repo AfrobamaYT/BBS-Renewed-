@@ -22,7 +22,7 @@ import java.util.List;
 public class Replay extends ValueGroup
 {
     public final ValueForm form = new ValueForm("form");
-    public final ReplayKeyframes keyframes = new ReplayKeyframes("keyframes");
+    public final ReplayKeyframes keyframes = new ReplayScaleKeyframes("keyframes");
     public final FormProperties properties = new FormProperties("properties");
     public final Clips actions = new Clips("actions", BBSMod.getFactoryActionClips());
 

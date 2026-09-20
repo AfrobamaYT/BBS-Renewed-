@@ -116,6 +116,7 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity, ActorEntity
         zustand.bbsEntity = entity.getEntity();
         zustand.koerperDrehung = Mth.rotLerp(teilTick, entity.yBodyRotO, entity.yBodyRot);
         zustand.teilTick = teilTick;
+        mchorse.bbs_mod.film.replays.ReplayScaleKeyframes.sample(zustand.bbsEntity, teilTick, zustand.rootScale);
         zustand.schlaeft = entity.hasPose(Pose.SLEEPING);
         zustand.todesZeit = entity.deathTime;
 
@@ -195,6 +196,7 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity, ActorEntity
 
             matrices.mulPose(Axis.ZP.rotationDegrees(Math.min(Mth.sqrt(deathAngle), 1F) * 90F));
         }
+        matrices.scale(zustand.rootScale.x, zustand.rootScale.y, zustand.rootScale.z);
     }
 
     /* ⚠️ getTextureLocation(ActorEntity) ist ersatzlos entfallen: EntityRenderer hat in 26.2
@@ -212,6 +214,7 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity, ActorEntity
      */
     public static class ActorRenderState extends EntityRenderState
     {
+        public final org.joml.Vector3f rootScale = new org.joml.Vector3f(1F);
         /** Die BBS-Form, die statt eines Vanilla-Modells gezeichnet wird. */
         public Form form;
 
