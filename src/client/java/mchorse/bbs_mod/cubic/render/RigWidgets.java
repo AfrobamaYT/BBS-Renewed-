@@ -422,14 +422,19 @@ public final class RigWidgets
         float ax2 = p2.x + dA2.x * sA2, ay2 = p2.y + dA2.y * sA2, az2 = p2.z + dA2.z * sA2;
         float bx1 = p1.x + dB1.x * sB1, by1 = p1.y + dB1.y * sB1, bz1 = p1.z + dB1.z * sB1;
         float bx2 = p2.x + dB2.x * sB2, by2 = p2.y + dB2.y * sB2, bz2 = p2.z + dB2.z * sB2;
+        int rgb = ((int) (col[0] * 255F) & 255) << 16
+            | ((int) (col[1] * 255F) & 255) << 8
+            | ((int) (col[2] * 255F) & 255);
+        int colorA = ((int) (aA * 255F) & 255) << 24 | rgb;
+        int colorB = ((int) (aB * 255F) & 255) << 24 | rgb;
 
-        builder.addVertex(ax1, ay1, az1).setColor(col[0], col[1], col[2], aA);
-        builder.addVertex(bx1, by1, bz1).setColor(col[0], col[1], col[2], aB);
-        builder.addVertex(bx2, by2, bz2).setColor(col[0], col[1], col[2], aB);
+        builder.addVertex(ax1, ay1, az1).setColor(colorA);
+        builder.addVertex(bx1, by1, bz1).setColor(colorB);
+        builder.addVertex(bx2, by2, bz2).setColor(colorB);
 
-        builder.addVertex(ax1, ay1, az1).setColor(col[0], col[1], col[2], aA);
-        builder.addVertex(bx2, by2, bz2).setColor(col[0], col[1], col[2], aB);
-        builder.addVertex(ax2, ay2, az2).setColor(col[0], col[1], col[2], aA);
+        builder.addVertex(ax1, ay1, az1).setColor(colorA);
+        builder.addVertex(bx2, by2, bz2).setColor(colorB);
+        builder.addVertex(ax2, ay2, az2).setColor(colorA);
     }
 
     /**
