@@ -51,10 +51,9 @@ public final class BOBJHaut
         private final int boneCount;
         private final int[] bendyOffset;
         private final BOBJBBone[] bendyBones;
-        private final int[] matrixA;
-        private final int[] matrixB;
-        private final float[] weightA;
-        private final float[] weightB;
+        private final int[] vertexOffset;
+        private final int[] matrixIndex;
+        private final float[] influenceWeight;
         private final float[] palette;
 
         private Palette(BOBJArmature armature, float[] pos, float[] weights,
@@ -80,18 +79,19 @@ public final class BOBJHaut
                 }
             }
 
-            this.matrixA = new int[count * 4];
-            this.matrixB = new int[count * 4];
-            this.weightA = new float[count * 4];
-            this.weightB = new float[count * 4];
             this.palette = new float[matrixCount * STRIDE];
+            this.vertexOffset = new int[count + 1];
 
-            Arrays.fill(this.matrixA, -1);
-            Arrays.fill(this.matrixB, -1);
+            int[] matrixIndex = new int[count * 8];
+            float[] influenceWeight = new float[count * 8];
+            int influenceCount = 0;
+
             cache.sichern(count);
 
             for (int i = 0; i < count; i++)
             {
+                this.vertexOffset[i] = influenceCount;
+
                 for (int k = 0; k < 4; k++)
                 {
                     int n = i * 4 + k;
@@ -110,18 +110,22 @@ public final class BOBJHaut
                         int segment = segment(armature, pos, bone, i, k, cache);
                         float blend = cache.blend[n];
 
-                        this.matrixA[n] = offset + segment;
-                        this.matrixB[n] = offset + segment + 1;
-                        this.weightA[n] = weight * (1F - blend);
-                        this.weightB[n] = weight * blend;
+                        matrixIndex[influenceCount] = offset + segment;
+                        influenceWeight[influenceCount++] = weight * (1F - blend);
+                        matrixIndex[influenceCount] = offset + segment + 1;
+                        influenceWeight[influenceCount++] = weight * blend;
                     }
                     else
                     {
-                        this.matrixA[n] = bone;
-                        this.weightA[n] = weight;
+                        matrixIndex[influenceCount] = bone;
+                        influenceWeight[influenceCount++] = weight;
                     }
                 }
             }
+
+            this.vertexOffset[count] = influenceCount;
+            this.matrixIndex = Arrays.copyOf(matrixIndex, influenceCount);
+            this.influenceWeight = Arrays.copyOf(influenceWeight, influenceCount);
         }
 
         public static Palette erstellen(BOBJArmature armature, float[] pos, float[] weights,
@@ -168,7 +172,6 @@ public final class BOBJHaut
         public void vertex(float[] pos, float[] norm, int i, float[] outPos, float[] outNorm)
         {
             int source = i * 3;
-            int influence = i * 4;
             float x = pos[source];
             float y = pos[source + 1];
             float z = pos[source + 2];
@@ -183,38 +186,19 @@ public final class BOBJHaut
             float rny = 0F;
             float rnz = 0F;
 
-            for (int k = 0; k < 4; k++)
+            int influenceEnd = this.vertexOffset[i + 1];
+
+            for (int n = this.vertexOffset[i]; n < influenceEnd; n++)
             {
-                int n = influence + k;
-                int a = this.matrixA[n];
-
-                if (a >= 0)
-                {
-                    int p = a * STRIDE;
-                    float w = this.weightA[n];
-                    rx += punkt(this.palette, p, x, y, z) * w;
-                    ry += punkt(this.palette, p + 4, x, y, z) * w;
-                    rz += punkt(this.palette, p + 8, x, y, z) * w;
-                    rnx += richtung(this.palette, p, nx, ny, nz) * w;
-                    rny += richtung(this.palette, p + 4, nx, ny, nz) * w;
-                    rnz += richtung(this.palette, p + 8, nx, ny, nz) * w;
-                    rw += w;
-                }
-
-                int b = this.matrixB[n];
-
-                if (b >= 0)
-                {
-                    int p = b * STRIDE;
-                    float w = this.weightB[n];
-                    rx += punkt(this.palette, p, x, y, z) * w;
-                    ry += punkt(this.palette, p + 4, x, y, z) * w;
-                    rz += punkt(this.palette, p + 8, x, y, z) * w;
-                    rnx += richtung(this.palette, p, nx, ny, nz) * w;
-                    rny += richtung(this.palette, p + 4, nx, ny, nz) * w;
-                    rnz += richtung(this.palette, p + 8, nx, ny, nz) * w;
-                    rw += w;
-                }
+                int p = this.matrixIndex[n] * STRIDE;
+                float w = this.influenceWeight[n];
+                rx += punkt(this.palette, p, x, y, z) * w;
+                ry += punkt(this.palette, p + 4, x, y, z) * w;
+                rz += punkt(this.palette, p + 8, x, y, z) * w;
+                rnx += richtung(this.palette, p, nx, ny, nz) * w;
+                rny += richtung(this.palette, p + 4, nx, ny, nz) * w;
+                rnz += richtung(this.palette, p + 8, nx, ny, nz) * w;
+                rw += w;
             }
 
             if (rw == 0F)
