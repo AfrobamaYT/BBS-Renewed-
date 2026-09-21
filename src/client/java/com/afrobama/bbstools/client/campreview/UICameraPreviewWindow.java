@@ -88,7 +88,11 @@ public class UICameraPreviewWindow extends UIElement
                 /* Close button. */
                 if (context.mouseX >= this.closeBtnX() && context.mouseX < this.closeBtnX() + BUTTON_W)
                 {
-                    CameraPreviewRegistry.remove(this.preview.id);
+                    else
+                    {
+                        CameraPreviewRegistry.remove(this.preview.id);
+                        this.removeFromParent();
+                    }
                     return true;
                 }
 
