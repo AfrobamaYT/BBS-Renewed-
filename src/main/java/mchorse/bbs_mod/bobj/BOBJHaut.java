@@ -8,6 +8,8 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.util.Arrays;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.IntStream;
 
 /**
  * BBS' Skinning eines Vertex — DIE eine Stelle, die der VAO (Zeichnen) und die Mess-Sonde
@@ -55,6 +57,10 @@ public final class BOBJHaut
         private final int[] matrixIndex;
         private final float[] influenceWeight;
         private final float[] palette;
+        private final int[] vertexGroup;
+        private final int groupCount;
+        private final float[] blendedMatrix;
+        private final float[] blendedWeight;
 
         private Palette(BOBJArmature armature, float[] pos, float[] weights,
                         int[] boneIndices, int count, Segmente cache)
@@ -80,17 +86,63 @@ public final class BOBJHaut
             }
 
             this.palette = new float[matrixCount * STRIDE];
-            this.vertexOffset = new int[count + 1];
+            this.vertexGroup = new int[count];
 
-            int[] matrixIndex = new int[count * 8];
-            float[] influenceWeight = new float[count * 8];
+            int[] representative = new int[count];
+            int groups = 0;
+            int tableSize = 1;
+
+            while (tableSize < count * 2)
+            {
+                tableSize <<= 1;
+            }
+
+            int[] table = new int[tableSize];
+            int mask = tableSize - 1;
+
+            Arrays.fill(table, -1);
+
+            for (int i = 0; i < count; i++)
+            {
+                int slot = hash(pos, weights, boneIndices, i) & mask;
+                int representativeIndex;
+
+                while ((representativeIndex = table[slot]) >= 0
+                    && !gleich(pos, weights, boneIndices, representativeIndex, i))
+                {
+                    slot = slot + 1 & mask;
+                }
+
+                if (representativeIndex < 0)
+                {
+                    int group = groups++;
+
+                    table[slot] = i;
+                    representative[group] = i;
+                    this.vertexGroup[i] = group;
+                }
+                else
+                {
+                    this.vertexGroup[i] = this.vertexGroup[representativeIndex];
+                }
+            }
+
+            this.groupCount = groups;
+            this.blendedMatrix = new float[groups * STRIDE];
+            this.blendedWeight = new float[groups];
+            this.vertexOffset = new int[groups + 1];
+
+            int[] matrixIndex = new int[groups * 8];
+            float[] influenceWeight = new float[groups * 8];
             int influenceCount = 0;
 
             cache.sichern(count);
 
-            for (int i = 0; i < count; i++)
+            for (int group = 0; group < groups; group++)
             {
-                this.vertexOffset[i] = influenceCount;
+                int i = representative[group];
+
+                this.vertexOffset[group] = influenceCount;
 
                 for (int k = 0; k < 4; k++)
                 {
@@ -123,7 +175,7 @@ public final class BOBJHaut
                 }
             }
 
-            this.vertexOffset[count] = influenceCount;
+            this.vertexOffset[groups] = influenceCount;
             this.matrixIndex = Arrays.copyOf(matrixIndex, influenceCount);
             this.influenceWeight = Arrays.copyOf(influenceWeight, influenceCount);
         }
@@ -132,6 +184,54 @@ public final class BOBJHaut
                                         int[] boneIndices, int count, Segmente cache)
         {
             return new Palette(armature, pos, weights, boneIndices, count, cache);
+        }
+
+        private static int hash(float[] pos, float[] weights, int[] boneIndices, int vertex)
+        {
+            int hash = 1;
+            int p = vertex * 3;
+            int w = vertex * 4;
+
+            hash = 31 * hash + Float.floatToIntBits(pos[p]);
+            hash = 31 * hash + Float.floatToIntBits(pos[p + 1]);
+            hash = 31 * hash + Float.floatToIntBits(pos[p + 2]);
+
+            for (int i = 0; i < 4; i++)
+            {
+                hash = 31 * hash + Float.floatToIntBits(weights[w + i]);
+                hash = 31 * hash + boneIndices[w + i];
+            }
+
+            return hash;
+        }
+
+        private static boolean gleich(float[] pos, float[] weights, int[] boneIndices,
+                                      int a, int b)
+        {
+            int ap = a * 3;
+            int bp = b * 3;
+
+            for (int i = 0; i < 3; i++)
+            {
+                if (Float.floatToIntBits(pos[ap + i]) != Float.floatToIntBits(pos[bp + i]))
+                {
+                    return false;
+                }
+            }
+
+            int aw = a * 4;
+            int bw = b * 4;
+
+            for (int i = 0; i < 4; i++)
+            {
+                if (Float.floatToIntBits(weights[aw + i]) != Float.floatToIntBits(weights[bw + i])
+                    || boneIndices[aw + i] != boneIndices[bw + i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public void aktualisieren(Matrix4f[] matrices)
@@ -167,18 +267,29 @@ public final class BOBJHaut
                     }
                 }
             }
+
+            /* Neue Paletten mischen die Hautmatrix nur einmal je BOBJ-Quellvertex.
+             * Bei einer bereits vor dem Hotswap erzeugten Palette sind die neuen Felder
+             * null; dann bleibt vertex() bis zum Modell-Reload auf dem alten sicheren Weg. */
+            if (this.blendedMatrix != null)
+            {
+                if (this.groupCount >= 4096 && ForkJoinPool.getCommonPoolParallelism() > 1)
+                {
+                    IntStream.range(0, this.groupCount).parallel().forEach(this::mischeGruppe);
+                }
+                else
+                {
+                    for (int group = 0; group < this.groupCount; group++)
+                    {
+                        this.mischeGruppe(group);
+                    }
+                }
+            }
         }
 
-        public void vertex(float[] pos, float[] norm, int i, float[] outPos, float[] outNorm)
+        private void mischeGruppe(int group)
         {
-            int source = i * 3;
-            float x = pos[source];
-            float y = pos[source + 1];
-            float z = pos[source + 2];
-            float nx = norm[source];
-            float ny = norm[source + 1];
-            float nz = norm[source + 2];
-            float rw = 0F;
+            int out = group * STRIDE;
             float m0 = 0F;
             float m1 = 0F;
             float m2 = 0F;
@@ -191,13 +302,14 @@ public final class BOBJHaut
             float m9 = 0F;
             float m10 = 0F;
             float m11 = 0F;
+            float weight = 0F;
+            int influenceEnd = this.vertexOffset[group + 1];
 
-            int influenceEnd = this.vertexOffset[i + 1];
-
-            for (int n = this.vertexOffset[i]; n < influenceEnd; n++)
+            for (int n = this.vertexOffset[group]; n < influenceEnd; n++)
             {
                 int p = this.matrixIndex[n] * STRIDE;
                 float w = this.influenceWeight[n];
+
                 m0 += this.palette[p] * w;
                 m1 += this.palette[p + 1] * w;
                 m2 += this.palette[p + 2] * w;
@@ -210,7 +322,95 @@ public final class BOBJHaut
                 m9 += this.palette[p + 9] * w;
                 m10 += this.palette[p + 10] * w;
                 m11 += this.palette[p + 11] * w;
-                rw += w;
+                weight += w;
+            }
+
+            this.blendedMatrix[out] = m0;
+            this.blendedMatrix[out + 1] = m1;
+            this.blendedMatrix[out + 2] = m2;
+            this.blendedMatrix[out + 3] = m3;
+            this.blendedMatrix[out + 4] = m4;
+            this.blendedMatrix[out + 5] = m5;
+            this.blendedMatrix[out + 6] = m6;
+            this.blendedMatrix[out + 7] = m7;
+            this.blendedMatrix[out + 8] = m8;
+            this.blendedMatrix[out + 9] = m9;
+            this.blendedMatrix[out + 10] = m10;
+            this.blendedMatrix[out + 11] = m11;
+            this.blendedWeight[group] = weight;
+        }
+
+        public void vertex(float[] pos, float[] norm, int i, float[] outPos, float[] outNorm)
+        {
+            int source = i * 3;
+            float x = pos[source];
+            float y = pos[source + 1];
+            float z = pos[source + 2];
+            float nx = norm[source];
+            float ny = norm[source + 1];
+            float nz = norm[source + 2];
+            float rw;
+            float m0;
+            float m1;
+            float m2;
+            float m3;
+            float m4;
+            float m5;
+            float m6;
+            float m7;
+            float m8;
+            float m9;
+            float m10;
+            float m11;
+
+            if (this.blendedMatrix != null)
+            {
+                int group = this.vertexGroup[i];
+                int p = group * STRIDE;
+
+                m0 = this.blendedMatrix[p];
+                m1 = this.blendedMatrix[p + 1];
+                m2 = this.blendedMatrix[p + 2];
+                m3 = this.blendedMatrix[p + 3];
+                m4 = this.blendedMatrix[p + 4];
+                m5 = this.blendedMatrix[p + 5];
+                m6 = this.blendedMatrix[p + 6];
+                m7 = this.blendedMatrix[p + 7];
+                m8 = this.blendedMatrix[p + 8];
+                m9 = this.blendedMatrix[p + 9];
+                m10 = this.blendedMatrix[p + 10];
+                m11 = this.blendedMatrix[p + 11];
+                rw = this.blendedWeight[group];
+            }
+            else
+            {
+                /* Hotswap-Fallback fuer Paletten, die vor den Gruppenfeldern entstanden. */
+                m0 = m1 = m2 = m3 = 0F;
+                m4 = m5 = m6 = m7 = 0F;
+                m8 = m9 = m10 = m11 = 0F;
+                rw = 0F;
+
+                int influenceEnd = this.vertexOffset[i + 1];
+
+                for (int n = this.vertexOffset[i]; n < influenceEnd; n++)
+                {
+                    int p = this.matrixIndex[n] * STRIDE;
+                    float w = this.influenceWeight[n];
+
+                    m0 += this.palette[p] * w;
+                    m1 += this.palette[p + 1] * w;
+                    m2 += this.palette[p + 2] * w;
+                    m3 += this.palette[p + 3] * w;
+                    m4 += this.palette[p + 4] * w;
+                    m5 += this.palette[p + 5] * w;
+                    m6 += this.palette[p + 6] * w;
+                    m7 += this.palette[p + 7] * w;
+                    m8 += this.palette[p + 8] * w;
+                    m9 += this.palette[p + 9] * w;
+                    m10 += this.palette[p + 10] * w;
+                    m11 += this.palette[p + 11] * w;
+                    rw += w;
+                }
             }
 
             if (rw == 0F)
