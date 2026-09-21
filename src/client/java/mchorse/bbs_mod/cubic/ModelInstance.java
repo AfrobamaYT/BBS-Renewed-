@@ -545,14 +545,24 @@ public class ModelInstance implements IModelInstance
             builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.ENTITY);
         }
 
-        CubicRenderer.processRenderModel(renderProcessor, builder, stack, model);
-
-        if (cpuGeometry)
+        try
         {
-            /* Die Normalenmatrix wird nicht mehr vorher am Shader gesetzt -- sie reist
-             * als Parameter in drawImmediate und landet dort im Modell-Block. */
+            CubicRenderer.processRenderModel(renderProcessor, builder, stack, model);
 
-            this.drawImmediate(builder, drawShader, stack, explicitWeld ? WELD_NORMAL_MAT : null, stencilMap, defaultTextureObject, color.a);
+            if (cpuGeometry)
+            {
+                /* Die Normalenmatrix wird nicht mehr vorher am Shader gesetzt -- sie reist
+                 * als Parameter in drawImmediate und landet dort im Modell-Block. */
+
+                this.drawImmediate(builder, drawShader, stack, explicitWeld ? WELD_NORMAL_MAT : null, stencilMap, defaultTextureObject, color.a);
+            }
+        }
+        finally
+        {
+            if (eckenSpeicher != null)
+            {
+                eckenSpeicher.close();
+            }
         }
     }
 
@@ -670,10 +680,12 @@ public class ModelInstance implements IModelInstance
                 /* 26.2: setShader entfaellt -- der Shader steht in der Pipeline, die
                  * drawImmediate weiter unten waehlt. Der Eckenspeicher gehoert jetzt dem
                  * Aufruf statt einem geteilten Tesselator. */
-                ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
-                BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.ENTITY);
-                CubicRenderer.processRenderModel(renderProcessor, builder, stack, model);
-                this.drawImmediate(builder, shader, stack, null, stencilMap, BBSModClient.getTextures().getLastBound(), color.a);
+                try (ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096))
+                {
+                    BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.ENTITY);
+                    CubicRenderer.processRenderModel(renderProcessor, builder, stack, model);
+                    this.drawImmediate(builder, shader, stack, null, stencilMap, BBSModClient.getTextures().getLastBound(), color.a);
+                }
             }
         }
         else if (this.model instanceof BOBJModel model)
