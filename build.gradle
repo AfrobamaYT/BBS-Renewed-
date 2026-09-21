@@ -639,8 +639,6 @@ tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach
 	 * Der compile zielte laengst auf 25 (release = 25 weiter unten), nur die LAUFZEIT hing
 	 * noch auf der alten JBR -- eine haelfte umgestellt, die andere vergessen. Die 21er bleibt
 	 * ueber -Pbbs.jbr erreichbar, fuer den fall dass jemand die zwei vergleichen will. */
-	def jbrOrdner = project.findProperty("bbs.jbr") ?: "jbr25-dcevm-home"
-
 	/* ⛔ DER BINAERNAME IST PLATTFORMABHAENGIG (2026-08-07, umzug auf linux).
 	 * Hier stand fest `bin/java.exe`. Unter linux heisst die datei `bin/java`, also war
 	 * jbr.exists() IMMER falsch — der client waere still auf der system-JVM gestartet und
@@ -648,7 +646,27 @@ tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach
 	 * vollstaendig danebenlag. Ein fehlender exe-suffix, der wie ein fehlendes feature
 	 * aussieht: genau die sorte fehldiagnose, die hier schon monate gekostet hat. */
 	def jbrBin = System.getProperty("os.name").toLowerCase().contains("windows") ? "java.exe" : "java"
-	def jbr = file("${rootDir}/../${jbrOrdner}/bin/${jbrBin}")
+	def jbrAngabe = project.findProperty("bbs.jbr")
+	def jbrHome
+
+	if (jbrAngabe)
+	{
+		def angegeben = file(jbrAngabe.toString())
+		jbrHome = angegeben.isAbsolute() ? angegeben : file("${rootDir}/../${jbrAngabe}")
+	}
+	else
+	{
+		/* Worktrees liegen nicht zwingend neben der JBR. gradle.properties kennt den
+		 * tatsaechlichen absoluten Pfad bereits; denselben Stand auch fuer den Client
+		 * verwenden, statt still auf die eingeschraenkte Standard-JVM-Konfiguration
+		 * zurueckzufallen. */
+		def gradleJavaHome = project.findProperty("org.gradle.java.home")
+		def eingestellt = gradleJavaHome ? file(gradleJavaHome.toString()) : null
+		jbrHome = eingestellt != null && eingestellt.isDirectory()
+			? eingestellt : file("${rootDir}/../jbr25-dcevm-home")
+	}
+
+	def jbr = new File(jbrHome, "bin/${jbrBin}")
 
 	/* ⛔ HEAP-DECKEL, WEIL ES OHNE IHN KEINEN GIBT (2026-08-02, user-order nach RAM-defekt).
 	 *
