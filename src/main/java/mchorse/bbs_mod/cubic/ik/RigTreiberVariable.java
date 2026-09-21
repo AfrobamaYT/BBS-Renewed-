@@ -22,10 +22,10 @@ final class RigTreiberVariable
     /** {@code driver_get_variable_value}. */
     static float wert(RigTreiber t, MapType v)
     {
-        String typ = v.getString("typ", "SINGLE_PROP");
-        ListType ziele = v.getList("ziele");
-        MapType z0 = ziele != null && ziele.size() > 0 ? ziele.getMap(0) : v;
-        MapType z1 = ziele != null && ziele.size() > 1 ? ziele.getMap(1) : null;
+        Beschreibung daten = t.variable(v);
+        String typ = daten.typ;
+        MapType z0 = daten.z0;
+        MapType z1 = daten.z1;
 
         switch (typ == null ? "SINGLE_PROP" : typ)
         {
@@ -36,21 +36,51 @@ final class RigTreiberVariable
             case "LOC_DIFF":
                 return RigTreiberLage.ortDifferenz(t, z0, z1);
             case "CONTEXT_PROP":
-                t.zaehle("CONTEXT_PROP:" + z0.getString("pfad", ""));
+                t.zaehle("CONTEXT_PROP:" + daten.pfad);
 
                 return 0F;
             default:
-                return eigenschaft(t, z0);
+                return eigenschaft(t, daten);
+        }
+    }
+
+    /** Nur die statische Beschreibung einer rig.json-Variable; Pose und Custom Properties
+     *  werden weiterhin bei JEDEM Aufruf aus dem aktuellen Actor gelesen. */
+    static final class Beschreibung
+    {
+        final String typ;
+        final MapType z0;
+        final MapType z1;
+        final String bone;
+        final String prop;
+        final String kanal;
+        final String pfad;
+        final String bboneFeld;
+        final int kanalAchse;
+
+        Beschreibung(MapType v)
+        {
+            this.typ = v.getString("typ", "SINGLE_PROP");
+            ListType ziele = v.getList("ziele");
+            this.z0 = ziele != null && ziele.size() > 0 ? ziele.getMap(0) : v;
+            this.z1 = ziele != null && ziele.size() > 1 ? ziele.getMap(1) : null;
+            this.bone = this.z0.getString("bone");
+            this.prop = this.z0.getString("prop");
+            this.kanal = this.z0.getString("kanal");
+            this.pfad = this.z0.getString("pfad", "");
+            int bb = this.pfad == null ? -1 : this.pfad.indexOf(".bbone_");
+            this.bboneFeld = bb < 0 ? null : this.pfad.substring(bb + 1);
+            this.kanalAchse = this.z0.getInt("kanal_achse", 0);
         }
     }
 
     /** SINGLE_PROP ({@code dtar_get_prop_val}): Custom Property, Pose-Kanal oder B-Bone-Kanal. */
-    private static float eigenschaft(RigTreiber t, MapType z)
+    private static float eigenschaft(RigTreiber t, Beschreibung daten)
     {
-        String bone = z.getString("bone");
-        String prop = z.getString("prop");
-        String kanal = z.getString("kanal");
-        String pfad = z.getString("pfad", "");
+        String bone = daten.bone;
+        String prop = daten.prop;
+        String kanal = daten.kanal;
+        String pfad = daten.pfad;
 
         if (prop != null && !prop.isEmpty())
         {
@@ -82,14 +112,12 @@ final class RigTreiberVariable
 
         if (kanal != null && !kanal.isEmpty())
         {
-            return kanalwert(b, kanal, z.getInt("kanal_achse", 0));
+            return kanalwert(b, kanal, daten.kanalAchse);
         }
 
-        int bb = pfad == null ? -1 : pfad.indexOf(".bbone_");
-
-        if (bb >= 0)
+        if (daten.bboneFeld != null)
         {
-            return bboneWert(b, pfad.substring(bb + 1));
+            return bboneWert(b, daten.bboneFeld);
         }
 
         t.zaehle("SINGLE_PROP:" + pfad);

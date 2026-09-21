@@ -35,6 +35,18 @@ public final class RigTreiber
 
     final Map<String, RigAusdruck> ausdruecke = new HashMap<>();
     private final Map<MapType, RigKurve> kurven = new IdentityHashMap<>();
+    /** rig.json ist bis zum Models-Reload unveraenderlich; Laufzeitwerte bleiben im Regler/Bone. */
+    private Map<MapType, RigTreiberVariable.Beschreibung> variablen;
+
+    RigTreiberVariable.Beschreibung variable(MapType daten)
+    {
+        if (this.variablen == null)
+        {
+            this.variablen = new IdentityHashMap<>();
+        }
+
+        return this.variablen.computeIfAbsent(daten, RigTreiberVariable.Beschreibung::new);
+    }
 
     public void lade(MapType regler)
     {
