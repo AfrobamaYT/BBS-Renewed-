@@ -7,6 +7,7 @@ import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.IndexType;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import org.joml.Matrix4f;
@@ -39,6 +40,10 @@ public class BOBJModelVAO implements IModelVAO
     public BOBJLoader.CompiledData data;
     public BOBJArmature armature;
 
+    private final BOBJLoader.CompiledData renderData;
+    private final boolean indexed;
+    private final int indexCount;
+    private final int[] indices;
     private int count;
 
     /**
@@ -64,6 +69,7 @@ public class BOBJModelVAO implements IModelVAO
     private GpuBuffer position;
     private GpuBuffer normale;
     private GpuBuffer texturUV;
+    private GpuBuffer indexBuffer;
 
     /** Knochenteil der Pick-Kennung je Ecke (ivec2, y ungenutzt) — die vierte Bindung,
      *  die der Feldkommentar oben lange als fehlend fuehrte. Befuellt nur im
@@ -95,6 +101,15 @@ public class BOBJModelVAO implements IModelVAO
     {
         this.data = data;
         this.armature = this.data.mesh.armature;
+        /* SimpleVAO edits vertices by their old face-corner indices in processData.
+         * Keep its original layout; regular BOBJ meshes use the indexed path. The
+         * property is an explicit compatibility fallback, read only at model load. */
+        this.indexed = !(this instanceof BOBJModelSimpleVAO)
+            && !Boolean.getBoolean("bbs.bobj.legacyTriangles");
+        BOBJIndexedData packed = this.indexed ? BOBJIndexedData.pack(data) : null;
+        this.renderData = packed == null ? data : packed.vertices;
+        this.indices = packed == null ? null : packed.indices;
+        this.indexCount = data.posData.length / 3;
 
         this.initBuffers();
     }
@@ -106,9 +121,9 @@ public class BOBJModelVAO implements IModelVAO
      */
     private void initBuffers()
     {
-        this.count = this.data.normData.length / 3;
-        this.tmpVertices = new float[this.data.posData.length];
-        this.tmpNormals = new float[this.data.normData.length];
+        this.count = this.renderData.normData.length / 3;
+        this.tmpVertices = new float[this.renderData.posData.length];
+        this.tmpNormals = new float[this.renderData.normData.length];
         this.tmpLight = new int[this.count * 2];
         this.pickingBones = new int[this.count];
         this.tmpTangents = new float[this.count * 4];
@@ -118,10 +133,11 @@ public class BOBJModelVAO implements IModelVAO
             this.pickingBones[i] = this.dominanterKnochen(i);
         }
 
-        this.position = puffer("bobj-position", this.data.posData);
-        this.normale = puffer("bobj-normale", this.data.normData);
-        this.texturUV = puffer("bobj-uv", this.data.texData);
+        this.position = puffer("bobj-position", this.renderData.posData);
+        this.normale = puffer("bobj-normale", this.renderData.normData);
+        this.texturUV = puffer("bobj-uv", this.renderData.texData);
         this.licht = pufferInt("bobj-licht", this.tmpLight);
+        this.indexBuffer = this.indexed ? pufferIndex(this.indices) : null;
     }
 
     /**
@@ -191,6 +207,23 @@ public class BOBJModelVAO implements IModelVAO
         }
     }
 
+    private static GpuBuffer pufferIndex(int[] werte)
+    {
+        ByteBuffer roh = MemoryUtil.memAlloc(werte.length * Integer.BYTES).order(ByteOrder.nativeOrder());
+
+        try
+        {
+            roh.asIntBuffer().put(werte);
+
+            return RenderSystem.getDevice().createBuffer(() -> "bobj-indizes",
+                GpuBuffer.USAGE_INDEX, roh);
+        }
+        finally
+        {
+            MemoryUtil.memFree(roh);
+        }
+    }
+
     private static void schreibenInt(GpuBuffer ziel, int[] werte)
     {
         ByteBuffer roh = MemoryUtil.memAlloc(werte.length * Integer.BYTES).order(ByteOrder.nativeOrder());
@@ -230,6 +263,12 @@ public class BOBJModelVAO implements IModelVAO
         {
             this.texturUV.close();
             this.texturUV = null;
+        }
+
+        if (this.indexBuffer != null)
+        {
+            this.indexBuffer.close();
+            this.indexBuffer = null;
         }
 
         if (this.licht != null)
@@ -304,14 +343,14 @@ public class BOBJModelVAO implements IModelVAO
      */
     private float[] ausgangslagen()
     {
-        java.util.Map<String, float[]> bahnen = this.data.shapeData;
+        java.util.Map<String, float[]> bahnen = this.renderData.shapeData;
 
         if (bahnen.isEmpty() || this.shapeKeys == null || this.shapeKeys.shapeKeys.isEmpty())
         {
-            return this.data.posData;
+            return this.renderData.posData;
         }
 
-        float[] basis = this.data.posData;
+        float[] basis = this.renderData.posData;
         boolean gerechnet = false;
 
         for (java.util.Map.Entry<String, Float> e : this.shapeKeys.shapeKeys.entrySet())
@@ -380,7 +419,7 @@ public class BOBJModelVAO implements IModelVAO
             this.meshGueltig = true;
 
             float[] oldVertices = this.ausgangslagen();
-            float[] oldNormals = this.data.normData;
+            float[] oldNormals = this.renderData.normData;
             SkinPose pose = this.skinCache.get(signatur);
 
             if (pose == null)
@@ -391,8 +430,8 @@ public class BOBJModelVAO implements IModelVAO
                 if (this.hautPalette == null)
                 {
                     this.hautPalette = mchorse.bbs_mod.bobj.BOBJHaut.Palette.erstellen(
-                        this.armature, oldVertices, this.data.weightData,
-                        this.data.boneIndexData, this.count, segmente);
+                        this.armature, oldVertices, this.renderData.weightData,
+                        this.renderData.boneIndexData, this.count, segmente);
                 }
 
                 this.hautPalette.aktualisieren(matrices);
@@ -451,8 +490,8 @@ public class BOBJModelVAO implements IModelVAO
 
     private SkinPose neueGpuSkinPose()
     {
-        return new SkinPose(puffer("bobj-position-pose", this.data.posData),
-            puffer("bobj-normale-pose", this.data.normData));
+        return new SkinPose(puffer("bobj-position-pose", this.renderData.posData),
+            puffer("bobj-normale-pose", this.renderData.normData));
     }
 
     private void skinCacheLeeren()
@@ -510,11 +549,11 @@ public class BOBJModelVAO implements IModelVAO
 
         for (int k = 0; k < 4; k++)
         {
-            float weight = this.data.weightData[vertex * 4 + k];
+            float weight = this.renderData.weightData[vertex * 4 + k];
 
             if (weight > 0F && weight > maxWeight)
             {
-                bone = this.data.boneIndexData[vertex * 4 + k];
+                bone = this.renderData.boneIndexData[vertex * 4 + k];
                 maxWeight = weight;
             }
         }
@@ -549,16 +588,22 @@ public class BOBJModelVAO implements IModelVAO
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_LICHT, this.licht.slice());
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_UV0, this.texturUV.slice());
 
-        /* Reihenfolge: (Eckenzahl, Instanzen, erste Ecke, erste Instanz) — belegt an
-         * Vanillas Lightmap, PostPass und SkyRenderer. Die Verwechslung mit
-         * (erste Ecke, Anzahl) zeichnet lautlos nichts. */
-        pass.draw(this.count, 1, 0, 0);
+        if (this.indexed)
+        {
+            pass.setIndexBuffer(this.indexBuffer, IndexType.INT);
+            pass.drawIndexed(this.indexCount, 1, 0, 0, 0);
+        }
+        else
+        {
+            /* SimpleVAO und der explizite Legacy-Fallback behalten die Originalecken. */
+            pass.draw(this.count, 1, 0, 0);
+        }
     }
 
     @Override
     public int eckenZahl()
     {
-        return this.count;
+        return this.indexCount;
     }
 
     /* ================== Mesh-Cache ================== */
