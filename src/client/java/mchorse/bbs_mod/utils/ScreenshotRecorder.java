@@ -53,13 +53,29 @@ public class ScreenshotRecorder
      */
     public void takeScreenshot(File output, int texture, int width, int height)
     {
-        FloatBuffer pixelData = BufferUtils.createFloatBuffer(width * height * 4);
-
         GlStateManager._bindTexture(texture);
+        int actualWidth = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
+        int actualHeight = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
+
+        if (actualWidth <= 0 || actualHeight <= 0)
+        {
+            throw new IllegalStateException("Screenshot texture " + texture + " has no level-0 image");
+        }
+
+        if (actualWidth != width || actualHeight != height)
+        {
+            org.apache.logging.log4j.LogManager.getLogger("bbs/screenshot").warn(
+                "Screenshot texture {} is {}x{}, requested {}x{}; reading actual size",
+                texture, actualWidth, actualHeight, width, height);
+        }
+
+        FloatBuffer pixelData = BufferUtils.createFloatBuffer(
+            Math.multiplyExact(Math.multiplyExact(actualWidth, actualHeight), 4));
+
         GL11.glGetTexImage(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, GL11.GL_FLOAT, pixelData);
         pixelData.rewind();
 
-        this.saveScreenshot(pixelData, output, width, height);
+        this.saveScreenshot(pixelData, output, actualWidth, actualHeight);
     }
 
     /**
