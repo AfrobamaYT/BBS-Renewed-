@@ -178,13 +178,19 @@ public final class BOBJHaut
             float nx = norm[source];
             float ny = norm[source + 1];
             float nz = norm[source + 2];
-            float rx = 0F;
-            float ry = 0F;
-            float rz = 0F;
             float rw = 0F;
-            float rnx = 0F;
-            float rny = 0F;
-            float rnz = 0F;
+            float m0 = 0F;
+            float m1 = 0F;
+            float m2 = 0F;
+            float m3 = 0F;
+            float m4 = 0F;
+            float m5 = 0F;
+            float m6 = 0F;
+            float m7 = 0F;
+            float m8 = 0F;
+            float m9 = 0F;
+            float m10 = 0F;
+            float m11 = 0F;
 
             int influenceEnd = this.vertexOffset[i + 1];
 
@@ -192,32 +198,45 @@ public final class BOBJHaut
             {
                 int p = this.matrixIndex[n] * STRIDE;
                 float w = this.influenceWeight[n];
-                rx += punkt(this.palette, p, x, y, z) * w;
-                ry += punkt(this.palette, p + 4, x, y, z) * w;
-                rz += punkt(this.palette, p + 8, x, y, z) * w;
-                rnx += richtung(this.palette, p, nx, ny, nz) * w;
-                rny += richtung(this.palette, p + 4, nx, ny, nz) * w;
-                rnz += richtung(this.palette, p + 8, nx, ny, nz) * w;
+                m0 = org.joml.Math.fma(this.palette[p], w, m0);
+                m1 = org.joml.Math.fma(this.palette[p + 1], w, m1);
+                m2 = org.joml.Math.fma(this.palette[p + 2], w, m2);
+                m3 = org.joml.Math.fma(this.palette[p + 3], w, m3);
+                m4 = org.joml.Math.fma(this.palette[p + 4], w, m4);
+                m5 = org.joml.Math.fma(this.palette[p + 5], w, m5);
+                m6 = org.joml.Math.fma(this.palette[p + 6], w, m6);
+                m7 = org.joml.Math.fma(this.palette[p + 7], w, m7);
+                m8 = org.joml.Math.fma(this.palette[p + 8], w, m8);
+                m9 = org.joml.Math.fma(this.palette[p + 9], w, m9);
+                m10 = org.joml.Math.fma(this.palette[p + 10], w, m10);
+                m11 = org.joml.Math.fma(this.palette[p + 11], w, m11);
                 rw += w;
             }
 
             if (rw == 0F)
             {
-                rx = x;
-                ry = y;
-                rz = z;
-                rnx = nx;
-                rny = ny;
-                rnz = nz;
-                rw = 1F;
+                outPos[source] = x;
+                outPos[source + 1] = y;
+                outPos[source + 2] = z;
+                outNorm[source] = nx;
+                outNorm[source + 1] = ny;
+                outNorm[source + 2] = nz;
+
+                return;
             }
 
-            outPos[source] = rx / rw;
-            outPos[source + 1] = ry / rw;
-            outPos[source + 2] = rz / rw;
-            outNorm[source] = rnx;
-            outNorm[source + 1] = rny;
-            outNorm[source + 2] = rnz;
+            outPos[source] = org.joml.Math.fma(m0, x,
+                org.joml.Math.fma(m1, y, org.joml.Math.fma(m2, z, m3))) / rw;
+            outPos[source + 1] = org.joml.Math.fma(m4, x,
+                org.joml.Math.fma(m5, y, org.joml.Math.fma(m6, z, m7))) / rw;
+            outPos[source + 2] = org.joml.Math.fma(m8, x,
+                org.joml.Math.fma(m9, y, org.joml.Math.fma(m10, z, m11))) / rw;
+            outNorm[source] = org.joml.Math.fma(m0, nx,
+                org.joml.Math.fma(m1, ny, m2 * nz));
+            outNorm[source + 1] = org.joml.Math.fma(m4, nx,
+                org.joml.Math.fma(m5, ny, m6 * nz));
+            outNorm[source + 2] = org.joml.Math.fma(m8, nx,
+                org.joml.Math.fma(m9, ny, m10 * nz));
         }
 
         private static float punkt(float[] matrix, int p, float x, float y, float z)
