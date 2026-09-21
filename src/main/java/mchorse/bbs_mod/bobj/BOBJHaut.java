@@ -37,6 +37,235 @@ public final class BOBJHaut
         }
     }
 
+    /**
+     * Static vertex-to-matrix layout plus the current flat matrix palette.
+     *
+     * <p>The expensive questions (ordinary bone or B-Bone, segment pair and split
+     * weights) depend only on imported weights and rest positions. Resolve them once;
+     * each pose then copies the current matrices into a compact primitive array.</p>
+     */
+    public static final class Palette
+    {
+        private static final int STRIDE = 12;
+
+        private final int boneCount;
+        private final int[] bendyOffset;
+        private final BOBJBBone[] bendyBones;
+        private final int[] matrixA;
+        private final int[] matrixB;
+        private final float[] weightA;
+        private final float[] weightB;
+        private final float[] palette;
+
+        private Palette(BOBJArmature armature, float[] pos, float[] weights,
+                        int[] boneIndices, int count, Segmente cache)
+        {
+            this.boneCount = armature.orderedBones.size();
+            this.bendyOffset = new int[this.boneCount];
+            this.bendyBones = new BOBJBBone[this.boneCount];
+
+            Arrays.fill(this.bendyOffset, -1);
+
+            int matrixCount = this.boneCount;
+
+            for (int i = 0; i < this.boneCount; i++)
+            {
+                BOBJBBone bendy = armature.orderedBones.get(i).bbone;
+
+                if (bendy != null && bendy.aktiv() && bendy.verformJoml != null)
+                {
+                    this.bendyOffset[i] = matrixCount;
+                    this.bendyBones[i] = bendy;
+                    matrixCount += bendy.segmente + 1;
+                }
+            }
+
+            this.matrixA = new int[count * 4];
+            this.matrixB = new int[count * 4];
+            this.weightA = new float[count * 4];
+            this.weightB = new float[count * 4];
+            this.palette = new float[matrixCount * STRIDE];
+
+            Arrays.fill(this.matrixA, -1);
+            Arrays.fill(this.matrixB, -1);
+            cache.sichern(count);
+
+            for (int i = 0; i < count; i++)
+            {
+                for (int k = 0; k < 4; k++)
+                {
+                    int n = i * 4 + k;
+                    float weight = weights[n];
+                    int bone = boneIndices[n];
+
+                    if (weight <= 0F || bone < 0 || bone >= this.boneCount)
+                    {
+                        continue;
+                    }
+
+                    int offset = this.bendyOffset[bone];
+
+                    if (offset >= 0)
+                    {
+                        int segment = segment(armature, pos, bone, i, k, cache);
+                        float blend = cache.blend[n];
+
+                        this.matrixA[n] = offset + segment;
+                        this.matrixB[n] = offset + segment + 1;
+                        this.weightA[n] = weight * (1F - blend);
+                        this.weightB[n] = weight * blend;
+                    }
+                    else
+                    {
+                        this.matrixA[n] = bone;
+                        this.weightA[n] = weight;
+                    }
+                }
+            }
+        }
+
+        public static Palette erstellen(BOBJArmature armature, float[] pos, float[] weights,
+                                        int[] boneIndices, int count, Segmente cache)
+        {
+            return new Palette(armature, pos, weights, boneIndices, count, cache);
+        }
+
+        public void aktualisieren(Matrix4f[] matrices)
+        {
+            for (int i = 0; i < this.boneCount; i++)
+            {
+                Matrix4f matrix = matrices[i];
+
+                if (matrix != null)
+                {
+                    kopiere(matrix, this.palette, i * STRIDE);
+                }
+            }
+
+            for (int i = 0; i < this.boneCount; i++)
+            {
+                BOBJBBone bendy = this.bendyBones[i];
+
+                if (bendy == null || bendy.verformJoml == null)
+                {
+                    continue;
+                }
+
+                int offset = this.bendyOffset[i];
+
+                for (int s = 0; s <= bendy.segmente; s++)
+                {
+                    Matrix4f matrix = bendy.verformJoml[s + 1];
+
+                    if (matrix != null)
+                    {
+                        kopiere(matrix, this.palette, (offset + s) * STRIDE);
+                    }
+                }
+            }
+        }
+
+        public void vertex(float[] pos, float[] norm, int i, float[] outPos, float[] outNorm)
+        {
+            int source = i * 3;
+            int influence = i * 4;
+            float x = pos[source];
+            float y = pos[source + 1];
+            float z = pos[source + 2];
+            float nx = norm[source];
+            float ny = norm[source + 1];
+            float nz = norm[source + 2];
+            float rx = 0F;
+            float ry = 0F;
+            float rz = 0F;
+            float rw = 0F;
+            float rnx = 0F;
+            float rny = 0F;
+            float rnz = 0F;
+
+            for (int k = 0; k < 4; k++)
+            {
+                int n = influence + k;
+                int a = this.matrixA[n];
+
+                if (a >= 0)
+                {
+                    int p = a * STRIDE;
+                    float w = this.weightA[n];
+                    rx += punkt(this.palette, p, x, y, z) * w;
+                    ry += punkt(this.palette, p + 4, x, y, z) * w;
+                    rz += punkt(this.palette, p + 8, x, y, z) * w;
+                    rnx += richtung(this.palette, p, nx, ny, nz) * w;
+                    rny += richtung(this.palette, p + 4, nx, ny, nz) * w;
+                    rnz += richtung(this.palette, p + 8, nx, ny, nz) * w;
+                    rw += w;
+                }
+
+                int b = this.matrixB[n];
+
+                if (b >= 0)
+                {
+                    int p = b * STRIDE;
+                    float w = this.weightB[n];
+                    rx += punkt(this.palette, p, x, y, z) * w;
+                    ry += punkt(this.palette, p + 4, x, y, z) * w;
+                    rz += punkt(this.palette, p + 8, x, y, z) * w;
+                    rnx += richtung(this.palette, p, nx, ny, nz) * w;
+                    rny += richtung(this.palette, p + 4, nx, ny, nz) * w;
+                    rnz += richtung(this.palette, p + 8, nx, ny, nz) * w;
+                    rw += w;
+                }
+            }
+
+            if (rw == 0F)
+            {
+                rx = x;
+                ry = y;
+                rz = z;
+                rnx = nx;
+                rny = ny;
+                rnz = nz;
+                rw = 1F;
+            }
+
+            outPos[source] = rx / rw;
+            outPos[source + 1] = ry / rw;
+            outPos[source + 2] = rz / rw;
+            outNorm[source] = rnx;
+            outNorm[source + 1] = rny;
+            outNorm[source + 2] = rnz;
+        }
+
+        private static float punkt(float[] matrix, int p, float x, float y, float z)
+        {
+            return org.joml.Math.fma(matrix[p], x,
+                org.joml.Math.fma(matrix[p + 1], y,
+                    org.joml.Math.fma(matrix[p + 2], z, matrix[p + 3])));
+        }
+
+        private static float richtung(float[] matrix, int p, float x, float y, float z)
+        {
+            return org.joml.Math.fma(matrix[p], x,
+                org.joml.Math.fma(matrix[p + 1], y, matrix[p + 2] * z));
+        }
+
+        private static void kopiere(Matrix4f matrix, float[] out, int p)
+        {
+            out[p] = matrix.m00();
+            out[p + 1] = matrix.m10();
+            out[p + 2] = matrix.m20();
+            out[p + 3] = matrix.m30();
+            out[p + 4] = matrix.m01();
+            out[p + 5] = matrix.m11();
+            out[p + 6] = matrix.m21();
+            out[p + 7] = matrix.m31();
+            out[p + 8] = matrix.m02();
+            out[p + 9] = matrix.m12();
+            out[p + 10] = matrix.m22();
+            out[p + 11] = matrix.m32();
+        }
+    }
+
     private BOBJHaut()
     {}
 

@@ -10,8 +10,6 @@ import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
@@ -26,15 +24,6 @@ public class BOBJModelVAO implements IModelVAO
 {
     private static final int PARALLEL_SKIN_THRESHOLD = 16384;
     private static final int SKIN_CACHE_SIZE = 3;
-    private static final ThreadLocal<SkinScratch> SKIN_SCRATCH =
-        ThreadLocal.withInitial(SkinScratch::new);
-
-    private static final class SkinScratch
-    {
-        public final Vector4f vertex = new Vector4f();
-        public final Vector3f normal = new Vector3f();
-    }
-
     private static final class SkinPose
     {
         public final GpuBuffer position;
@@ -89,6 +78,7 @@ public class BOBJModelVAO implements IModelVAO
     private float[] tmpTangents;
     private final LinkedHashMap<Long, SkinPose> skinCache = new LinkedHashMap<>(8, 0.75F, true);
     private SkinPose aktiveSkinPose;
+    private mchorse.bbs_mod.bobj.BOBJHaut.Palette hautPalette;
 
     /** Picking-Licht hat einen eigenen Dirty-Zustand; eine Stencil-Passage bewegt kein Mesh. */
     private boolean lichtGueltig;
@@ -398,18 +388,27 @@ public class BOBJModelVAO implements IModelVAO
                 pose = this.neueSkinPose();
                 mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente = this.segmente();
 
+                if (this.hautPalette == null)
+                {
+                    this.hautPalette = mchorse.bbs_mod.bobj.BOBJHaut.Palette.erstellen(
+                        this.armature, oldVertices, this.data.weightData,
+                        this.data.boneIndexData, this.count, segmente);
+                }
+
+                this.hautPalette.aktualisieren(matrices);
+
                 if (this.count >= PARALLEL_SKIN_THRESHOLD && ForkJoinPool.getCommonPoolParallelism() > 1)
                 {
                     IntStream.range(0, this.count).parallel().forEach((i) ->
                         this.hautVertex(oldVertices, oldNormals, this.tmpVertices,
-                            this.tmpNormals, matrices, segmente, i));
+                            this.tmpNormals, i));
                 }
                 else
                 {
                     for (int i = 0; i < this.count; i++)
                     {
                         this.hautVertex(oldVertices, oldNormals, this.tmpVertices,
-                            this.tmpNormals, matrices, segmente, i);
+                            this.tmpNormals, i);
                     }
                 }
 
@@ -469,23 +468,9 @@ public class BOBJModelVAO implements IModelVAO
     }
 
     private void hautVertex(float[] oldVertices, float[] oldNormals, float[] newVertices,
-                            float[] newNormals, Matrix4f[] matrices,
-                            mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente, int i)
+                            float[] newNormals, int i)
     {
-        SkinScratch scratch = SKIN_SCRATCH.get();
-
-        /* Haeuten wie Blender — EINE Stelle fuer Zeichnen und Messung (BOBJHaut). */
-        mchorse.bbs_mod.bobj.BOBJHaut.vertex(this.armature, oldVertices, oldNormals,
-            this.data.weightData, this.data.boneIndexData, matrices, i, segmente,
-            scratch.vertex, scratch.normal);
-
-        int n = i * 3;
-        newVertices[n] = scratch.vertex.x;
-        newVertices[n + 1] = scratch.vertex.y;
-        newVertices[n + 2] = scratch.vertex.z;
-        newNormals[n] = scratch.normal.x;
-        newNormals[n + 1] = scratch.normal.y;
-        newNormals[n + 2] = scratch.normal.z;
+        this.hautPalette.vertex(oldVertices, oldNormals, i, newVertices, newNormals);
     }
 
     /**
@@ -586,6 +571,7 @@ public class BOBJModelVAO implements IModelVAO
     {
         this.meshGueltig = false;
         this.skinCacheLeeren();
+        this.hautPalette = null;
     }
 
     private static long signatur(Matrix4f[] matrices, mchorse.bbs_mod.obj.shapes.ShapeKeys shapeKeys)
