@@ -251,6 +251,12 @@ public class BOBJArmature
     private boolean matrizenGueltig;
     private LinkedHashMap<Long, BOBJPoseSnapshot> poseSnapshots;
 
+    /** Signature of the pose currently held by this shared armature; absent before evaluation. */
+    public long ausgewerteteSignatur()
+    {
+        return this.matrizenGueltig ? this.letzteEingabe : Long.MIN_VALUE;
+    }
+
     public void copyOrder(BOBJArmature armature)
     {
         for (BOBJBone bone : armature.orderedBones)

@@ -24,6 +24,7 @@ import java.util.Map;
  */
 public final class RigMechanik implements BOBJArmature.Zwang
 {
+    public static volatile boolean ENABLE_SHAPE_CACHE = true;
     private final List<String> reihenfolge;
     /** Constraint-Stapel je Knochen (ohne IK), in Blenders Stapelreihenfolge. */
     private final Map<String, List<MapType>> proBone;
@@ -45,6 +46,8 @@ public final class RigMechanik implements BOBJArmature.Zwang
     private Map<String, List<MapType>> bboneTreiberNachBone;
     private boolean poseCacheGeprueft;
     private boolean poseCacheSicher;
+    private final java.util.LinkedHashMap<Long, Map<String, Float>> shapeSnapshots =
+        new java.util.LinkedHashMap<>(8, 0.75F, true);
     RigRahmen rahmen = RigRahmen.einheit();
     /** {@code pose_position == REST}: Blender zeigt dann die Ruhelage, ohne Pose und Constraints. */
     boolean ruhelage;
@@ -714,12 +717,44 @@ public final class RigMechanik implements BOBJArmature.Zwang
             return 0;
         }
 
+        /* A BOBJ model can have several meshes and is drawn in world, picker and
+         * preview passes. Its shape drivers depend on the same bones, properties and
+         * frame already represented by the evaluated-armature signature. */
+        long signature = ENABLE_SHAPE_CACHE ? armature.ausgewerteteSignatur() : Long.MIN_VALUE;
+        Map<String, Float> values = signature == Long.MIN_VALUE ? null : this.shapeSnapshots.get(signature);
+
+        if (values != null)
+        {
+            ziel.shapeKeys.putAll(values);
+            return values.size();
+        }
+
         int gesetzt = 0;
+        Map<String, Float> computed = signature == Long.MIN_VALUE ? null : new HashMap<>();
 
         for (Map.Entry<String, MapType> e : this.shapeTreiber.entrySet())
         {
-            ziel.shapeKeys.put(e.getKey(), this.treiber.wert(e.getValue(), 0F));
+            float value = this.treiber.wert(e.getValue(), 0F);
+            ziel.shapeKeys.put(e.getKey(), value);
+
+            if (computed != null)
+            {
+                computed.put(e.getKey(), value);
+            }
+
             gesetzt++;
+        }
+
+        if (computed != null)
+        {
+            this.shapeSnapshots.put(signature, computed);
+
+            if (this.shapeSnapshots.size() > 4)
+            {
+                java.util.Iterator<Long> oldest = this.shapeSnapshots.keySet().iterator();
+                oldest.next();
+                oldest.remove();
+            }
         }
 
         return gesetzt;
