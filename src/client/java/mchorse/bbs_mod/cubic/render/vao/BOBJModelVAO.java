@@ -16,12 +16,16 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.IntStream;
 
 public class BOBJModelVAO implements IModelVAO
 {
     private static final int PARALLEL_SKIN_THRESHOLD = 16384;
+    private static final int SKIN_CACHE_SIZE = 3;
     private static final ThreadLocal<SkinScratch> SKIN_SCRATCH =
         ThreadLocal.withInitial(SkinScratch::new);
 
@@ -29,6 +33,18 @@ public class BOBJModelVAO implements IModelVAO
     {
         public final Vector4f vertex = new Vector4f();
         public final Vector3f normal = new Vector3f();
+    }
+
+    private static final class SkinPose
+    {
+        public final GpuBuffer position;
+        public final GpuBuffer normale;
+
+        public SkinPose(GpuBuffer position, GpuBuffer normale)
+        {
+            this.position = position;
+            this.normale = normale;
+        }
     }
 
     public BOBJLoader.CompiledData data;
@@ -71,6 +87,8 @@ public class BOBJModelVAO implements IModelVAO
     /** Dominanter Knochen je Ecke. Haengt nur von den importierten Gewichten ab. */
     private int[] pickingBones;
     private float[] tmpTangents;
+    private final LinkedHashMap<Long, SkinPose> skinCache = new LinkedHashMap<>(8, 0.75F, true);
+    private SkinPose aktiveSkinPose;
 
     /** Picking-Licht hat einen eigenen Dirty-Zustand; eine Stencil-Passage bewegt kein Mesh. */
     private boolean lichtGueltig;
@@ -204,6 +222,8 @@ public class BOBJModelVAO implements IModelVAO
      */
     public void delete()
     {
+        this.skinCacheLeeren();
+
         if (this.position != null)
         {
             this.position.close();
@@ -363,39 +383,44 @@ public class BOBJModelVAO implements IModelVAO
          * Der Fingerabdruck laeuft nur ueber Daten, die die Geometrie wirklich aendern.
          * Picking-Licht hat unten einen eigenen Cache. Damit kann der Stencil-Durchgang
          * dieselbe ausgewertete Geometrie verwenden, statt sie ein zweites Mal zu haeuten. */
-        long signatur = signatur(matrices);
+        long signatur = signatur(matrices, this.shapeKeys);
         if (signatur != this.letzteMeshSignatur || !this.meshGueltig)
         {
             this.letzteMeshSignatur = signatur;
             this.meshGueltig = true;
 
             float[] oldVertices = this.ausgangslagen();
-            float[] newVertices = this.tmpVertices;
             float[] oldNormals = this.data.normData;
-            float[] newNormals = this.tmpNormals;
-            mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente = this.segmente();
+            SkinPose pose = this.skinCache.get(signatur);
 
-            if (this.count >= PARALLEL_SKIN_THRESHOLD && ForkJoinPool.getCommonPoolParallelism() > 1)
+            if (pose == null)
             {
-                IntStream.range(0, this.count).parallel().forEach((i) ->
-                    this.hautVertex(oldVertices, oldNormals, newVertices, newNormals, matrices, segmente, i));
-            }
-            else
-            {
-                for (int i = 0; i < this.count; i++)
+                pose = this.neueSkinPose();
+                mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente = this.segmente();
+
+                if (this.count >= PARALLEL_SKIN_THRESHOLD && ForkJoinPool.getCommonPoolParallelism() > 1)
                 {
-                    this.hautVertex(oldVertices, oldNormals, newVertices, newNormals, matrices, segmente, i);
+                    IntStream.range(0, this.count).parallel().forEach((i) ->
+                        this.hautVertex(oldVertices, oldNormals, this.tmpVertices,
+                            this.tmpNormals, matrices, segmente, i));
                 }
+                else
+                {
+                    for (int i = 0; i < this.count; i++)
+                    {
+                        this.hautVertex(oldVertices, oldNormals, this.tmpVertices,
+                            this.tmpNormals, matrices, segmente, i);
+                    }
+                }
+
+                this.processData(this.tmpVertices, this.tmpNormals, matrices);
+                schreiben(pose.position, this.tmpVertices);
+                schreiben(pose.normale, this.tmpNormals);
+                this.skinCache.put(signatur, pose);
             }
 
-            this.processData(newVertices, newNormals, matrices);
-
+            this.aktiveSkinPose = pose;
             this.uploadCount += 1;
-
-            /* 26.2: Inhalt ersetzen statt Puffer neu anzulegen. Die Groesse aendert sich beim
-             * Skinning nie -- es bewegen sich nur die Ecken. */
-            schreiben(this.position, newVertices);
-            schreiben(this.normale, newNormals);
         }
 
         /* ⚠️ Tangenten (Iris) bleiben geparkt (keine Bindung, 26.2-Ausschluss). Das
@@ -403,6 +428,44 @@ public class BOBJModelVAO implements IModelVAO
          * Knochenteil der Pick-Kennung je Ecke — ohne ihn kannte der Auswahlpuffer nur
          * die Replay-Basis, ein Klick fand nie einen Knochen. */
         this.lichtAktualisieren(stencilMap);
+    }
+
+    private SkinPose neueSkinPose()
+    {
+        if (this.skinCache.isEmpty())
+        {
+            return this.neueGpuSkinPose();
+        }
+
+        if (this.skinCache.size() < SKIN_CACHE_SIZE)
+        {
+            return this.neueGpuSkinPose();
+        }
+
+        Iterator<Map.Entry<Long, SkinPose>> iterator = this.skinCache.entrySet().iterator();
+        SkinPose pose = iterator.next().getValue();
+
+        iterator.remove();
+
+        return pose;
+    }
+
+    private SkinPose neueGpuSkinPose()
+    {
+        return new SkinPose(puffer("bobj-position-pose", this.data.posData),
+            puffer("bobj-normale-pose", this.data.normData));
+    }
+
+    private void skinCacheLeeren()
+    {
+        for (SkinPose pose : this.skinCache.values())
+        {
+            pose.position.close();
+            pose.normale.close();
+        }
+
+        this.skinCache.clear();
+        this.aktiveSkinPose = null;
     }
 
     private void hautVertex(float[] oldVertices, float[] oldNormals, float[] newVertices,
@@ -493,8 +556,11 @@ public class BOBJModelVAO implements IModelVAO
             return;
         }
 
-        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_POSITION, this.position.slice());
-        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_NORMALE, this.normale.slice());
+        GpuBuffer aktuellePosition = this.aktiveSkinPose == null ? this.position : this.aktiveSkinPose.position;
+        GpuBuffer aktuelleNormale = this.aktiveSkinPose == null ? this.normale : this.aktiveSkinPose.normale;
+
+        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_POSITION, aktuellePosition.slice());
+        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_NORMALE, aktuelleNormale.slice());
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_LICHT, this.licht.slice());
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_UV0, this.texturUV.slice());
 
@@ -519,9 +585,10 @@ public class BOBJModelVAO implements IModelVAO
     public void meshMarkieren()
     {
         this.meshGueltig = false;
+        this.skinCacheLeeren();
     }
 
-    private static long signatur(Matrix4f[] matrices)
+    private static long signatur(Matrix4f[] matrices, mchorse.bbs_mod.obj.shapes.ShapeKeys shapeKeys)
     {
         long h = 17L;
 
@@ -531,6 +598,11 @@ public class BOBJModelVAO implements IModelVAO
             {
                 h = h * 31L + (m == null ? 0 : m.hashCode());
             }
+        }
+
+        if (shapeKeys != null)
+        {
+            h = h * 31L + shapeKeys.shapeKeys.hashCode();
         }
 
         return h;
