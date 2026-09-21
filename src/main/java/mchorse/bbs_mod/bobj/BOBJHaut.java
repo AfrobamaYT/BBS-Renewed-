@@ -3,7 +3,6 @@ package mchorse.bbs_mod.bobj;
 import mchorse.bbs_mod.cubic.ik.RigBBone;
 import mchorse.bbs_mod.cubic.ik.RigMathe;
 
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -16,15 +15,11 @@ import java.util.Arrays;
  * lineare Mischung der Verform-Matrizen; bei Bendy Bones ({@code b_bone_deform}) die zwei
  * Segmentmatrizen um den Ruhe-Ort des Vertex, nach seiner Lage entlang des Knochens gemischt.
  *
- * <p>Nur fuer den Render-Thread bzw. eine Sonde nacheinander gedacht: die Rechenpuffer sind
- * statisch, damit je Vertex und Bild nichts alloziert wird.
+ * <p>Thread-safe: all mutable result vectors belong to the caller. This lets large meshes
+ * split independent vertices across workers without copying the armature.
  */
 public final class BOBJHaut
 {
-    private static final Vector4f SUMME = new Vector4f();
-    private static final Vector3f SUMME_N = new Vector3f();
-    private static final Matrix3f DREI = new Matrix3f();
-
     /** B-Bone-Segment je Vertex-Gewicht (Blenders Segmentindex und Mischfaktor); -1 = ungerechnet. */
     public static final class Segmente
     {
@@ -154,12 +149,40 @@ public final class BOBJHaut
     /** Ein Gewichtsanteil: Ort und Normale durch {@code m}, mit {@code w} aufaddiert. */
     private static void anteil(Matrix4f m, float w, float[] pos, float[] norm, int i, Vector4f result, Vector3f resultNormal)
     {
-        SUMME.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2], 1F);
-        m.transform(SUMME);
-        result.add(SUMME.mul(w));
+        int n = i * 3;
+        float x = pos[n];
+        float y = pos[n + 1];
+        float z = pos[n + 2];
+        float nx = norm[n];
+        float ny = norm[n + 1];
+        float nz = norm[n + 2];
 
-        SUMME_N.set(norm[i * 3], norm[i * 3 + 1], norm[i * 3 + 2]);
-        DREI.set(m).transform(SUMME_N);
-        resultNormal.add(SUMME_N.mul(w));
+        /* JOML uses column-major component access. This is exactly Matrix4f.transform
+         * and Matrix3f.set(m).transform, expanded to avoid rebuilding a Matrix3f and
+         * mutating two shared scratch vectors for every single bone weight. */
+        float tx = org.joml.Math.fma(m.m00(), x,
+            org.joml.Math.fma(m.m10(), y, org.joml.Math.fma(m.m20(), z, m.m30())));
+        float ty = org.joml.Math.fma(m.m01(), x,
+            org.joml.Math.fma(m.m11(), y, org.joml.Math.fma(m.m21(), z, m.m31())));
+        float tz = org.joml.Math.fma(m.m02(), x,
+            org.joml.Math.fma(m.m12(), y, org.joml.Math.fma(m.m22(), z, m.m32())));
+        float tw = org.joml.Math.fma(m.m03(), x,
+            org.joml.Math.fma(m.m13(), y, org.joml.Math.fma(m.m23(), z, m.m33())));
+
+        result.x += tx * w;
+        result.y += ty * w;
+        result.z += tz * w;
+        result.w += tw * w;
+
+        float tnx = org.joml.Math.fma(m.m00(), nx,
+            org.joml.Math.fma(m.m10(), ny, m.m20() * nz));
+        float tny = org.joml.Math.fma(m.m01(), nx,
+            org.joml.Math.fma(m.m11(), ny, m.m21() * nz));
+        float tnz = org.joml.Math.fma(m.m02(), nx,
+            org.joml.Math.fma(m.m12(), ny, m.m22() * nz));
+
+        resultNormal.x += tnx * w;
+        resultNormal.y += tny * w;
+        resultNormal.z += tnz * w;
     }
 }

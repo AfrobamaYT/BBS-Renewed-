@@ -16,9 +16,21 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.IntStream;
 
 public class BOBJModelVAO implements IModelVAO
 {
+    private static final int PARALLEL_SKIN_THRESHOLD = 16384;
+    private static final ThreadLocal<SkinScratch> SKIN_SCRATCH =
+        ThreadLocal.withInitial(SkinScratch::new);
+
+    private static final class SkinScratch
+    {
+        public final Vector4f vertex = new Vector4f();
+        public final Vector3f normal = new Vector3f();
+    }
+
     public BOBJLoader.CompiledData data;
     public BOBJArmature armature;
 
@@ -357,27 +369,23 @@ public class BOBJModelVAO implements IModelVAO
             this.letzteMeshSignatur = signatur;
             this.meshGueltig = true;
 
-            Vector4f result = new Vector4f(0F, 0F, 0F, 0F);
-            Vector3f resultNormal = new Vector3f();
-
             float[] oldVertices = this.ausgangslagen();
             float[] newVertices = this.tmpVertices;
             float[] oldNormals = this.data.normData;
             float[] newNormals = this.tmpNormals;
+            mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente = this.segmente();
 
-            for (int i = 0, c = this.count; i < c; i++)
+            if (this.count >= PARALLEL_SKIN_THRESHOLD && ForkJoinPool.getCommonPoolParallelism() > 1)
             {
-                /* Haeuten wie Blender — EINE Stelle fuer Zeichnen und Messung (BOBJHaut). */
-                mchorse.bbs_mod.bobj.BOBJHaut.vertex(this.armature, oldVertices, oldNormals,
-                    this.data.weightData, this.data.boneIndexData, matrices, i, this.segmente(), result, resultNormal);
-
-                newVertices[i * 3] = result.x;
-                newVertices[i * 3 + 1] = result.y;
-                newVertices[i * 3 + 2] = result.z;
-
-                newNormals[i * 3] = resultNormal.x;
-                newNormals[i * 3 + 1] = resultNormal.y;
-                newNormals[i * 3 + 2] = resultNormal.z;
+                IntStream.range(0, this.count).parallel().forEach((i) ->
+                    this.hautVertex(oldVertices, oldNormals, newVertices, newNormals, matrices, segmente, i));
+            }
+            else
+            {
+                for (int i = 0; i < this.count; i++)
+                {
+                    this.hautVertex(oldVertices, oldNormals, newVertices, newNormals, matrices, segmente, i);
+                }
             }
 
             this.processData(newVertices, newNormals, matrices);
@@ -395,6 +403,26 @@ public class BOBJModelVAO implements IModelVAO
          * Knochenteil der Pick-Kennung je Ecke — ohne ihn kannte der Auswahlpuffer nur
          * die Replay-Basis, ein Klick fand nie einen Knochen. */
         this.lichtAktualisieren(stencilMap);
+    }
+
+    private void hautVertex(float[] oldVertices, float[] oldNormals, float[] newVertices,
+                            float[] newNormals, Matrix4f[] matrices,
+                            mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente, int i)
+    {
+        SkinScratch scratch = SKIN_SCRATCH.get();
+
+        /* Haeuten wie Blender — EINE Stelle fuer Zeichnen und Messung (BOBJHaut). */
+        mchorse.bbs_mod.bobj.BOBJHaut.vertex(this.armature, oldVertices, oldNormals,
+            this.data.weightData, this.data.boneIndexData, matrices, i, segmente,
+            scratch.vertex, scratch.normal);
+
+        int n = i * 3;
+        newVertices[n] = scratch.vertex.x;
+        newVertices[n + 1] = scratch.vertex.y;
+        newVertices[n + 2] = scratch.vertex.z;
+        newNormals[n] = scratch.normal.x;
+        newNormals[n + 1] = scratch.normal.y;
+        newNormals[n + 2] = scratch.normal.z;
     }
 
     /**
