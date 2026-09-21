@@ -135,14 +135,19 @@ public final class RigBBone
         d.dualQuats = new Object[n + 1];
         d.verformMatrizen[0] = armInv;
 
+        /* These two products are identical for every segment of this bone.
+         * Keep the original multiplication order and rounding, without a persistent cache. */
+        float[] poseArmMat = RigMathe.mul(chanMat, armMat);
+        float[] poseIdentity = rahmen.zuPose(RigMathe.einheit());
+
         for (int a = 0; a <= n; a++)
         {
             float[] tmat = RigMathe.invertiert(d.ruheMatrizen[a]);
-            float[] m = RigMathe.mul(RigMathe.mul(RigMathe.mul(RigMathe.mul(chanMat, armMat), d.poseMatrizen[a]), tmat), armInv);
+            float[] m = RigMathe.mul(RigMathe.mul(RigMathe.mul(poseArmMat, d.poseMatrizen[a]), tmat), armInv);
 
             d.verformMatrizen[a + 1] = m;
             /* Pose-Raum -> BBS-Raum fuer eine ABBILDUNG: GW · M · inv(GW). */
-            d.verformBBS[a + 1] = rahmen.ausPose(RigMathe.mul(m, rahmen.zuPose(RigMathe.einheit())));
+            d.verformBBS[a + 1] = rahmen.ausPose(RigMathe.mul(m, poseIdentity));
             d.verformJoml[a + 1] = RigMathe.zuJoml(d.verformBBS[a + 1]);
 
             float[] basis = RigMathe.mul(armMat, d.ruheMatrizen[a]);
