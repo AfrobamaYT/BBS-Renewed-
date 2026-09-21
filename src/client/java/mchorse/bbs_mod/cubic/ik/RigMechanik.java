@@ -43,6 +43,8 @@ public final class RigMechanik implements BOBJArmature.Zwang
     final List<MapType> bboneTreiber = new ArrayList<>();
     /** Lazy auch fuer vor dem Hotswap geladene Rigs: die Liste ist nach dem Import unveraenderlich. */
     private Map<String, List<MapType>> bboneTreiberNachBone;
+    private boolean poseCacheGeprueft;
+    private boolean poseCacheSicher;
     RigRahmen rahmen = RigRahmen.einheit();
     /** {@code pose_position == REST}: Blender zeigt dann die Ruhelage, ohne Pose und Constraints. */
     boolean ruhelage;
@@ -60,6 +62,44 @@ public final class RigMechanik implements BOBJArmature.Zwang
     {
         return this.treiber.regler.eingabeSignatur() * 31L
             + Float.floatToIntBits(this.treiber.bild);
+    }
+
+    @Override
+    public boolean poseCacheSicher()
+    {
+        if (!this.poseCacheGeprueft)
+        {
+            boolean sicher = this.propTreiber.isEmpty();
+
+            for (List<MapType> stapel : this.proBone.values())
+            {
+                for (MapType c : stapel)
+                {
+                    String typ = c.getString("typ", "");
+
+                    if (c.has("treiber_felder")
+                        || ("STRETCH_TO".equals(typ)
+                            && RigZwangBasis.zahl(c, "rest_length", "ruhe_laenge", 0F) <= 0F)
+                        || ("LIMIT_DISTANCE".equals(typ)
+                            && RigZwangBasis.zahl(c, "distance", "distanz", 0F) <= 0F))
+                    {
+                        sicher = false;
+                    }
+                }
+            }
+
+            this.poseCacheSicher = sicher;
+            this.poseCacheGeprueft = true;
+        }
+
+        return this.poseCacheSicher;
+    }
+
+    @Override
+    public void poseAusCache(BOBJArmature armature)
+    {
+        this.treiber.knochen = armature;
+        this.treiber.rahmen = this.rahmen;
     }
 
     /** Beim Models-Reload rufen. */
@@ -98,6 +138,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
         armature.zwang = mechanik;
         mechanik.flaggen(armature);
+        armature.posenMarkieren();
     }
 
     /** Setzt Blenders Knochen-Flags, Huellen und B-Bone-Daten auf DIESE Armature. */

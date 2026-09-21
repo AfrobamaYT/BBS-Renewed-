@@ -6,11 +6,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class BOBJArmature
 {
+    /** Enable reuse of evaluated poses for solver graphs whose outputs are snapshot-safe. */
+    public static volatile boolean ENABLE_POSE_CACHE = true;
     /**
      * Name of this armature 
      */
@@ -49,6 +53,7 @@ public class BOBJArmature
     {
         this.bones.put(bone.name, bone);
         this.orderedBones.add(bone);
+        this.posenMarkieren();
     }
 
     /**
@@ -101,6 +106,16 @@ public class BOBJArmature
         {
             return 0L;
         }
+
+        /** Only solvers without externally mutable evaluation output may use pose snapshots. */
+        default boolean poseCacheSicher()
+        {
+            return false;
+        }
+
+        /** Restore solver-owned references needed by later shape/rig consumers. */
+        default void poseAusCache(BOBJArmature armature)
+        {}
     }
 
     public Zwang zwang;
@@ -131,11 +146,54 @@ public class BOBJArmature
             return;
         }
 
+        boolean cachebar = ENABLE_POSE_CACHE
+            && this.zwang != null && this.zwang.poseCacheSicher();
+
+        if (cachebar && this.poseSnapshots != null)
+        {
+            BOBJPoseSnapshot snapshot = this.poseSnapshots.get(signatur);
+
+            if (snapshot != null)
+            {
+                snapshot.restore(this);
+                this.zwang.poseAusCache(this);
+                this.letzteEingabe = signatur;
+                this.matrizenGueltig = true;
+                return;
+            }
+        }
+        else if (!cachebar && this.poseSnapshots != null && !this.poseSnapshots.isEmpty())
+        {
+            this.poseSnapshots.clear();
+        }
+
         this.letzteEingabe = signatur;
         this.matrizenGueltig = true;
 
         if (this.zwang != null && this.zwang.auswerten(this))
         {
+            if (cachebar)
+            {
+                BOBJPoseSnapshot snapshot = BOBJPoseSnapshot.capture(this);
+
+                if (snapshot != null)
+                {
+                    if (this.poseSnapshots == null)
+                    {
+                        this.poseSnapshots = new LinkedHashMap<>(8, 0.75F, true);
+                    }
+
+                    this.poseSnapshots.put(signatur, snapshot);
+
+                    if (this.poseSnapshots.size() > 4)
+                    {
+                        Iterator<Long> oldest = this.poseSnapshots.keySet().iterator();
+                        oldest.next();
+                        oldest.remove();
+                    }
+                }
+            }
+
             return;
         }
 
@@ -149,6 +207,11 @@ public class BOBJArmature
     public void posenMarkieren()
     {
         this.matrizenGueltig = false;
+
+        if (this.poseSnapshots != null)
+        {
+            this.poseSnapshots.clear();
+        }
     }
 
     /**
@@ -171,6 +234,9 @@ public class BOBJArmature
             h = h * 31L + t.scale.hashCode();
             h = h * 31L + t.pivot.hashCode();
             h = h * 31L + t.quat.hashCode();
+            h = h * 31L + (t.rotationMode == null ? 0 : t.rotationMode.ordinal() + 1);
+            h = h * 31L + (bone.orient == null ? 0 : bone.orient.hashCode());
+            h = h * 31L + (bone.offset == null ? 0 : bone.offset.hashCode());
         }
 
         if (this.zwang != null)
@@ -183,6 +249,7 @@ public class BOBJArmature
 
     private long letzteEingabe;
     private boolean matrizenGueltig;
+    private LinkedHashMap<Long, BOBJPoseSnapshot> poseSnapshots;
 
     public void copyOrder(BOBJArmature armature)
     {
@@ -197,5 +264,6 @@ public class BOBJArmature
         }
 
         Collections.sort(this.orderedBones, (o1, o2) -> o1.index - o2.index);
+        this.posenMarkieren();
     }
 }
