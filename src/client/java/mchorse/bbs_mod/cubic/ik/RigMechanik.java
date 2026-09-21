@@ -46,6 +46,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
     private Map<String, List<MapType>> bboneTreiberNachBone;
     private boolean poseCacheGeprueft;
     private boolean poseCacheSicher;
+    private final java.util.WeakHashMap<BOBJArmature, int[]> eingabeMasken = new java.util.WeakHashMap<>();
     private final java.util.LinkedHashMap<Long, Map<String, Float>> shapeSnapshots =
         new java.util.LinkedHashMap<>(8, 0.75F, true);
     RigRahmen rahmen = RigRahmen.einheit();
@@ -65,6 +66,18 @@ public final class RigMechanik implements BOBJArmature.Zwang
     {
         return this.treiber.regler.eingabeSignatur() * 31L
             + Float.floatToIntBits(this.treiber.bild);
+    }
+
+    @Override
+    public int[] eingabeMasken(BOBJArmature armature)
+    {
+        if (this.ruhelage)
+        {
+            return null;
+        }
+
+        return this.eingabeMasken.computeIfAbsent(armature,
+            key -> RigEingabeMasken.bauen(this, key));
     }
 
     @Override

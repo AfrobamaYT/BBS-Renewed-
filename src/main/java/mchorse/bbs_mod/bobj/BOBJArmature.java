@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.bobj;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +16,7 @@ public class BOBJArmature
 {
     /** Enable reuse of evaluated poses for solver graphs whose outputs are snapshot-safe. */
     public static volatile boolean ENABLE_POSE_CACHE = true;
+    static volatile boolean NORMALIZE_DRIVEN_INPUTS = true;
     /**
      * Name of this armature 
      */
@@ -113,6 +115,12 @@ public class BOBJArmature
             return false;
         }
 
+        /** Axes that channel drivers always overwrite before evaluating their bone. */
+        default int[] eingabeMasken(BOBJArmature armature)
+        {
+            return null;
+        }
+
         /** Restore solver-owned references needed by later shape/rig consumers. */
         default void poseAusCache(BOBJArmature armature)
         {}
@@ -139,15 +147,34 @@ public class BOBJArmature
          * Bones (translate/rotate/scale/pivot/quat). Aendert eine Rig-Mechanik ihre Ausgabe
          * ohne diese Felder anzufassen, MUSS `posenMarkieren()` gerufen werden — sonst
          * friert die Pose ein. Deshalb ist das Verwerfen oeffentlich und nicht versteckt. */
-        long signatur = this.eingabeSignatur();
+        boolean cachebar = ENABLE_POSE_CACHE
+            && this.zwang != null && this.zwang.poseCacheSicher();
+        int[] masken = cachebar && NORMALIZE_DRIVEN_INPUTS
+            ? this.zwang.eingabeMasken(this) : null;
+
+        if (masken != null && masken.length == 0)
+        {
+            masken = null;
+        }
+
+        long signatur = this.eingabeSignatur(masken);
 
         if (signatur == this.letzteEingabe && this.matrizenGueltig)
         {
-            return;
-        }
+            if (masken == null)
+            {
+                return;
+            }
 
-        boolean cachebar = ENABLE_POSE_CACHE
-            && this.zwang != null && this.zwang.poseCacheSicher();
+            BOBJPoseSnapshot aktuell = this.poseSnapshots == null ? null : this.poseSnapshots.get(signatur);
+
+            if (aktuell != null)
+            {
+                aktuell.restoreDrivenChannels(this, masken);
+                this.zwang.poseAusCache(this);
+                return;
+            }
+        }
 
         if (cachebar && this.poseSnapshots != null)
         {
@@ -221,20 +248,23 @@ public class BOBJArmature
      * sie 0 bzw. false — und {@code matrizenGueltig == false} bedeutet „voll rechnen", also
      * ist der sichere Zustand auch der Standardwert.</p>
      */
-    private long eingabeSignatur()
+    private long eingabeSignatur(int[] masken)
     {
         long h = 17L;
 
         for (BOBJBone bone : this.orderedBones)
         {
             mchorse.bbs_mod.utils.pose.Transform t = bone.transform;
+            int maske = masken == null ? 0 : masken[bone.index];
 
-            h = h * 31L + t.translate.hashCode();
-            h = h * 31L + t.rotate.hashCode();
-            h = h * 31L + t.scale.hashCode();
+            h = h * 31L + vektorSignatur(t.translate, maske & 7);
+            h = h * 31L + vektorSignatur(t.rotate, maske >> 6 & 7);
+            h = h * 31L + vektorSignatur(t.scale, maske >> 3 & 7);
             h = h * 31L + t.pivot.hashCode();
             h = h * 31L + t.quat.hashCode();
-            h = h * 31L + (t.rotationMode == null ? 0 : t.rotationMode.ordinal() + 1);
+            h = h * 31L + ((maske & (1 << 9)) != 0
+                ? mchorse.bbs_mod.utils.pose.Transform.RotationMode.EULER.ordinal() + 1
+                : t.rotationMode == null ? 0 : t.rotationMode.ordinal() + 1);
             h = h * 31L + (bone.orient == null ? 0 : bone.orient.hashCode());
             h = h * 31L + (bone.offset == null ? 0 : bone.offset.hashCode());
         }
@@ -244,6 +274,20 @@ public class BOBJArmature
             h = h * 31L + this.zwang.eingabeSignatur();
         }
 
+        return h;
+    }
+
+    private static int vektorSignatur(Vector3f value, int maske)
+    {
+        if (maske == 0)
+        {
+            return value.hashCode();
+        }
+
+        int h = 1;
+        h = 31 * h + ((maske & 1) != 0 ? 0 : Float.floatToIntBits(value.x));
+        h = 31 * h + ((maske & 2) != 0 ? 0 : Float.floatToIntBits(value.y));
+        h = 31 * h + ((maske & 4) != 0 ? 0 : Float.floatToIntBits(value.z));
         return h;
     }
 

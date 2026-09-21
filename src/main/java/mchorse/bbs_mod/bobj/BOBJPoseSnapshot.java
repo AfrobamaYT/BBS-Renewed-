@@ -113,6 +113,39 @@ final class BOBJPoseSnapshot
         }
     }
 
+    /** Same-pose fast path: only fields replaced by channel drivers need canonicalizing. */
+    void restoreDrivenChannels(BOBJArmature armature, int[] masks)
+    {
+        for (int i = 0; i < armature.orderedBones.size(); i++)
+        {
+            BOBJBone bone = armature.orderedBones.get(i);
+            int mask = masks[bone.index];
+
+            if (mask == 0)
+            {
+                continue;
+            }
+
+            Transform t = bone.transform;
+            int p = i * 16;
+
+            for (int axis = 0; axis < 3; axis++)
+            {
+                if ((mask & (1 << axis)) != 0)
+                    t.translate.setComponent(axis, this.channels[p + axis]);
+                if ((mask & (1 << (axis + 3))) != 0)
+                    t.scale.setComponent(axis, this.channels[p + 6 + axis]);
+                if ((mask & (1 << (axis + 6))) != 0)
+                    t.rotate.setComponent(axis, this.channels[p + 3 + axis]);
+            }
+
+            if ((mask & (1 << 9)) != 0)
+            {
+                t.rotationMode = this.modes[i];
+            }
+        }
+    }
+
     private static final class BBoneState
     {
         private final float[] channels = new float[28];
