@@ -41,6 +41,8 @@ public final class RigMechanik implements BOBJArmature.Zwang
     final Map<String, List<MapType>> kanalTreiber = new HashMap<>();
     final List<MapType> propTreiber = new ArrayList<>();
     final List<MapType> bboneTreiber = new ArrayList<>();
+    /** Lazy auch fuer vor dem Hotswap geladene Rigs: die Liste ist nach dem Import unveraenderlich. */
+    private Map<String, List<MapType>> bboneTreiberNachBone;
     RigRahmen rahmen = RigRahmen.einheit();
     /** {@code pose_position == REST}: Blender zeigt dann die Ruhelage, ohne Pose und Constraints. */
     boolean ruhelage;
@@ -235,6 +237,32 @@ public final class RigMechanik implements BOBJArmature.Zwang
         this.eigenschaftsTreiber();
 
         java.util.Set<BOBJBone> verarbeitet = new java.util.HashSet<>();
+        Map<String, List<MapType>> bboneNachBone = this.bboneTreiberNachBone;
+
+        if (bboneNachBone == null)
+        {
+            bboneNachBone = new HashMap<>();
+
+            for (MapType treiber : this.bboneTreiber)
+            {
+                String bone = treiber.getString("bone");
+
+                if (bone != null)
+                {
+                    List<MapType> liste = bboneNachBone.get(bone);
+
+                    if (liste == null)
+                    {
+                        liste = new ArrayList<>();
+                        bboneNachBone.put(bone, liste);
+                    }
+
+                    liste.add(treiber);
+                }
+            }
+
+            this.bboneTreiberNachBone = bboneNachBone;
+        }
 
         for (String name : this.reihenfolge)
         {
@@ -251,12 +279,9 @@ public final class RigMechanik implements BOBJArmature.Zwang
                 kanalSetzen(bone, k, this.treiber.wert(k.getMap("treiber"), 0F));
             }
 
-            for (MapType k : this.bboneTreiber)
+            for (MapType k : bboneNachBone.getOrDefault(name, List.of()))
             {
-                if (name.equals(k.getString("bone")))
-                {
-                    bboneSetzen(bone, k, this.treiber.wert(k.getMap("treiber"), 0F));
-                }
+                bboneSetzen(bone, k, this.treiber.wert(k.getMap("treiber"), 0F));
             }
 
             armature.matrices[bone.index] = bone.compute();
