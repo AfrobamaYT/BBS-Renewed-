@@ -411,7 +411,6 @@ sourceSets {
 			exclude "com/afrobama/bbstools/client/fx/BBSFxUniformPusher.java"
 			exclude "com/afrobama/bbstools/client/mixin/accelrender/**"
 			exclude "com/afrobama/bbstools/client/web/BBSWebBridge.java"
-			exclude "com/afrobama/bbstools/client/powerbins/MASPresetIO.java"
 
 			exclude "com/afrobama/bbstools/client/cinematic/AccelRenderCommand.java"
 			exclude "com/afrobama/bbstools/client/cinematic/CrowdGpuCommand.java"

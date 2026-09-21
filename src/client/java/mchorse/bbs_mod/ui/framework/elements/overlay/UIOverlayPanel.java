@@ -35,7 +35,7 @@ public class UIOverlayPanel extends UIElement
     private int initialOffsetY;
     /* AUTONOMIE 2026-07-27: groessen-anfasser unten rechts (bzw. links, siehe resizeFromLeft),
      * portiert aus dem CML-fork. fs' overlay kann nur VERSCHIEBEN (feld `moving` oben) —
-     * unsere panels (keybind-editor, launchpad, replay-dock, powerbins, settings-overlay)
+     * unsere panels (keybind-editor, launchpad, replay-dock, settings-overlay)
      * rufen resizable() und brauchen den zieh-rand. Standardmaessig AUS: bestehende
      * overlays verhalten sich unveraendert. */
     private boolean resizing;

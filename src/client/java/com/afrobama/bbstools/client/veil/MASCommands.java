@@ -107,13 +107,6 @@ public final class MASCommands
 
     private MASCommands() {}
 
-    /** Public read-only access to the effect registry — used by
-     *  PowerBins preset save/load to snapshot active effects. */
-    public static Map<String, MASPostFXFeature> getEffects()
-    {
-        return EFFECTS;
-    }
-
     public static void register()
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) -> registerTree(dispatcher));
@@ -223,45 +216,6 @@ public final class MASCommands
                 return 1;
             }));
 
-        /* /mas preset save <name>  → saves to default bin (vfx).
-         *  /mas preset save <bin> <name>  → saves to specified bin.
-         *  Snapshots currently-active effects + intensities as JSON in
-         *  bbs/presets/<bin>/<name>.json. Shows up immediately in the
-         *  Power Bins dashboard tab. */
-        presetNode.then(ClientCommands.literal("save")
-            .then(com.mojang.brigadier.builder.RequiredArgumentBuilder
-                .<FabricClientCommandSource, String>argument(
-                    "nameOrBin", com.mojang.brigadier.arguments.StringArgumentType.word())
-                .executes(ctx ->
-                {
-                    String name = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "nameOrBin");
-                    return doSavePreset(ctx, com.afrobama.bbstools.client.powerbins.MASPresetIO.DEFAULT_BIN, name);
-                })
-                .then(com.mojang.brigadier.builder.RequiredArgumentBuilder
-                    .<FabricClientCommandSource, String>argument(
-                        "name", com.mojang.brigadier.arguments.StringArgumentType.word())
-                    .executes(ctx ->
-                    {
-                        String bin = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "nameOrBin");
-                        String name = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "name");
-                        return doSavePreset(ctx, bin, name);
-                    }))));
-
-        /* /mas preset apply <bin> <name>  → loads JSON, applies to current state.
-         *  Bypasses the curated PRESETS map; reads files written by 'save'. */
-        presetNode.then(ClientCommands.literal("apply")
-            .then(com.mojang.brigadier.builder.RequiredArgumentBuilder
-                .<FabricClientCommandSource, String>argument(
-                    "bin", com.mojang.brigadier.arguments.StringArgumentType.word())
-                .then(com.mojang.brigadier.builder.RequiredArgumentBuilder
-                    .<FabricClientCommandSource, String>argument(
-                        "name", com.mojang.brigadier.arguments.StringArgumentType.word())
-                    .executes(ctx ->
-                    {
-                        String bin = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "bin");
-                        String name = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "name");
-                        return doApplyPreset(ctx, bin, name);
-                    }))));
         root.then(presetNode);
 
         /* /mas intensity <effect> <value> — set intensity multiplier
@@ -620,66 +574,6 @@ public final class MASCommands
         msg(ctx, "§a[MAS preset " + presetName + "] §fapplied — " + enabled + " effects active: §7"
                 + String.join(", ", effectNames));
         return 1;
-    }
-
-    /** /mas preset save — snapshot active effects into bbs/presets/<bin>/<name>.json. */
-    private static int doSavePreset(CommandContext<FabricClientCommandSource> ctx, String bin, String name)
-    {
-        try
-        {
-            int active = 0;
-            for (MASPostFXFeature fx : EFFECTS.values()) { if (fx.isActive()) active++; }
-            if (active == 0)
-            {
-                msg(ctx, "§e[MAS preset save] no active effects to save — enable some first then re-run.");
-                return 0;
-            }
-            java.util.List<com.afrobama.bbstools.client.powerbins.MASPresetIO.Entry> entries =
-                com.afrobama.bbstools.client.powerbins.MASPresetIO.snapshotActiveEffects(EFFECTS);
-            java.io.File saved = com.afrobama.bbstools.client.powerbins.MASPresetIO.save(bin, name, name, entries);
-            if (saved == null)
-            {
-                msg(ctx, "§c[MAS preset save] failed — check console for error.");
-                return 0;
-            }
-            msg(ctx, "§a[MAS preset save] §fSaved " + entries.size() + " effects to §7"
-                    + bin + "/§f" + name + ".json §7(Power Bins tab)");
-            return 1;
-        }
-        catch (Throwable t)
-        {
-            msg(ctx, "§c[MAS preset save] error: " + t.toString());
-            return 0;
-        }
-    }
-
-    /** /mas preset apply — load bbs/presets/<bin>/<name>.json and apply. */
-    private static int doApplyPreset(CommandContext<FabricClientCommandSource> ctx, String bin, String name)
-    {
-        try
-        {
-            java.io.File file = com.afrobama.bbstools.client.powerbins.PowerBins.resolveInBin(bin, name + ".json");
-            if (!file.exists())
-            {
-                msg(ctx, "§c[MAS preset apply] not found: " + file.getAbsolutePath());
-                return 0;
-            }
-            com.afrobama.bbstools.client.powerbins.MASPresetIO.Result preset =
-                com.afrobama.bbstools.client.powerbins.MASPresetIO.load(file);
-            if (preset == null)
-            {
-                msg(ctx, "§c[MAS preset apply] failed to parse: " + file.getName());
-                return 0;
-            }
-            com.afrobama.bbstools.client.powerbins.MASPresetIO.apply(preset, EFFECTS);
-            msg(ctx, "§a[MAS preset apply] §f" + preset.displayName + " §7— " + preset.effects.size() + " effects active");
-            return 1;
-        }
-        catch (Throwable t)
-        {
-            msg(ctx, "§c[MAS preset apply] error: " + t.toString());
-            return 0;
-        }
     }
 
     private static void msg(CommandContext<FabricClientCommandSource> ctx, String text)

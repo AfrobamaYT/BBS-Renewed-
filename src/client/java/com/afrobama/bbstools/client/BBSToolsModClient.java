@@ -344,17 +344,6 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  inaccurate/annoying and is superseded by the BBS-side WorldBlockCapture
          *  (drag-box marquee → StructureForm/BlockForm replays). Dead code deleted. */
 
-        /* Phase 2 Editor: Power Bins folder structure. Creates default
-         *  preset bins under bbs/presets/ on first launch so save-preset
-         *  actions have somewhere to put files. */
-        com.afrobama.bbstools.client.powerbins.PowerBins.ensureFolders();
-
-        /* Power Bins thumbnails: 1 Hz ring-buffer capture of world-only
-         *  frame, used when MASPresetIO.captureThumbnail() fires from
-         *  the dashboard right-click handler (where the live framebuffer
-         *  would contain UI chrome). See WorldFrameCapture javadoc. */
-        com.afrobama.bbstools.client.powerbins.WorldFrameCapture.register();
-
 
 
 

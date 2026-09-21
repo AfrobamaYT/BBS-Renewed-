@@ -3,9 +3,6 @@
 // ClientModInitializer) so we can register dashboard panels, form
 // editors, and other BBS-specific things via BBS's own event bus.
 //
-// Iteration 1 wires only PowerBins dashboard panel — first piece of
-// the DR-style asset library overhaul.
-//
 // 2026-05-16: added action-clip registration hook for WorldSnapshotClip
 // (scaffold). The override is reflection-driven so the file keeps
 // compiling even if a particular BBS build doesn't ship
@@ -45,12 +42,6 @@ public class BBSToolsAddon
 
     private void registerDashboardPanels(RegisterDashboardPanelsEvent event)
     {
-        /* AUTONOMIE 2026-07-27: PowerBins-panel ZURUECKGESTELLT (src -> ../zurueckgestellt/).
-         * Es baut auf CMLs UIFileLinkList-kachelbrowser mit FileLink-wrapper (folder/up-flags,
-         * VIEW_ICONS_*) — den gibt es im fs-kern nicht, dessen picker arbeitet direkt mit Link.
-         * Reinholen wuerde ~505 zeilen CML-browser mitschleppen. Kommt in der feature-runde
-         * zurueck, dann gegen fs' UIFileLinkList neu gebaut statt CML kopiert. */
-
         /* Piggyback: registerDashboardPanels fires once on BBS boot and
          *  is the safest hook we already override. We use it to confirm
          *  WorldSnapshotClip's factory is reachable. Real factory
