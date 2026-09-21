@@ -324,17 +324,27 @@ public final class RigWidgets
             streckung[i] = 1F;
         }
 
+        /* Camera/FOV and screen scale are constant for this polyline. Each point is
+         * shared by its neighboring segments, so calculate its width only once. */
+        float tanFov = (float) Math.tan(BBSSettings.getFov() / 2.0);
+        int height = Math.max(net.minecraft.client.Minecraft.getInstance().getWindow().getHeight(), 1);
+        float lineScale = breitenSkala <= 0F ? 1F : breitenSkala;
+        float half1 = 2F * pkt[0].length() * tanFov / height * lineScale;
+
         for (int i = 0; i < n - 1; i++)
         {
+            float half2 = 2F * pkt[i + 1].length() * tanFov / height * lineScale;
+
             if (!scratch.richtungGueltig[i] || !scratch.richtungGueltig[i + 1])
             {
+                half1 = half2;
                 continue;
             }
 
-            float k1 = Math.max(dick - 1F, 0F) * 0.5F * halb(pkt[i]) * streckung[i];
-            float a1 = (dick + 1F) * 0.5F * halb(pkt[i]) * streckung[i];
-            float k2 = Math.max(dick - 1F, 0F) * 0.5F * halb(pkt[i + 1]) * streckung[i + 1];
-            float a2 = (dick + 1F) * 0.5F * halb(pkt[i + 1]) * streckung[i + 1];
+            float k1 = Math.max(dick - 1F, 0F) * 0.5F * half1 * streckung[i];
+            float a1 = (dick + 1F) * 0.5F * half1 * streckung[i];
+            float k2 = Math.max(dick - 1F, 0F) * 0.5F * half2 * streckung[i + 1];
+            float a2 = (dick + 1F) * 0.5F * half2 * streckung[i + 1];
 
             Vector3f r1 = richtung[i];
             Vector3f r2 = richtung[i + 1];
@@ -342,6 +352,7 @@ public final class RigWidgets
             quer(builder, pkt[i], pkt[i + 1], r1, a1, r2, a2, r1, k1, r2, k2, col, 0F, a);
             quer(builder, pkt[i], pkt[i + 1], r1, k1, r2, k2, r1, -k1, r2, -k2, col, a, a);
             quer(builder, pkt[i], pkt[i + 1], r1, -k1, r2, -k2, r1, -a1, r2, -a2, col, a, 0F);
+            half1 = half2;
         }
     }
 
