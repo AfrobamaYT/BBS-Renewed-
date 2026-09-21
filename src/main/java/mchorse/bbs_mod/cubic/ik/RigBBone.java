@@ -3,6 +3,11 @@ package mchorse.bbs_mod.cubic.ik;
 import mchorse.bbs_mod.bobj.BOBJArmature;
 import mchorse.bbs_mod.bobj.BOBJBBone;
 import mchorse.bbs_mod.bobj.BOBJBone;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 import static mchorse.bbs_mod.cubic.ik.RigBBoneGriffe.*;
 import static mchorse.bbs_mod.cubic.ik.RigBBoneKurve.*;
 import static mchorse.bbs_mod.cubic.ik.RigBBoneSpline.*;
@@ -20,6 +25,24 @@ import static mchorse.bbs_mod.cubic.ik.RigBBoneSpline.*;
 public final class RigBBone
 {
     public static final int MAX_SUBDIV = 32;
+    static volatile boolean ENABLE_REST_CACHE = true;
+    private static final Map<BOBJBBone, LinkedHashMap<Long, RestState>> REST = new WeakHashMap<>();
+
+    /** Rest spline, segment boundaries and inverse rest matrix are independent of pose. */
+    private record RestState(float[][] matrices, float[][] grenzPunkt, float[][] grenzNormale,
+        float[] grenzVersatz, float[] grenzTiefe, float bogenLaengeKehrwert,
+        float[] armMat, float[] armInv)
+    {
+        private void restore(BOBJBBone d)
+        {
+            d.ruheMatrizen = this.matrices;
+            d.grenzPunkt = this.grenzPunkt;
+            d.grenzNormale = this.grenzNormale;
+            d.grenzVersatz = this.grenzVersatz;
+            d.grenzTiefe = this.grenzTiefe;
+            d.bogenLaengeKehrwert = this.bogenLaengeKehrwert;
+        }
+    }
 
     private RigBBone()
     {}
@@ -51,23 +74,59 @@ public final class RigBBone
             return;
         }
 
+        long restKey = ENABLE_REST_CACHE ? restSignature(rahmen, b, d) : 0L;
+        LinkedHashMap<Long, RestState> entries = ENABLE_REST_CACHE ? REST.get(d) : null;
+        RestState cached = entries == null ? null : entries.get(restKey);
         d.poseMatrizen = spline(params(rahmen, b, false), true);
-        d.ruheMatrizen = spline(params(rahmen, b, true), true);
 
         int n = d.segmente;
+        float[] armMat;
+        float[] armInv;
 
-        if ("CURVED".equals(d.mapping))
+        if (cached != null)
         {
-            grenzen(rahmen, b);
+            cached.restore(d);
+            armMat = cached.armMat;
+            armInv = cached.armInv;
         }
         else
         {
-            d.grenzPunkt = null;
+            d.ruheMatrizen = spline(params(rahmen, b, true), true);
+
+            if ("CURVED".equals(d.mapping))
+            {
+                grenzen(rahmen, b);
+            }
+            else
+            {
+                d.grenzPunkt = null;
+            }
+
+            armMat = rahmen.armMat(b);
+            armInv = RigMathe.invertiert(armMat);
+
+            if (ENABLE_REST_CACHE)
+            {
+                if (entries == null)
+                {
+                    entries = new LinkedHashMap<>(8, 0.75F, true);
+                    REST.put(d, entries);
+                }
+
+                entries.put(restKey, new RestState(d.ruheMatrizen, d.grenzPunkt,
+                    d.grenzNormale, d.grenzVersatz, d.grenzTiefe,
+                    d.bogenLaengeKehrwert, armMat, armInv));
+
+                if (entries.size() > 4)
+                {
+                    Iterator<Long> oldest = entries.keySet().iterator();
+                    oldest.next();
+                    oldest.remove();
+                }
+            }
         }
 
-        float[] armMat = rahmen.armMat(b);
         float[] poseMat = rahmen.poseMat(b);
-        float[] armInv = RigMathe.invertiert(armMat);
         float[] chanMat = RigMathe.mul(poseMat, armInv);
 
         d.verformMatrizen = new float[n + 2][];
@@ -91,6 +150,50 @@ public final class RigBBone
             RigMathe.normalisiere(basis);
             d.dualQuats[a] = RigDualQuat.aus(basis, m);
         }
+    }
+
+    private static long restSignature(RigRahmen rahmen, BOBJBone b, BOBJBBone d)
+    {
+        long h = 17L;
+        h = h * 31L + System.identityHashCode(rahmen);
+        h = h * 31L + b.boneMat.hashCode();
+        h = h * 31L + Float.floatToIntBits(b.restLength);
+        h = h * 31L + d.segmente;
+        h = h * 31L + (d.mapping == null ? 0 : d.mapping.hashCode());
+        h = h * 31L + Arrays.hashCode(d.griffTyp);
+        h = h * 31L + Arrays.deepHashCode(d.griffSkala);
+        h = h * 31L + Arrays.hashCode(d.griffEase);
+        h = h * 31L + Boolean.hashCode(d.endrollAlsInroll);
+        h = h * 31L + Boolean.hashCode(d.skaliertEasing);
+        h = h * 31L + Arrays.hashCode(d.ruheEase);
+        h = h * 31L + Arrays.hashCode(d.ruheRoll);
+        h = h * 31L + Arrays.hashCode(d.ruheKurveIn);
+        h = h * 31L + Arrays.hashCode(d.ruheKurveOut);
+        h = h * 31L + Arrays.hashCode(d.ruheSkalaIn);
+        h = h * 31L + Arrays.hashCode(d.ruheSkalaOut);
+
+        BOBJBone[] grips = griffe(b);
+
+        for (BOBJBone grip : grips)
+        {
+            h = h * 31L + (grip == null ? 0 : grip.name.hashCode());
+
+            if (grip != null)
+            {
+                h = h * 31L + grip.boneMat.hashCode();
+                h = h * 31L + Float.floatToIntBits(grip.restLength);
+                h = h * 31L + (grip.bbone == null ? 0 : grip.bbone.segmente);
+            }
+        }
+
+        if (d.endrollAlsInroll)
+        {
+            BOBJBone prev = grips[0];
+            h = h * 31L + (prev == null || prev.bbone == null
+                ? 0 : Float.floatToIntBits(prev.bbone.ruheRoll[1]));
+        }
+
+        return h;
     }
 
     /** {@code BKE_pchan_bbone_deform_clamp_segment_index}. */
@@ -127,4 +230,3 @@ public final class RigBBone
         klemmeSegmentIndex(d.segmente, y / b.restLength, rIndex, rBlend);
     }
 }
-
