@@ -78,6 +78,13 @@ public final class ModelIKDebug
      */
     public static void renderEditor(mchorse.bbs_mod.ui.film.controller.UIFilmController controller, net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context)
     {
+        /* COLLECT_SUBMITS only queues shadows/text. Immediate control draws there
+         * are discarded before the visible main pass, which calls us again. */
+        if (mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang)
+        {
+            return;
+        }
+
         ValueIKDebug config = BBSSettings.ikDebug;
         boolean targets = config.target.visible.get();
         boolean poles = config.pole.visible.get();
