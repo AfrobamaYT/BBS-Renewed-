@@ -719,7 +719,8 @@ public class ModelInstance implements IModelInstance
                         + " basis=" + (stencilMap == null ? -1 : stencilMap.aktuelleBasis)
                         + " objectIndex=" + (stencilMap == null ? -1 : stencilMap.objectIndex));
 
-                    vao.updateMesh(stencilMap, keys);
+                    vao.updateMesh(stencilMap, keys,
+                        ModelVAOPipeline.gpuVariante(shader) != null);
 
                     if (FormTranslucentQueue.needsSplit(shader, stencilMap, texture, color.a))
                     {

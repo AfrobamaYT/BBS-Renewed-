@@ -423,6 +423,7 @@ public class FormTranslucentQueue
         private final int passMode;
         private final Matrix4f[] armatureSnapshot;
         private final int uploadCount;
+        private final boolean gpuSkin;
         private final Texture texture;
         private final Matrix4f modelView;
         private final Matrix3f normalMat;
@@ -456,6 +457,7 @@ public class FormTranslucentQueue
             this.passMode = passMode;
             this.armatureSnapshot = armatureSnapshot;
             this.uploadCount = uploadCount;
+            this.gpuSkin = vao.gpuSkinAktiv();
             this.texture = texture;
             this.modelView = modelView;
             this.normalMat = normalMat;
@@ -480,7 +482,7 @@ public class FormTranslucentQueue
 
             if (this.vao.getUploadCount() != this.uploadCount)
             {
-                this.vao.updateMesh(null, this.armatureSnapshot);
+                this.vao.updateMesh(null, this.armatureSnapshot, this.gpuSkin);
             }
 
             /* BOBJModelVAO steht jetzt auf GpuBuffer und implementiert IModelVAO — der

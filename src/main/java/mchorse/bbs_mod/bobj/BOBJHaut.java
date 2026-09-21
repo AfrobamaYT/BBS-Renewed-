@@ -236,6 +236,28 @@ public final class BOBJHaut
 
         public void aktualisieren(Matrix4f[] matrices)
         {
+            this.aktualisierenMatrizen(matrices);
+
+            /* CPU path alone needs preblended matrices per source-vertex group. */
+            if (this.blendedMatrix != null)
+            {
+                if (this.groupCount >= 4096 && ForkJoinPool.getCommonPoolParallelism() > 1)
+                {
+                    IntStream.range(0, this.groupCount).parallel().forEach(this::mischeGruppe);
+                }
+                else
+                {
+                    for (int group = 0; group < this.groupCount; group++)
+                    {
+                        this.mischeGruppe(group);
+                    }
+                }
+            }
+        }
+
+        /** Matrix-only update for GPU skinning; static B-Bone segment choices stay on the vertex. */
+        public void aktualisierenMatrizen(Matrix4f[] matrices)
+        {
             for (int i = 0; i < this.boneCount; i++)
             {
                 Matrix4f matrix = matrices[i];
@@ -268,21 +290,43 @@ public final class BOBJHaut
                 }
             }
 
-            /* Neue Paletten mischen die Hautmatrix nur einmal je BOBJ-Quellvertex.
-             * Bei einer bereits vor dem Hotswap erzeugten Palette sind die neuen Felder
-             * null; dann bleibt vertex() bis zum Modell-Reload auf dem alten sicheren Weg. */
-            if (this.blendedMatrix != null)
+        }
+
+        public int matrixCount()
+        {
+            return this.palette.length / STRIDE;
+        }
+
+        /** Three vec4 rows per skin matrix, in the exact order consumed by vertex(). */
+        public float[] matrixRows()
+        {
+            return this.palette;
+        }
+
+        /** Eight effective influences per render vertex: B-Bones split each source weight in two. */
+        public void vertexInfluences(int[] indices, float[] weights)
+        {
+            if (indices.length != this.vertexGroup.length * 8 || weights.length != indices.length)
             {
-                if (this.groupCount >= 4096 && ForkJoinPool.getCommonPoolParallelism() > 1)
+                throw new IllegalArgumentException("GPU influence layout does not match render vertices");
+            }
+
+            for (int vertex = 0; vertex < this.vertexGroup.length; vertex++)
+            {
+                int group = this.vertexGroup[vertex];
+                int start = this.vertexOffset[group];
+                int end = this.vertexOffset[group + 1];
+
+                if (end - start > 8)
                 {
-                    IntStream.range(0, this.groupCount).parallel().forEach(this::mischeGruppe);
+                    throw new IllegalStateException("More than eight BOBJ skin influences");
                 }
-                else
+
+                for (int i = start; i < end; i++)
                 {
-                    for (int group = 0; group < this.groupCount; group++)
-                    {
-                        this.mischeGruppe(group);
-                    }
+                    int target = vertex * 8 + i - start;
+                    indices[target] = this.matrixIndex[i];
+                    weights[target] = this.influenceWeight[i];
                 }
             }
         }

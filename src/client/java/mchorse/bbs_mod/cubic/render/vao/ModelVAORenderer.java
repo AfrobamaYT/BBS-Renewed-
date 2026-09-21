@@ -175,6 +175,20 @@ public class ModelVAORenderer
             return;
         }
 
+        GpuBuffer skinMatrices = modelVAO instanceof BOBJModelVAO bobj ? bobj.skinMatrices() : null;
+
+        if (skinMatrices != null)
+        {
+            RenderPipeline gpuPipeline = ModelVAOPipeline.gpuVariante(pipeline);
+
+            if (gpuPipeline == null)
+            {
+                throw new IllegalStateException("GPU-skinned BOBJ has no matching pipeline: " + pipeline);
+            }
+
+            pipeline = gpuPipeline;
+        }
+
         /* ⚠️ RUECKFALL AUF DIE ZULETZT GLOBAL GEBUNDENE TEXTUR -- eine BRUECKE, kein Entwurf.
          *
          * Nicht jeder Aufrufer reicht die Textur schon als Parameter durch. CubicVAORenderer
@@ -356,6 +370,11 @@ public class ModelVAORenderer
              * Modellansicht, und genau die soll hier ueberschrieben werden. */
             durchgang.setUniform("DynamicTransforms", transformationen);
             durchgang.setUniform(ModelVAOPipeline.MODELL_BLOCK, block);
+
+            if (skinMatrices != null)
+            {
+                durchgang.setUniform("SkinMatrices", skinMatrices);
+            }
 
             /* ⛔ AM DURCHGANG, NICHT GLOBAL. Zwei Anlaeufe ueber RenderSystem.setShaderLights
              * blieben wirkungslos (gemessen 2026-08-10, Helligkeit 0,415 unveraendert): der

@@ -76,6 +76,19 @@ public final class ModelVAOPipeline
     public static final int BINDUNG_NORMALE = 1;
     public static final int BINDUNG_UV0 = 2;
     public static final int BINDUNG_LICHT = 3;
+    public static final int BINDUNG_JOINTS0 = 4;
+    public static final int BINDUNG_WEIGHTS0 = 5;
+    public static final int BINDUNG_JOINTS1 = 6;
+    public static final int BINDUNG_WEIGHTS1 = 7;
+
+    private static final VertexFormat FORMAT_JOINTS0 = VertexFormat.builder(0)
+        .addAttribute("SkinJoints0", GpuFormat.RGBA32_SINT).build();
+    private static final VertexFormat FORMAT_WEIGHTS0 = VertexFormat.builder(0)
+        .addAttribute("SkinWeights0", GpuFormat.RGBA32_FLOAT).build();
+    private static final VertexFormat FORMAT_JOINTS1 = VertexFormat.builder(0)
+        .addAttribute("SkinJoints1", GpuFormat.RGBA32_SINT).build();
+    private static final VertexFormat FORMAT_WEIGHTS1 = VertexFormat.builder(0)
+        .addAttribute("SkinWeights1", GpuFormat.RGBA32_FLOAT).build();
 
     /** {@code in vec3 Position} — drei Fliesskommazahlen, dicht gepackt. */
     public static final VertexFormat FORMAT_POSITION = VertexFormat.builder(0)
@@ -115,6 +128,10 @@ public final class ModelVAOPipeline
         .withSampler("Sampler2")
         .build();
 
+    private static final BindGroupLayout GRUPPE_SKIN = BindGroupLayout.builder()
+        .withUniform("SkinMatrices", UniformType.UNIFORM_BUFFER)
+        .build();
+
     /** Der uebliche Durchgang: durchsichtig gemischt, Tiefe gelesen und geschrieben. */
     public static final RenderPipeline DURCHSICHTIG = bauen("model", true, true, true);
 
@@ -152,6 +169,25 @@ public final class ModelVAOPipeline
     public static final RenderPipeline PICKER_BILLBOARD = bauen("picker_billboard", false, true, true);
     public static final RenderPipeline PICKER_BILLBOARD_OHNE_SCHATTIERUNG = bauen("picker_billboard_no_shading", false, true, true);
     public static final RenderPipeline PICKER_PARTIKEL = bauen("picker_particles", false, true, true);
+
+    private static final RenderPipeline GPU_DURCHSICHTIG = bauenGpu("model", true, true, true);
+    private static final RenderPipeline GPU_DURCHSICHTIG_BEIDSEITIG = bauenGpu("model", true, false, true);
+    private static final RenderPipeline GPU_OHNE_TIEFENSCHREIBEN = bauenGpu("model", true, true, false);
+    private static final RenderPipeline GPU_OHNE_TIEFENSCHREIBEN_BEIDSEITIG = bauenGpu("model", true, false, false);
+    private static final RenderPipeline GPU_UNDURCHSICHTIG = bauenGpu("model", false, true, true);
+    private static final RenderPipeline GPU_PICKER_MODELLE = bauenGpu("picker_models", false, true, true);
+
+    /** The GPU path is only valid for BOBJ pipelines with a matching vertex shader. */
+    public static RenderPipeline gpuVariante(RenderPipeline normal)
+    {
+        if (normal == DURCHSICHTIG) return GPU_DURCHSICHTIG;
+        if (normal == DURCHSICHTIG_BEIDSEITIG) return GPU_DURCHSICHTIG_BEIDSEITIG;
+        if (normal == DURCHSICHTIG_OHNE_TIEFENSCHREIBEN) return GPU_OHNE_TIEFENSCHREIBEN;
+        if (normal == DURCHSICHTIG_OHNE_TIEFENSCHREIBEN_BEIDSEITIG) return GPU_OHNE_TIEFENSCHREIBEN_BEIDSEITIG;
+        if (normal == UNDURCHSICHTIG) return GPU_UNDURCHSICHTIG;
+        if (normal == PICKER_MODELLE) return GPU_PICKER_MODELLE;
+        return null;
+    }
 
     /**
      * Ob eine Pipeline zum BBS-Modellweg gehoert — und damit die Durchgangsart
@@ -300,17 +336,30 @@ public final class ModelVAOPipeline
     private static RenderPipeline bauen(String shader, boolean mischen, boolean culling,
         boolean tiefeSchreiben, boolean verschraenkt)
     {
-        Identifier datei = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "core/" + shader);
+        return bauen(shader, mischen, culling, tiefeSchreiben, verschraenkt, false);
+    }
+
+    private static RenderPipeline bauenGpu(String shader, boolean mischen, boolean culling, boolean tiefeSchreiben)
+    {
+        return bauen(shader, mischen, culling, tiefeSchreiben, false, true);
+    }
+
+    private static RenderPipeline bauen(String shader, boolean mischen, boolean culling,
+        boolean tiefeSchreiben, boolean verschraenkt, boolean gpu)
+    {
+        Identifier vertexDatei = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID,
+            "core/" + shader + (gpu ? "_gpu" : ""));
+        Identifier fragmentDatei = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "core/" + shader);
         String name = shader + (mischen ? "_translucent" : "_opaque")
             + (culling ? "" : "_no_cull") + (tiefeSchreiben ? "" : "_no_depth_write")
             /* ⚠️ Der Name IST die Kennung der Pipeline. Ohne diesen Zusatz truegen beide
              * Familien dieselbe und die zweite ueberschriebe die erste. */
-            + (verschraenkt ? "_interleaved" : "");
+            + (verschraenkt ? "_interleaved" : "") + (gpu ? "_gpu_skin" : "");
 
         RenderPipeline.Builder bauer = RenderPipeline.builder()
             .withLocation(Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "pipeline/" + name))
-            .withVertexShader(datei)
-            .withFragmentShader(datei)
+            .withVertexShader(vertexDatei)
+            .withFragmentShader(fragmentDatei)
             .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
             .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
             .withBindGroupLayout(BindGroupLayouts.PROJECTION)
@@ -318,6 +367,11 @@ public final class ModelVAOPipeline
             .withBindGroupLayout(BindGroupLayouts.FOG)
             .withBindGroupLayout(GRUPPE_MODELL)
             .withCull(culling);
+
+        if (gpu)
+        {
+            bauer.withBindGroupLayout(GRUPPE_SKIN);
+        }
 
         if (verschraenkt)
         {
@@ -329,6 +383,14 @@ public final class ModelVAOPipeline
                 .withVertexBinding(BINDUNG_NORMALE, FORMAT_NORMALE)
                 .withVertexBinding(BINDUNG_UV0, FORMAT_UV0)
                 .withVertexBinding(BINDUNG_LICHT, FORMAT_LICHT);
+
+            if (gpu)
+            {
+                bauer.withVertexBinding(BINDUNG_JOINTS0, FORMAT_JOINTS0)
+                    .withVertexBinding(BINDUNG_WEIGHTS0, FORMAT_WEIGHTS0)
+                    .withVertexBinding(BINDUNG_JOINTS1, FORMAT_JOINTS1)
+                    .withVertexBinding(BINDUNG_WEIGHTS1, FORMAT_WEIGHTS1);
+            }
         }
 
         /* ⛔ 26.2 rechnet die Tiefe UMGEKEHRT (reversed-Z): naeher heisst groesserer Wert,

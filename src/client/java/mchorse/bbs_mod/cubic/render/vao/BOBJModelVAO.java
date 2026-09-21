@@ -27,8 +27,10 @@ public class BOBJModelVAO implements IModelVAO
     private static final int SKIN_CACHE_SIZE = 3;
     private static final class SkinPose
     {
-        public final GpuBuffer position;
+        public GpuBuffer position;
         public final GpuBuffer normale;
+        public GpuBuffer skinMatrices;
+        public boolean morphed;
 
         public SkinPose(GpuBuffer position, GpuBuffer normale)
         {
@@ -85,6 +87,10 @@ public class BOBJModelVAO implements IModelVAO
     private final LinkedHashMap<Long, SkinPose> skinCache = new LinkedHashMap<>(8, 0.75F, true);
     private SkinPose aktiveSkinPose;
     private mchorse.bbs_mod.bobj.BOBJHaut.Palette hautPalette;
+    private BOBJGpuSkin gpuSkin;
+    private boolean gpuMode;
+    private boolean gpuSupportChecked;
+    private boolean gpuSupported;
 
     /** Picking-Licht hat einen eigenen Dirty-Zustand; eine Stencil-Passage bewegt kein Mesh. */
     private boolean lichtGueltig;
@@ -247,6 +253,12 @@ public class BOBJModelVAO implements IModelVAO
     {
         this.skinCacheLeeren();
 
+        if (this.gpuSkin != null)
+        {
+            this.gpuSkin.close();
+            this.gpuSkin = null;
+        }
+
         if (this.position != null)
         {
             this.position.close();
@@ -309,6 +321,12 @@ public class BOBJModelVAO implements IModelVAO
 
     public void updateMesh(StencilMap stencilMap, mchorse.bbs_mod.obj.shapes.ShapeKeys keys)
     {
+        this.updateMesh(stencilMap, keys, false);
+    }
+
+    public void updateMesh(StencilMap stencilMap, mchorse.bbs_mod.obj.shapes.ShapeKeys keys,
+        boolean gpuAllowed)
+    {
         /* ⛔ Getriebene Shape Keys ERST hier, nach setupMatrices: der Treiber liest Regler
          * und Knochenlagen, und die stehen vorher noch auf dem letzten Bild. In eine KOPIE,
          * damit die Werte des Animators an der Form unangetastet bleiben — das Rig
@@ -323,7 +341,7 @@ public class BOBJModelVAO implements IModelVAO
 
         this.shapeKeys = keys;
 
-        this.updateMesh(stencilMap, this.armature.matrices);
+        this.updateMesh(stencilMap, this.armature.matrices, gpuAllowed);
     }
 
     /**
@@ -402,6 +420,41 @@ public class BOBJModelVAO implements IModelVAO
 
     public void updateMesh(StencilMap stencilMap, Matrix4f[] matrices)
     {
+        this.updateMesh(stencilMap, matrices, false);
+    }
+
+    /** The caller has already selected a shader family; unsupported paths keep CPU skinning. */
+    public void updateMesh(StencilMap stencilMap, Matrix4f[] matrices, boolean gpuAllowed)
+    {
+        boolean gpu = BOBJGpuSkin.ENABLED && gpuAllowed && this.indexed;
+
+        if (gpu && !this.gpuSupportChecked)
+        {
+            if (this.hautPalette == null)
+            {
+                this.hautPalette = mchorse.bbs_mod.bobj.BOBJHaut.Palette.erstellen(
+                    this.armature, this.renderData.posData, this.renderData.weightData,
+                    this.renderData.boneIndexData, this.count, this.segmente());
+            }
+
+            this.gpuSupported = BOBJGpuSkin.supported(this.hautPalette);
+            this.gpuSupportChecked = true;
+
+            if (this.gpuSupported)
+            {
+                this.gpuSkin = new BOBJGpuSkin(this.hautPalette, this.count);
+            }
+        }
+
+        gpu &= this.gpuSupported;
+
+        if (gpu != this.gpuMode)
+        {
+            this.skinCacheLeeren();
+            this.meshGueltig = false;
+            this.gpuMode = gpu;
+        }
+
         /* ⛔ NUR HAEUTEN UND HOCHLADEN, WENN SICH DIE MATRIZEN GEAENDERT HABEN. Gemessen am
          * 2026-08-21 mit async-profiler: `schreiben` (der Weg in den GPU-Puffer) stand mit
          * 15,0 % als groesster Einzelposten der CPU — bei 84 FPS rund 1,8 ms je Bild. Dabei
@@ -424,36 +477,57 @@ public class BOBJModelVAO implements IModelVAO
 
             if (pose == null)
             {
-                pose = this.neueSkinPose();
+                pose = this.neueSkinPose(gpu);
                 mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente = this.segmente();
 
                 if (this.hautPalette == null)
                 {
                     this.hautPalette = mchorse.bbs_mod.bobj.BOBJHaut.Palette.erstellen(
-                        this.armature, oldVertices, this.renderData.weightData,
+                        this.armature, this.renderData.posData, this.renderData.weightData,
                         this.renderData.boneIndexData, this.count, segmente);
                 }
 
-                this.hautPalette.aktualisieren(matrices);
-
-                if (this.count >= PARALLEL_SKIN_THRESHOLD && ForkJoinPool.getCommonPoolParallelism() > 1)
+                if (gpu)
                 {
-                    IntStream.range(0, this.count).parallel().forEach((i) ->
-                        this.hautVertex(oldVertices, oldNormals, this.tmpVertices,
-                            this.tmpNormals, i));
+                    this.hautPalette.aktualisierenMatrizen(matrices);
+                    pose.skinMatrices = this.gpuSkin.writePalette(this.hautPalette, pose.skinMatrices);
+                    pose.morphed = oldVertices != this.renderData.posData;
+
+                    if (pose.morphed)
+                    {
+                        if (pose.position == null)
+                        {
+                            pose.position = puffer("bobj-morph-pose", oldVertices);
+                        }
+                        else
+                        {
+                            schreiben(pose.position, oldVertices);
+                        }
+                    }
                 }
                 else
                 {
-                    for (int i = 0; i < this.count; i++)
-                    {
-                        this.hautVertex(oldVertices, oldNormals, this.tmpVertices,
-                            this.tmpNormals, i);
-                    }
-                }
+                    this.hautPalette.aktualisieren(matrices);
 
-                this.processData(this.tmpVertices, this.tmpNormals, matrices);
-                schreiben(pose.position, this.tmpVertices);
-                schreiben(pose.normale, this.tmpNormals);
+                    if (this.count >= PARALLEL_SKIN_THRESHOLD && ForkJoinPool.getCommonPoolParallelism() > 1)
+                    {
+                        IntStream.range(0, this.count).parallel().forEach((i) ->
+                            this.hautVertex(oldVertices, oldNormals, this.tmpVertices,
+                                this.tmpNormals, i));
+                    }
+                    else
+                    {
+                        for (int i = 0; i < this.count; i++)
+                        {
+                            this.hautVertex(oldVertices, oldNormals, this.tmpVertices,
+                                this.tmpNormals, i);
+                        }
+                    }
+
+                    this.processData(this.tmpVertices, this.tmpNormals, matrices);
+                    schreiben(pose.position, this.tmpVertices);
+                    schreiben(pose.normale, this.tmpNormals);
+                }
                 this.skinCache.put(signatur, pose);
             }
 
@@ -468,16 +542,16 @@ public class BOBJModelVAO implements IModelVAO
         this.lichtAktualisieren(stencilMap);
     }
 
-    private SkinPose neueSkinPose()
+    private SkinPose neueSkinPose(boolean gpu)
     {
         if (this.skinCache.isEmpty())
         {
-            return this.neueGpuSkinPose();
+            return gpu ? new SkinPose(null, null) : this.neueCpuSkinPose();
         }
 
         if (this.skinCache.size() < SKIN_CACHE_SIZE)
         {
-            return this.neueGpuSkinPose();
+            return gpu ? new SkinPose(null, null) : this.neueCpuSkinPose();
         }
 
         Iterator<Map.Entry<Long, SkinPose>> iterator = this.skinCache.entrySet().iterator();
@@ -488,7 +562,7 @@ public class BOBJModelVAO implements IModelVAO
         return pose;
     }
 
-    private SkinPose neueGpuSkinPose()
+    private SkinPose neueCpuSkinPose()
     {
         return new SkinPose(puffer("bobj-position-pose", this.renderData.posData),
             puffer("bobj-normale-pose", this.renderData.normData));
@@ -498,8 +572,9 @@ public class BOBJModelVAO implements IModelVAO
     {
         for (SkinPose pose : this.skinCache.values())
         {
-            pose.position.close();
-            pose.normale.close();
+            if (pose.position != null) pose.position.close();
+            if (pose.normale != null) pose.normale.close();
+            if (pose.skinMatrices != null) pose.skinMatrices.close();
         }
 
         this.skinCache.clear();
@@ -580,13 +655,21 @@ public class BOBJModelVAO implements IModelVAO
             return;
         }
 
-        GpuBuffer aktuellePosition = this.aktiveSkinPose == null ? this.position : this.aktiveSkinPose.position;
-        GpuBuffer aktuelleNormale = this.aktiveSkinPose == null ? this.normale : this.aktiveSkinPose.normale;
+        GpuBuffer aktuellePosition = this.aktiveSkinPose == null
+            || this.gpuMode && !this.aktiveSkinPose.morphed
+            ? this.position : this.aktiveSkinPose.position;
+        GpuBuffer aktuelleNormale = this.aktiveSkinPose == null || this.gpuMode
+            ? this.normale : this.aktiveSkinPose.normale;
 
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_POSITION, aktuellePosition.slice());
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_NORMALE, aktuelleNormale.slice());
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_LICHT, this.licht.slice());
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_UV0, this.texturUV.slice());
+
+        if (this.gpuMode)
+        {
+            this.gpuSkin.bind(pass);
+        }
 
         if (this.indexed)
         {
@@ -606,6 +689,16 @@ public class BOBJModelVAO implements IModelVAO
         return this.indexCount;
     }
 
+    public GpuBuffer skinMatrices()
+    {
+        return this.gpuMode && this.aktiveSkinPose != null ? this.aktiveSkinPose.skinMatrices : null;
+    }
+
+    public boolean gpuSkinAktiv()
+    {
+        return this.skinMatrices() != null;
+    }
+
     /* ================== Mesh-Cache ================== */
 
     private long letzteMeshSignatur;
@@ -617,6 +710,16 @@ public class BOBJModelVAO implements IModelVAO
         this.meshGueltig = false;
         this.skinCacheLeeren();
         this.hautPalette = null;
+
+        if (this.gpuSkin != null)
+        {
+            this.gpuSkin.close();
+            this.gpuSkin = null;
+        }
+
+        this.gpuMode = false;
+        this.gpuSupportChecked = false;
+        this.gpuSupported = false;
     }
 
     private static long signatur(Matrix4f[] matrices, mchorse.bbs_mod.obj.shapes.ShapeKeys shapeKeys)
