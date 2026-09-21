@@ -34,12 +34,16 @@ public final class RigZwangBasis
 
     public static MapType rna(MapType c)
     {
-        if (!c.has("rna"))
+        mchorse.bbs_mod.data.types.BaseType wert = c.get("rna");
+
+        if (wert == null)
         {
-            c.put("rna", new MapType());
+            MapType rna = new MapType();
+            c.put("rna", rna);
+            return rna;
         }
 
-        return c.getMap("rna");
+        return wert instanceof MapType rna ? rna : new MapType();
     }
 
     public static boolean flag(MapType c, String rnaName, String altName, boolean vorgabe)
@@ -162,4 +166,3 @@ public final class RigZwangBasis
         {1F, 0F, 0F}, {0F, 1F, 0F}, {0F, 0F, 1F}, {-1F, 0F, 0F}, {0F, -1F, 0F}, {0F, 0F, -1F}};
 
 }
-
