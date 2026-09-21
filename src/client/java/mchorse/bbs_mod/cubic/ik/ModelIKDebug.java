@@ -18,12 +18,14 @@ import mchorse.bbs_mod.cubic.render.ModelPivotFrames;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.graphics.SofortZeichner;
+import mchorse.bbs_mod.graphics.GehaltenesNetz;
 import mchorse.bbs_mod.settings.values.ui.ValueDebugElement;
 import mchorse.bbs_mod.settings.values.ui.ValueIKDebug;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -129,11 +131,9 @@ public final class ModelIKDebug
         java.util.List<RigCtrl.Eintrag> rig = instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bm
             ? RigCtrl.fuer(bm.getArmature(), form.model.get()) : null;
 
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(262144);
-             ByteBufferBuilder speicherVerdeckt = new ByteBufferBuilder(262144))
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(262144))
         {
             BufferBuilder wire = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            BufferBuilder wireVerdeckt = null;
             float hidden = config.hiddenOpacity.get();
 
             if (rig != null)
@@ -148,14 +148,8 @@ public final class ModelIKDebug
                  * sichtbare Baender voll, verdeckte gedimmt — auffindbar hinter dem
                  * Koerper, ohne ihn zu ueberdecken. xray=true bleibt der alte
                  * Voll-Durchschein-Look, dann braucht es keinen zweiten Pass. */
-                if (tiefe && hidden > 0F)
-                {
-                    wireVerdeckt = SofortZeichner.beginnen(speicherVerdeckt,
-                        PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-                }
-
-                mchorse.bbs_mod.cubic.render.RigCtrlZeichner.weltPass(wire, wireVerdeckt, sicht, kamera,
-                    entities, entity, replay, rig, selectedBone, a, a * hidden, uebergang);
+                mchorse.bbs_mod.cubic.render.RigCtrlZeichner.weltPass(wire, sicht, kamera,
+                    entities, entity, replay, rig, selectedBone, a, uebergang);
             }
 
             /* FK-Skelett (Blenders Pose Mode): JEDER Bone als Octahedron — grau,
@@ -312,22 +306,32 @@ public final class ModelIKDebug
              * Baender selbst Tiefe schreiben, malt die spaetere Figur nicht mehr
              * drueber: de facto X-Ray, egal was eingestellt ist. Gemessen 2026-08-16:
              * hidden_opacity 0.0/0.35/1.0 lieferten bit-gleiche Bilder. */
-            if (wireVerdeckt != null)
+            var mesh = wire.build();
+
+            if (mesh == null)
             {
-                SofortZeichner.zeichnen(
-                    FormPipelines.hinterGeometrie(PrimitiveTopology.TRIANGLES),
-                    wireVerdeckt.build(),
-                    new Matrix4f(),
-                    null,
-                    null);
+                return;
             }
 
-            SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, tiefe, false),
-                wire.build(),
-                new Matrix4f(),
-                null,
-                null);
+            try (GehaltenesNetz shared = new GehaltenesNetz(mesh))
+            {
+                Matrix4f identity = new Matrix4f();
+
+                if (rig != null && tiefe && hidden > 0F)
+                {
+                    /* position_color.fsh multiplies the vertex alpha by ColorModulator.
+                     * Match the old byte-quantized hidden vertex alpha without building
+                     * and uploading the identical control geometry a second time. */
+                    int visibleAlpha = (int) (a * 255F) & 255;
+                    int hiddenAlpha = (int) (a * hidden * 255F) & 255;
+                    float ratio = visibleAlpha == 0 ? 0F : hiddenAlpha / (float) visibleAlpha;
+                    shared.zeichnen(FormPipelines.hinterGeometrie(PrimitiveTopology.TRIANGLES),
+                        identity, new Vector4f(1F, 1F, 1F, ratio), null, null, null);
+                }
+
+                shared.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, tiefe, false),
+                    identity, null, null, null, null);
+            }
         }
     }
 
