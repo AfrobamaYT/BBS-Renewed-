@@ -198,18 +198,18 @@ public final class BOBJHaut
             {
                 int p = this.matrixIndex[n] * STRIDE;
                 float w = this.influenceWeight[n];
-                m0 = org.joml.Math.fma(this.palette[p], w, m0);
-                m1 = org.joml.Math.fma(this.palette[p + 1], w, m1);
-                m2 = org.joml.Math.fma(this.palette[p + 2], w, m2);
-                m3 = org.joml.Math.fma(this.palette[p + 3], w, m3);
-                m4 = org.joml.Math.fma(this.palette[p + 4], w, m4);
-                m5 = org.joml.Math.fma(this.palette[p + 5], w, m5);
-                m6 = org.joml.Math.fma(this.palette[p + 6], w, m6);
-                m7 = org.joml.Math.fma(this.palette[p + 7], w, m7);
-                m8 = org.joml.Math.fma(this.palette[p + 8], w, m8);
-                m9 = org.joml.Math.fma(this.palette[p + 9], w, m9);
-                m10 = org.joml.Math.fma(this.palette[p + 10], w, m10);
-                m11 = org.joml.Math.fma(this.palette[p + 11], w, m11);
+                m0 += this.palette[p] * w;
+                m1 += this.palette[p + 1] * w;
+                m2 += this.palette[p + 2] * w;
+                m3 += this.palette[p + 3] * w;
+                m4 += this.palette[p + 4] * w;
+                m5 += this.palette[p + 5] * w;
+                m6 += this.palette[p + 6] * w;
+                m7 += this.palette[p + 7] * w;
+                m8 += this.palette[p + 8] * w;
+                m9 += this.palette[p + 9] * w;
+                m10 += this.palette[p + 10] * w;
+                m11 += this.palette[p + 11] * w;
                 rw += w;
             }
 
