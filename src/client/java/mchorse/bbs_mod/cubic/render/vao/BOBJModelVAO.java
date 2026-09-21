@@ -471,12 +471,12 @@ public class BOBJModelVAO implements IModelVAO
             this.letzteMeshSignatur = signatur;
             this.meshGueltig = true;
 
-            float[] oldVertices = this.ausgangslagen();
-            float[] oldNormals = this.renderData.normData;
             SkinPose pose = this.skinCache.get(signatur);
 
             if (pose == null)
             {
+                float[] oldVertices = this.ausgangslagen();
+                float[] oldNormals = this.renderData.normData;
                 pose = this.neueSkinPose(gpu);
                 mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente = this.segmente();
 
