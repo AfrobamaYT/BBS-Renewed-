@@ -121,7 +121,10 @@ public final class MixinBruecke
                 return null;
             }
 
-            return handle.invokeWithArguments(argumente);
+            /* Fixed-arity adapters are prepared once; varargs retain JDK collection rules. */
+            return handle.isVarargsCollector()
+                ? handle.invokeWithArguments(argumente)
+                : (Object) handle.invokeExact(argumente);
         }
         catch (Throwable t)
         {
@@ -153,7 +156,8 @@ public final class MixinBruecke
             cacheGeneration = jetzt;
         }
 
-        String schluessel = jetzt + "|" + klasse + "#" + methode + "|" + argumente.length;
+        /* Keep array adapters separate from griff()'s typed handles and pre-swap entries. */
+        String schluessel = "array|" + jetzt + "|" + klasse + "#" + methode + "|" + argumente.length;
         MethodHandle vorhanden = CACHE.get(schluessel);
 
         if (vorhanden != null)
@@ -192,6 +196,13 @@ public final class MixinBruecke
         m.setAccessible(true);
 
         MethodHandle handle = MethodHandles.lookup().unreflect(m);
+
+        if (!handle.isVarargsCollector())
+        {
+            handle = handle.asType(MethodType.genericMethodType(argumente.length))
+                .asSpreader(Object[].class, argumente.length);
+        }
+
         CACHE.put(schluessel, handle);
 
         return handle;
