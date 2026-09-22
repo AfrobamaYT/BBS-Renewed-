@@ -293,7 +293,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
         this.eigenschaftsTreiber();
 
-        java.util.Set<BOBJBone> verarbeitet = new java.util.HashSet<>();
+        java.util.Set<BOBJBone> verarbeitet = RigBoneSet.processed(armature);
         Map<String, List<MapType>> bboneNachBone = this.bboneTreiberNachBone;
 
         if (bboneNachBone == null)
@@ -392,7 +392,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
      */
     private void nachrechnen(BOBJArmature armature, List<BOBJBone> kette, java.util.Set<BOBJBone> verarbeitet)
     {
-        java.util.Set<BOBJBone> ketteSet = new java.util.HashSet<>(kette);
+        java.util.Set<BOBJBone> ketteSet = RigBoneSet.chain(verarbeitet, kette);
 
         for (String name : this.reihenfolge)
         {
