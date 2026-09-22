@@ -309,6 +309,7 @@ public class ModelVAORenderer
 
         /* Den ZURUECKGEGEBENEN Block binden, nicht ein globales Feld: seit dem Ringpuffer
          * ist es je Zeichenaufruf ein anderer. */
+        ModelDrawBatch.beforeUniformWrite();
         GpuBuffer block = blockFuer(normalMat, light, overlay, passMode, kennung, emission);
 
         /* Messfuehler 2026-08-02: der Auswahlpuffer traegt Alpha (100928 Punkte gemessen),
@@ -355,6 +356,12 @@ public class ModelVAORenderer
          * ("class redefinition failed: attempted to add a method"), womit diese Aenderung nur
          * noch mit Boot pruefbar waere. Einmal hier passiert, darum steht es dabei. */
         java.util.function.Supplier<String> name = () -> "bbs-modell";
+
+        if (ModelDrawBatch.collect(name, farbZiel, tiefenZiel, bereich, pipeline, modelVAO,
+            transformationen, block, skinMatrices, textur))
+        {
+            return;
+        }
 
         try (RenderPass durchgang = bereich == null
             ? schreiber.createRenderPass(

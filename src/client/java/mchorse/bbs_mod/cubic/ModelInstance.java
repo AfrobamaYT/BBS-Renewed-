@@ -660,7 +660,10 @@ public class ModelInstance implements IModelInstance
                 CubicVAORenderer renderProcessor = new CubicVAORenderer(shader, this, light, overlay, stencilMap, keys, textureResolver);
 
                 renderProcessor.setColor(color.r, color.g, color.b, color.a);
-                CubicRenderer.processRenderModel(renderProcessor, null, stack, model);
+                try (mchorse.bbs_mod.cubic.render.vao.ModelDrawBatch batch = mchorse.bbs_mod.cubic.render.vao.ModelDrawBatch.begin())
+                {
+                    CubicRenderer.processRenderModel(renderProcessor, null, stack, model);
+                }
             }
             else
             {
@@ -687,72 +690,76 @@ public class ModelInstance implements IModelInstance
 
                 model.getArmature().setupMatrices();
 
-                /* One draw per mesh; bind that mesh's resolved texture (mesh name = material). */
-                for (BOBJModelVAO vao : vaos)
+                /* Keep draw order while sharing compatible passes within this model. */
+                try (mchorse.bbs_mod.cubic.render.vao.ModelDrawBatch batch = mchorse.bbs_mod.cubic.render.vao.ModelDrawBatch.begin())
                 {
-                    Texture texture = null; float emission = this.config.getMaterialEmission(vao.data.mesh.name);
-
-                    if (textureResolver != null)
+                    for (BOBJModelVAO vao : vaos)
                     {
-                        Link link = textureResolver.apply(vao.data.mesh.name);
+                        Texture texture = null; float emission = this.config.getMaterialEmission(vao.data.mesh.name);
 
-                        if (link != null)
+                        if (textureResolver != null)
                         {
-                            texture = BBSModClient.getTextures().getTexture(link);
-                            BBSModClient.getTextures().bindTexture(texture);
+                            Link link = textureResolver.apply(vao.data.mesh.name);
+
+                            if (link != null)
+                            {
+                                texture = BBSModClient.getTextures().getTexture(link);
+                                BBSModClient.getTextures().bindTexture(texture);
+                            }
                         }
-                    }
 
-                    if (texture == null)
-                    {
-                        /* No per-mesh override — the draw uses the form's base texture bound earlier. */
-                        texture = BBSModClient.getTextures().getLastBound();
-                    }
+                        if (texture == null)
+                        {
+                            /* No per-mesh override — the draw uses the form's base texture bound earlier. */
+                            texture = BBSModClient.getTextures().getLastBound();
+                        }
 
-                    /* Messfuehler 2026-08-02: der Grundindex kam als 0 an, obwohl er
-                     * durchgereicht wird. Diese Zeile trennt die zwei Moeglichkeiten —
-                     * stencilMap ist hier null, ODER fillStencilMap lief nie (aktuelleBasis
-                     * steht dann auf dem Feld-Vorgabewert 0). */
-                    if (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null)
-                    mchorse.bbs_mod.graphics.Messpunkt.zaehle("pick.basis",
-                        "stencilMap=" + (stencilMap == null ? "NULL" : "da")
-                        + " basis=" + (stencilMap == null ? -1 : stencilMap.aktuelleBasis)
-                        + " objectIndex=" + (stencilMap == null ? -1 : stencilMap.objectIndex));
+                        /* Messfuehler 2026-08-02: der Grundindex kam als 0 an, obwohl er
+                         * durchgereicht wird. Diese Zeile trennt die zwei Moeglichkeiten —
+                         * stencilMap ist hier null, ODER fillStencilMap lief nie (aktuelleBasis
+                         * steht dann auf dem Feld-Vorgabewert 0). */
+                        if (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null)
+                        mchorse.bbs_mod.graphics.Messpunkt.zaehle("pick.basis",
+                            "stencilMap=" + (stencilMap == null ? "NULL" : "da")
+                            + " basis=" + (stencilMap == null ? -1 : stencilMap.aktuelleBasis)
+                            + " objectIndex=" + (stencilMap == null ? -1 : stencilMap.objectIndex));
 
-                    vao.updateMesh(stencilMap, keys,
-                        ModelVAOPipeline.gpuVariante(shader) != null);
+                        mchorse.bbs_mod.cubic.render.vao.ModelDrawBatch.beforeMeshUpdate(vao);
+                        vao.updateMesh(stencilMap, keys,
+                            ModelVAOPipeline.gpuVariante(shader) != null);
 
-                    if (FormTranslucentQueue.needsSplit(shader, stencilMap, texture, color.a))
-                    {
-                        Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
-                        Matrix3f normalMat = new Matrix3f(stack.last().normal());
+                        if (FormTranslucentQueue.needsSplit(shader, stencilMap, texture, color.a))
+                        {
+                            Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
+                            Matrix3f normalMat = new Matrix3f(stack.last().normal());
 
-                        /* BOBJModelVAO zeichnet nicht mehr selbst -- es IST das Netz, gezeichnet
-                         * wird es vom ModelVAORenderer. Die Durchgangsart ist dabei Parameter
-                         * und keine Klammer mehr um den Zug herum, kann also nicht mehr am
-                         * naechsten Zug haengenbleiben. */
-                        /* Die Textur GEHT MIT: seit 26.2 liest der Zug sie nicht mehr aus
-                         * einer globalen Bindung, sie muss an Sampler0 des Durchgangs. Ohne
-                         * das zeichnet das Modell weiss (gemessen, Aufgabe 99). */
-                        ModelVAORenderer.render(shader, vao, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, FormTranslucentQueue.PASS_OPAQUE, stencilMap == null ? 0 : stencilMap.aktuelleBasis, texture, emission);
+                            /* BOBJModelVAO zeichnet nicht mehr selbst -- es IST das Netz, gezeichnet
+                             * wird es vom ModelVAORenderer. Die Durchgangsart ist dabei Parameter
+                             * und keine Klammer mehr um den Zug herum, kann also nicht mehr am
+                             * naechsten Zug haengenbleiben. */
+                            /* Die Textur GEHT MIT: seit 26.2 liest der Zug sie nicht mehr aus
+                             * einer globalen Bindung, sie muss an Sampler0 des Durchgangs. Ohne
+                             * das zeichnet das Modell weiss (gemessen, Aufgabe 99). */
+                            ModelVAORenderer.render(shader, vao, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, FormTranslucentQueue.PASS_OPAQUE, stencilMap == null ? 0 : stencilMap.aktuelleBasis, texture, emission);
 
-                        FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, FormTranslucentQueue.captureArmature(vao), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, emission, this.isCulling()));
-                    }
-                    else if (FormTranslucentQueue.needsWholeDefer(shader, stencilMap, color.a))
-                    {
-                        /* A uniform colour fade defers the whole draw into the sorted end-of-frame
-                         * pass with depth kept on, so the faded model still self-occludes. */
-                        Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
-                        Matrix3f normalMat = new Matrix3f(stack.last().normal());
+                            FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, FormTranslucentQueue.captureArmature(vao), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, emission, this.isCulling()));
+                        }
+                        else if (FormTranslucentQueue.needsWholeDefer(shader, stencilMap, color.a))
+                        {
+                            /* A uniform colour fade defers the whole draw into the sorted end-of-frame
+                             * pass with depth kept on, so the faded model still self-occludes. */
+                            Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
+                            Matrix3f normalMat = new Matrix3f(stack.last().normal());
 
-                        FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, () -> shader, FormTranslucentQueue.PASS_SINGLE, true, FormTranslucentQueue.captureArmature(vao), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, emission, this.isCulling()));
-                    }
-                    else
-                    {
-                        /* Der Weg des Auswahl-Durchgangs: beide Zweige darueber verlangen
-                         * stencilMap == null, hier landet das Picken also immer. Der
-                         * Grundindex der Form muss darum HIER mit, nicht nur oben. */
-                        ModelVAORenderer.render(shader, vao, stack, color.r, color.g, color.b, color.a, light, overlay, texture, stencilMap == null ? 0 : stencilMap.aktuelleBasis, emission);
+                            FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, () -> shader, FormTranslucentQueue.PASS_SINGLE, true, FormTranslucentQueue.captureArmature(vao), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, emission, this.isCulling()));
+                        }
+                        else
+                        {
+                            /* Der Weg des Auswahl-Durchgangs: beide Zweige darueber verlangen
+                             * stencilMap == null, hier landet das Picken also immer. Der
+                             * Grundindex der Form muss darum HIER mit, nicht nur oben. */
+                            ModelVAORenderer.render(shader, vao, stack, color.r, color.g, color.b, color.a, light, overlay, texture, stencilMap == null ? 0 : stencilMap.aktuelleBasis, emission);
+                        }
                     }
                 }
 
