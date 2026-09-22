@@ -6,7 +6,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /** Evaluated rig state for one input pose. Original model/rig data is never copied here. */
-final class BOBJPoseSnapshot
+public final class BOBJPoseSnapshot
 {
     private final float[] mat;
     private final float[] origin;
@@ -82,9 +82,19 @@ final class BOBJPoseSnapshot
 
     void restore(BOBJArmature armature)
     {
+        this.restoreExcept(armature, null);
+    }
+
+    /** Reuse completed output only outside the dependency closure being evaluated now. */
+    public void restoreExcept(BOBJArmature armature, java.util.BitSet dirty)
+    {
         for (int i = 0; i < armature.orderedBones.size(); i++)
         {
             BOBJBone bone = armature.orderedBones.get(i);
+            if (dirty != null && dirty.get(bone.index))
+            {
+                continue;
+            }
             Transform t = bone.transform;
             int p = i * 16;
 

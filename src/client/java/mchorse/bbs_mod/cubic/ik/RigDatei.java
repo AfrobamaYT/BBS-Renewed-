@@ -155,6 +155,7 @@ final class RigDatei
 
         gebaut.ketten = RigIKKetten.lesen(mechanik, wurzel.getMap("ik_gelenke"), wurzel.getList("ik_gruppen"));
         gebaut.treiber.lade(wurzel.getMap("regler"));
+        gebaut.incremental = new RigIncrementalPose(wurzel);
 
         return gebaut;
     }

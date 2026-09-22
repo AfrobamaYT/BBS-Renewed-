@@ -124,6 +124,10 @@ public class BOBJArmature
         /** Restore solver-owned references needed by later shape/rig consumers. */
         default void poseAusCache(BOBJArmature armature)
         {}
+
+        /** Completed immutable output for incremental solvers; null invalidates their basis. */
+        default void poseGespeichert(BOBJPoseSnapshot snapshot)
+        {}
     }
 
     public Zwang zwang;
@@ -202,6 +206,7 @@ public class BOBJArmature
             if (cachebar)
             {
                 BOBJPoseSnapshot snapshot = BOBJPoseSnapshot.capture(this);
+                this.zwang.poseGespeichert(snapshot);
 
                 if (snapshot != null)
                 {
@@ -234,6 +239,10 @@ public class BOBJArmature
     public void posenMarkieren()
     {
         this.matrizenGueltig = false;
+        if (this.zwang != null)
+        {
+            this.zwang.poseGespeichert(null);
+        }
 
         if (this.poseSnapshots != null)
         {

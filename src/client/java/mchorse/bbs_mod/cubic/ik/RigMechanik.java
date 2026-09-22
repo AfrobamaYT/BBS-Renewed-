@@ -34,6 +34,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
     public final RigTreiber treiber = new RigTreiber();
 
     RigIKKetten ketten;
+    RigIncrementalPose incremental;
     final Map<String, MapType> shapeTreiber = new HashMap<>();
     final Map<String, MapType> knochenFlags = new HashMap<>();
     final Map<String, MapType> huellen = new HashMap<>();
@@ -116,6 +117,15 @@ public final class RigMechanik implements BOBJArmature.Zwang
     {
         this.treiber.knochen = armature;
         this.treiber.rahmen = this.rahmen;
+    }
+
+    @Override
+    public void poseGespeichert(mchorse.bbs_mod.bobj.BOBJPoseSnapshot snapshot)
+    {
+        if (this.incremental != null)
+        {
+            this.incremental.remember(snapshot);
+        }
     }
 
     /** Beim Models-Reload rufen. */
@@ -291,6 +301,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
             return true;
         }
 
+        java.util.BitSet dirty = this.incremental == null ? null : this.incremental.begin(armature, this);
         this.eigenschaftsTreiber();
 
         java.util.Set<BOBJBone> verarbeitet = RigBoneSet.processed(armature);
@@ -330,6 +341,12 @@ public final class RigMechanik implements BOBJArmature.Zwang
                 continue;
             }
 
+            if (dirty != null && !dirty.get(bone.index))
+            {
+                verarbeitet.add(bone);
+                continue;
+            }
+
             /* ⛔ VOR compute(): Kanal-Treiber schreiben die Pose, aus der compute() rechnet. */
             for (MapType k : this.kanalTreiber.getOrDefault(name, List.of()))
             {
@@ -341,25 +358,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
                 bboneSetzen(bone, k, this.treiber.wert(k.getMap("treiber"), 0F));
             }
 
-            armature.matrices[bone.index] = bone.compute();
-
-            Matrix4f kanal = this.ruhekanal.get(name);
-
-            if (kanal != null)
-            {
-                /* Wirkt wie Blenders matrix_basis: im eigenen Ruheraum, VOR den Constraints. */
-                bone.mat.mul(kanal);
-                bone.originMat.mul(kanal);
-            }
-
-            List<MapType> liste = this.proBone.get(name);
-
-            if (liste != null && !liste.isEmpty())
-            {
-                this.zwaenge(armature, bone, liste);
-            }
-
-            armature.matrices[bone.index] = bone.hautMatrix();
+            this.boneAuswerten(armature, bone);
 
             verarbeitet.add(bone);
 
@@ -415,26 +414,28 @@ public final class RigMechanik implements BOBJArmature.Zwang
                 continue;
             }
 
-            armature.matrices[bone.index] = bone.compute();
-
-            Matrix4f kanal = this.ruhekanal.get(name);
-
-            if (kanal != null)
-            {
-                bone.mat.mul(kanal);
-                bone.originMat.mul(kanal);
-            }
-
-            List<MapType> liste = this.proBone.get(name);
-
-            if (liste != null && !liste.isEmpty())
-            {
-                this.zwaenge(armature, bone, liste);
-            }
-
-            armature.matrices[bone.index] = bone.hautMatrix();
+            this.boneAuswerten(armature, bone);
             ketteSet.add(bone);
         }
+    }
+
+    /** Shared by the main graph and IK descendant reevaluation; channel drivers run before this call. */
+    private void boneAuswerten(BOBJArmature armature, BOBJBone bone)
+    {
+        armature.matrices[bone.index] = bone.compute();
+        Matrix4f kanal = this.ruhekanal.get(bone.name);
+        if (kanal != null)
+        {
+            /* The imported matrix_basis acts before the constraint stack. */
+            bone.mat.mul(kanal);
+            bone.originMat.mul(kanal);
+        }
+        List<MapType> liste = this.proBone.get(bone.name);
+        if (liste != null && !liste.isEmpty())
+        {
+            this.zwaenge(armature, bone, liste);
+        }
+        armature.matrices[bone.index] = bone.hautMatrix();
     }
 
     /** Getriebene Custom Properties (Regler treibt Regler) — typgerecht wie Blender. */
