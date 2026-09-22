@@ -428,6 +428,12 @@ public final class RigWidgets
         int colorA = ((int) (aA * 255F) & 255) << 24 | rgb;
         int colorB = ((int) (aB * 255F) & 255) << 24 | rgb;
 
+        if (ControlVertexBatch.quad(builder, ax1, ay1, az1, bx1, by1, bz1,
+            bx2, by2, bz2, ax2, ay2, az2, colorA, colorB))
+        {
+            return;
+        }
+
         builder.addVertex(ax1, ay1, az1).setColor(colorA);
         builder.addVertex(bx1, by1, bz1).setColor(colorB);
         builder.addVertex(bx2, by2, bz2).setColor(colorB);

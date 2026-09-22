@@ -155,8 +155,13 @@ public final class ModelIKDebug
                  * sichtbare Baender voll, verdeckte gedimmt — auffindbar hinter dem
                  * Koerper, ohne ihn zu ueberdecken. xray=true bleibt der alte
                  * Voll-Durchschein-Look, dann braucht es keinen zweiten Pass. */
-                mchorse.bbs_mod.cubic.render.RigCtrlZeichner.weltPass(wire, sicht, kamera,
-                    entities, entity, replay, rig, selectedBone, a, uebergang);
+                /* Only this locally created POSITION_COLOR buffer enters the bulk scope. */
+                try (mchorse.bbs_mod.cubic.render.ControlVertexBatch batch =
+                    mchorse.bbs_mod.cubic.render.ControlVertexBatch.begin(wire))
+                {
+                    mchorse.bbs_mod.cubic.render.RigCtrlZeichner.weltPass(wire, sicht, kamera,
+                        entities, entity, replay, rig, selectedBone, a, uebergang);
+                }
             }
 
             /* FK-Skelett (Blenders Pose Mode): JEDER Bone als Octahedron — grau,

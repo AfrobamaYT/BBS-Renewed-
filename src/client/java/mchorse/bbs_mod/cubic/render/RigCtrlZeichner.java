@@ -137,6 +137,10 @@ public class RigCtrlZeichner
         Vector3f p2 = STENCIL.p2;
         float[] col = STENCIL.color;
 
+        /* The caller supplies a dedicated POSITION_COLOR selection buffer. Flush it
+         * before returning so subsequent geometry keeps its original ordering. */
+        try (ControlVertexBatch batch = ControlVertexBatch.begin(builder))
+        {
         for (RigCtrl.Eintrag e : rig)
         {
             if (!RigCtrl.sichtbar(e, armature))
@@ -192,6 +196,7 @@ public class RigCtrlZeichner
 
             stencilMap.addPicking(form, e.pick());
         }
+        }
     }
 
     /** Zwei senkrecht gekreuzte Quads laengs p1->p2 — aus jeder Blickrichtung Flaeche. */
@@ -219,6 +224,19 @@ public class RigCtrlZeichner
 
     private static void quad(BufferBuilder builder, Vector3f p1, Vector3f p2, Vector3f s, float[] col)
     {
+        /* Match VertexConsumer.setColor(float...) byte truncation exactly. */
+        int color = 0xFF000000 | ((int) (col[0] * 255F) & 255) << 16
+            | ((int) (col[1] * 255F) & 255) << 8 | ((int) (col[2] * 255F) & 255);
+
+        if (ControlVertexBatch.quad(builder,
+            p1.x - s.x, p1.y - s.y, p1.z - s.z,
+            p2.x - s.x, p2.y - s.y, p2.z - s.z,
+            p2.x + s.x, p2.y + s.y, p2.z + s.z,
+            p1.x + s.x, p1.y + s.y, p1.z + s.z, color, color))
+        {
+            return;
+        }
+
         builder.addVertex(p1.x - s.x, p1.y - s.y, p1.z - s.z).setColor(col[0], col[1], col[2], 1F);
         builder.addVertex(p2.x - s.x, p2.y - s.y, p2.z - s.z).setColor(col[0], col[1], col[2], 1F);
         builder.addVertex(p2.x + s.x, p2.y + s.y, p2.z + s.z).setColor(col[0], col[1], col[2], 1F);
