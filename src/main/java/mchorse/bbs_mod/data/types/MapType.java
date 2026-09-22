@@ -263,7 +263,15 @@ public class MapType extends BaseType implements Iterable<Map.Entry<String, Base
 
     public ListType getList(String key)
     {
-        return this.getList(key, new ListType());
+        /* Keep overload dispatch and its fresh default for external subclasses. */
+        if (this.getClass() != MapType.class)
+        {
+            return this.getList(key, new ListType());
+        }
+
+        BaseType value = this.get(key);
+
+        return BaseType.isList(value) ? (ListType) value : new ListType();
     }
 
     public ListType getList(String key, ListType defaultValue)
@@ -275,7 +283,15 @@ public class MapType extends BaseType implements Iterable<Map.Entry<String, Base
 
     public MapType getMap(String key)
     {
-        return this.getMap(key, new MapType());
+        /* Successful ordinary lookups need no temporary fallback allocation. */
+        if (this.getClass() != MapType.class)
+        {
+            return this.getMap(key, new MapType());
+        }
+
+        BaseType value = this.get(key);
+
+        return BaseType.isMap(value) ? (MapType) value : new MapType();
     }
 
     public MapType getMap(String key, MapType defaultValue)
