@@ -77,7 +77,18 @@ public final class RigBBone
         long restKey = ENABLE_REST_CACHE ? restSignature(rahmen, b, d) : 0L;
         LinkedHashMap<Long, RestState> entries = ENABLE_REST_CACHE ? REST.get(d) : null;
         RestState cached = entries == null ? null : entries.get(restKey);
-        d.poseMatrizen = spline(params(rahmen, b, false), true);
+        RigBBoneParam.Param parameters = params(rahmen, b, false);
+        float[] poseMat = rahmen.poseMat(b);
+        int[] poseInput = cached != null && !Boolean.getBoolean("bbs.bbone.fullRebuild")
+            ? RigBBonePoseCache.input(parameters, poseMat) : null;
+
+        if (poseInput != null && RigBBonePoseCache.restore(d, cached, poseInput))
+        {
+            cached.restore(d);
+            return;
+        }
+
+        d.poseMatrizen = spline(parameters, true);
 
         int n = d.segmente;
         float[] armMat;
@@ -126,7 +137,6 @@ public final class RigBBone
             }
         }
 
-        float[] poseMat = rahmen.poseMat(b);
         float[] chanMat = RigMathe.mul(poseMat, armInv);
 
         d.verformMatrizen = new float[n + 2][];
@@ -154,6 +164,11 @@ public final class RigBBone
 
             RigMathe.normalisiere(basis);
             d.dualQuats[a] = RigDualQuat.aus(basis, m);
+        }
+
+        if (poseInput != null)
+        {
+            RigBBonePoseCache.store(d, cached, poseInput);
         }
     }
 
