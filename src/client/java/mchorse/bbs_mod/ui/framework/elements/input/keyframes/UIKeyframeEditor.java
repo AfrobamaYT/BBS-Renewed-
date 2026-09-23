@@ -93,6 +93,13 @@ public class UIKeyframeEditor extends UIElement
         return this.propertiesVisible;
     }
 
+    /** Dispose the owned dock contents as well as the timeline when replacing this editor. */
+    public void release()
+    {
+        this.pickKeyframe(null);
+        this.removeFromParent();
+    }
+
     private void pickKeyframe(Keyframe keyframe)
     {
         if (this.fremdesPanel != null)

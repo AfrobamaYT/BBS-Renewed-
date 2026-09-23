@@ -615,7 +615,7 @@ public class UIReplaysEditor extends UIElement
 
         if (this.keyframeEditor != null)
         {
-            this.keyframeEditor.removeFromParent();
+            this.keyframeEditor.release();
             this.keyframeEditor = null;
         }
 
