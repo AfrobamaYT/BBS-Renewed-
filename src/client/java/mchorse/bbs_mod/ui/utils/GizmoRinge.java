@@ -14,6 +14,7 @@ import mchorse.bbs_mod.graphics.GehaltenesNetz;
 import mchorse.bbs_mod.graphics.PickZiel;
 import mchorse.bbs_mod.graphics.Projektion;
 import mchorse.bbs_mod.graphics.SofortZeichner;
+import mchorse.bbs_mod.graphics.Zeichenziel;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -21,6 +22,10 @@ import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Die vorgebauten Netze des Rotations-Gizmos: die drei Achsenringe und die Mittelkugel.
@@ -52,10 +57,21 @@ import org.joml.Vector3f;
  */
 public class GizmoRinge
 {
+    private static final int BOGEN_CACHE_MAX = 12;
+
     /** Ein Ring liegt in der XZ-Ebene; fuer die anderen Achsen wird er gedreht. */
     private GehaltenesNetz ring;
 
     private GehaltenesNetz kugel;
+
+    /**
+     * Camera-facing rings used to be rebuilt for every render/picking pass. Cache the
+     * exact CPU-transformed and vertex-coloured output of that old path. Keeping the pose
+     * and colour in the key preserves its floating-point and UNORM colour quantisation;
+     * only tessellation/upload are skipped on a hit.
+     */
+    private final LinkedHashMap<BogenSchluessel, GehaltenesNetz> boegen =
+        new LinkedHashMap<>(16, 0.75F, true);
 
     private float letzteSkalierung = -1F;
     private float letzteDicke = -1F;
@@ -108,6 +124,45 @@ public class GizmoRinge
         return this.kugel;
     }
 
+    private GehaltenesNetz bogen(PoseStack stapel, Axis achse, float radius, float dicke,
+        float startDeg, float sweepDeg, float r, float g, float b)
+    {
+        BogenSchluessel schluessel = new BogenSchluessel(
+            stapel.last().pose(), achse, radius, dicke, startDeg, sweepDeg, r, g, b);
+        GehaltenesNetz netz = this.boegen.get(schluessel);
+
+        if (netz != null)
+        {
+            return netz;
+        }
+
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(262144))
+        {
+            BufferBuilder bauer = SofortZeichner.beginnen(
+                speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+
+            /* Intentionally the exact old operation: transform and colour while emitting. */
+            if (!GizmoRingVertices.emit(bauer, stapel, achse, radius, dicke, r, g, b, startDeg, sweepDeg))
+            {
+                Draw.arc3D(bauer, stapel, achse, radius, dicke, r, g, b, startDeg, sweepDeg);
+            }
+            netz = new GehaltenesNetz(bauer.buildOrThrow());
+        }
+
+        this.boegen.put(schluessel, netz);
+
+        if (this.boegen.size() > BOGEN_CACHE_MAX)
+        {
+            Map.Entry<BogenSchluessel, GehaltenesNetz> aeltester =
+                this.boegen.entrySet().iterator().next();
+
+            aeltester.getValue().close();
+            this.boegen.remove(aeltester.getKey());
+        }
+
+        return netz;
+    }
+
     public void freigeben()
     {
         if (this.ring != null)
@@ -121,6 +176,13 @@ public class GizmoRinge
             this.kugel.close();
             this.kugel = null;
         }
+
+        for (GehaltenesNetz netz : this.boegen.values())
+        {
+            netz.close();
+        }
+
+        this.boegen.clear();
     }
 
     /**
@@ -151,6 +213,67 @@ public class GizmoRinge
         zeichnen(this.ring, stapel, r, g, b, a, null);
 
         stapel.popPose();
+    }
+
+    /**
+     * Draw exactly the arc produced by {@code Draw.arc3D}, but reuse its uploaded geometry
+     * across the depth, visible and picking passes. A moving camera can change the arc; the
+     * bounded cache keeps recent quantized arcs without retaining an unbounded GPU history.
+     */
+    public void abschnittZeichnen(PoseStack stapel, Axis achse, float radius, float dicke,
+        float startDeg, float sweepDeg, float r, float g, float b)
+    {
+        /* Keep the native fallback beside the cache, not in Gizmo's input/state class. */
+        if (Boolean.getBoolean("bbs.gizmo.immediateRings"))
+        {
+            try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
+            {
+                BufferBuilder builder = SofortZeichner.beginnen(
+                    speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+
+                Draw.arc3D(builder, stapel, achse, radius, dicke, r, g, b, startDeg, sweepDeg);
+                GpuTextureView ziel = PickZiel.aktiv();
+
+                if (ziel == null)
+                {
+                    mchorse.bbs_mod.ui.framework.elements.utils.vorschau.GizmoZug.zeichnen(
+                        FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true),
+                        builder.build(), RenderSystem.getModelViewMatrixCopy(), null);
+                }
+                else
+                {
+                    SofortZeichner.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, true),
+                        builder.build(), RenderSystem.getModelViewMatrixCopy(), null, null, ziel, null);
+                }
+            }
+
+            return;
+        }
+
+        GehaltenesNetz netz = this.bogen(stapel, achse, radius, dicke, startDeg, sweepDeg, r, g, b);
+        Matrix4f modellAnsicht = RenderSystem.getModelViewMatrixCopy();
+        GpuTextureView pickZiel = PickZiel.aktiv();
+
+        if (pickZiel != null)
+        {
+            netz.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, true),
+                modellAnsicht, null, null, pickZiel, null, null);
+        }
+        else
+        {
+            GpuTextureView farbZiel = Zeichenziel.farbe();
+
+            if (farbZiel == null)
+            {
+                netz.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true),
+                    modellAnsicht, null, null, (com.mojang.blaze3d.pipeline.RenderTarget) null, null);
+            }
+            else
+            {
+                netz.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true),
+                    modellAnsicht, null, null, farbZiel, Zeichenziel.tiefe(), null);
+            }
+        }
     }
 
     /**
@@ -193,6 +316,52 @@ public class GizmoRinge
         stapel.scale(skalierung, skalierung, skalierung);
 
         zeichnen(this.ring, stapel, r, g, b, a, PickZiel.aktiv());
+
+        stapel.popPose();
+    }
+
+    /** Exact cached counterpart of {@code GizmoZug.blickring} for the PIP target. */
+    public void billboardGecachtZeichnen(PoseStack stapel, float r, float g, float b, float a, float skalierung)
+    {
+        stapel.pushPose();
+
+        Matrix4f matrix = stapel.last().pose();
+        Vector3f zurKamera = matrix.getTranslation(new Vector3f()).negate();
+        Matrix3f basis = matrix.get3x3(new Matrix3f());
+
+        if (Math.abs(basis.determinant()) > 1.0E-8F)
+        {
+            basis.invert().transform(zurKamera);
+        }
+
+        if (zurKamera.lengthSquared() > 1.0E-8F)
+        {
+            zurKamera.normalize();
+            stapel.mulPose(new Quaternionf().rotationTo(
+                0F, 1F, 0F, zurKamera.x, zurKamera.y, zurKamera.z));
+        }
+
+        stapel.scale(skalierung, skalierung, skalierung);
+
+        float groesse = BBSSettings.axesScale.get();
+        float radius = 0.22F * groesse;
+        float dicke = 0.02F * groesse * BBSSettings.axesThickness.get();
+        GehaltenesNetz netz = this.bogen(
+            stapel, Axis.Y, radius, dicke, 0F, 360F, r, g, b);
+        Matrix4f modellAnsicht = RenderSystem.getModelViewMatrixCopy();
+        org.joml.Vector4f alpha = new org.joml.Vector4f(1F, 1F, 1F, a);
+        GpuTextureView farbZiel = Zeichenziel.farbe();
+
+        if (farbZiel == null)
+        {
+            netz.zeichnen(pipeline(), modellAnsicht, alpha, null,
+                (com.mojang.blaze3d.pipeline.RenderTarget) null, null);
+        }
+        else
+        {
+            netz.zeichnen(pipeline(), modellAnsicht, alpha, null,
+                farbZiel, Zeichenziel.tiefe(), null);
+        }
 
         stapel.popPose();
     }
@@ -271,7 +440,18 @@ public class GizmoRinge
 
         if (farbZiel == null)
         {
-            netz.zeichnen(pipeline(), modellAnsicht, farbe, null, (com.mojang.blaze3d.pipeline.RenderTarget) null, null);
+            GpuTextureView sichtZiel = Zeichenziel.farbe();
+
+            if (sichtZiel == null)
+            {
+                netz.zeichnen(pipeline(), modellAnsicht, farbe, null,
+                    (com.mojang.blaze3d.pipeline.RenderTarget) null, null);
+            }
+            else
+            {
+                netz.zeichnen(pipeline(), modellAnsicht, farbe, null,
+                    sichtZiel, Zeichenziel.tiefe(), null);
+            }
 
             return;
         }
@@ -289,5 +469,68 @@ public class GizmoRinge
     private static com.mojang.blaze3d.pipeline.RenderPipeline pipeline()
     {
         return FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, false);
+    }
+
+    private static final class BogenSchluessel
+    {
+        private final int achse;
+        private final int radius;
+        private final int dicke;
+        private final int start;
+        private final int sweep;
+        private final int r;
+        private final int g;
+        private final int b;
+        private final int[] pose;
+
+        private BogenSchluessel(Matrix4f pose, Axis achse, float radius, float dicke,
+            float start, float sweep, float r, float g, float b)
+        {
+            this.achse = achse.ordinal();
+            this.radius = Float.floatToRawIntBits(radius);
+            this.dicke = Float.floatToRawIntBits(dicke);
+            this.start = Float.floatToRawIntBits(start);
+            this.sweep = Float.floatToRawIntBits(sweep);
+            this.r = Float.floatToRawIntBits(r);
+            this.g = Float.floatToRawIntBits(g);
+            this.b = Float.floatToRawIntBits(b);
+            float[] matrix = pose.get(new float[16]);
+            this.pose = new int[matrix.length];
+
+            for (int i = 0; i < matrix.length; i++)
+            {
+                this.pose[i] = Float.floatToRawIntBits(matrix[i]);
+            }
+        }
+
+        @Override
+        public boolean equals(Object object)
+        {
+            if (!(object instanceof BogenSchluessel other))
+            {
+                return false;
+            }
+
+            return this.achse == other.achse
+                && this.radius == other.radius && this.dicke == other.dicke
+                && this.start == other.start && this.sweep == other.sweep
+                && this.r == other.r && this.g == other.g && this.b == other.b
+                && Arrays.equals(this.pose, other.pose);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = this.achse;
+            result = 31 * result + this.radius;
+            result = 31 * result + this.dicke;
+            result = 31 * result + this.start;
+            result = 31 * result + this.sweep;
+            result = 31 * result + this.r;
+            result = 31 * result + this.g;
+            result = 31 * result + this.b;
+
+            return 31 * result + Arrays.hashCode(this.pose);
+        }
     }
 }

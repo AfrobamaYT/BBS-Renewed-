@@ -1042,11 +1042,7 @@ public class Gizmo
         return true;
     }
 
-    /**
-     * Draw a rotation ring with its far half (behind the central sphere) culled,
-     * so it reads like the rings in a typical 3D gizmo. Immediate mode, since the
-     * visible arc changes with the camera every frame.
-     */
+    /** Draw the unchanged camera-facing arc, caching its exact vertices by default. */
     void drawOccludedRing(PoseStack stack, Axis axis, float radius, float thickness, float r, float g, float b)
     {
         Vector2f arc = new Vector2f();
@@ -1056,33 +1052,10 @@ public class Gizmo
             return;
         }
 
-        /* Derselbe Aufruf dient zwei Durchgaengen: sichtbar geht er ins Bild, als
-         * Kennung in BBS' Auswahl-Puffer. Welcher gerade laeuft, sagt PickZiel --
-         * angemeldet von StencilFormFramebuffer.apply(). Das war frueher die Bindung,
-         * die es in 26.2 nicht mehr gibt. */
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
-        {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle(
+            mchorse.bbs_mod.graphics.PickZiel.aktiv() == null ? "gizmo3d.stelle4" : "gizmo3d.stelle5");
 
-            Draw.arc3D(builder, stack, axis, radius, thickness, r, g, b, arc.x, arc.y);
-
-            com.mojang.blaze3d.textures.GpuTextureView ziel = mchorse.bbs_mod.graphics.PickZiel.aktiv();
-
-            if (ziel == null)
-            {
-                mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle4");
-                GizmoZug.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true),
-                    builder.build(), RenderSystem.getModelViewMatrixCopy(), null);
-            }
-            else
-            {
-                /* Kennungen duerfen nicht gemischt und nicht von Tiefe verschluckt werden --
-                 * sonst liest der Klick eine verrechnete Farbe oder gar keine. */
-                mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle5");
-                SofortZeichner.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, true),
-                    builder.build(), RenderSystem.getModelViewMatrixCopy(), null, null, ziel, null);
-            }
-        }
+        this.ringe.abschnittZeichnen(stack, axis, radius, thickness, arc.x, arc.y, r, g, b);
     }
 
     void drawCachedRingBillboard(PoseStack stack, float r, float g, float b, float a)
@@ -1099,7 +1072,14 @@ public class Gizmo
         if (mchorse.bbs_mod.graphics.PickZiel.aktiv() == null
             && mchorse.bbs_mod.graphics.Zeichenziel.eigenes())
         {
-            GizmoZug.blickring(stack, r, g, b, a, VIEW_RING_SCALE);
+            if (Boolean.getBoolean("bbs.gizmo.immediateRings"))
+            {
+                GizmoZug.blickring(stack, r, g, b, a, VIEW_RING_SCALE);
+            }
+            else
+            {
+                this.ringe.billboardGecachtZeichnen(stack, r, g, b, a, VIEW_RING_SCALE);
+            }
 
             return;
         }
