@@ -25,6 +25,7 @@ public class UIFormUndoHandler
     protected Map<BaseValue, BaseType> cachedValues = new HashMap<>();
     protected boolean cacheMarkLastUndoNoMerging;
     protected MapType uiData;
+    private boolean valuesNeedSync;
 
     protected Timer undoTimer = new Timer(1000);
 
@@ -116,6 +117,8 @@ public class UIFormUndoHandler
             return;
         }
 
+        this.valuesNeedSync = true;
+
         if (this.uiData == null && this.uiElement.getRoot() != null)
         {
             this.uiData = this.uiElement.getRoot().collectAllUndoData();
@@ -134,6 +137,13 @@ public class UIFormUndoHandler
 
     public void submitUndo()
     {
+        boolean editing = this.isEditingGesture();
+
+        if (editing)
+        {
+            this.undoTimer.mark();
+        }
+
         this.handleTimers();
 
         if (this.cachedValues.isEmpty())
@@ -143,17 +153,42 @@ public class UIFormUndoHandler
 
         reduceUndoRedundancy(this.cachedValues);
 
+        /* Keep the gesture's original values until release. Preview changes still sync,
+         * but a cancelled gesture must not insert an empty undo or discard a redo branch. */
+        if (editing)
+        {
+            if (this.valuesNeedSync)
+            {
+                for (BaseValue value : this.cachedValues.keySet())
+                {
+                    this.handleValue(value);
+                }
+
+                this.valuesNeedSync = false;
+            }
+
+            return;
+        }
+
         List<ValueChangeUndo> changeUndos = new ArrayList<>();
 
         for (Map.Entry<BaseValue, BaseType> entry : this.cachedValues.entrySet())
         {
             BaseValue value = entry.getKey();
-            ValueChangeUndo undo = new ValueChangeUndo(value.getPath(), entry.getValue(), value.toData());
+            BaseType after = value.toData();
 
-            undo.cacheAfter(this.uiElement);
-            undo.cacheBefore(this.uiData);
-            changeUndos.add(undo);
+            /* Releasing a held transform may notify with identical data. Such an entry
+             * would consume Undo without changing the document once the merge timer expires. */
+            if (!java.util.Objects.equals(entry.getValue(), after))
+            {
+                ValueChangeUndo undo = new ValueChangeUndo(value.getPath(), entry.getValue(), after);
 
+                undo.cacheAfter(this.uiElement);
+                undo.cacheBefore(this.uiData);
+                changeUndos.add(undo);
+            }
+
+            /* Keep synchronization and explicit merge-boundary notifications intact. */
             this.handleValue(value);
         }
 
@@ -168,6 +203,7 @@ public class UIFormUndoHandler
 
         this.cachedValues.clear();
         this.uiData = null;
+        this.valuesNeedSync = false;
 
         this.undoTimer.mark();
 
@@ -177,6 +213,12 @@ public class UIFormUndoHandler
 
             this.undoManager.markLastUndoNoMerging();
         }
+    }
+
+    /** Active modal gestures publish their single history entry only when they end. */
+    protected boolean isEditingGesture()
+    {
+        return false;
     }
 
     protected void handleValue(BaseValue value)

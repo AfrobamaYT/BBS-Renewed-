@@ -52,6 +52,17 @@ public class UIFilmUndoHandler extends UIFormUndoHandler
     }
 
     @Override
+    protected boolean isEditingGesture()
+    {
+        UIFilmPanel panel = (UIFilmPanel) this.uiElement;
+        mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform transform =
+            panel.replayEditor == null || panel.replayEditor.keyframeEditor == null ? null
+                : mchorse.bbs_mod.ui.film.replays.UIReplaysEditorUtils.getEditableTransform(panel.replayEditor.keyframeEditor);
+
+        return transform != null && transform.isEditing();
+    }
+
+    @Override
     protected void handleTimers()
     {
         super.handleTimers();
