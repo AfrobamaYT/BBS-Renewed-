@@ -91,6 +91,20 @@ public final class MixinBruecke
     private static final java.util.concurrent.ConcurrentHashMap<String, MethodHandle> CACHE =
         new java.util.concurrent.ConcurrentHashMap<>();
 
+    /**
+     * Handles für {@link #rufe}, ohne je aufruf einen schlüssel zu verketten: klasse → methode →
+     * je argumentzahl. Die namen kommen als literale aus den handlern, ihr hash ist also schon
+     * gerechnet. Vorher entstand je aufruf ein verketteter string, dessen hash neu gerechnet
+     * wurde: 2,2 % des renderthreads im film-editor, danach 0,6 % (gemessen 27.09.2026).
+     */
+    private static final java.util.concurrent.ConcurrentHashMap<String,
+        java.util.concurrent.ConcurrentHashMap<String, Eintrag>> TABELLE =
+        new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Die handles einer methode je argumentzahl, gültig für genau eine generation. */
+    private record Eintrag(int generation, MethodHandle[] jeZahl)
+    {}
+
     /** Generation, für die der cache gilt. Steigt sie, sind alle einträge ungültig. */
     private static volatile int cacheGeneration = -1;
 
@@ -153,7 +167,18 @@ public final class MixinBruecke
             /* SWAP PASSIERT — alle handles zeigen auf tote klassen. Der cache wird geleert,
              * bevor ein einziger alter eintrag benutzt werden kann. */
             CACHE.clear();
+            TABELLE.clear();
             cacheGeneration = jetzt;
+        }
+
+        java.util.concurrent.ConcurrentHashMap<String, Eintrag> jeMethode = TABELLE.get(klasse);
+        Eintrag eintrag = jeMethode == null ? null : jeMethode.get(methode);
+        int zahl = argumente.length;
+
+        if (eintrag != null && eintrag.generation() == jetzt && zahl < eintrag.jeZahl().length
+            && eintrag.jeZahl()[zahl] != null)
+        {
+            return eintrag.jeZahl()[zahl];
         }
 
         /* Keep array adapters separate from griff()'s typed handles and pre-swap entries. */
@@ -162,6 +187,8 @@ public final class MixinBruecke
 
         if (vorhanden != null)
         {
+            merken(klasse, methode, zahl, jetzt, vorhanden);
+
             return vorhanden;
         }
 
@@ -204,8 +231,23 @@ public final class MixinBruecke
         }
 
         CACHE.put(schluessel, handle);
+        merken(klasse, methode, zahl, jetzt, handle);
 
         return handle;
+    }
+
+    /** Legt einen fertigen handle in die {@link #TABELLE}; ein verlorener wettlauf baut ihn nur neu. */
+    private static void merken(String klasse, String methode, int zahl, int generation, MethodHandle handle)
+    {
+        java.util.concurrent.ConcurrentHashMap<String, Eintrag> jeMethode =
+            TABELLE.computeIfAbsent(klasse, (k) -> new java.util.concurrent.ConcurrentHashMap<>());
+        Eintrag alt = jeMethode.get(methode);
+        MethodHandle[] jeZahl = alt == null || alt.generation() != generation
+            ? new MethodHandle[zahl + 1]
+            : java.util.Arrays.copyOf(alt.jeZahl(), Math.max(alt.jeZahl().length, zahl + 1));
+
+        jeZahl[zahl] = handle;
+        jeMethode.put(methode, new Eintrag(generation, jeZahl));
     }
 
     /**
