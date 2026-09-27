@@ -205,7 +205,18 @@ public class BOBJArmature
         {
             if (cachebar)
             {
-                BOBJPoseSnapshot snapshot = BOBJPoseSnapshot.capture(this);
+                /* The signature missed above, so the oldest of four is evicted either way; take
+                 * it out first and refill it instead of allocating a new one. */
+                BOBJPoseSnapshot frei = null;
+
+                if (this.poseSnapshots != null && this.poseSnapshots.size() >= 4)
+                {
+                    Iterator<BOBJPoseSnapshot> oldest = this.poseSnapshots.values().iterator();
+                    frei = oldest.next();
+                    oldest.remove();
+                }
+
+                BOBJPoseSnapshot snapshot = BOBJPoseSnapshot.capture(this, frei);
                 this.zwang.poseGespeichert(snapshot);
 
                 if (snapshot != null)
@@ -216,13 +227,6 @@ public class BOBJArmature
                     }
 
                     this.poseSnapshots.put(signatur, snapshot);
-
-                    if (this.poseSnapshots.size() > 4)
-                    {
-                        Iterator<Long> oldest = this.poseSnapshots.keySet().iterator();
-                        oldest.next();
-                        oldest.remove();
-                    }
                 }
             }
 

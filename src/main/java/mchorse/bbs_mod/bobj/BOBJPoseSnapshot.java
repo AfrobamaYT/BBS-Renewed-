@@ -29,6 +29,16 @@ public final class BOBJPoseSnapshot
         this.orient = new Quaternionf[count];
         this.offset = new Vector3f[count];
         this.bendy = new BBoneState[count];
+        this.fuellen(armature);
+    }
+
+    /**
+     * Refill with the armature's current state. A recycled snapshot reuses its own arrays and
+     * vector objects; everything it holds is only ever copied out by {@link #restore}.
+     */
+    private BOBJPoseSnapshot fuellen(BOBJArmature armature)
+    {
+        int count = armature.orderedBones.size();
 
         for (int i = 0; i < count; i++)
         {
@@ -56,13 +66,23 @@ public final class BOBJPoseSnapshot
             this.channels[p + 14] = t.quat.z;
             this.channels[p + 15] = t.quat.w;
             this.modes[i] = t.rotationMode;
-            this.orient[i] = bone.orient == null ? null : new Quaternionf(bone.orient);
-            this.offset[i] = bone.offset == null ? null : new Vector3f(bone.offset);
-            this.bendy[i] = bone.bbone == null ? null : new BBoneState(bone.bbone);
+            this.orient[i] = bone.orient == null ? null
+                : this.orient[i] == null ? new Quaternionf(bone.orient) : this.orient[i].set(bone.orient);
+            this.offset[i] = bone.offset == null ? null
+                : this.offset[i] == null ? new Vector3f(bone.offset) : this.offset[i].set(bone.offset);
+            this.bendy[i] = bone.bbone == null ? null
+                : this.bendy[i] == null ? new BBoneState(bone.bbone) : this.bendy[i].fuellen(bone.bbone);
         }
+
+        return this;
     }
 
-    static BOBJPoseSnapshot capture(BOBJArmature armature)
+    /**
+     * @param frei an evicted snapshot of this armature to refill instead of allocating (may be
+     *             {@code null}): playback evaluates a new pose every frame, and allocating ~55 KB
+     *             per rig actor and frame was 8 % of the render thread's allocations (27.09.2026)
+     */
+    static BOBJPoseSnapshot capture(BOBJArmature armature, BOBJPoseSnapshot frei)
     {
         if (armature.matrices == null || armature.matrices.length != armature.orderedBones.size())
         {
@@ -75,6 +95,11 @@ public final class BOBJPoseSnapshot
             {
                 return null;
             }
+        }
+
+        if (frei != null && frei.modes.length == armature.orderedBones.size())
+        {
+            return frei.fuellen(armature);
         }
 
         return new BOBJPoseSnapshot(armature);
@@ -159,14 +184,19 @@ public final class BOBJPoseSnapshot
     private static final class BBoneState
     {
         private final float[] channels = new float[28];
-        private final float[][] ruheMatrizen, poseMatrizen, verformMatrizen, verformBBS;
-        private final Matrix4f[] verformJoml;
-        private final Object[] dualQuats;
-        private final float[][] grenzPunkt, grenzNormale;
-        private final float[] grenzVersatz, grenzTiefe;
-        private final float bogenLaengeKehrwert;
+        private float[][] ruheMatrizen, poseMatrizen, verformMatrizen, verformBBS;
+        private Matrix4f[] verformJoml;
+        private Object[] dualQuats;
+        private float[][] grenzPunkt, grenzNormale;
+        private float[] grenzVersatz, grenzTiefe;
+        private float bogenLaengeKehrwert;
 
         private BBoneState(BOBJBBone d)
+        {
+            this.fuellen(d);
+        }
+
+        private BBoneState fuellen(BOBJBBone d)
         {
             int p = 0;
             p = copy(this.channels, p, d.ruheEase);
@@ -193,6 +223,8 @@ public final class BOBJPoseSnapshot
             this.grenzVersatz = d.grenzVersatz;
             this.grenzTiefe = d.grenzTiefe;
             this.bogenLaengeKehrwert = d.bogenLaengeKehrwert;
+
+            return this;
         }
 
         private void restore(BOBJBBone d)
