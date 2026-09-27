@@ -281,12 +281,13 @@ public class GizmoInteraction
     {
         StencilFormFramebuffer stencil = this.viewport.getGizmoStencil();
 
-        if (!stencil.hasPicked())
+        /* Per-frame hover, drawn right after the asynchronous pick: never wait for the GPU. */
+        if (!stencil.hasPickedOhneWarten())
         {
             return false;
         }
 
-        int index = stencil.getIndex();
+        int index = stencil.getIndexOhneWarten();
 
         return index >= Gizmo.STENCIL_X && index <= Gizmo.STENCIL_MAX;
     }

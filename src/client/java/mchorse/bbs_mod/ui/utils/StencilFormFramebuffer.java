@@ -9,13 +9,11 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.Pair;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.system.MemoryStack;
 
-import java.nio.FloatBuffer;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,16 +41,14 @@ public class StencilFormFramebuffer
     private int index;
     private Map<Integer, Pair<Form, String>> indexMap = new HashMap<>();
 
-    /** Reused readback buffer for the tolerance region pick (grows as needed). */
-    private FloatBuffer pickBuffer;
-
     /**
-     * Eigener FBO NUR zum Zurueklesen — 0 heisst "noch nicht erzeugt".
-     *
-     * <p>Ohne Initialisierer, damit ein Hotswap dieser Klasse das Feld nicht auf einem
-     * Bytecode-Default haengen laesst, den kein {@code <clinit>} mehr fuellt.</p>
+     * Reads the ids back ({@link StencilLeser}); created lazily, because a hotswap does not
+     * run initialisers for live instances.
      */
-    private int leseFbo;
+    private StencilLeser leser;
+
+    /** Id map of the frame whose asynchronous pick is still pending (see {@link #pickAsync}). */
+    private Map<Integer, Pair<Form, String>> ausstehendeKarte;
 
 
     /**
@@ -172,18 +168,51 @@ public class StencilFormFramebuffer
         return this.framebuffer;
     }
 
+    /** Exact result of the last issued pick: waits for a pending asynchronous readback. */
     public int getIndex()
     {
+        this.aufloesen(true);
+
         return this.index;
     }
 
     public Map<Integer, Pair<Form, String>> getIndexMap()
     {
+        this.aufloesen(true);
+
         return this.indexMap;
     }
 
     public Pair<Form, String> getPicked()
     {
+        this.aufloesen(true);
+
+        return this.indexMap.get(this.index);
+    }
+
+    /**
+     * For drawing in the same frame right after {@link #pickAsync}: the latest COMPLETED
+     * result, never waiting for the GPU. At most one frame old; clicks and drags use the
+     * exact accessors instead.
+     */
+    public boolean hasPickedOhneWarten()
+    {
+        this.aufloesen(false);
+
+        return this.index > 0;
+    }
+
+    public int getIndexOhneWarten()
+    {
+        this.aufloesen(false);
+
+        return this.index;
+    }
+
+    public Pair<Form, String> getPickedOhneWarten()
+    {
+        this.aufloesen(false);
+
         return this.indexMap.get(this.index);
     }
 
@@ -396,125 +425,16 @@ public class StencilFormFramebuffer
         this.pick(Math.round(x * scale), Math.round(y * scale));
     }
 
-    /**
-     * Liest eine Region AUS DEM EIGENEN Puffer zurueck.
-     *
-     * <h2>⛔ OHNE DAS BINDEN LIEST DER PICKER DEN BILDSCHIRM (2026-08-02 gemessen)</h2>
-     *
-     * <p>{@code glReadPixels} nimmt keine Zieltextur entgegen -- es liest, was gerade als
-     * {@code GL_READ_FRAMEBUFFER} gebunden ist. Bis 1.21.1 band {@link #apply()} den
-     * Auswahlpuffer global, und das Lesen darunter fand ihn vor. In 26.2 nennt jeder
-     * Durchgang sein Ziel selbst; {@code apply()} meldet nur noch {@code PickZiel} an und
-     * bindet nichts mehr. Gemessen an der Sonde {@code stencil.leseziel}:
-     * {@code gebunden=0 eigener=29} -- gelesen wurde der Standard-Framebuffer, also das
-     * fertige Bild, dessen RGB keine Kennungen traegt. Ergebnis: {@code index=0} an jeder
-     * Mausposition, an Kopf wie an Bein.
-     *
-     * <p>⚠️ ROHES {@code GL30} statt {@code GlStateManager}, mit Absicht: dessen
-     * 26.2-Fassung merkt sich {@code readFbo} und UEBERSPRINGT den Aufruf bei einem
-     * Treffer. Hier wird der ECHTE Zustand gelesen und exakt wiederhergestellt -- ein
-     * Zwischenspeicher, der etwas anderes glaubt, wuerde die Bindung verschlucken und
-     * genau den Fehler zurueckbringen, den diese Methode behebt.
-     *
-     * <h2>⛔ DER KLICK FINDET TROTZDEM NICHTS -- WAS BEREITS AUSGESCHLOSSEN IST</h2>
-     *
-     * <p>Damit hier niemand dieselben drei Sackgassen nochmal laeuft. Alles mit den Sonden
-     * {@code stencil.leseziel} und {@code stencil.inhalt} gemessen, am laufenden Editor:
-     *
-     * <ul>
-     * <li><b>FBO und Anhang stimmen:</b> {@code anhang=732 textur=732},
-     *     {@code status=0x8cd5} (COMPLETE) -- und es ist DIESELBE Textur, aus der der
-     *     Umriss liest ({@code umriss.gezeichnet: texturId=732 pufferId=29}).
-     * <li><b>Nicht der Zeitpunkt:</b> weder ein {@code glFinish} unmittelbar vor dem Lesen
-     *     noch das Lesen VOR {@code applyClear()} (also auf dem Puffer des vorigen Bildes)
-     *     aendert etwas. Beides gemessen, beides {@code deckung=0/30625}.
-     * <li><b>Nicht die Kennung:</b> die kommt seit {@code 869c910a7} am Zeichenaufruf an
-     *     ({@code pick.einreichung: kennung=20}).
-     * </ul>
-     *
-     * <p>Der offene Widerspruch, an dem es weitergeht: der orange Umriss ist im Bild
-     * SICHTBAR und speist sich aus genau dieser Textur, waehrend ein Abzug derselben
-     * Textur ({@code TextureDumper#dumpTexture}) sie voellig leer zeigt. Entweder liest
-     * der Abzug falsch, oder der Umriss bezieht sein Ergebnis nicht aus dem Auswahlpuffer.
-     * DAS zuerst klaeren -- vor dem naechsten Reparaturversuch.
-     */
-    private void leseEigenenPuffer(int x, int y, int w, int h, FloatBuffer ziel)
-    {
-        if (this.framebuffer == null)
-        {
-            GL11.glReadPixels(x, y, w, h, GL11.GL_RGBA, GL11.GL_FLOAT, ziel);
-
-            return;
-        }
-
-        int vorher = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
-
-        /* ⛔ EIGENER LESE-FBO STATT DES ZEICHEN-FBOs (2026-08-04, per Bisect gefunden).
-         *
-         * Aus dem Zeichen-FBO herauszulesen lieferte an JEDER Position Nullen -- bei
-         * vollstaendigem FBO, passendem Anhang (724) und Status COMPLETE. Ein
-         * ausdrueckliches glReadBuffer(COLOR_ATTACHMENT0) aenderte daran nichts.
-         *
-         * Der zweite Lesepfad (Pufferprobe) las DIESELBE Textur und fand 21606 Punkte
-         * ungleich 0 -- exakt die Zahl, die auch RenderDoc im Capture zaehlt. Er
-         * unterscheidet sich in genau einem Punkt: er legt einen EIGENEN FBO an und
-         * haengt die Textur selbst dort an. Das wird hier nachgezogen.
-         *
-         * Der FBO wird einmal erzeugt und behalten; die Textur wird bei jedem Lesen neu
-         * angehaengt, weil sie sich bei einer Groessenaenderung ersetzen kann. */
-        if (this.leseFbo == 0)
-        {
-            this.leseFbo = GL30.glGenFramebuffers();
-        }
-
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.leseFbo);
-        GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
-            GL11.GL_TEXTURE_2D, this.framebuffer.getMainTexture().id, 0);
-        GL11.glReadBuffer(GL30.GL_COLOR_ATTACHMENT0);
-
-        try
-        {
-            if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
-            {
-                /* Haengt am FBO noch DIE Textur, in die 26.2 zeichnet? Framebuffer#resize
-                 * zieht den Anhang nach, wenn eine Textur ihre GL-Nummer wechselt -- bleibt
-                 * hier eine alte Nummer stehen, liest glReadPixels eine freigegebene Textur
-                 * und findet nichts, egal wie richtig Zeitpunkt und Bindung sind. */
-                mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.leseziel",
-                    "gebunden=" + GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING)
-                        + " eigener=" + this.framebuffer.id
-                        + " anhang=" + GL30.glGetFramebufferAttachmentParameteri(
-                            GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
-                            GL30.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME)
-                        + " textur=" + this.framebuffer.getMainTexture().id
-                        + " status=0x" + Integer.toHexString(
-                            GL30.glCheckFramebufferStatus(GL30.GL_READ_FRAMEBUFFER)));
-            }
-
-            GL11.glReadPixels(x, y, w, h, GL11.GL_RGBA, GL11.GL_FLOAT, ziel);
-        }
-        finally
-        {
-            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
-        }
-    }
-
     public void pick(int x, int y)
     {
-        try (MemoryStack stack = MemoryStack.stackPush())
-        {
-            FloatBuffer floats = stack.mallocFloat(4);
+        /* A synchronous pick replaces a pending asynchronous one. */
+        this.verwerfen();
 
-            this.leseEigenenPuffer(x, y, 1, 1, floats);
+        ByteBuffer daten = this.leser().lesenSofort(this.framebuffer, x, y, 1, 1);
 
-            /* TODO: make other channels work */
-            int r = (int) (floats.get() * 255F);
-            int g = (int) (floats.get() * 255F);
-            int b = (int) (floats.get() * 255F);
-            int a = (int) (floats.get() * 255F);
-
-            this.index = a < 1F ? 0 : r | (g << 8) | (b << 16);
-        }
+        /* TODO: make other channels work */
+        this.index = (daten.get(3) & 0xFF) < 1 ? 0
+            : (daten.get(0) & 0xFF) | ((daten.get(1) & 0xFF) << 8) | ((daten.get(2) & 0xFF) << 16);
     }
 
     /**
@@ -528,6 +448,8 @@ public class StencilFormFramebuffer
      */
     public void pick(int x, int y, int radius, int handleMax)
     {
+        this.verwerfen();
+
         /* Messfuehler (hier, weil der Film-Controller gewoben ist): kommt beim Pick die
          * VIRTUELLE maus an oder die echte? Trennt UIContext-Weg von Roh-Koordinaten. */
         if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
@@ -548,182 +470,110 @@ public class StencilFormFramebuffer
             return;
         }
 
-        Texture texture = this.framebuffer.getMainTexture();
-        int x0 = Math.max(0, x - radius);
-        int y0 = Math.max(0, y - radius);
-        int x1 = Math.min(texture.width - 1, x + radius);
-        int y1 = Math.min(texture.height - 1, y + radius);
-        int w = x1 - x0 + 1;
-        int h = y1 - y0 + 1;
+        int[] lage = StencilAuswertung.region(this.framebuffer, x, y, radius, handleMax);
 
-        if (w <= 0 || h <= 0)
+        this.index = lage == null ? 0 : StencilAuswertung.auswerten(this.framebuffer,
+            this.leser().lesenSofort(this.framebuffer, lage[0], lage[1], lage[2], lage[3]), lage, this.indexMap);
+    }
+
+    /**
+     * Hover pick of the film viewport without stalling the frame.
+     *
+     * <p>{@link #pick(int, int, int, int)} reads synchronously: the CPU waits in the middle of
+     * the frame until the GPU has finished everything queued before, the world pass included.
+     * Here the same region goes into a pixel pack buffer behind a fence and is evaluated
+     * later -- the established asynchronous readback (PBO + {@code glFenceSync}, as behind
+     * Unity's AsyncGPUReadback). Measured 27.09.2026: 0.1 ms per frame paused, 0.3 ms in
+     * playback, see docs/PERFORMANCE-ASYNC-PICK-2026-09-27.md.
+     *
+     * <p>The exact accessors ({@link #getIndex}, {@link #hasPicked}, {@link #getPicked}) wait
+     * for it, so clicks and drags still get the result of the last drawn frame. Only drawing in
+     * the same frame takes the latest completed one ({@link #hasPickedOhneWarten}).
+     * Reference path: {@code -Dbbs.stencil.syncPick=true} reads synchronously as before.
+     */
+    public void pickAsync(int x, int y, int radius, int handleMax)
+    {
+        if (radius <= 0 || this.framebuffer == null || Boolean.getBoolean("bbs.stencil.syncPick"))
         {
-            this.index = 0;
+            this.pick(x, y, radius, handleMax);
 
             return;
         }
 
-        int needed = w * h * 4;
+        /* The previous request must leave the buffer before it is reused (normally long done). */
+        this.aufloesen(true);
 
-        /* A large tolerance × GUI scale can make this region far bigger than the
-         * LWJGL frame stack holds, so read into a cached heap buffer instead. */
-        if (this.pickBuffer == null || this.pickBuffer.capacity() < needed)
+        int[] lage = StencilAuswertung.region(this.framebuffer, x, y, radius, handleMax);
+
+        if (lage == null)
         {
-            this.pickBuffer = BufferUtils.createFloatBuffer(needed);
+            this.index = 0;
+        }
+        else
+        {
+            this.leser().anfordern(this.framebuffer, lage);
+        }
+    }
+
+    private void aufloesen(boolean warten)
+    {
+        if (this.leser == null || !this.leser.ausstehend())
+        {
+            return;
         }
 
-        FloatBuffer floats = this.pickBuffer;
+        Map<Integer, Pair<Form, String>> karte = this.ausstehendeKarte == null ? new HashMap<>() : this.ausstehendeKarte;
+        int ergebnis = this.leser.aufloesen(warten,
+            (daten, lage) -> StencilAuswertung.auswerten(this.framebuffer, daten, lage, karte));
 
-        floats.clear();
-        this.leseEigenenPuffer(x0, y0, w, h, floats);
-
-        /* ⚗️ ROHE WERTE, BEVOR DIE ALPHA-ANNAHME GREIFT (2026-08-04).
-         *
-         * Die Schleife unten ueberspringt jeden Texel mit alpha < 1. Steht in diesem Puffer
-         * eine Kennung MIT alpha 0, sieht sie von aussen exakt aus wie ein leerer Puffer --
-         * und der sichtbare Umriss, der dieselbe Textur im Shader liest, widerspricht dem.
-         * Genau dieser Fehlertyp ("alpha != 0 als Annahme IM Messgeraet") hat hier schon
-         * einmal Stunden gekostet. Also erst die rohen Maxima, dann urteilen. */
-        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        if (ergebnis == StencilLeser.KEIN_ERGEBNIS)
         {
-            float maxA = 0F;
-            float maxRGB = 0F;
-            int mitte = (((y - y0) * w) + (x - x0)) * 4;
-
-            for (int i = 0; i + 3 < needed; i += 4)
-            {
-                maxA = Math.max(maxA, floats.get(i + 3));
-                maxRGB = Math.max(maxRGB, Math.max(floats.get(i), Math.max(floats.get(i + 1), floats.get(i + 2))));
-            }
-
-            mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.roh",
-                "maxAlpha=" + maxA + " maxRGB=" + maxRGB
-                    + " mitte=" + (mitte >= 0 && mitte + 3 < needed
-                        ? floats.get(mitte) + "/" + floats.get(mitte + 1) + "/"
-                            + floats.get(mitte + 2) + "/" + floats.get(mitte + 3)
-                        : "ausserhalb")
-                    + " region=" + x0 + "," + y0 + " " + w + "x" + h);
+            return;
         }
 
+        /* The index belongs to the frame that issued the read, and so does its map. */
+        this.ausstehendeKarte = this.indexMap;
+        this.indexMap = karte;
+        this.index = ergebnis;
+    }
+
+    private void verwerfen()
+    {
+        if (this.leser != null)
         {
-            int centerId = 0;
-            int nearestHandle = 0;
-            int nearestAny = 0;
-            long nearestDist = Long.MAX_VALUE;
-            long nearestAnyDist = Long.MAX_VALUE;
-            long radiusSq = (long) radius * radius;
-
-            for (int py = 0; py < h; py++)
-            {
-                for (int px = 0; px < w; px++)
-                {
-                    int base = (py * w + px) * 4;
-
-                    if ((int) (floats.get(base + 3) * 255F) < 1)
-                    {
-                        continue;
-                    }
-
-                    int id = (int) (floats.get(base) * 255F)
-                        | ((int) (floats.get(base + 1) * 255F) << 8)
-                        | ((int) (floats.get(base + 2) * 255F) << 16);
-                    int fx = x0 + px;
-                    int fy = y0 + py;
-
-                    if (fx == x && fy == y)
-                    {
-                        centerId = id;
-                    }
-
-                    long dx = fx - x;
-                    long dy = fy - y;
-                    long dist = dx * dx + dy * dy;
-
-                    if (id >= 1 && id <= handleMax)
-                    {
-                        if (dist <= radiusSq && dist < nearestDist)
-                        {
-                            nearestDist = dist;
-                            nearestHandle = id;
-                        }
-                    }
-                    else if (id != 0 && dist <= radiusSq && dist < nearestAnyDist)
-                    {
-                        nearestAnyDist = dist;
-                        nearestAny = id;
-                    }
-                }
-            }
-
-            /* Blenders Klick-Toleranz (view3d_select: 14->9->5px-Kaskade um den Cursor):
-             * Gizmo-Handles gewinnen, dann der exakte Pixel, dann die NAECHSTE beliebige
-             * Kennung im Radius — sonst sind duenne Wire-Widgets und schmale Marker nur
-             * pixelgenau klickbar und fuehlen sich tot an. */
-            this.index = nearestHandle != 0 ? nearestHandle : (centerId != 0 ? centerId : nearestAny);
-
-            /* Messfuehler 2026-08-02, zweiter Anlauf: das Leseziel stimmt inzwischen
-             * (gebunden=29=eigener), der Index bleibt 0. Diese Zeile trennt die zwei
-             * verbliebenen Ursachen -- LEERER Puffer (Bildgraph zeichnet erst spaeter,
-             * dann ist deckung=0) gegen FALSCHE STELLE (Puffer traegt Kennungen, nur
-             * nicht unter der Maus, dann ist deckung>0 bei maxId>0). */
-            if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
-            {
-                int deckung = 0;
-                int maxId = 0;
-
-                for (int py = 0; py < h; py++)
-                {
-                    for (int px = 0; px < w; px++)
-                    {
-                        int base = (py * w + px) * 4;
-
-                        if ((int) (floats.get(base + 3) * 255F) < 1)
-                        {
-                            continue;
-                        }
-
-                        deckung++;
-                        maxId = Math.max(maxId, (int) (floats.get(base) * 255F)
-                            | ((int) (floats.get(base + 1) * 255F) << 8)
-                            | ((int) (floats.get(base + 2) * 255F) << 16));
-                    }
-                }
-
-                Texture t = this.framebuffer.getMainTexture();
-
-                mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.inhalt",
-                    "deckung=" + deckung + "/" + (w * h) + " maxId=" + maxId
-                        + " region=" + x0 + "," + y0 + " " + w + "x" + h
-                        + " textur=" + t.width + "x" + t.height);
-            }
-
-            /* Messfuehler 2026-08-02: prueft die ANNAHME aus ModelInstance#fillStencilMap --
-             * dass orderedGroups/orderedBones der Reihenfolge entspricht, die
-             * BOBJModelVAO.updateMesh als Knochenteil ins Licht-Attribut backt. Der
-             * Formteil kommt seit 869c910a7 an; ob die SUMME den richtigen Knochen
-             * trifft, sagt erst der zurueckgelesene Name.
-             *
-             * Steht HIER und nicht im Aufrufer: UIFilmController ist Mixin-Ziel eines
-             * Redirectors, dessen Neuwebung beim Hotswap scheitert (ClassFormatError).
-             * Diese Klasse ist ungewoben und damit live tauschbar. */
-            if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
-            {
-                Pair<Form, String> getroffen = this.getPicked();
-
-                mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.getroffen",
-                    "index=" + this.index
-                        + " knochen=" + (getroffen == null ? "NICHTS" : "'" + getroffen.b + "'")
-                        + " gizmoTreffer=" + nearestHandle + " mitte=" + centerId);
-            }
+            this.leser.verwerfen();
         }
+    }
+
+    private StencilLeser leser()
+    {
+        if (this.leser == null)
+        {
+            this.leser = new StencilLeser();
+        }
+
+        return this.leser;
     }
 
     public void unbind(StencilMap map)
     {
         this.unbind();
 
-        this.indexMap.clear();
-        this.indexMap.putAll(map.indexMap);
+        /* A pending asynchronous pick keeps the map of ITS frame until it is resolved. */
+        Map<Integer, Pair<Form, String>> ziel = this.indexMap;
+
+        if (this.leser != null && this.leser.ausstehend())
+        {
+            if (this.ausstehendeKarte == null)
+            {
+                this.ausstehendeKarte = new HashMap<>();
+            }
+
+            ziel = this.ausstehendeKarte;
+        }
+
+        ziel.clear();
+        ziel.putAll(map.indexMap);
     }
 
     public void unbind()
@@ -753,12 +603,15 @@ public class StencilFormFramebuffer
 
     public void clearPicking()
     {
+        this.verwerfen();
         this.index = 0;
         this.indexMap.clear();
     }
 
     public boolean hasPicked()
     {
+        this.aufloesen(true);
+
         return this.index > 0;
     }
 }

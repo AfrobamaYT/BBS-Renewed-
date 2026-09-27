@@ -1388,14 +1388,14 @@ public class UIFilmController extends UIElement implements GizmoViewport
             StencilAnzeige.umriss(context, area, this.panel, this.stencil, altPressed, REPLAY_STENCIL_OFFSET, this.stencilMap.widgetBasis);
         }
 
-        if (!this.stencil.hasPicked())
+        if (!this.stencil.hasPickedOhneWarten())
         {
             return;
         }
 
-        int index = this.stencil.getIndex();
+        int index = this.stencil.getIndexOhneWarten();
         Texture texture = this.stencil.getFramebuffer().getMainTexture();
-        Pair<Form, String> pair = this.stencil.getPicked();
+        Pair<Form, String> pair = this.stencil.getPickedOhneWarten();
         int w = texture.width;
         int h = texture.height;
 
@@ -1694,7 +1694,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
             int y = (int) ((1F - (context.mouseY - viewport.y) / (float) viewport.h) * mainTexture.height);
             int radius = Math.round(BBSSettings.gizmoHoverTolerance.get() * mainTexture.width / (float) viewport.w);
 
-            this.stencil.pick(x, y, radius, Gizmo.STENCIL_MAX);
+            this.stencil.pickAsync(x, y, radius, Gizmo.STENCIL_MAX);
         }
 
         this.stencil.unbind(this.stencilMap);
