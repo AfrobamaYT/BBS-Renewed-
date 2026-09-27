@@ -23,7 +23,6 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -57,7 +56,7 @@ import java.util.Map;
  */
 public class GizmoRinge
 {
-    private static final int BOGEN_CACHE_MAX = 12;
+    private static final int BOGEN_CACHE_MAX = 16;
 
     /** Ein Ring liegt in der XZ-Ebene; fuer die anderen Achsen wird er gedreht. */
     private GehaltenesNetz ring;
@@ -65,10 +64,13 @@ public class GizmoRinge
     private GehaltenesNetz kugel;
 
     /**
-     * Camera-facing rings used to be rebuilt for every render/picking pass. Cache the
-     * exact CPU-transformed and vertex-coloured output of that old path. Keeping the pose
-     * and colour in the key preserves its floating-point and UNORM colour quantisation;
-     * only tessellation/upload are skipped on a hit.
+     * Visible ring arcs in the gizmo's LOCAL space, tessellated by the unchanged
+     * {@code Draw.arc3D} and vertex-coloured exactly like before (same UNORM quantisation,
+     * so picking IDs stay identical). The pose is not part of the key: it goes to the GPU
+     * as the model-view matrix, the way {@link #ringZeichnen} draws the full ring. A moving
+     * bone or camera therefore reuses the uploaded arc instead of re-tessellating,
+     * re-transforming and re-uploading 13824 vertices per ring and pass. Arcs are quantised
+     * to {@code Gizmo.RING_OCCLUSION_SAMPLES}, so only a few keys are live at once.
      */
     private final LinkedHashMap<BogenSchluessel, GehaltenesNetz> boegen =
         new LinkedHashMap<>(16, 0.75F, true);
@@ -124,11 +126,10 @@ public class GizmoRinge
         return this.kugel;
     }
 
-    private GehaltenesNetz bogen(PoseStack stapel, Axis achse, float radius, float dicke,
+    private GehaltenesNetz bogen(Axis achse, float radius, float dicke,
         float startDeg, float sweepDeg, float r, float g, float b)
     {
-        BogenSchluessel schluessel = new BogenSchluessel(
-            stapel.last().pose(), achse, radius, dicke, startDeg, sweepDeg, r, g, b);
+        BogenSchluessel schluessel = new BogenSchluessel(achse, radius, dicke, startDeg, sweepDeg, r, g, b);
         GehaltenesNetz netz = this.boegen.get(schluessel);
 
         if (netz != null)
@@ -141,11 +142,9 @@ public class GizmoRinge
             BufferBuilder bauer = SofortZeichner.beginnen(
                 speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-            /* Intentionally the exact old operation: transform and colour while emitting. */
-            if (!GizmoRingVertices.emit(bauer, stapel, achse, radius, dicke, r, g, b, startDeg, sweepDeg))
-            {
-                Draw.arc3D(bauer, stapel, achse, radius, dicke, r, g, b, startDeg, sweepDeg);
-            }
+            /* The original tessellator with an identity pose: axis rotation and colour are
+             * baked in, the caller's pose is applied as the model-view matrix. */
+            Draw.arc3D(bauer, new PoseStack(), achse, radius, dicke, r, g, b, startDeg, sweepDeg);
             netz = new GehaltenesNetz(bauer.buildOrThrow());
         }
 
@@ -216,9 +215,9 @@ public class GizmoRinge
     }
 
     /**
-     * Draw exactly the arc produced by {@code Draw.arc3D}, but reuse its uploaded geometry
-     * across the depth, visible and picking passes. A moving camera can change the arc; the
-     * bounded cache keeps recent quantized arcs without retaining an unbounded GPU history.
+     * Draw the arc produced by {@code Draw.arc3D}, reusing its uploaded local-space geometry
+     * across frames, poses and the visible and picking passes. The bounded cache keeps the
+     * recently visible quantised arcs without retaining an unbounded GPU history.
      */
     public void abschnittZeichnen(PoseStack stapel, Axis achse, float radius, float dicke,
         float startDeg, float sweepDeg, float r, float g, float b)
@@ -250,8 +249,8 @@ public class GizmoRinge
             return;
         }
 
-        GehaltenesNetz netz = this.bogen(stapel, achse, radius, dicke, startDeg, sweepDeg, r, g, b);
-        Matrix4f modellAnsicht = RenderSystem.getModelViewMatrixCopy();
+        GehaltenesNetz netz = this.bogen(achse, radius, dicke, startDeg, sweepDeg, r, g, b);
+        Matrix4f modellAnsicht = modellAnsicht(stapel);
         GpuTextureView pickZiel = PickZiel.aktiv();
 
         if (pickZiel != null)
@@ -346,9 +345,8 @@ public class GizmoRinge
         float groesse = BBSSettings.axesScale.get();
         float radius = 0.22F * groesse;
         float dicke = 0.02F * groesse * BBSSettings.axesThickness.get();
-        GehaltenesNetz netz = this.bogen(
-            stapel, Axis.Y, radius, dicke, 0F, 360F, r, g, b);
-        Matrix4f modellAnsicht = RenderSystem.getModelViewMatrixCopy();
+        GehaltenesNetz netz = this.bogen(Axis.Y, radius, dicke, 0F, 360F, r, g, b);
+        Matrix4f modellAnsicht = modellAnsicht(stapel);
         org.joml.Vector4f alpha = new org.joml.Vector4f(1F, 1F, 1F, a);
         GpuTextureView farbZiel = Zeichenziel.farbe();
 
@@ -481,9 +479,8 @@ public class GizmoRinge
         private final int r;
         private final int g;
         private final int b;
-        private final int[] pose;
 
-        private BogenSchluessel(Matrix4f pose, Axis achse, float radius, float dicke,
+        private BogenSchluessel(Axis achse, float radius, float dicke,
             float start, float sweep, float r, float g, float b)
         {
             this.achse = achse.ordinal();
@@ -494,13 +491,6 @@ public class GizmoRinge
             this.r = Float.floatToRawIntBits(r);
             this.g = Float.floatToRawIntBits(g);
             this.b = Float.floatToRawIntBits(b);
-            float[] matrix = pose.get(new float[16]);
-            this.pose = new int[matrix.length];
-
-            for (int i = 0; i < matrix.length; i++)
-            {
-                this.pose[i] = Float.floatToRawIntBits(matrix[i]);
-            }
         }
 
         @Override
@@ -514,8 +504,7 @@ public class GizmoRinge
             return this.achse == other.achse
                 && this.radius == other.radius && this.dicke == other.dicke
                 && this.start == other.start && this.sweep == other.sweep
-                && this.r == other.r && this.g == other.g && this.b == other.b
-                && Arrays.equals(this.pose, other.pose);
+                && this.r == other.r && this.g == other.g && this.b == other.b;
         }
 
         @Override
@@ -528,9 +517,8 @@ public class GizmoRinge
             result = 31 * result + this.sweep;
             result = 31 * result + this.r;
             result = 31 * result + this.g;
-            result = 31 * result + this.b;
 
-            return 31 * result + Arrays.hashCode(this.pose);
+            return 31 * result + this.b;
         }
     }
 }
