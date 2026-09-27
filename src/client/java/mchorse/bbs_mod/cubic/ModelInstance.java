@@ -399,9 +399,11 @@ public class ModelInstance implements IModelInstance
 
             CubicRenderer.processRenderModel(renderer, null, stack, model);
 
+            int stelle = 0;
+
             for (ModelGroup group : model.getAllGroups())
             {
-                MatrixCacheEntry entry = bones.acquire(group.id);
+                MatrixCacheEntry entry = bones.acquire(stelle++, group.id);
                 Matrix4f matrix = entry.matrix().set(renderer.matrices.get(group.index));
                 Matrix4f origin = entry.origin().set(renderer.origins.get(group.index));
 
@@ -425,9 +427,11 @@ public class ModelInstance implements IModelInstance
         {
             model.getArmature().setupMatrices();
 
+            int stelle = 0;
+
             for (BOBJBone orderedBone : model.getArmature().orderedBones)
             {
-                MatrixCacheEntry entry = bones.acquire(orderedBone.name);
+                MatrixCacheEntry entry = bones.acquire(stelle++, orderedBone.name);
                 Matrix4f matrix = entry.matrix().identity();
                 Matrix4f origin = entry.origin().identity();
 
