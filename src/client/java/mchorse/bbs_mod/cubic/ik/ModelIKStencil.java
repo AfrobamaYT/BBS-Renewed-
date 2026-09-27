@@ -96,8 +96,8 @@ public final class ModelIKStencil
         /* Ab hier Widget-Kennungen — der Umriss-Shader endet an dieser Grenze. */
         stencilMap.widgetBeginn();
 
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
+            ByteBufferBuilder speicher = mchorse.bbs_mod.cubic.render.ControlVertexBatch.speicher(1);
             BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
             if (rig != null)

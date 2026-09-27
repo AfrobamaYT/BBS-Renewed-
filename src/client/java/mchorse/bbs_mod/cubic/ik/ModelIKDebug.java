@@ -138,8 +138,8 @@ public final class ModelIKDebug
         java.util.List<RigCtrl.Eintrag> rig = instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bm
             ? RigCtrl.fuer(bm.getArmature(), form.model.get()) : null;
 
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(262144))
         {
+            ByteBufferBuilder speicher = mchorse.bbs_mod.cubic.render.ControlVertexBatch.speicher(0);
             BufferBuilder wire = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
             float hidden = config.hiddenOpacity.get();
 

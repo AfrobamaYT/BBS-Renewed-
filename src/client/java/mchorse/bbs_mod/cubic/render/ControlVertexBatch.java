@@ -2,6 +2,7 @@ package mchorse.bbs_mod.cubic.render;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import mchorse.bbs_mod.client.BBSRendering;
 import net.fabricmc.loader.api.FabricLoader;
@@ -20,6 +21,9 @@ public final class ControlVertexBatch implements AutoCloseable
 {
     private static boolean enabled = !Boolean.getBoolean("bbs.controls.scalarVertices");
     private static ControlVertexBatch current;
+
+    /** Persistent storage of the control passes, see {@link #speicher}. Created lazily. */
+    private static ByteBufferBuilder[] speicher;
 
     private final BufferBuilder builder;
     private final Writer writer;
@@ -46,6 +50,33 @@ public final class ControlVertexBatch implements AutoCloseable
 
         /* The optional API is resolved only after Sodium was found. */
         return Sodium.begin(builder);
+    }
+
+    /**
+     * Reused vertex storage for one control pass ({@code 0} world, {@code 1} picking).
+     *
+     * <p>Both passes started a fresh ByteBufferBuilder every frame (4 KB and 256 KB) and grew
+     * it to ~0.5 MB by doubling copies; vanilla keeps such builders per render type as well.
+     * The mesh built from it must be closed before the pass returns, as SofortZeichner and
+     * GehaltenesNetz do; {@code clear()} otherwise warns and discards.
+     */
+    public static ByteBufferBuilder speicher(int pass)
+    {
+        RenderSystem.assertOnRenderThread();
+
+        if (speicher == null)
+        {
+            speicher = new ByteBufferBuilder[2];
+        }
+
+        if (speicher[pass] == null)
+        {
+            speicher[pass] = new ByteBufferBuilder(1 << 20);
+        }
+
+        speicher[pass].clear();
+
+        return speicher[pass];
     }
 
     public static boolean quad(BufferBuilder builder,
