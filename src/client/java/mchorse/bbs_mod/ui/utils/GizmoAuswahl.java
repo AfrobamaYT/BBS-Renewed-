@@ -10,6 +10,7 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.graphics.PickZiel;
+import mchorse.bbs_mod.graphics.Sammelpass;
 import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.ui.utils.Gizmo.Handle;
@@ -33,6 +34,21 @@ import mchorse.bbs_mod.utils.Axis;
 final class GizmoAuswahl
 {
     static void achsenZeichnen(Gizmo gizmo, PoseStack stack, StencilMap map, float axisSize, float axisOffset)
+    {
+        /* All pick ids go to the same picking target: one render pass instead of one per part. */
+        Sammelpass.beginnen();
+
+        try
+        {
+            kennungenZeichnen(gizmo, stack, map, axisSize, axisOffset);
+        }
+        finally
+        {
+            Sammelpass.beenden();
+        }
+    }
+
+    private static void kennungenZeichnen(Gizmo gizmo, PoseStack stack, StencilMap map, float axisSize, float axisOffset)
     {
         float scale = BBSSettings.axesScale.get();
         float thickness = BBSSettings.axesThickness.get();

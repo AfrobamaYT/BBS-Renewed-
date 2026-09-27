@@ -172,14 +172,18 @@ public class GehaltenesNetz implements AutoCloseable
         RenderPass.RenderArea bereich = Zeichenbereich.begrenztAuf(
             Zeichenbereich.aktiv(), farbZiel.getWidth(0), farbZiel.getHeight(0));
 
-        try (RenderPass durchgang = tiefenZiel == null
+        /* Inside a Sammelpass scope consecutive draws to the same target share one pass. */
+        RenderPass geteilt = Sammelpass.holen(farbZiel, tiefenZiel, bereich);
+        RenderPass durchgang = geteilt != null ? geteilt : tiefenZiel == null
             ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
                 () -> "bbs-gehalten", farbZiel, Optional.empty())
             : bereich == null
                 ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
                     () -> "bbs-gehalten", farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty())
                 : RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                    () -> "bbs-gehalten", farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty(), bereich))
+                    () -> "bbs-gehalten", farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty(), bereich);
+
+        try
         {
             durchgang.setPipeline(pipeline);
 
@@ -203,6 +207,13 @@ public class GehaltenesNetz implements AutoCloseable
             durchgang.drawIndexed(this.zustand.indexCount(), 1, 0, 0, 0);
 
             messen("gezeichnet", pipeline);
+        }
+        finally
+        {
+            if (geteilt == null)
+            {
+                durchgang.close();
+            }
         }
     }
 

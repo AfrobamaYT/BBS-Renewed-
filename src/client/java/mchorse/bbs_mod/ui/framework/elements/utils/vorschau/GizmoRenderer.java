@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.forms.FormSammler;
 import mchorse.bbs_mod.graphics.Messpunkt;
 import mchorse.bbs_mod.graphics.Projektion;
+import mchorse.bbs_mod.graphics.Sammelpass;
 import mchorse.bbs_mod.graphics.Zeichenziel;
 import mchorse.bbs_mod.ui.utils.Gizmo;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
@@ -96,8 +97,20 @@ public class GizmoRenderer extends PictureInPictureRenderer<GizmoZustand>
              * ⛔ AUSNAHMEN ABFANGEN. Hier wartet kein Aufrufer mehr, der etwas auffangen
              * koennte: eine kaputte Stelle im Gizmo risse sonst das ganze Spiel mit. Ein
              * unsichtbares Gizmo ist ein Fehler, ein Absturz kostet dem Nutzer seine Szene. */
+            /* All gizmo parts go to the same PIP target: one render pass instead of one per part. */
             FormSammler.mitEigenemSammler(() ->
-                Gizmo.INSTANCE.zeichneInTextur(zustand.ansicht(), zustand.viewportSkalierung()));
+            {
+                Sammelpass.beginnen();
+
+                try
+                {
+                    Gizmo.INSTANCE.zeichneInTextur(zustand.ansicht(), zustand.viewportSkalierung());
+                }
+                finally
+                {
+                    Sammelpass.beenden();
+                }
+            });
         }
         catch (Throwable t)
         {
