@@ -107,7 +107,7 @@ public final class SofortZeichner
          * Zeichenweg selbst ist derselbe wie beim gehaltenen Netz -- er steht dort einmal
          * und nicht zweimal, damit ein spaeterer Eingriff (Sampler, Ziel, Uniform-Block)
          * nicht an einer der beiden Kopien vorbeigeht. */
-        try (GehaltenesNetz kurzlebig = new GehaltenesNetz(netz))
+        try (GehaltenesNetz kurzlebig = GehaltenesNetz.kurzlebig(netz))
         {
             kurzlebig.zeichnen(pipeline, modelView, farbe, textur, ziel, null);
         }
@@ -128,7 +128,7 @@ public final class SofortZeichner
             return;
         }
 
-        try (GehaltenesNetz kurzlebig = new GehaltenesNetz(netz))
+        try (GehaltenesNetz kurzlebig = GehaltenesNetz.kurzlebig(netz))
         {
             kurzlebig.zeichnen(pipeline, modelView, farbe, textur, farbZiel, tiefenZiel, null);
         }

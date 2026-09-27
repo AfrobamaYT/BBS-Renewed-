@@ -325,7 +325,7 @@ public final class ModelIKDebug
                 return;
             }
 
-            try (GehaltenesNetz shared = new GehaltenesNetz(mesh))
+            try (GehaltenesNetz shared = GehaltenesNetz.kurzlebig(mesh))
             {
                 Matrix4f identity = new Matrix4f();
 

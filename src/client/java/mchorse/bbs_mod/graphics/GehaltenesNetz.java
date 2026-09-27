@@ -44,6 +44,9 @@ public class GehaltenesNetz implements AutoCloseable
 {
     private GpuBuffer ecken;
 
+    /** Was gebunden wird: der eigene Puffer oder ein Stueck aus Vanillas Bildspeicher. */
+    private GpuBufferSlice eckenAnsicht;
+
     /**
      * Eigene Indizes gibt es nur bei sortierter Durchsichtigkeit — dort bestimmt die
      * Reihenfolge das Bild. Sonst bleibt das Feld leer und es wird Mojangs geteilter
@@ -55,11 +58,40 @@ public class GehaltenesNetz implements AutoCloseable
 
     public GehaltenesNetz(MeshData netz)
     {
+        this(netz, false);
+    }
+
+    /**
+     * Fuer Netze, die nur im laufenden Bild gezeichnet werden (SofortZeichner, Rig-Widgets).
+     *
+     * <p>Die Ecken landen in Vanillas {@code TransientMemory} -- persistent gemappte Bloecke,
+     * die je Bild rotiert werden -- statt in einem eigenen Puffer, der nach dem Zug sofort
+     * wieder geloescht wird. Anlegen und Loeschen kosteten im Rig-Film 4,1-4,5 % (Playback) bzw.
+     * 5,2-5,3 % (Stillstand) des Renderthreads, danach 1,3-1,8 % (27.09.2026). Das Stueck gilt
+     * nur in diesem Bild.</p>
+     */
+    public static GehaltenesNetz kurzlebig(MeshData netz)
+    {
+        return new GehaltenesNetz(netz, true);
+    }
+
+    private GehaltenesNetz(MeshData netz, boolean kurzlebig)
+    {
         try (MeshData zuSchliessen = netz)
         {
             this.zustand = zuSchliessen.drawState();
-            this.ecken = RenderSystem.getDevice().createBuffer(
-                () -> "bbs-gehaltene-ecken", GpuBuffer.USAGE_VERTEX, zuSchliessen.vertexBuffer());
+
+            if (kurzlebig)
+            {
+                this.eckenAnsicht = RenderSystem.getDevice().createCommandEncoder().transientMemory()
+                    .uploadGpu(zuSchliessen.vertexBuffer(), 16L, GpuBuffer.USAGE_VERTEX);
+            }
+            else
+            {
+                this.ecken = RenderSystem.getDevice().createBuffer(
+                    () -> "bbs-gehaltene-ecken", GpuBuffer.USAGE_VERTEX, zuSchliessen.vertexBuffer());
+                this.eckenAnsicht = this.ecken.slice();
+            }
 
             ByteBuffer indizes = zuSchliessen.indexBuffer();
 
@@ -114,7 +146,7 @@ public class GehaltenesNetz implements AutoCloseable
     public void zeichnen(RenderPipeline pipeline, Matrix4f modelView, Vector4f farbe,
         TextureSetup textur, GpuTextureView farbZiel, GpuTextureView tiefenZiel, Consumer<RenderPass> zusatz)
     {
-        if (this.ecken == null || this.zustand.vertexCount() <= 0)
+        if (this.eckenAnsicht == null || this.zustand.vertexCount() <= 0)
         {
             messen("leer", pipeline);
 
@@ -202,7 +234,7 @@ public class GehaltenesNetz implements AutoCloseable
                 zusatz.accept(durchgang);
             }
 
-            durchgang.setVertexBuffer(0, this.ecken.slice());
+            durchgang.setVertexBuffer(0, this.eckenAnsicht);
             durchgang.setIndexBuffer(indizes, indexTyp);
             durchgang.drawIndexed(this.zustand.indexCount(), 1, 0, 0, 0);
 
@@ -335,6 +367,8 @@ public class GehaltenesNetz implements AutoCloseable
     @Override
     public void close()
     {
+        this.eckenAnsicht = null;
+
         if (this.ecken != null)
         {
             this.ecken.close();
