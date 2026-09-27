@@ -45,6 +45,7 @@
     "bbs.ValueChangeUndoMemoMixin",
     "bbs.UIFormUndoHandlerSubmitUndoMixin",
     "Batcher2DBackgroundAlphaMixin",
+    "GuiRendererSortierungMixin",
     "CameraClipContextSkipOurClipMixin",
     "ContentTypeFilmsAllWorldsMixin",
     "UIToggleSkinMixin",
