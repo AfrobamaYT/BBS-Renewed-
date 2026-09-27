@@ -253,6 +253,12 @@ public class BOBJModelVAO implements IModelVAO
     {
         this.skinCacheLeeren();
 
+        if (this.verzug != null)
+        {
+            this.verzug.close();
+            this.verzug = null;
+        }
+
         if (this.gpuSkin != null)
         {
             this.gpuSkin.close();
@@ -403,6 +409,25 @@ public class BOBJModelVAO implements IModelVAO
         return gerechnet ? this.verzogen : basis;
     }
 
+    /** GPU-Weg: der Verzug duenn besetzt und ohne Zwischenspeicher je Upload (siehe {@link Verzug}). */
+    private Verzug verzug;
+
+    /** @return ob ein Shape Key wirkt; der verzogene Stand liegt dann in {@code verzug.daten()} */
+    private boolean verziehen()
+    {
+        if (this.renderData.shapeData.isEmpty() || this.shapeKeys == null || this.shapeKeys.shapeKeys.isEmpty())
+        {
+            return false;
+        }
+
+        if (this.verzug == null)
+        {
+            this.verzug = new Verzug(this.renderData.posData, this.renderData.shapeData);
+        }
+
+        return this.verzug.anwenden(this.shapeKeys.shapeKeys);
+    }
+
     /** B-Bone-Segmentwahl je Vertex-Gewicht, einmal aus der Ruhelage (siehe {@code BOBJHaut}). */
     private mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente;
 
@@ -475,7 +500,6 @@ public class BOBJModelVAO implements IModelVAO
 
             if (pose == null)
             {
-                float[] oldVertices = this.ausgangslagen();
                 float[] oldNormals = this.renderData.normData;
                 pose = this.neueSkinPose(gpu);
                 mchorse.bbs_mod.bobj.BOBJHaut.Segmente segmente = this.segmente();
@@ -491,22 +515,26 @@ public class BOBJModelVAO implements IModelVAO
                 {
                     this.hautPalette.aktualisierenMatrizen(matrices);
                     pose.skinMatrices = this.gpuSkin.writePalette(this.hautPalette, pose.skinMatrices);
-                    pose.morphed = oldVertices != this.renderData.posData;
+                    pose.morphed = this.verziehen();
 
                     if (pose.morphed)
                     {
                         if (pose.position == null)
                         {
-                            pose.position = puffer("bobj-morph-pose", oldVertices);
+                            pose.position = RenderSystem.getDevice().createBuffer(() -> "bobj-morph-pose",
+                                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, this.verzug.daten());
                         }
                         else
                         {
-                            schreiben(pose.position, oldVertices);
+                            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(
+                                pose.position.slice(), this.verzug.daten());
                         }
                     }
                 }
                 else
                 {
+                    float[] oldVertices = this.ausgangslagen();
+
                     this.hautPalette.aktualisieren(matrices);
 
                     if (this.count >= PARALLEL_SKIN_THRESHOLD && ForkJoinPool.getCommonPoolParallelism() > 1)
