@@ -220,11 +220,16 @@ public class ModelVAORenderer
          * laufen 22 Kacheln verschiedener Typen je Bild -- der letzte Wert gehoerte dort
          * einer fremden Kachel, und "rueckfall" sah nach einem Modell-Befund aus. Getrennt
          * gezaehlt sagen die ZAHLEN, welcher Weg wie oft geht. */
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle(
-            "modell.textur." + (durchgereicht ? "parameter" : "rueckfall"),
-            textur == null
-                ? "NULL"
-                : "id=" + textur.id + " " + textur.width + "x" + textur.height);
+        /* Einzelheiten nur bei laufender Messung bauen (siehe Messpunkt.istAn): ungeschuetzt
+         * kosteten die drei Einzelheiten dieses Zugs 0,8-1,0 % des Renderthreads (27.09.2026). */
+        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle(
+                "modell.textur." + (durchgereicht ? "parameter" : "rueckfall"),
+                textur == null
+                    ? "NULL"
+                    : "id=" + textur.id + " " + textur.width + "x" + textur.height);
+        }
 
 
         RenderTarget ziel = Minecraft.getInstance().gameRenderer.mainRenderTarget();
@@ -272,33 +277,36 @@ public class ModelVAORenderer
         /* ⚗️ WELCHER ZWEIG GEWINNT? (2026-08-05, #13.) Die drei Ziele stehen hier in fester
          * Rangfolge, und welches greift, ist von aussen nicht zu sehen -- der Zug laeuft
          * durch, egal wohin er schreibt. Getrennte Schluessel, damit ZAHLEN antworten. */
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.ziel."
-            + (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null ? "pick"
-                : mchorse.bbs_mod.graphics.Zeichenziel.eigenes() ? "zeichenziel" : "hauptbild"),
-            /* Der AUSSCHNITT dazu: ein Zug ins richtige Ziel hinterlaesst trotzdem nichts,
-             * wenn der Ausschnitt ihn wegschneidet. Die Sammeltextur ist in Bildpunkten,
-             * ihr Zustand nennt aber GUI-Einheiten -- genau hier wuerde sich das zeigen. */
-            "ausschnitt=" + mchorse.bbs_mod.graphics.Zeichenbereich.aktiv()
-                + " zielgroesse=" + (farbZiel == null ? "null"
-                    : farbZiel.getWidth(0) + "x" + farbZiel.getHeight(0))
-                /* ⛔ HIER STAND DIE PROJEKTION -- UND SIE WAR EINE LUEGE (2026-08-05).
-                 *
-                 * `Projektion.lesen()` liefert NICHT die gebundene Abbildung, sondern den
-                 * eingefrorenen Kamerazustand des WELTdurchgangs; sein eigener Kommentar sagt
-                 * "nur waehrend eines Weltdurchgangs sinnvoll, ausserhalb steht dort der Wert
-                 * des letzten Bildes". Dieser Zug hier laeuft in der GUI-Phase. Gemeldet
-                 * wurde also auf JEDEM Pfad derselbe Weltwert (m33=0, Perspektive) -- was wie
-                 * ein Befund aussah ("Perspektive auf Pixelgeometrie") und keiner war.
-                 *
-                 * Eine lesbare Fassung der gebundenen Projektion gibt es nicht: sie liegt als
-                 * GPU-Puffer vor. Wer sie braucht, muss sie an der Setzstelle mitschreiben.
-                 * Bis dahin steht hier NICHTS statt einer Zahl, der man glaubt.
-                 *
-                 * Die Modellansicht darunter ist dagegen echt -- sie ist genau das Argument,
-                 * das writeTransform bekommt. */
-                + " mv[m30=" + String.format("%.3f", modelView.m30())
-                + " m31=" + String.format("%.3f", modelView.m31())
-                + " m32=" + String.format("%.3f", modelView.m32()) + "]");
+        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.ziel."
+                + (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null ? "pick"
+                    : mchorse.bbs_mod.graphics.Zeichenziel.eigenes() ? "zeichenziel" : "hauptbild"),
+                /* Der AUSSCHNITT dazu: ein Zug ins richtige Ziel hinterlaesst trotzdem nichts,
+                 * wenn der Ausschnitt ihn wegschneidet. Die Sammeltextur ist in Bildpunkten,
+                 * ihr Zustand nennt aber GUI-Einheiten -- genau hier wuerde sich das zeigen. */
+                "ausschnitt=" + mchorse.bbs_mod.graphics.Zeichenbereich.aktiv()
+                    + " zielgroesse=" + (farbZiel == null ? "null"
+                        : farbZiel.getWidth(0) + "x" + farbZiel.getHeight(0))
+                    /* ⛔ HIER STAND DIE PROJEKTION -- UND SIE WAR EINE LUEGE (2026-08-05).
+                     *
+                     * `Projektion.lesen()` liefert NICHT die gebundene Abbildung, sondern den
+                     * eingefrorenen Kamerazustand des WELTdurchgangs; sein eigener Kommentar sagt
+                     * "nur waehrend eines Weltdurchgangs sinnvoll, ausserhalb steht dort der Wert
+                     * des letzten Bildes". Dieser Zug hier laeuft in der GUI-Phase. Gemeldet
+                     * wurde also auf JEDEM Pfad derselbe Weltwert (m33=0, Perspektive) -- was wie
+                     * ein Befund aussah ("Perspektive auf Pixelgeometrie") und keiner war.
+                     *
+                     * Eine lesbare Fassung der gebundenen Projektion gibt es nicht: sie liegt als
+                     * GPU-Puffer vor. Wer sie braucht, muss sie an der Setzstelle mitschreiben.
+                     * Bis dahin steht hier NICHTS statt einer Zahl, der man glaubt.
+                     *
+                     * Die Modellansicht darunter ist dagegen echt -- sie ist genau das Argument,
+                     * das writeTransform bekommt. */
+                    + " mv[m30=" + String.format("%.3f", modelView.m30())
+                    + " m31=" + String.format("%.3f", modelView.m31())
+                    + " m32=" + String.format("%.3f", modelView.m32()) + "]");
+        }
 
         /* Modellansicht und Farbe gehen in Vanillas DynamicTransforms-Block. BBS setzt eine
          * EIGENE Modellansicht (die eingefangene, siehe captureModelView) — writeTransform
@@ -316,7 +324,7 @@ public class ModelVAORenderer
          * aber RGB = 0 — die Kennung kommt also nicht an, obwohl der Durchgang laeuft.
          * Diese Zeile sagt, WELCHE Kennung und WELCHER Modus hier ueberhaupt eingereicht
          * werden. Nur im Kennungs-Fenster, sonst waere es Rauschen aus dem Weltdurchgang. */
-        if (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null)
+        if (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null && mchorse.bbs_mod.graphics.Messpunkt.istAn())
         {
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("pick.einreichung",
                 "kennung=" + kennung + " passMode=" + passMode + " farbe=" + r + "," + g + "," + b + "," + a);
