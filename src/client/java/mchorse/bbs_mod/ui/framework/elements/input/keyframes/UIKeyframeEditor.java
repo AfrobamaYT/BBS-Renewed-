@@ -7,6 +7,7 @@ import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.settings.values.IValueListener;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditorUtils;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.IUIKeyframeGraph;
@@ -181,7 +182,7 @@ public class UIKeyframeEditor extends UIElement
         Pair<String, Boolean> bone = this.getBone();
         Keyframe[] recorded = new Keyframe[1];
 
-        BaseValue.edit(parent, (value) ->
+        BaseValue.edit(parent, IValueListener.FLAG_UNMERGEABLE, (value) ->
         {
             for (UIKeyframeSheet sheet : graph.getSheets())
             {
