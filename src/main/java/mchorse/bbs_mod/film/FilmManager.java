@@ -29,11 +29,11 @@ public class FilmManager extends BaseManager<Film>
             if (file.exists())
             {
                 MapType previousData = this.storage.load(file);
-                String previous = previousData.getString("bridge_journal");
+                String previous = FilmBridgeMetadata.read(previousData, "bridge_journal");
                 if (!previous.isEmpty())
                 {
                     JsonObject old = JsonParser.parseString(previous).getAsJsonObject();
-                    String incoming = data.getString("bridge_journal");
+                    String incoming = FilmBridgeMetadata.read(data, "bridge_journal");
                     if (incoming.isEmpty())
                     {
                         throw new IllegalStateException("stale save lacks the durable film journal");
@@ -47,8 +47,8 @@ public class FilmManager extends BaseManager<Film>
                 }
 
                 this.checkBridgePathRevisions(
-                    previousData.getString("bridge_path_revisions"),
-                    data.getString("bridge_path_revisions"));
+                    FilmBridgeMetadata.read(previousData, "bridge_path_revisions"),
+                    FilmBridgeMetadata.read(data, "bridge_path_revisions"));
             }
             return super.save(id, data);
         }

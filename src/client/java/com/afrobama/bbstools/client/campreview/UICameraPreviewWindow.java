@@ -88,7 +88,11 @@ public class UICameraPreviewWindow extends UIElement
                 /* Close button. */
                 if (context.mouseX >= this.closeBtnX() && context.mouseX < this.closeBtnX() + BUTTON_W)
                 {
-                    CameraPreviewRegistry.remove(this.preview.id);
+                    else
+                    {
+                        CameraPreviewRegistry.remove(this.preview.id);
+                        this.removeFromParent();
+                    }
                     return true;
                 }
 
@@ -195,13 +199,15 @@ public class UICameraPreviewWindow extends UIElement
             {
                 int top = y + HEADER_H;
                 int bottom = y + h;
+                int drawW = Math.min(w, Math.round((bottom-top) * (float)this.preview.fbWidth / this.preview.fbHeight));
+                int drawH = Math.round(drawW * (float)this.preview.fbHeight / this.preview.fbWidth);
                 /* Flip V because framebuffer is bottom-up vs UI top-down. */
                 context.batcher.texturedBox(
                     () -> RenderPipelines.GUI_TEXTURED,
                     vorschauTextur(texAnsicht),
                     Colors.WHITE,
-                    x, top,
-                    w, bottom - top,
+                    x + (w-drawW)/2, top + (bottom-top-drawH)/2,
+                    drawW, drawH,
                     0, this.preview.fbHeight,
                     this.preview.fbWidth, 0,
                     this.preview.fbWidth, this.preview.fbHeight);
