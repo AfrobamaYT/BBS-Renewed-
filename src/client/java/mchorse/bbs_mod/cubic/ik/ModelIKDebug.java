@@ -80,7 +80,8 @@ public final class ModelIKDebug
     {
         /* COLLECT_SUBMITS only queues shadows/text. Immediate control draws there
          * are discarded before the visible main pass, which calls us again. */
-        if (mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang)
+        if (mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang
+            || mchorse.bbs_mod.film.VideoExportSession.laeuftExport())
         {
             return;
         }
