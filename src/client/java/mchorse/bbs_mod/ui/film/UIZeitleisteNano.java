@@ -93,7 +93,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 		this.spuren.addAll(ZeitleisteSpuren.bauen(film, gewaehlt, this.offen, this.modus == 1, this.modus == 2));
 
-		StringBuilder kennung = new StringBuilder(film.getId());
+		StringBuilder kennung = new StringBuilder(film.getId()).append('d').append(film.camera.calculateDuration());
 
 		for (ZeitleisteSpuren.Zeile z : this.spuren)
 		{
