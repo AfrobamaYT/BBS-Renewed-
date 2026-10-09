@@ -116,7 +116,8 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         this.duration.limit(0, Float.MAX_VALUE).tooltip(UIKeys.KEYFRAMES_FORCED_DURATION);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            Interpolation interp = this.keyframe.getInterpolation();
+            Interpolation interp = new Interpolation("interp", this.keyframe.getInterpolation().getMap());
+            interp.copy(this.keyframe.getInterpolation());
             UIInterpolationContextMenu menu = new UIInterpolationContextMenu(interp);
 
             this.getContext().replaceContextMenu(menu.callback(() -> this.editor.getGraph().setInterpolation(interp)));
