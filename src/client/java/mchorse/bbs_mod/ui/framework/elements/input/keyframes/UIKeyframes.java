@@ -1451,8 +1451,7 @@ public class UIKeyframes extends UIElement
 
     public void applyState(KeyframeState state)
     {
-        this.xAxis.view(state.extra.getDouble("x_min"), state.extra.getDouble("x_max"));
-        this.currentGraph.restoreState(state.extra);
+        state.restoreGraph(this);
 
         List<UIKeyframeSheet> properties = this.currentGraph.getSheets();
 

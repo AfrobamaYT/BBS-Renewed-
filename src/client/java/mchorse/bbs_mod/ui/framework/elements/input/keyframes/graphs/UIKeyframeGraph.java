@@ -753,6 +753,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     @Override
     public void saveState(MapType extra)
     {
+        extra.putString("graph_sheet", this.sheet.id);
         extra.putDouble("y_min", this.yAxis.getMinValue());
         extra.putDouble("y_max", this.yAxis.getMaxValue());
     }
