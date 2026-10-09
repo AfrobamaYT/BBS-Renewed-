@@ -215,6 +215,13 @@ public class VideoRecorder
             }
 
             this.channel = Channels.newChannel(os);
+
+            if (Minecraft.getInstance().getDeltaTracker() instanceof mchorse.bbs_mod.mixin.client.RenderTickCounterAccessor timer)
+            {
+                timer.bbs$setTickDelta(0F);
+                timer.bbs$setDeltaTicks(0F);
+            }
+
             this.recording = true;
 
             UIUtils.playClick(2F);
