@@ -39,7 +39,8 @@ public class UIViewportHudNano extends UIElement
 	@Override
 	public void render(mchorse.bbs_mod.ui.framework.UIContext context)
 	{
-		String jetzt = this.text();
+		UIFilmPanel panel = filmPanel();
+		String jetzt = (panel == null ? "" : panel.getController().getPovMode() + "|") + this.text();
 
 		if (!jetzt.equals(this.stand))
 		{
@@ -85,11 +86,21 @@ public class UIViewportHudNano extends UIElement
 			return;
 		}
 
+		UIFilmPanel panel = filmPanel();
+		String erste = switch (panel.getController().getPovMode())
+		{
+			case 0 -> "Camera Perspective";
+			case 3 -> "First Person";
+			case 4 -> "Third Person Back";
+			case 5 -> "Third Person Front";
+			default -> "User Perspective";
+		};
+
 		/* Schattenkante, damit die Schrift ueber hellem Himmel und dunklem Boden lesbar bleibt. */
 		NanoStifte.text(vg, NanoDesign.BOLD, 11F * k, 1F * k, 12F * k + 1F * k, 0x0A0A0A,
-			"User Perspective", null);
+			erste, null);
 		NanoStifte.text(vg, NanoDesign.BOLD, 11F * k, 0F, 12F * k, 0xFFFFFF,
-			"User Perspective", null);
+			erste, null);
 
 		NanoStifte.text(vg, NanoDesign.SANS, 10F * k, 1F * k, 24F * k + 1F * k, 0x0A0A0A, zweite, null);
 		NanoStifte.text(vg, NanoDesign.SANS, 10F * k, 0F, 24F * k, 0xC8D2DC, zweite, null);
