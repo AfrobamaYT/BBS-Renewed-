@@ -134,6 +134,10 @@ public final class SpielRendererLogik
         }
 
         BBSRendering.onWorldRenderBegin();
+        if (BBSRendering.isIrisShadersEnabled())
+        {
+            mchorse.bbs_mod.utils.iris.IrisFrameTarget.sync();
+        }
         Stapelwache.abschnitt("level:begin");
     }
 
