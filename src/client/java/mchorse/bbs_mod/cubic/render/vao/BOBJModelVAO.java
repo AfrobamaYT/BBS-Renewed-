@@ -182,6 +182,7 @@ public class BOBJModelVAO implements IModelVAO
      */
     private static void schreiben(GpuBuffer ziel, float[] werte)
     {
+        IrisModelBuffers.invalidate(ziel);
         ByteBuffer roh = MemoryUtil.memAlloc(werte.length * Float.BYTES).order(ByteOrder.nativeOrder());
 
         try
@@ -267,25 +268,25 @@ public class BOBJModelVAO implements IModelVAO
 
         if (this.position != null)
         {
-            this.position.close();
+            IrisModelBuffers.close(this.position);
             this.position = null;
         }
 
         if (this.normale != null)
         {
-            this.normale.close();
+            IrisModelBuffers.close(this.normale);
             this.normale = null;
         }
 
         if (this.texturUV != null)
         {
-            this.texturUV.close();
+            IrisModelBuffers.close(this.texturUV);
             this.texturUV = null;
         }
 
         if (this.indexBuffer != null)
         {
-            this.indexBuffer.close();
+            IrisModelBuffers.close(this.indexBuffer);
             this.indexBuffer = null;
         }
 
@@ -451,7 +452,10 @@ public class BOBJModelVAO implements IModelVAO
     /** The caller has already selected a shader family; unsupported paths keep CPU skinning. */
     public void updateMesh(StencilMap stencilMap, Matrix4f[] matrices, boolean gpuAllowed)
     {
-        boolean gpu = BOBJGpuSkin.ENABLED && gpuAllowed && this.indexed;
+        /* World and UI share this pose cache. Iris world pipelines cannot consume our
+         * GPU skinning layout; keep every pass on CPU instead of clearing the cache twice per frame. */
+        boolean gpu = BOBJGpuSkin.ENABLED && gpuAllowed && this.indexed
+            && !mchorse.bbs_mod.client.BBSRendering.isIrisShadersEnabled();
 
         if (gpu && !this.gpuSupportChecked)
         {
@@ -600,8 +604,8 @@ public class BOBJModelVAO implements IModelVAO
     {
         for (SkinPose pose : this.skinCache.values())
         {
-            if (pose.position != null) pose.position.close();
-            if (pose.normale != null) pose.normale.close();
+            if (pose.position != null) IrisModelBuffers.close(pose.position);
+            if (pose.normale != null) IrisModelBuffers.close(pose.normale);
             if (pose.skinMatrices != null) pose.skinMatrices.close();
         }
 
@@ -688,6 +692,9 @@ public class BOBJModelVAO implements IModelVAO
             ? this.position : this.aktiveSkinPose.position;
         GpuBuffer aktuelleNormale = this.aktiveSkinPose == null || this.gpuMode
             ? this.normale : this.aktiveSkinPose.normale;
+
+        if (IrisModelBuffers.tryDraw(pass, aktuellePosition, aktuelleNormale, this.texturUV,
+            this.indexed ? this.indexBuffer : null, this.indexed ? this.indexCount : this.count)) return;
 
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_POSITION, aktuellePosition.slice());
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_NORMALE, aktuelleNormale.slice());

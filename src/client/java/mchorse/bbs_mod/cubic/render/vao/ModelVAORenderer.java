@@ -422,7 +422,7 @@ public class ModelVAORenderer
                 durchgang.bindTexture("Sampler2", spielZeichner.lightmap(), glatt);
             }
 
-            modelVAO.zeichnen(durchgang);
+            IrisModelBuffers.draw(modelVAO, durchgang, pipeline, light, overlay);
         }
     }
 

@@ -1,0 +1,88 @@
+// SPDX-License-Identifier: Apache-2.0
+// Smooth tangent calculation adapted from Iris NormalHelper.java:
+// https://github.com/IrisShaders/Iris/blob/bff1e69cb6c5519d8745784aa9c8b92984de67e7/common/src/main/java/net/irisshaders/iris/vertices/NormalHelper.java
+// Copyright (c) 2016, 2017, 2018, 2019 FabricMC
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy at https://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// BBS changes: parallel conversion of split/indexed GPU model buffers into Iris entity vertices.
+#version 430
+layout(local_size_x = 256) in;
+layout(std430, binding = 0) readonly buffer Positions { float positions[]; };
+layout(std430, binding = 1) readonly buffer Normals { float normals[]; };
+layout(std430, binding = 2) readonly buffer UVs { float uvs[]; };
+layout(std430, binding = 3) readonly buffer Indices { uint indices[]; };
+layout(std430, binding = 4) writeonly buffer Vertices { uint vertices[]; };
+uniform ivec4 layout0; // stride, position, normal, UV
+uniform ivec4 layout1; // color, overlay, light, entity IDs
+uniform ivec4 layout2; // mid-UV, tangent, count, indexed
+uniform ivec4 context0; // light, overlay, entity, block entity
+uniform int itemId;
+
+uint source(uint corner) { return layout2.w == 0 ? corner : indices[corner]; }
+vec3 position(uint corner) {
+    uint i = source(corner) * 3u;
+    return vec3(positions[i], positions[i + 1u], positions[i + 2u]);
+}
+vec2 uv(uint corner) {
+    uint i = source(corner) * 2u;
+    return vec2(uvs[i], uvs[i + 1u]);
+}
+uint pack(vec4 value) {
+    uvec4 bytes = uvec4(ivec4(value * 127.0)) & 255u;
+    return bytes.x | (bytes.y << 8u) | (bytes.z << 16u) | (bytes.w << 24u);
+}
+float reciprocalLength(vec3 value) {
+    precise float square = value.x * value.x + value.y * value.y + value.z * value.z;
+    return square == 0.0 ? 1.0 : float(1.0lf / sqrt(double(square)));
+}
+uint smoothTangent(vec3 normal, uint first) {
+    precise vec3 a = position(first), b = position(first + 1u), c = position(first + 2u);
+    precise float d0 = a.x * normal.x + a.y * normal.y + a.z * normal.z;
+    precise float d1 = b.x * normal.x + b.y * normal.y + b.z * normal.z;
+    precise float d2 = c.x * normal.x + c.y * normal.y + c.z * normal.z;
+    a -= d0 * normal; b -= d1 * normal; c -= d2 * normal;
+    precise vec3 e1 = b - a, e2 = c - a;
+    precise vec2 delta1 = uv(first + 1u) - uv(first), delta2 = uv(first + 2u) - uv(first);
+    precise float denominator = delta1.x * delta2.y - delta2.x * delta1.y;
+    precise float f = denominator == 0.0 ? 1.0 : 1.0 / denominator;
+    precise vec3 tangent = f * (delta2.y * e1 - delta1.y * e2);
+    tangent *= reciprocalLength(tangent);
+    precise vec3 bitangent = f * (-delta2.x * e1 + delta1.x * e2);
+    bitangent *= reciprocalLength(bitangent);
+    precise vec3 predicted = cross(tangent, normal);
+    precise float determinant = bitangent.x * predicted.x + bitangent.y * predicted.y + bitangent.z * predicted.z;
+    return pack(vec4(tangent, determinant < 0.0 ? -1.0 : 1.0));
+}
+void main() {
+    uint corner = gl_GlobalInvocationID.x;
+    if (corner >= uint(layout2.z)) return;
+    uint base = corner * uint(layout0.x);
+    for (uint i = 0u; i < uint(layout0.x); i++) vertices[base + i] = 0u;
+    vec3 p = position(corner);
+    vec2 tex = uv(corner);
+    uint n = source(corner) * 3u;
+    uint normal = pack(vec4(clamp(vec3(normals[n], normals[n + 1u], normals[n + 2u]), -1.0, 1.0), 0.0));
+    vec3 decoded = vec3(int(normal << 24u) >> 24, int(normal << 16u) >> 24, int(normal << 8u) >> 24) * (1.0 / 127.0);
+    uint first = corner - corner % 3u;
+    precise vec2 mid = (uv(first) + uv(first + 1u) + uv(first + 2u)) / 3.0;
+    vertices[base + uint(layout0.y)] = floatBitsToUint(p.x);
+    vertices[base + uint(layout0.y) + 1u] = floatBitsToUint(p.y);
+    vertices[base + uint(layout0.y) + 2u] = floatBitsToUint(p.z);
+    vertices[base + uint(layout0.z)] = normal;
+    vertices[base + uint(layout0.w)] = floatBitsToUint(tex.x);
+    vertices[base + uint(layout0.w) + 1u] = floatBitsToUint(tex.y);
+    vertices[base + uint(layout1.x)] = 0xffffffffu;
+    vertices[base + uint(layout1.y)] = uint(context0.y);
+    vertices[base + uint(layout1.z)] = uint(context0.x);
+    vertices[base + uint(layout1.w)] = (uint(context0.z) & 65535u) | (uint(context0.w) << 16u);
+    vertices[base + uint(layout1.w) + 1u] = uint(itemId) & 65535u;
+    vertices[base + uint(layout2.x)] = floatBitsToUint(mid.x);
+    vertices[base + uint(layout2.x) + 1u] = floatBitsToUint(mid.y);
+    vertices[base + uint(layout2.y)] = smoothTangent(decoded, first);
+}

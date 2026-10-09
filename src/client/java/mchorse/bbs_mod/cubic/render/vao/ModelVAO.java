@@ -69,19 +69,19 @@ public class ModelVAO implements IModelVAO
     {
         if (this.position != null)
         {
-            this.position.close();
+            IrisModelBuffers.close(this.position);
             this.position = null;
         }
 
         if (this.normale != null)
         {
-            this.normale.close();
+            IrisModelBuffers.close(this.normale);
             this.normale = null;
         }
 
         if (this.texturUV != null)
         {
-            this.texturUV.close();
+            IrisModelBuffers.close(this.texturUV);
             this.texturUV = null;
         }
 
@@ -140,6 +140,11 @@ public class ModelVAO implements IModelVAO
     public void zeichnen(RenderPass pass)
     {
         if (this.position == null)
+        {
+            return;
+        }
+
+        if (IrisModelBuffers.tryDraw(pass, this.position, this.normale, this.texturUV, null, this.ecken))
         {
             return;
         }
