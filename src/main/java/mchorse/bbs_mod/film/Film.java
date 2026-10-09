@@ -99,11 +99,11 @@ public class Film extends ValueGroup
         MapType data = super.toData().asMap();
         if (!this.bridgeJournal.isEmpty())
         {
-            data.putString("bridge_journal", this.bridgeJournal);
+            FilmBridgeMetadata.write(data, "bridge_journal", this.bridgeJournal);
         }
         if (!this.bridgePathRevisions.isEmpty())
         {
-            data.putString("bridge_path_revisions", this.bridgePathRevisions);
+            FilmBridgeMetadata.write(data, "bridge_path_revisions", this.bridgePathRevisions);
         }
         return data;
     }
@@ -114,11 +114,11 @@ public class Film extends ValueGroup
         super.fromData(data);
         if (data.isMap() && data.asMap().has("bridge_journal"))
         {
-            this.bridgeJournal = data.asMap().getString("bridge_journal");
+            this.bridgeJournal = FilmBridgeMetadata.read(data.asMap(), "bridge_journal");
         }
         if (data.isMap() && data.asMap().has("bridge_path_revisions"))
         {
-            this.bridgePathRevisions = data.asMap().getString("bridge_path_revisions");
+            this.bridgePathRevisions = FilmBridgeMetadata.read(data.asMap(), "bridge_path_revisions");
         }
     }
 

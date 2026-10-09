@@ -74,6 +74,9 @@ public final class SpielRendererLogik
      */
     public static boolean trefferneigung(PoseStack matrizen)
     {
+        {
+            return true;
+        }
         CameraController regler = BBSModClient.getCameraController();
 
         if (regler.getCurrent() == null || BBSRendering.isIrisShadowPass())
