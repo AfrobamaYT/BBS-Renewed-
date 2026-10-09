@@ -544,11 +544,6 @@ public class BBSModClient implements ClientModInitializer
          * wären weg. */
         LevelRenderEvents.COLLECT_SUBMITS.register((context) ->
         {
-            if (BBSRendering.isIrisShadersEnabled())
-            {
-                return;
-            }
-
             mchorse.bbs_mod.forms.FormSammler.anmelden(context.submitNodeCollector());
             mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang = true;
 
@@ -582,10 +577,7 @@ public class BBSModClient implements ClientModInitializer
 
             try
             {
-            if (!BBSRendering.isIrisShadersEnabled())
-            {
-                BBSRendering.renderCoolStuff(context);
-            }
+            BBSRendering.renderCoolStuff(context);
 
             if (BBSSettings.chromaSkyEnabled.get())
             {
