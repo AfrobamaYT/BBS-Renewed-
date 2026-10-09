@@ -133,6 +133,7 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 			blur == 0 ? "aus" : String.valueOf(blur), "feld:blur", blur / 6F, 0);
 
 		/* ── Startknöpfe unten ── */
+			|| mchorse.bbs_mod.film.VideoExportSession.laeuftExport();
 		float kh = 24F * k;
 		float ky = h - kh - rand;
 
@@ -236,6 +237,10 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 			return;
 		}
 
+		{
+			return;
+		}
+
 		int engine = BBSSettings.renderEngine.get();
 
 		if (engine == 0)
@@ -263,6 +268,7 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 
 		int dauer = panel.getData().camera.calculateDuration();
 
+		panel.recorder.setFinishedListener(cancelled ->
 		UIFilmPanel.applyExportSizeToBBS();
 		mchorse.bbs_mod.client.BBSRendering.scheduleAfterNextExportFrame(() ->
 			panel.recorder.startRecording(dauer, mchorse.bbs_mod.client.BBSRendering.getTexture().id,
