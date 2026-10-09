@@ -80,7 +80,9 @@ public final class ModelIKDebug
     {
         /* COLLECT_SUBMITS only queues shadows/text. Immediate control draws there
          * are discarded before the visible main pass, which calls us again. */
-        if (mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang)
+        if (mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang
+            || (mchorse.bbs_mod.client.BBSRendering.isIrisShadersEnabled()
+                && net.irisshaders.iris.api.v0.IrisApi.getInstance().isRenderingShadowPass()))
         {
             return;
         }
@@ -99,7 +101,6 @@ public final class ModelIKDebug
 
         if (entity == null || replay == null
             || !(entity.getForm() instanceof mchorse.bbs_mod.forms.forms.ModelForm form)
-            || !(form.ik.get() instanceof MapType map)
             || !(mchorse.bbs_mod.forms.FormUtilsClient.getRenderer(form) instanceof mchorse.bbs_mod.forms.renderers.ModelFormRenderer renderer))
         {
             return;
@@ -112,9 +113,14 @@ public final class ModelIKDebug
             return;
         }
 
-        ModelIKCache.Compiled compiled = ModelIKCache.getFromData(instance.model, map);
+        java.util.List<RigCtrl.Eintrag> rig = instance.model instanceof BOBJModel bm
+            ? RigCtrl.fuer(bm.getArmature(), form.model.get()) : null;
+        ModelIKCache.Compiled compiled = ModelIKCache.getFromData(instance.model,
+            form.ik.get() instanceof MapType map ? map : null);
+        List<ModelIKCache.CompiledChain> chains = compiled == null ? List.of() : compiled.chains();
 
-        if (compiled == null || compiled.chains() == null || compiled.chains().isEmpty())
+        /* Authored face controls do not require an IK chain. */
+        if (rig == null && chains.isEmpty())
         {
             return;
         }
@@ -135,9 +141,6 @@ public final class ModelIKDebug
 
         /* Mixamo-Skelett mit unseren IK-Bones -> das 1:1 extrahierte Blender-Control-Rig
          * ersetzt Octas UND Klotz-Widgets (Blender zeigt DEF/MCH auch nicht). */
-        java.util.List<RigCtrl.Eintrag> rig = instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bm
-            ? RigCtrl.fuer(bm.getArmature(), form.model.get()) : null;
-
         {
             ByteBufferBuilder speicher = mchorse.bbs_mod.cubic.render.ControlVertexBatch.speicher(0);
             BufferBuilder wire = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
@@ -170,7 +173,7 @@ public final class ModelIKDebug
             {
                 Set<String> ikBones = new HashSet<>();
 
-                for (ModelIKCache.CompiledChain chain : compiled.chains())
+                for (ModelIKCache.CompiledChain chain : chains)
                 {
                     ikBones.add(chain.target());
 
@@ -256,7 +259,7 @@ public final class ModelIKDebug
                 }
             }
 
-            for (ModelIKCache.CompiledChain chain : compiled.chains())
+            for (ModelIKCache.CompiledChain chain : chains)
             {
                 if (rig != null)
                 {
@@ -322,6 +325,13 @@ public final class ModelIKDebug
 
             if (mesh == null)
             {
+                return;
+            }
+
+            if (rig != null && mchorse.bbs_mod.client.BBSRendering.isIrisShadersEnabled())
+            {
+                mchorse.bbs_mod.cubic.render.RigOverlayPass.queue(mesh, a, hidden, tiefe);
+
                 return;
             }
 

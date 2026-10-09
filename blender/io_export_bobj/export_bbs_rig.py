@@ -134,6 +134,9 @@ class ExportBBSRig(bpy.types.Operator, ExportHelper):
         if lauf.returncode != 0:
             raise RuntimeError("rig-extrakt: " + (lauf.stderr or lauf.stdout)[-300:])
 
+        from . import native_rig_export
+        native_rig_export.write(arm, ziel)
+
         self.report({"INFO"}, "%s: %s Controls, %s Shapes -> %s"
                     % (self.modellname, extrakt.get("ctrls", "?"),
                        extrakt.get("shapes", "?"), ziel))

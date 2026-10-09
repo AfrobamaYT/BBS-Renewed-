@@ -66,19 +66,23 @@ public final class ModelIKStencil
                     + " von=" + mchorse.bbs_mod.graphics.Messpunkt.rufer(4));
         }
 
-        if (!config.enabled.get() || (!targets && !poles) || model == null || ikData == null || stencilMap == null)
+        if (!config.enabled.get() || (!targets && !poles) || model == null || stencilMap == null)
         {
             return;
         }
 
         ModelIKCache.Compiled compiled = ModelIKCache.getFromData(model, ikData);
+        java.util.List<RigCtrl.Eintrag> rig = model instanceof BOBJModel bm && form instanceof mchorse.bbs_mod.forms.forms.ModelForm mf
+            ? RigCtrl.fuer(bm.getArmature(), mf.model.get()) : null;
+        List<ModelIKCache.CompiledChain> chains = compiled == null ? List.of() : compiled.chains();
 
-        if (compiled == null || compiled.chains() == null || compiled.chains().isEmpty())
+        /* Picking must follow the same authored controls as the visible pass. */
+        if (rig == null && chains.isEmpty())
         {
             return;
         }
 
-        Map<String, PivotFrame> frames = ModelIKDebug.collectFrames(model, compiled);
+        Map<String, PivotFrame> frames = rig == null ? ModelIKDebug.collectFrames(model, compiled) : Map.of();
 
         /* Pick-Pass = ID-Farben: kein Blend (gemischte ID = falsche ID), ohne Cull
          * (fehlende Flaeche = Loch im Klickziel), Tiefe wie der Sichtpass. */
@@ -90,9 +94,6 @@ public final class ModelIKStencil
         }
 
         /* Control-Rig vorhanden -> die Original-Shapes sind die Klickziele, nicht die Kloetze. */
-        java.util.List<RigCtrl.Eintrag> rig = model instanceof BOBJModel bm && form instanceof mchorse.bbs_mod.forms.forms.ModelForm mf
-            ? RigCtrl.fuer(bm.getArmature(), mf.model.get()) : null;
-
         /* Ab hier Widget-Kennungen — der Umriss-Shader endet an dieser Grenze. */
         stencilMap.widgetBeginn();
 
@@ -105,7 +106,7 @@ public final class ModelIKStencil
                 mchorse.bbs_mod.cubic.render.RigCtrlZeichner.stencilPass(builder, stack, stencilMap, form, ((BOBJModel) model).getArmature(), rig);
             }
 
-            for (ModelIKCache.CompiledChain chain : compiled.chains())
+            for (ModelIKCache.CompiledChain chain : chains)
             {
                 if (rig != null)
                 {

@@ -128,6 +128,7 @@ public final class SpielRendererLogik
     /** {@code renderLevel} @HEAD. */
     public static void weltAnfang()
     {
+        mchorse.bbs_mod.cubic.render.RigOverlayPass.clear();
         if (BBSModClient.getCameraController().getCurrent() != null)
         {
             TrackerClientClip.beginLevelRendering();
@@ -149,6 +150,7 @@ public final class SpielRendererLogik
      */
     public static void weltEnde()
     {
+        mchorse.bbs_mod.cubic.render.RigOverlayPass.flush();
         TrackerClientClip.endLevelRendering();
         BBSRendering.onWorldRenderEnd();
         Stapelwache.abschnitt("level:ende");
