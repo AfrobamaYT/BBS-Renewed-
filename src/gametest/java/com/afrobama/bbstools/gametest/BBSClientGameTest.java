@@ -92,7 +92,19 @@ public class BBSClientGameTest implements FabricClientGameTest {
 			// prueft er nur, ob Vanilla eine Welt zeichnet -- das sagt ueber unseren
 			// Editor nichts. UIScreen ist die Screen-Huelle, UIDashboard das Menue darin;
 			// setScreen ist der von Fabric vorgesehene Weg und umgeht jede Tastensimulation.
-			context.setScreen(() -> new UIScreen(Component.empty(), new UIDashboard()));
+			context.setScreen(() ->
+			{
+				/* The fixture compares the editor, not the installation's one-time announcement.
+				 * Fabric runs this in its private clientGameTest directory. */
+				com.afrobama.bbstools.client.dashboard.AnnouncementGate.markShown();
+
+				if (com.afrobama.bbstools.client.dashboard.AnnouncementGate.shouldShow())
+				{
+					throw new AssertionError("Could not prepare the test-only announcement state");
+				}
+
+				return new UIScreen(Component.empty(), new StillDashboard());
+			});
 
 			// Das Dashboard baut seine Panels erst im ersten Zeichendurchlauf auf. Ohne
 			// Wartezeit faengt der Screenshot ein halb aufgebautes Fenster ein und der
@@ -100,6 +112,49 @@ public class BBSClientGameTest implements FabricClientGameTest {
 			context.waitTicks(20);
 
 			pruefe(context, "bbs-dashboard");
+		}
+	}
+
+	/** Fix the native empty-panel arrow's animation phase only inside the private fixture. */
+	private static final class StillDashboard extends UIDashboard
+	{
+		private final java.lang.reflect.Field clock;
+
+		private StillDashboard()
+		{
+			try
+			{
+				this.clock = mchorse.bbs_mod.ui.framework.UIContext.class.getDeclaredField("tick");
+				this.clock.setAccessible(true);
+			}
+			catch (ReflectiveOperationException failure)
+			{
+				throw new AssertionError("Cannot control the test UI clock", failure);
+			}
+		}
+
+		@Override
+		public void renderMenu(mchorse.bbs_mod.ui.framework.UIRenderingContext rendering, int mouseX, int mouseY)
+		{
+			long tick = this.context.getTick();
+			float transition = this.context.getTransition();
+
+			try
+			{
+				this.clock.setLong(this.context, 0L);
+				this.context.setTransition(0F);
+				super.renderMenu(rendering, mouseX, mouseY);
+			}
+			catch (IllegalAccessException failure)
+			{
+				throw new AssertionError("Cannot set the test UI clock", failure);
+			}
+			finally
+			{
+				try { this.clock.setLong(this.context, tick); }
+				catch (IllegalAccessException failure) { throw new AssertionError(failure); }
+				this.context.setTransition(transition);
+			}
 		}
 	}
 
@@ -113,6 +168,7 @@ public class BBSClientGameTest implements FabricClientGameTest {
 	 */
 	private static void pruefe(ClientGameTestContext context, String name) {
 		TestScreenshotComparisonOptions optionen = TestScreenshotComparisonOptions.of(name)
+			.saveWithFileName(name + "-compared")
 			.withGrayscale()
 			.withAlgorithm(TestScreenshotComparisonAlgorithm.exact());
 
