@@ -1261,29 +1261,19 @@ public class UIClips extends UIElement
         {
             int tick = (int) Math.floor(this.scale.from(mouseX));
             int layerIndex = this.fromLayerY(mouseY);
-            Clip original = this.delegate.getClip();
             Clip clip = this.clips.getClipAt(tick, layerIndex);
 
             if (clip != null)
             {
-                if (clip != original)
+                if (shift || this.selection.contains(this.clips.getIndex(clip)))
                 {
-                    if (shift || this.selection.contains(this.clips.getIndex(clip)))
-                    {
-                        this.addSelected(clip);
-
-                        Clip last = this.getLastSelectedClip();
-
-                        if (last != original)
-                        {
-                            this.delegate.pickClip(last);
-                        }
-                    }
-                    else
-                    {
-                        this.delegate.pickClip(clip);
-                        this.setSelected(clip);
-                    }
+                    this.addSelected(clip);
+                    this.delegate.pickClip(this.getLastSelectedClip());
+                }
+                else
+                {
+                    this.delegate.pickClip(clip);
+                    this.setSelected(clip);
                 }
 
                 this.grabMode = this.getClipHandle(clip, context, this.getLayerHeight());

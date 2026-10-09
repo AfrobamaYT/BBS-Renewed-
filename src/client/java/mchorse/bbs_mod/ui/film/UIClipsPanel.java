@@ -222,6 +222,11 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
             {
                 this.panel.fillData();
 
+                if (this.target != null && this.target.getParent() instanceof UIPropertiesNano props)
+                {
+                    props.kameraKategorie();
+                }
+
                 return;
             }
             else
