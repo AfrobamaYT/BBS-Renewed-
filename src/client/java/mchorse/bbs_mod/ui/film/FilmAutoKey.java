@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.film;
 
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.film.markers.TimerCueActions;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
@@ -56,7 +57,14 @@ public final class FilmAutoKey
 
     public static boolean isEditing(UIElement element)
     {
-        return enabled && owner(element) != null;
+        UIFilmPanel panel = owner(element);
+
+        return enabled && panel != null && !staticHelper(panel);
+    }
+
+    private static boolean staticHelper(UIFilmPanel panel)
+    {
+        return TimerCueActions.isStaticEndpoint(panel.getData(), panel.replayEditor.getReplay());
     }
 
     public static int pickTick(UIKeyframes view, int closest, int current)
@@ -84,7 +92,7 @@ public final class FilmAutoKey
             return fallback;
         }
         UIFilmPanel panel = owner(element);
-        if (panel == null || panel.getController().isTransformRecording())
+        if (panel == null || panel.getController().isTransformRecording() || staticHelper(panel))
         {
             return fallback;
         }

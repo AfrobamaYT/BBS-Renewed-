@@ -13,6 +13,9 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIList;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.pose.Transform;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIText;
 import mchorse.bbs_mod.utils.colors.Colors;
 
@@ -188,6 +191,28 @@ public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffris
 
         this.panel.replayEditor.setReplay(replay);
         this.panel.replayEditor.replaysList.replays.scrollToReplay(replay);
+        KeyframeChannel<Transform> channel = replay.properties.getOrCreate(replay.form.get(), "transform");
+
+        if (channel.getKeyframes().isEmpty())
+        {
+            this.fence();
+            channel.insert(0, replay.form.get().transform.get().copy());
+            this.persist(false);
+        }
+        this.panel.replayEditor.updateChannelsList();
+        for (UIKeyframeSheet sheet : this.panel.replayEditor.keyframeEditor.view.getGraph().getSheets())
+        {
+            if (sheet.channel == channel)
+            {
+                this.panel.replayEditor.keyframeEditor.view.getGraph().clearSelection();
+                sheet.selection.add(channel.find(this.panel.getCursor()).getClosest());
+                this.panel.replayEditor.keyframeEditor.view.pickKeyframe(channel.find(this.panel.getCursor()).getClosest());
+                return;
+            }
+        }
+        this.editError = "ERROR: Marker transform track is not available";
+        this.snapshot = "";
+        this.auffrischen();
     }
 
     public void removeCue()

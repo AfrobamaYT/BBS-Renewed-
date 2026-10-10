@@ -41,8 +41,8 @@ public class UITimerCueFields extends UIElement
         this.endNow.wh(20, 20);
         this.groundRoute = new UIToggle(IKey.raw("Walking guide"),
             (button) -> panel.edit((cue) -> cue.groundRoute.set(button.getValue())));
-        this.selectStart = new UIButton(IKey.raw("Select START"), (button) -> panel.selectEndpoint(false));
-        this.selectEnd = new UIButton(IKey.raw("Select END"), (button) -> panel.selectEndpoint(true));
+        this.selectStart = new UIButton(IKey.raw("Move START"), (button) -> panel.selectEndpoint(false));
+        this.selectEnd = new UIButton(IKey.raw("Move END"), (button) -> panel.selectEndpoint(true));
         this.remove = new UIButton(IKey.raw("Delete timer pair"), (button) -> panel.removeCue());
 
         this.column(3).vertical().stretch();

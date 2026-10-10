@@ -5,6 +5,8 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
 /** Native film transactions; no references to picker/library forms enter a cue. */
 public final class TimerCueActions
@@ -74,6 +76,7 @@ public final class TimerCueActions
         form.color.get().set(color, true);
         form.background.get().set(0xB0000000, true);
         replay.form.set(form);
+        replay.properties.getOrCreate(form, "transform").insert(0, form.transform.get().copy());
         replay.label.set(label);
         replay.labelColor.set(color & 0xFFFFFF);
         replay.nurVorschau.set(true);
@@ -142,6 +145,46 @@ public final class TimerCueActions
         }
 
         return false;
+    }
+
+    /** Fresh helper transforms stay static; explicitly timed or animated endpoints retain normal keying. */
+    public static boolean isStaticEndpoint(Film film, Replay replay)
+    {
+        if (film == null || replay == null || !isEndpoint(film, replay))
+        {
+            return false;
+        }
+        for (KeyframeChannel<?> channel : replay.keyframes.getChannels())
+        {
+            if (!staticChannel(channel))
+            {
+                return false;
+            }
+        }
+        for (KeyframeChannel<?> channel : replay.properties.properties.values())
+        {
+            if (!staticChannel(channel))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean staticChannel(KeyframeChannel<?> channel)
+    {
+        if (channel.getKeyframes().size() > 1)
+        {
+            return false;
+        }
+        for (Keyframe<?> key : channel.getKeyframes())
+        {
+            if (key.getTick() != 0F)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static void remove(Film film, TimerCue cue)
