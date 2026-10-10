@@ -1,7 +1,10 @@
 /* Uebersetzt aus Blenders intern/iksolver/intern/IK_QJacobian.cpp
  * (InvertSDLS / InvertDLS).
  * SPDX-FileCopyrightText: 2001-2002 NaN Holding BV. All rights reserved.
- * SPDX-License-Identifier: GPL-2.0-or-later */
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * Direct-Blender-Port: https://projects.blender.org/blender/blender/src/commit/67807e1800cc48cc7bff3c793525e1179a4d64ca/intern/iksolver/intern/IK_QJacobian.cpp
+ * BBS-Modification: 2026-10-10 - Re-audited against pinned Blender; original revision unknown.
+ * See docs/BLENDER-IK-PROVENANCE-2026-10-10.md for scope and parity evidence. */
 package mchorse.bbs_mod.cubic.ik.blender;
 
 /**

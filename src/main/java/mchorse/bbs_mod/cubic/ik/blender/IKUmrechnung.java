@@ -1,5 +1,9 @@
 /* Bruecke zwischen BBS' JOML-Matrizen und dem Port von Blenders intern/iksolver.
- * SPDX-License-Identifier: GPL-2.0-or-later */
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2001-2002 NaN Holding BV. All rights reserved.
+ * Direct-Blender-Port: https://projects.blender.org/blender/blender/src/commit/67807e1800cc48cc7bff3c793525e1179a4d64ca/intern/iksolver/intern/IK_Solver.cpp
+ * BBS-Modification: 2026-10-10 - Re-audited against pinned Blender; original revision unknown.
+ * See docs/BLENDER-IK-PROVENANCE-2026-10-10.md for scope and parity evidence. */
 package mchorse.bbs_mod.cubic.ik.blender;
 
 import org.joml.Matrix4f;
@@ -14,12 +18,9 @@ import org.joml.Vector3f;
  */
 public final class IKUmrechnung
 {
-    /** IK_STRETCH_STIFF_EPS/_MIN/_MAX aus Blenders IK_Solver.h. */
-    /* ⛔ Blenders IK_STRETCH_STIFF_EPS ist 0.001, nicht 0.01 (iksolver_plugin.cc).
-     * Mit 0.01 war das Dehngewicht nach unten auf 0.01 gedeckelt: ein Knochen mit
-     * ik_stretch 0.05 bekam 0.01 statt 0.0025 und dehnte sich VIERMAL so leicht.
-     * Gemessen an der Umrechnung selbst: 0.05 -> 0.01000 statt 0.00250. */
-    private static final double DEHN_EPS = 0.001D;
+    /** Constants from Blender's intern/iksolver/extern/IK_solver.h.
+     * The stiffness epsilon is 0.01, distinct from the translation limit 0.001. */
+    private static final double DEHN_EPS = (double) 0.01F;
     public static final double DEHN_MIN = 0.001D;
     public static final double DEHN_MAX = 1e10D;
 

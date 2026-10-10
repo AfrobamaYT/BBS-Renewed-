@@ -14,18 +14,25 @@
     {
       "id": "legacy-ik-solver",
       "kind": "direct-port",
-      "status": "legacy-unresolved",
+      "status": "verified",
       "local_globs": [
         "src/main/java/mchorse/bbs_mod/cubic/ik/blender/*.java"
       ],
-      "upstream_commit": null,
+      "upstream_commit": "67807e1800cc48cc7bff3c793525e1179a4d64ca",
+      "original_upstream_commit": null,
+      "provenance_basis": "Full source re-audit against official Blender v4.5.3; this is not a reconstruction of the unknown original revision.",
       "upstream_paths": [
         "intern/iksolver/intern/IK_Math.h",
         "intern/iksolver/intern/IK_QJacobian.cpp",
+        "intern/iksolver/intern/IK_QJacobian.h",
         "intern/iksolver/intern/IK_QJacobianSolver.cpp",
+        "intern/iksolver/intern/IK_QJacobianSolver.h",
         "intern/iksolver/intern/IK_QSegment.cpp",
+        "intern/iksolver/intern/IK_QSegment.h",
         "intern/iksolver/intern/IK_QTask.cpp",
-        "intern/iksolver/intern/IK_Solver.h",
+        "intern/iksolver/intern/IK_QTask.h",
+        "intern/iksolver/intern/IK_Solver.cpp",
+        "intern/iksolver/extern/IK_solver.h",
         "source/blender/ikplugin/intern/iksolver_plugin.cc",
         "source/blender/blenkernel/intern/constraint.cc"
       ],
@@ -33,9 +40,10 @@
       "copyright": [
         "2001-2002 NaN Holding BV. All rights reserved."
       ],
-      "modified": "2026-08-14",
-      "parity_evidence": "docs/FEATURES-RELEASE.md: Blender IK parity, maximum deviation 7e-06",
-      "unresolved": "The exact Blender upstream commit used for the translation was not recorded."
+      "modified": "2026-10-10",
+      "parity_evidence": "docs/BLENDER-IK-PROVENANCE-2026-10-10.md",
+      "independent_support": ["IKAffine.java", "IKMatN.java", "IKSvd.java"],
+      "historical_note": "The original upstream revision remains unknown. Verification applies to the documented re-audit against the pinned revision, not an invented historical attribution."
     }
   ]
 }
