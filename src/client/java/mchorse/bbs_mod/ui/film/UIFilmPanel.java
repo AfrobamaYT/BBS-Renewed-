@@ -2957,12 +2957,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             Vector3d cameraPos = this.camera.position;
             double distance = cameraPos.distance(pos.x, pos.y, pos.z);
             int value = Minecraft.getInstance().options.renderDistance().get();
-
-            if (distance > value * 12)
+            if (distance > value * 12 && this.getContext().notifications.notifications.stream()
+                .noneMatch(notification -> notification.message == UIKeys.FILM_TELEPORT_DESCRIPTION))
             {
                 this.getContext().notifyError(UIKeys.FILM_TELEPORT_DESCRIPTION);
             }
-
             this.entered = false;
         }
     }
