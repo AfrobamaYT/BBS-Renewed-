@@ -188,7 +188,7 @@ public abstract class BaseFilmController
         FormRenderingContext formContext = new FormRenderingContext()
             .set(FormRenderType.ENTITY, entity, stack, light, overlay, transition)
             .stencilMap(context.map)
-            .color(context.color);
+            .color(context.color).worldLabel(form instanceof mchorse.bbs_mod.forms.forms.LabelForm);
 
         /* 26.2: FormRenderingContext#camera nimmt ein lebendes net.minecraft.client.Camera;
          * hier liegt nur noch der eingefrorene CameraRenderState des Weltdurchgangs vor.
@@ -230,7 +230,7 @@ public abstract class BaseFilmController
         /* Im SAMMEL-Durchgang wird nichts gezeichnet, nur eingereicht (Schatten, Namensschild
          * weiter unten) — siehe FilmControllerContext#sammelDurchgang. Das Modell geht einen
          * anderen Weg (ModelVAORenderer zeichnet sofort) und darf hier nicht doppelt laufen. */
-        if (!context.gizmoOnly && !FilmControllerContext.sammelDurchgang)
+        if (!context.gizmoOnly && (!FilmControllerContext.sammelDurchgang || formContext.worldLabel))
         {
             FormUtilsClient.render(form, formContext);
         }

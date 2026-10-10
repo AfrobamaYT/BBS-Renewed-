@@ -23,6 +23,8 @@ public class FormRenderingContext
     public boolean ui;
     public int color;
     public boolean modelRenderer;
+    /** Root world labels submit glyphs in COLLECT and draw their background in AFTER. */
+    public boolean worldLabel;
 
     /* AUTONOMIE 2026-07-27: zwei render-flags aus dem CML-fork.
      * relative        — matrizen sind schon relativ zum entity aufgebaut, world nicht nochmal anwenden.
@@ -48,6 +50,7 @@ public class FormRenderingContext
         this.ui = false;
         this.color = 0xffffffff;
         this.relative = false;
+        this.worldLabel = false;
         this.renderEquipment = true;
 
         if (entity != null && (this.type == FormRenderType.ENTITY || this.type == FormRenderType.MODEL_BLOCK))
@@ -102,6 +105,13 @@ public class FormRenderingContext
     public FormRenderingContext color(int color)
     {
         this.color = color;
+
+        return this;
+    }
+
+    public FormRenderingContext worldLabel(boolean worldLabel)
+    {
+        this.worldLabel = worldLabel;
 
         return this;
     }

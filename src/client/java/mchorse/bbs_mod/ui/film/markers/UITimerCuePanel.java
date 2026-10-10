@@ -12,11 +12,9 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.UISeitenleiste;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIList;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIText;
-import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.colors.Colors;
 import org.joml.Vector3d;
 
@@ -56,10 +54,8 @@ public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffris
         this.list.background();
         this.status = new UIText();
         this.fields = new UITimerCueFields(this);
-        UIScrollView scroll = UI.scrollView(4, 5, this.create, this.list, this.fields, this.status);
-
-        scroll.full(this);
-        this.add(scroll);
+        this.column(5).vertical().stretch().padding(4);
+        this.add(this.create, this.list, this.fields, this.status);
         this.auffrischen();
     }
 

@@ -14,6 +14,8 @@ import mchorse.bbs_mod.forms.FormTranslucentQueue;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.renderers.utils.FormColorBlend;
+import mchorse.bbs_mod.forms.renderers.utils.LabelPickQuad;
+import mchorse.bbs_mod.forms.renderers.utils.WorldLabelPhases;
 import mchorse.bbs_mod.graphics.GehaltenesNetz;
 import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -85,11 +87,10 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         if (this.form.billboard.get())
         {
-            MatrixStackUtils.billboard(context.stack);
+            WorldLabelPhases.billboard(context);
         }
 
         Font renderer = Minecraft.getInstance().font;
-        CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
         float scale = 1F / 16F;
         int light = context.light;
 
@@ -100,18 +101,22 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         if (context.isPicking())
         {
-            /* ⛔ 26.2: der Hijack ist ersatzlos entfallen. Er setzte beim Zeichnen JEDER Ebene
-             * einen anderen Shader -- ein Haken in Vanillas Sofort-Zeichnung, die es nicht
-             * mehr gibt. Der Shader steht jetzt in der Pipeline des jeweiligen Zuges; fuer
-             * den Auswahl-Durchgang waehlt ihn die Pipeline dort, nicht ein Rueckruf hier. */
+            try
+            {
+                LabelPickQuad.render(this.form, context, renderer);
+            }
+            finally
+            {
+                context.stack.popPose();
+            }
 
-            light = 0;
+            return;
         }
+        CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
 
-        /* The whole label (text + background) records as ONE deferred group: its parts rely on
-         * each other's depth (glyphs over the background quad), so they replay together in
-         * original order, while the group as a whole sorts against other translucent forms. */
-        boolean grouped = !context.isPicking() && FormTranslucentQueue.isActive();
+        /* Root world glyphs go to the current frame's collector first. Only their background
+         * may defer in AFTER; legacy non-world label groups keep their original ordering. */
+        boolean grouped = !context.isPicking() && !WorldLabelPhases.collecting(context) && FormTranslucentQueue.isActive();
 
         if (grouped)
         {
@@ -158,7 +163,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         FormColorBlend.blend(color, this.form.color.get(), this.form.additiveColor.get());
         shadowColor.mul(context.color);
 
-        if (shadowColor.a > 0)
+        if (WorldLabelPhases.text(context) && shadowColor.a > 0)
         {
             context.stack.pushPose();
             context.stack.translate(0F, 0F, -0.1F);
@@ -166,12 +171,10 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             context.stack.popPose();
         }
 
-        text(context.stack, consumers, x, y, content, color.getARGBColor(), light);
-
-        /* 26.2: entfaellt. consumers.draw() spielt die RenderTypes ab, in die
-         * Font.drawInBatch geschrieben hat; deren Pipeline traegt den Tiefentest.
-         * Ein Zustandsaufruf davor erreicht sie nicht mehr. */
-        consumers.draw();
+        if (WorldLabelPhases.text(context))
+        {
+            text(context.stack, consumers, x, y, content, color.getARGBColor(), light);
+        }
 
         this.renderShadow(context, x, y, w, h);
     }
@@ -212,7 +215,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         shadowColor.mul(context.color);
 
-        if (shadowColor.a > 0)
+        if (WorldLabelPhases.text(context) && shadowColor.a > 0)
         {
             context.stack.pushPose();
             context.stack.translate(0F, 0F, -0.1F);
@@ -237,21 +240,18 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         int color = cColor.getARGBColor();
 
-        for (String line : lines)
+        if (WorldLabelPhases.text(context))
         {
-            int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.width(line)) * this.form.anchorX.get()) : 0);
+            for (String line : lines)
+            {
+                int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.width(line)) * this.form.anchorX.get()) : 0);
 
-            text(context.stack, consumers, x2, y2, line, color, light);
+                text(context.stack, consumers, x2, y2, line, color, light);
 
-            y2 += 12;
+                y2 += 12;
+            }
         }
 
-        consumers.draw();
-
-        /* 26.2: entfaellt. Der Tiefentest der Textzeilen steckt in den Pipelines der
-         * RenderTypes, die consumers.draw() gerade abgespielt hat; fuer den danach
-         * folgenden Hintergrund-Quad gehoert er in dessen eigene Pipeline — die Stelle
-         * dafuer steht in renderShadow und ist dort noch offen. */
         this.renderShadow(context, x, y, w, h);
     }
 
@@ -291,6 +291,11 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
     private void renderShadow(FormRenderingContext context, int x, int y, int w, int h)
     {
+        if (!WorldLabelPhases.background(context))
+        {
+            return;
+        }
+
         float offset = this.form.offset.get();
         Color color = this.form.background.get().copy();
 
@@ -361,5 +366,28 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         }
 
         context.stack.popPose();
+    }
+
+    @Override
+    public void renderBodyParts(FormRenderingContext context)
+    {
+        if (WorldLabelPhases.collecting(context))
+        {
+            return;
+        }
+
+        boolean worldLabel = context.worldLabel;
+
+        /* Only the root Label is collected twice. Do not draw its attached models twice
+         * or change the legacy one-pass behavior of nested Label body parts. */
+        context.worldLabel = false;
+        try
+        {
+            super.renderBodyParts(context);
+        }
+        finally
+        {
+            context.worldLabel = worldLabel;
+        }
     }
 }

@@ -69,6 +69,7 @@ public final class TimerCueActions
 
         form.text.set(label);
         form.billboard.set(true);
+        form.shaderShadow.set(false);
         form.transform.get().scale.set(0.2F);
         form.color.get().set(color, true);
         form.background.get().set(0xB0000000, true);
