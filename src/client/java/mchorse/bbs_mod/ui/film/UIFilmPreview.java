@@ -89,7 +89,6 @@ public class UIFilmPreview extends UIElement
          * weitere kommen ueber UISeitenleiste.anmelden(name, bauer) dazu. */
         UISeitenleiste.anmelden("Rig", mchorse.bbs_mod.ui.film.replays.UIRigReiter::neu);
         UISeitenleiste.anmelden("Render", UIRenderReiterNano::neu);
-        UISeitenleiste.anmelden("Timers", () -> new mchorse.bbs_mod.ui.film.markers.UITimerCuePanel(this.panel));
 
         UISeitenleiste leiste = new UISeitenleiste();
 
@@ -312,6 +311,7 @@ public class UIFilmPreview extends UIElement
         this.eckenFlaeche.setEnabled(false);
 
         this.add(this.eckenFlaeche, this.werkzeuge, this.hud);
+        mchorse.bbs_mod.ui.film.markers.UITimerPlacement.install(this, this.panel);
     }
 
     public void openOnionSkin()

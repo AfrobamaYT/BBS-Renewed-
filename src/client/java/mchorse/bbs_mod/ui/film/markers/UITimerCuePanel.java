@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.film.markers;
 
-import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.markers.TimerCue;
@@ -16,7 +15,6 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIList;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIText;
 import mchorse.bbs_mod.utils.colors.Colors;
-import org.joml.Vector3d;
 
 import java.util.function.Consumer;
 
@@ -36,7 +34,7 @@ public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffris
     {
         mchorse.bbs_mod.film.markers.TimerGroundGuidance.register();
         this.panel = panel;
-        this.create = new UIButton(IKey.raw("+ Timer pair"), (button) -> this.createCue());
+        this.create = new UIButton(IKey.raw("+ 3D Timer"), (button) -> this.createCue());
         this.list = new UIList<>((items) ->
         {
             this.selected = items.isEmpty() ? "" : items.get(0).uuid.get();
@@ -50,9 +48,36 @@ public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffris
             {
                 return cue.label.get();
             }
+
+            @Override
+            public boolean subMouseClicked(UIContext context)
+            {
+                if (context.mouseButton == 1 && this.area.isInside(context))
+                {
+                    int index = this.getIndexAtCursor(context);
+
+                    if (index >= 0)
+                    {
+                        TimerCue cue = this.list.get(index);
+
+                        this.setCurrent(cue);
+                        this.callback.accept(java.util.List.of(cue));
+                    }
+                }
+                return super.subMouseClicked(context);
+            }
         };
         this.list.h(80);
         this.list.background();
+        this.list.context((menu) ->
+        {
+            TimerCue cue = this.selectedCue();
+            if (cue != null)
+            {
+                menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.VISIBLE, IKey.raw("Show timer"), cue.enabled.get(),
+                    () -> this.edit((value) -> value.enabled.set(!value.enabled.get())));
+            }
+        });
         this.status = new UIText();
         this.fields = new UITimerCueFields(this);
         this.column(5).vertical().stretch().padding(4);
@@ -69,23 +94,27 @@ public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffris
 
     public void createCue()
     {
-        if (this.panel.getData() == null)
-        {
-            return;
-        }
+        UITimerPlacement.find(this.panel).begin();
+    }
 
-        Camera camera = this.panel.getCamera();
-        Vector3d point = new Vector3d(camera.getLookDirection()).mul(5D).add(camera.position);
-        Vector3d right = new Vector3d(new org.joml.Matrix4f(camera.view).invert().transformDirection(new org.joml.Vector3f(1F, 0F, 0F))).mul(1.5D);
-        Point start = new Point(point.x - right.x, point.y - right.y, point.z - right.z);
-        Point end = new Point(point.x + right.x, point.y + right.y, point.z + right.z);
-
+    void createAt(int tick, Point start, Point end)
+    {
         this.fence();
-        TimerCue cue = TimerCueActions.create(this.panel.getData(), this.panel.getCursor(), start, end);
+        TimerCue cue = TimerCueActions.create(this.panel.getData(), tick, start, end);
 
         this.selected = cue.uuid.get();
         this.persist(true);
         this.selectEndpoint(false);
+    }
+
+    void selectCue(String uuid)
+    {
+        if (!uuid.equals(this.selected))
+        {
+            this.selected = uuid;
+            this.snapshot = "";
+            this.auffrischen();
+        }
     }
 
     void edit(Consumer<TimerCue> change)
@@ -136,6 +165,11 @@ public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffris
                 value.startTick.set((int) tick);
             }
         });
+    }
+
+    void usePlayhead(boolean end)
+    {
+        this.setTime(end, this.panel.getCursor() / 20D);
     }
 
     public void selectEndpoint(boolean end)
