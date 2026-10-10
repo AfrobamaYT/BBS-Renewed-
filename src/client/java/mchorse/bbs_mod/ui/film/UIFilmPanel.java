@@ -3183,9 +3183,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public void setCursor(int value)
     {
         this.flightRecorder.rewind();
-
         this.runner.ticks = Math.max(0, value);
-
+        this.lastRunning = this.runner.isRunning();
         this.notifyServer(ActionState.SEEK);
     }
 

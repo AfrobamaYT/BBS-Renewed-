@@ -979,7 +979,7 @@ public class BBSModClient implements ClientModInitializer
      */
     private void keyPlayFilmAndRecord()
     {
-        if (getDashboardIfCreated() == null)
+        if (getDashboardIfCreated() == null || com.afrobama.bbstools.client.film.RecordFromKeyframesHandler.consumeWorldKey(keyPlayFilmAndRecord))
         {
             return;
         }

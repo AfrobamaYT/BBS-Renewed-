@@ -13,7 +13,9 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.player.LocalPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,6 +93,43 @@ public final class RecordFromKeyframesHandler
             if (k == null) return false;
             if (!InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), k)) return false;
         }
+        return true;
+    }
+
+    /** Consume a conflicting native video-key pulse as the replay key, once until release. */
+    public static boolean consumeWorldKey(KeyMapping mapping)
+    {
+        Minecraft mc = Minecraft.getInstance();
+        KeyCombo combo = BBSToolsKeys.RECORD_FROM_KEYFRAMES;
+
+        if (mc.gui.screen() != null || combo.keys.isEmpty()
+            || !mapping.matches(new KeyEvent(combo.getMainKey(), 0, 0)))
+        {
+            return false;
+        }
+
+        for (int i = 1; i < combo.keys.size(); i++)
+        {
+            if (!InputConstants.isKeyDown(mc.getWindow(), combo.keys.get(i)))
+            {
+                return false;
+            }
+        }
+
+        UIDashboard dashboard = BBSModClient.getDashboardIfCreated();
+        UIFilmPanel panel = dashboard == null ? null : dashboard.getPanel(UIFilmPanel.class);
+
+        if (panel == null || panel.getData() == null || (BBSModClient.getFilms().getRecorder() == null
+            && !panel.getData().replays.getList().contains(panel.replayEditor.getReplay())))
+        {
+            return false;
+        }
+
+        if (!wasPressed)
+        {
+            fireFromViewport();
+        }
+
         return true;
     }
 
