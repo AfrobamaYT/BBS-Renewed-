@@ -6,7 +6,6 @@ import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.pathfinder.Path;
@@ -22,7 +21,6 @@ import java.util.List;
 public final class TimerGroundPath
 {
     public static final int MAX_DISTANCE = 48;
-    private static final int SEARCH_RADIUS = MAX_DISTANCE + 8;
 
     public record Result(List<Vec3> points, String error)
     {
@@ -48,11 +46,14 @@ public final class TimerGroundPath
             return error("Marker is beyond 48 blocks; move closer");
         }
         BlockPos center = player.blockPosition();
+        /* The native region adds eight blocks of padding. A nearby marker must not
+         * demand the maximum 56-block region or force a higher world render distance. */
+        int searchRadius = Math.min(MAX_DISTANCE, Math.max(16, (int) Math.ceil(start.distanceTo(goal)) + 8)) + 8;
 
         /* PathNavigationRegion otherwise substitutes EmptyLevelChunk and hides missing terrain. */
-        for (int x = (center.getX() - SEARCH_RADIUS) >> 4; x <= (center.getX() + SEARCH_RADIUS) >> 4; x++)
+        for (int x = (center.getX() - searchRadius) >> 4; x <= (center.getX() + searchRadius) >> 4; x++)
         {
-            for (int z = (center.getZ() - SEARCH_RADIUS) >> 4; z <= (center.getZ() + SEARCH_RADIUS) >> 4; z++)
+            for (int z = (center.getZ() - searchRadius) >> 4; z <= (center.getZ() + searchRadius) >> 4; z++)
             {
                 if (level.getChunkSource().getChunkNow(x, z) == null)
                 {
@@ -62,9 +63,10 @@ public final class TimerGroundPath
         }
 
         Walker walker = new Walker(level, player);
-        GroundPathNavigation navigation = (GroundPathNavigation) walker.getNavigation();
+        TimerPlanningNavigation navigation = (TimerPlanningNavigation) walker.getNavigation();
 
         navigation.setRequiredPathLength(MAX_DISTANCE);
+        navigation.regionRadius(searchRadius);
         navigation.setCanFloat(false);
         navigation.setCanOpenDoors(false);
         navigation.getNodeEvaluator().setCanPassDoors(true);
