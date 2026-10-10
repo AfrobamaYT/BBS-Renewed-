@@ -1,11 +1,8 @@
 package mchorse.bbs_mod.ui.forms.editors.panels.widgets;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.function.Consumer;
 
 import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
-import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -105,14 +102,7 @@ public class UIItemStack extends UIElement
 
         if (!empty)
         {
-            PoseStack matrices = context.batcher.pose();
-            CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
-
-            matrices.pushPose();
-            consumers.setUI(true);
             context.batcher.getContext().item(this.stack, this.area.x + (slot - 16) / 2, this.area.my() - 8);
-            consumers.setUI(false);
-            matrices.popPose();
         }
 
         FontRenderer font = context.batcher.getFont();
