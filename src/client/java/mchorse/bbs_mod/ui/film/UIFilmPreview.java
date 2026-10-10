@@ -644,6 +644,9 @@ public class UIFilmPreview extends UIElement
         context.batcher.flush();
 
         net.minecraft.client.gui.GuiGraphicsExtractor draw = context.batcher.getContext();
+        com.mojang.blaze3d.platform.Window window = mc.getWindow();
+        int editorScale = window.getGuiScale();
+        boolean customScale = BBSModClient.getCustomGUIScale() > 0F;
 
         /* ⚠️ 26.2: der Zeichen-Stapel der Oberflaeche ist ZWEIDIMENSIONAL geworden
          * (Matrix3x2fStack statt PoseStack) — die Oberflaeche kennt kein Z mehr, die Tiefe
@@ -666,6 +669,13 @@ public class UIFilmPreview extends UIElement
 
         try
         {
+            /* Use the same calculation as Minecraft.resizeGui, without resizing the
+             * dashboard. Its own scale must not override the game's HUD preference. */
+            if (customScale)
+            {
+                BBSModClient.setCustomGUIScale(false);
+                window.setGuiScale(window.calculateScale(mc.options.guiScale().get(), mc.isEnforceUnicode()));
+            }
             mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.beginHudRendering(draw);
             matrices.pushMatrix();
 
@@ -684,12 +694,25 @@ public class UIFilmPreview extends UIElement
         }
         finally
         {
-            mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.endHudRendering(draw);
-            mchorse.bbs_mod.sonden.Sonden.ueberlagerung.wiederherstellen(debugOverlay);
-            mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(hidden);
+            try
+            {
+                mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.endHudRendering(draw);
+            }
+            finally
+            {
+                /* ui_scale=0 already uses Minecraft's scale: leave the override flag
+                 * untouched in that case, rather than inferring its value from zero. */
+                if (customScale)
+                {
+                    window.setGuiScale(editorScale);
+                    BBSModClient.setCustomGUIScale(true);
+                }
+                mchorse.bbs_mod.sonden.Sonden.ueberlagerung.wiederherstellen(debugOverlay);
+                mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(hidden);
 
-            context.batcher.flush();
-            context.batcher.unclip(context);
+                context.batcher.flush();
+                context.batcher.unclip(context);
+            }
         }
     }
 
