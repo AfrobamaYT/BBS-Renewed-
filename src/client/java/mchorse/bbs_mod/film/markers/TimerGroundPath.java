@@ -7,8 +7,10 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.phys.Vec3;
@@ -122,6 +124,12 @@ public final class TimerGroundPath
         protected EntityDimensions getDefaultDimensions(Pose pose)
         {
             return this.dimensions == null ? EntityDimensions.scalable(0.6F, 1.8F) : this.dimensions;
+        }
+
+        @Override
+        protected PathNavigation createNavigation(Level level)
+        {
+            return new TimerPlanningNavigation(this, level);
         }
 
         @Override
