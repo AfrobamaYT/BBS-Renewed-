@@ -89,7 +89,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         }
 
         Font renderer = Minecraft.getInstance().font;
-        CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
+        CustomVertexConsumerProvider consumers = context.isPicking() ? null : FormUtilsClient.getProvider();
         float scale = 1F / 16F;
         int light = context.light;
 
@@ -158,20 +158,23 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         FormColorBlend.blend(color, this.form.color.get(), this.form.additiveColor.get());
         shadowColor.mul(context.color);
 
-        if (shadowColor.a > 0)
+        if (shadowColor.a > 0 && !context.isPicking())
         {
             context.stack.pushPose();
             context.stack.translate(0F, 0F, -0.1F);
-            text(context.stack, consumers, x + this.form.shadowX.get(), y + this.form.shadowY.get(), content, shadowColor.getARGBColor(), light);
+            text(context, consumers, x + this.form.shadowX.get(), y + this.form.shadowY.get(), content, shadowColor.getARGBColor(), light);
             context.stack.popPose();
         }
 
-        text(context.stack, consumers, x, y, content, color.getARGBColor(), light);
+        text(context, consumers, x, y, content, color.getARGBColor(), light);
 
         /* 26.2: entfaellt. consumers.draw() spielt die RenderTypes ab, in die
          * Font.drawInBatch geschrieben hat; deren Pipeline traegt den Tiefentest.
          * Ein Zustandsaufruf davor erreicht sie nicht mehr. */
-        consumers.draw();
+        if (consumers != null)
+        {
+            consumers.draw();
+        }
 
         this.renderShadow(context, x, y, w, h);
     }
@@ -212,7 +215,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         shadowColor.mul(context.color);
 
-        if (shadowColor.a > 0)
+        if (shadowColor.a > 0 && !context.isPicking())
         {
             context.stack.pushPose();
             context.stack.translate(0F, 0F, -0.1F);
@@ -221,7 +224,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             {
                 int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.width(line)) * this.form.anchorX.get()) : 0);
 
-                text(context.stack, consumers, x2 + this.form.shadowX.get(), y2 + this.form.shadowY.get(), line, shadowColor.getARGBColor(), light);
+                text(context, consumers, x2 + this.form.shadowX.get(), y2 + this.form.shadowY.get(), line, shadowColor.getARGBColor(), light);
 
                 y2 += 12;
             }
@@ -241,12 +244,15 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         {
             int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.width(line)) * this.form.anchorX.get()) : 0);
 
-            text(context.stack, consumers, x2, y2, line, color, light);
+            text(context, consumers, x2, y2, line, color, light);
 
             y2 += 12;
         }
 
-        consumers.draw();
+        if (consumers != null)
+        {
+            consumers.draw();
+        }
 
         /* 26.2: entfaellt. Der Tiefentest der Textzeilen steckt in den Pipelines der
          * RenderTypes, die consumers.draw() gerade abgespielt hat; fuer den danach
@@ -271,15 +277,22 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
      * <p>⚠️ Der Sammler nimmt einen {@code PoseStack}, keine Matrix: er kopiert die oberste
      * Pose beim Einreichen. Der Stapel darf danach weiterwandern.
      *
-     * <p>{@code FormattedCharSequence.forward(text, Style.EMPTY)} ist die genaue Entsprechung
-     * der alten String-Ueberladung: beide gehen ueber {@code StringDecomposer.iterateFormatted}
-     * und werten damit die §-Codes aus, die {@code StringUtils.processColoredText} erzeugt.
+     * <p>Use StringDecomposer.iterateFormatted like the original String overload.
+     * FormattedCharSequence.forward iterates literal characters, including formatting codes.
      */
-    private static void text(PoseStack stapel, CustomVertexConsumerProvider consumers, float x, float y, String inhalt, int farbe, int licht)
+    private static void text(FormRenderingContext context, CustomVertexConsumerProvider consumers, float x, float y, String inhalt, int farbe, int licht)
     {
+        FormattedCharSequence formatted = (sink) -> net.minecraft.util.StringDecomposer.iterateFormatted(inhalt, Style.EMPTY, sink);
+
+        if (context.isPicking())
+        {
+            TexturedFormPicking.text(context, formatted, x, y, farbe);
+            return;
+        }
+
         consumers.sammler().submitText(
-            stapel, x, y,
-            FormattedCharSequence.forward(inhalt, Style.EMPTY),
+            context.stack, x, y,
+            formatted,
             false,
             Font.DisplayMode.NORMAL,
             licht,
@@ -295,6 +308,16 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         Color color = this.form.background.get().copy();
 
         color.mul(context.color);
+
+        if (context.isPicking())
+        {
+            if (color.a < 0.1F)
+            {
+                return;
+            }
+
+            color.set(TexturedFormPicking.color(context.getPickingIndex(), 255), true);
+        }
 
         if (color.a <= 0)
         {
@@ -320,7 +343,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
                 color.r, color.g, color.b, color.a
             );
 
-            if (FormTranslucentQueue.isGroupOpen())
+            if (!context.isPicking() && FormTranslucentQueue.isGroupOpen())
             {
                 /* 26.2: VertexBuffer ist entfallen, die Aufgabe nicht -- das Netz muss bis zum
                  * Leeren der Warteschlange auf der Karte liegenbleiben. Das macht jetzt
@@ -349,11 +372,13 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
                  * Zweig darueber in die Warteschlange legt — die Ecken tragen die Pose
                  * schon, also bleibt nur die globale Modellansicht. */
                 SofortZeichner.zeichnen(
-                    FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, false),
+                    FormPipelines.holen(PrimitiveTopology.TRIANGLES, !context.isPicking(), true, false),
                     builder.build(),
                     RenderSystem.getModelViewMatrixCopy(),
                     null,
-                    null);
+                    null,
+                    context.isPicking() ? mchorse.bbs_mod.graphics.PickZiel.pflicht() : null,
+                    context.isPicking() ? mchorse.bbs_mod.graphics.PickZiel.tiefe() : null);
                 /* MERGE fs-2.5: ihr translucent-queue-zweig uebernommen, unsere
                  * null-absicherung darueber. builder.end() wirft, wenn nichts gezeichnet
                  * wurde; endNullable() gibt dann null. Beides wird gebraucht. */
