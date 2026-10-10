@@ -573,13 +573,11 @@ public final class BBSToolsModClient implements ClientModInitializer
                 (clip, editor) -> new com.afrobama.bbstools.client.clip.UIBBSToolsAddCameraClip(
                     (com.afrobama.bbstools.clip.BBSToolsAddCameraClip) clip, editor));
 
-            /* AUTONOMIE 2026-07-27: UI-editor fuer den damage-hitbox-clip. Der clip-typ
-             * selbst wird serverseitig in BBSToolsMod registriert; ohne DIESE zeile gaebe
-             * es ihn zwar in der clip-liste, aber ohne editor-panel. */
             mchorse.bbs_mod.ui.film.clips.UIClip.register(
                 com.afrobama.bbstools.hitbox.DamageHitboxClip.class,
                 (clip, editor) -> new com.afrobama.bbstools.client.hitbox.UIDamageHitboxClip(
                     (com.afrobama.bbstools.hitbox.DamageHitboxClip) clip, editor));
+            com.afrobama.bbstools.client.hitbox.UIDamageHitboxClip.registerWireframe();
 
             BBSToolsMod.LOG.info("Add Camera clip registered (bbs:bbstools_add_camera)");
         }
