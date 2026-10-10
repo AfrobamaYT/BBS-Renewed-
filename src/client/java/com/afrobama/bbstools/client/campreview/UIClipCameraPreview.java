@@ -72,7 +72,6 @@ public class UIClipCameraPreview extends UIElement
     public boolean manuallyPositioned;
 
     public boolean freeFlyActive;
-    private boolean lastFPressed;
 
     /** True when in Free Mode (camera locked to the per-tile free
      *  pose, ignoring clip-animation). Camera Mode = follow clip. */
@@ -157,6 +156,36 @@ public class UIClipCameraPreview extends UIElement
     }
 
     @Override
+    protected boolean subKeyPressed(UIContext context)
+    {
+        if (context.isFocused())
+        {
+            return false;
+        }
+        if (this.area.isInside(context.mouseX, context.mouseY) && context.isPressed(GLFW.GLFW_KEY_F))
+        {
+            if (!this.freeMode)
+            {
+                this.enterFreeMode();
+            }
+            this.freeFlyActive = !this.freeFlyActive;
+            suppressBBSFlight();
+            return true;
+        }
+        if (this.freeFlyActive)
+        {
+            int key = context.getKeyCode();
+            if (key == GLFW.GLFW_KEY_W || key == GLFW.GLFW_KEY_A || key == GLFW.GLFW_KEY_S
+                || key == GLFW.GLFW_KEY_D || key == GLFW.GLFW_KEY_SPACE || key == GLFW.GLFW_KEY_LEFT_CONTROL
+                || key == GLFW.GLFW_KEY_Q || key == GLFW.GLFW_KEY_E || key == GLFW.GLFW_KEY_T || key == GLFW.GLFW_KEY_G)
+            {
+                return true;
+            }
+        }
+        return super.subKeyPressed(context);
+    }
+
+    @Override
     public void render(UIContext context)
     {
         if (this.dragging)
@@ -181,41 +210,7 @@ public class UIClipCameraPreview extends UIElement
 
         boolean hovered = this.area.isInside(context.mouseX, context.mouseY);
 
-        /* F key while hovered: enter Free Mode + activate free-fly so
-         *  the user can park the camera anywhere. Second F press
-         *  exits free-fly (camera stays at parked pose since we're
-         *  still in Free Mode). Pressing F in Camera Mode auto-flips
-         *  to Free Mode + starts the fly.
-         *
-         *  Side-effect: BBS's panel.setFlight(false) is called every
-         *  frame while our free-fly is active so the main BBS preview
-         *  doesn't ALSO fly with WASD (BBS's flight is also bound to
-         *  F in the dashboard, both my hover-poll and BBS's KeybindManager
-         *  would otherwise fire together).
-         *
-         *  26.2: Window.getWindow() heisst nicht mehr so — der rohe GLFW-Zeiger
-         *  waere jetzt Window.handle(). Gebraucht wird er hier aber nicht mehr,
-         *  weil InputConstants.isKeyDown das Window-Objekt selbst nimmt
-         *  (javap: isKeyDown(com.mojang.blaze3d.platform.Window, int)).
-         *  Darum wandert der Typ von long auf Window durch alle Tastenabfragen. */
         Window handle = Minecraft.getInstance().getWindow();
-        boolean fDown = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_F);
-        if (hovered && fDown && !lastFPressed)
-        {
-            if (!this.freeMode)
-            {
-                this.enterFreeMode();
-                this.freeFlyActive = true;
-                LOG.info("F: entered FREE MODE + free-fly for clip {}", this.clipId);
-            }
-            else
-            {
-                this.freeFlyActive = !this.freeFlyActive;
-                LOG.info("F: free-fly {} (free mode) for clip {}",
-                    this.freeFlyActive ? "ENABLED" : "disabled", this.clipId);
-            }
-        }
-        lastFPressed = fDown;
 
         if (this.freeFlyActive)
         {
