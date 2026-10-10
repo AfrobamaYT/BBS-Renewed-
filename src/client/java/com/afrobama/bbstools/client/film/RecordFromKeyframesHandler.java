@@ -96,22 +96,25 @@ public final class RecordFromKeyframesHandler
 
     private static void fire()
     {
+        /* Global polling must not record while a screen or text field is open. */
+        if (Minecraft.getInstance().gui.screen() == null)
+        {
+            fireFromViewport();
+        }
+    }
+
+    /** Called by the viewport's focus-aware keybind manager, or the global world key. */
+    public static void fireFromViewport()
+    {
         try
         {
             Minecraft mc = Minecraft.getInstance();
 
-            /* Match vanilla V (KeyBinding.wasPressed) semantics — MC
-             *  suppresses vanilla key bindings while any Screen is
-             *  open. We poll GLFW directly so we have to enforce the
-             *  same rule manually, otherwise the user can trigger an
-             *  accidental recording while typing in an editor textbox
-             *  or scrubbing the timeline. */
-            if (mc.gui.screen() != null)
-            {
-                return;
-            }
+            /* Closing the viewport must not let the still-held key toggle again
+             * from the global poll on the next client tick. Release re-arms it. */
+            wasPressed = true;
 
-            UIDashboard dashboard = BBSModClient.getDashboard();
+            UIDashboard dashboard = BBSModClient.getDashboardIfCreated();
             if (dashboard == null)
             {
                 LOG.info("F6 pressed but dashboard is null — open the editor at least once first.");

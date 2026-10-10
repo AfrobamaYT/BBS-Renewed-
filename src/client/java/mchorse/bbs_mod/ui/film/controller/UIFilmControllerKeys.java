@@ -1,6 +1,8 @@
 package mchorse.bbs_mod.ui.film.controller;
 
 import com.afrobama.bbstools.client.keybinds.BBSToolsKeys;
+import com.afrobama.bbstools.client.film.RecordFromCursorHandler;
+import com.afrobama.bbstools.client.film.RecordFromKeyframesHandler;
 
 import mchorse.bbs_mod.actions.ActionState;
 import mchorse.bbs_mod.camera.Camera;
@@ -40,6 +42,8 @@ public class UIFilmControllerKeys
         Supplier<Boolean> hasTwoOrMoreReplays = () -> c.panel.getData() != null && c.panel.getData().replays.getList().size() >= 2;
 
         c.keys().register(Keys.FILM_CONTROLLER_START_RECORDING, c::pickRecording).active(hasActor).category(category);
+        c.keys().register(BBSToolsKeys.RECORD_FROM_CURSOR, RecordFromCursorHandler::fireFromViewport).inside().strict().active(hasActor).category(category);
+        c.keys().register(BBSToolsKeys.RECORD_FROM_KEYFRAMES, RecordFromKeyframesHandler::fireFromViewport).inside().strict().active(hasActor).category(category);
         c.keys().register(Keys.FILM_CONTROLLER_INSERT_FRAME, () ->
         {
             c.insertFrame();

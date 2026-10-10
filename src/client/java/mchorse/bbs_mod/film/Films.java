@@ -15,6 +15,8 @@ import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
@@ -189,6 +191,21 @@ public class Films
             }
 
             recorder.shutdown();
+
+            /* A stopped take keeps its original start, including a cancelled countdown.
+             * All outside recording paths stop here, so their next take uses the same tick. */
+            UIDashboard dashboard = BBSModClient.getDashboardIfCreated();
+            UIFilmPanel panel = dashboard == null ? null : dashboard.getPanel(UIFilmPanel.class);
+
+            if (panel != null && panel.getData() == recorder.film)
+            {
+                if (panel.isRunning())
+                {
+                    panel.togglePlayback();
+                }
+
+                panel.setCursor(recorder.initialTick);
+            }
         }
 
         return recorder;
