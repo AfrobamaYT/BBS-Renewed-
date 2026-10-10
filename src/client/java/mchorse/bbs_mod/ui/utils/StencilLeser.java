@@ -235,15 +235,43 @@ final class StencilLeser
     /** {@code ziel == null}: into the bound pixel pack buffer at offset 0 (asynchronous). */
     private static void glLesen(int x, int y, int w, int h, ByteBuffer ziel)
     {
-        /* RGBA8 as stored: GL_FLOAT made the driver convert on the CPU and block even into a pixel
-         * pack buffer (27.09.2026). Same ids: (int) ((c / 255F) * 255F) == c for all 256 c. */
-        if (ziel == null)
+        int alignment = GL11.glGetInteger(GL11.GL_PACK_ALIGNMENT);
+        int rowLength = GL11.glGetInteger(GL11.GL_PACK_ROW_LENGTH);
+        int skipRows = GL11.glGetInteger(GL11.GL_PACK_SKIP_ROWS);
+        int skipPixels = GL11.glGetInteger(GL11.GL_PACK_SKIP_PIXELS);
+        int packBuffer = ziel == null ? 0 : GL11.glGetInteger(GL21.GL_PIXEL_PACK_BUFFER_BINDING);
+
+        try
         {
-            GL11.glReadPixels(x, y, w, h, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0L);
+            /* Both destinations hold exactly w*h RGBA8 pixels, not the renderer's row stride. */
+            GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, 1);
+            GL11.glPixelStorei(GL11.GL_PACK_ROW_LENGTH, 0);
+            GL11.glPixelStorei(GL11.GL_PACK_SKIP_ROWS, 0);
+            GL11.glPixelStorei(GL11.GL_PACK_SKIP_PIXELS, 0);
+
+            /* RGBA8 as stored: GL_FLOAT made the driver convert on the CPU and block even into a
+             * pixel pack buffer (27.09.2026). Same ids: (int) ((c / 255F) * 255F) == c for all 256 c. */
+            if (ziel == null)
+            {
+                GL11.glReadPixels(x, y, w, h, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0L);
+            }
+            else
+            {
+                GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, 0);
+                GL11.glReadPixels(x, y, w, h, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, ziel);
+            }
         }
-        else
+        finally
         {
-            GL11.glReadPixels(x, y, w, h, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, ziel);
+            if (ziel != null)
+            {
+                GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, packBuffer);
+            }
+
+            GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, alignment);
+            GL11.glPixelStorei(GL11.GL_PACK_ROW_LENGTH, rowLength);
+            GL11.glPixelStorei(GL11.GL_PACK_SKIP_ROWS, skipRows);
+            GL11.glPixelStorei(GL11.GL_PACK_SKIP_PIXELS, skipPixels);
         }
     }
 }
