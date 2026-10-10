@@ -44,13 +44,14 @@ public class CubicMatrixRenderer implements ICubicRenderer
         ICubicRenderer.rotateGroup(stack, group);
         ICubicRenderer.scaleGroup(stack, group);
         ICubicRenderer.moveBackFromGroupPivot(stack, group);
+
+        /* Hidden geometry still has a bone frame for trackers and attachments. */
+        this.matrices.get(group.index).set(stack.last().pose());
     }
 
     @Override
     public boolean renderGroup(BufferBuilder builder, PoseStack stack, ModelGroup group, Model model)
     {
-        this.matrices.get(group.index).set(stack.last().pose());
-
         return false;
     }
 }
