@@ -62,7 +62,7 @@ public class PlayerEntityRendererMixin
     @Inject(method = "renderRightHand", at = @At("HEAD"), cancellable = true)
     public void onRenderRightArmBegin(PoseStack matrices, SubmitNodeCollector sammler, int licht, Identifier textur, boolean schlank, CallbackInfo info)
     {
-        if (MixinBruecke.rufeUndAbbrechen("SpielerFormRendererLogik", "arm", matrices, licht, InteractionHand.MAIN_HAND))
+        if (MixinBruecke.rufeUndAbbrechen("SpielerFormRendererLogik", "arm", matrices, sammler, licht, InteractionHand.MAIN_HAND))
         {
             info.cancel();
         }
@@ -71,7 +71,7 @@ public class PlayerEntityRendererMixin
     @Inject(method = "renderLeftHand", at = @At("HEAD"), cancellable = true)
     public void onRenderLeftArmBegin(PoseStack matrices, SubmitNodeCollector sammler, int licht, Identifier textur, boolean schlank, CallbackInfo info)
     {
-        if (MixinBruecke.rufeUndAbbrechen("SpielerFormRendererLogik", "arm", matrices, licht, InteractionHand.OFF_HAND))
+        if (MixinBruecke.rufeUndAbbrechen("SpielerFormRendererLogik", "arm", matrices, sammler, licht, InteractionHand.OFF_HAND))
         {
             info.cancel();
         }

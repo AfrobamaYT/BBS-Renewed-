@@ -3,12 +3,14 @@ package com.afrobama.blendertransform;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.client.renderer.MorphRenderer;
 import mchorse.bbs_mod.forms.FormUtilsClient;
+import mchorse.bbs_mod.forms.FormSammler;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.renderers.FormRenderer;
 import mchorse.bbs_mod.morphing.Morph;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 
@@ -58,7 +60,7 @@ public final class SpielerFormRendererLogik
      *
      * @return {@code true} = Vanillas Arm wird uebersprungen
      */
-    public static boolean arm(PoseStack matrizen, int licht, InteractionHand hand)
+    public static boolean arm(PoseStack matrizen, SubmitNodeCollector sammler, int licht, InteractionHand hand)
     {
         AbstractClientPlayer spieler = Minecraft.getInstance().player;
 
@@ -77,6 +79,17 @@ public final class SpielerFormRendererLogik
 
         FormRenderer zeichner = FormUtilsClient.getRenderer(form);
 
-        return zeichner != null && zeichner.renderArm(matrizen, licht, spieler, hand);
+        if (zeichner == null)
+        {
+            return false;
+        }
+
+        /* The hand has its own native collector, outside the level's registered pass. */
+        boolean[] gezeichnet = new boolean[1];
+
+        FormSammler.mitSammler(sammler, () ->
+            gezeichnet[0] = zeichner.renderArm(matrizen, licht, spieler, hand));
+
+        return gezeichnet[0];
     }
 }

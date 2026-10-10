@@ -707,66 +707,66 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             Link texture = link == null ? model.getTexture() : link;
             Color contextColor = Color.white();
             Color formColor = this.form.color.get();
+            List<ModelGroup> groups = new ArrayList<>(model.getModel().getAllGroups());
+            boolean[] visibility = new boolean[groups.size()];
+            boolean wasRenderingArm = this.renderingArm;
 
-            for (ModelGroup group : model.getModel().getAllGroups())
+            for (int i = 0; i < groups.size(); i++)
             {
-                ModelGroup g = group;
-                boolean visible = false;
-
-                while (g != null)
-                {
-                    if (g.id.equals(slot.group))
-                    {
-                        visible = true;
-
-                        break;
-                    }
-
-                    g = g.parent;
-                }
-
-                group.visible = visible;
+                visibility[i] = groups.get(i).visible;
             }
 
-            model.model.resetPose();
-
             matrices.pushPose();
-            matrices.mulPose(Axis.YP.rotation(MathUtils.PI));
-            MatrixStackUtils.applyTransform(matrices, slot.transform);
-
-            BBSModClient.getTextures().bindTexture(texture);
-
-            Supplier<RenderPipeline> mainShader = (BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld()) || !model.isVAORendered()
-                ? () -> RenderPipelines.ENTITY_TRANSLUCENT_CULL
-                : BBSShaders::getModel;
-
-            /* 26.2: enableDepthTest() + enableBlend() sind ersatzlos entfallen. Der Arm laeuft durch
-             * dasselbe renderModel wie jedes andere Modell, und Tiefentest wie Mischung kommen aus
-             * der Pipeline dieses Draws: ModelVAOPipeline traegt DepthStencilState(
-             * GREATER_THAN_OR_EQUAL, true) und BlendFunction.TRANSLUCENT, ohne VAO und unter Iris
-             * bringt es die Pipeline des Entity-RenderTypes mit. */
-
-            boolean additive = this.form.additiveColor.get();
-
-            this.renderingArm = true;
 
             try
             {
+                for (ModelGroup group : groups)
+                {
+                    boolean visible = false;
+
+                    for (ModelGroup g = group; g != null; g = g.parent)
+                    {
+                        if (g.id.equals(slot.group))
+                        {
+                            visible = true;
+
+                            break;
+                        }
+                    }
+
+                    group.visible = visible;
+                }
+
+                model.model.resetPose();
+                matrices.mulPose(Axis.YP.rotation(MathUtils.PI));
+                MatrixStackUtils.applyTransform(matrices, slot.transform);
+
+                BBSModClient.getTextures().bindTexture(texture);
+
+                Supplier<RenderPipeline> mainShader = (BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld()) || !model.isVAORendered()
+                    ? () -> RenderPipelines.ENTITY_TRANSLUCENT_CULL
+                    : BBSShaders::getModel;
+
+                /* Depth and blending belong to the selected pipeline, not global switches. */
+                boolean additive = this.form.additiveColor.get();
+
+                this.renderingArm = true;
                 this.renderModel(this.entity, mainShader, matrices, model, light, OverlayTexture.NO_OVERLAY, contextColor, formColor, additive, false, null, 0F, null);
+
+                return true;
             }
             finally
             {
-                this.renderingArm = false;
+                /* Models are shared by all forms, including the picker and other films. */
+                this.renderingArm = wasRenderingArm;
+
+                for (int i = 0; i < groups.size(); i++)
+                {
+                    groups.get(i).visible = visibility[i];
+                }
+
+                matrices.popPose();
             }
-
-            for (ModelGroup group : model.getModel().getAllGroups())
-            {
-                group.visible = true;
-            }
-
-            matrices.popPose();
-
-            return true;
         }
 
         return super.renderArm(matrices, light, player, hand);
