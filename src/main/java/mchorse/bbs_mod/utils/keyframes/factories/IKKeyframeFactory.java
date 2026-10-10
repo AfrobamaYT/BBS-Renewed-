@@ -12,6 +12,7 @@ import java.util.Set;
 
 public class IKKeyframeFactory implements IKeyframeFactory<IKControls>
 {
+    private static final IKControl IDENTITY = new IKControl();
     private final ThreadLocal<Set<String>> keys = ThreadLocal.withInitial(HashSet::new);
     private final ThreadLocal<IKControls> output = ThreadLocal.withInitial(IKControls::new);
 
@@ -67,7 +68,7 @@ public class IKKeyframeFactory implements IKeyframeFactory<IKControls>
 
             for (String key : keys)
             {
-                i.get(key).autoLerp(preAp.get(key), ap.get(key), bp.get(key), postBp.get(key), pt, at, bt, qt, clamped, x);
+                i.get(key).autoLerp(read(preAp, key), read(ap, key), read(bp, key), read(postBp, key), pt, at, bt, qt, clamped, x);
             }
 
             return i;
@@ -84,10 +85,15 @@ public class IKKeyframeFactory implements IKeyframeFactory<IKControls>
 
         for (String key : keys)
         {
-            i.get(key).lerp(preA.get(key), a.get(key), b.get(key), postB.get(key), interpolation, x);
+            i.get(key).lerp(read(preA, key), read(a, key), read(b, key), read(postB, key), interpolation, x);
         }
 
         return i;
+    }
+
+    private static IKControl read(IKControls value, String key)
+    {
+        return value == null ? IDENTITY : value.controls.getOrDefault(key, IDENTITY);
     }
 
     private Set<String> collect(IKControls preA, IKControls a, IKControls b, IKControls postB)

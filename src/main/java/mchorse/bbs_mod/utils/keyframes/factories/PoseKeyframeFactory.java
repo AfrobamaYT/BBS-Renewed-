@@ -12,6 +12,7 @@ import java.util.Set;
 
 public class PoseKeyframeFactory implements IKeyframeFactory<Pose>
 {
+    private static final PoseTransform IDENTITY = new PoseTransform();
     private final ThreadLocal<Set<String>> keys = ThreadLocal.withInitial(HashSet::new);
     private final ThreadLocal<Pose> output = ThreadLocal.withInitial(Pose::new);
 
@@ -67,7 +68,7 @@ public class PoseKeyframeFactory implements IKeyframeFactory<Pose>
 
             for (String key : keys)
             {
-                i.get(key).autoLerp(preAp.get(key), ap.get(key), bp.get(key), postBp.get(key), pt, at, bt, qt, clamped, x);
+                i.get(key).autoLerp(read(preAp, key), read(ap, key), read(bp, key), read(postBp, key), pt, at, bt, qt, clamped, x);
             }
 
             return i;
@@ -84,10 +85,16 @@ public class PoseKeyframeFactory implements IKeyframeFactory<Pose>
 
         for (String key : keys)
         {
-            i.get(key).lerp(preA.get(key), a.get(key), b.get(key), postB.get(key), interpolation, x);
+            i.get(key).lerp(read(preA, key), read(a, key), read(b, key), read(postB, key), interpolation, x);
         }
 
         return i;
+    }
+
+    private static PoseTransform read(Pose value, String key)
+    {
+        /* Missing input bones are identity; evaluating a key must never author them. */
+        return value == null ? IDENTITY : value.transforms.getOrDefault(key, IDENTITY);
     }
 
     private Set<String> collect(Pose preA, Pose a, Pose b, Pose postB)
