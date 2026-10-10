@@ -100,7 +100,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 			kennung.append('|').append(z.ebene).append(z.name).append(z.zaehler).append(z.auf ? '+' : '-');
 		}
 
-		return kennung.append('@').append(panel.getCursor()).append('m').append(this.modus).toString();
+        return kennung.append('@').append(panel.getCursor()).append('m').append(this.modus).append('a').append(FilmAutoKey.isEnabled()).toString();
 	}
 
 	@Override
@@ -560,11 +560,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 							filmF.markers.setzeBei(cursorF);
 						}
 					}
-					else if ("Key".equals(name))
-					{
-						this.oeffneKeyMenue(cursorF);
-					}
-
 					this.stand = "";
 					this.flaeche.neuMalen();
 				});
@@ -607,6 +602,11 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		x -= bw;
 		this.transportKnopf(vg, f, "tr-rec", x, y, bw, bh, k, "rec", 0xE58F89, false,
 			() -> panel.preview.recordReplay.clickItself(), "Record replay", kuerzel("record"));
+		/* Auto-key edits do not start replay recording or playback. */
+		x -= bw + 6F * k;
+		this.transportKnopf(vg, f, "tr-auto-key", x, y, bw, bh, k, "dopesheet", 0xE58F89, FilmAutoKey.isEnabled(),
+			FilmAutoKey::toggle, "Auto Key: pose/transform edits at playhead (no playback)", "");
+
 
 		x -= 6F * k + bw;
 		this.transportKnopf(vg, f, "tr-ende", x, y, bw, bh, k, "ende", NanoDesign.TXT, false,

@@ -518,7 +518,7 @@ public class UIPropTransform extends UITransform
 
     public Transform getTransform()
     {
-        return this.transform;
+        return mchorse.bbs_mod.ui.film.FilmAutoKey.transform(this, this.transform);
     }
 
     public boolean isEditing()
@@ -1089,7 +1089,7 @@ public class UIPropTransform extends UITransform
          * the drag being investigated (see ModelIKRuntime#logGesture). */
         ModelIKRuntime.logGesture(true);
 
-        this.cache.copy(this.transform);
+        this.cache.copy(this.transform = this.getTransform());
         Gizmo.INSTANCE.trackTransform(this);
 
         this.strategy = DragStrategyFactory.create(this.bridge, op, axis, axis2, variant, hotkeyMode);

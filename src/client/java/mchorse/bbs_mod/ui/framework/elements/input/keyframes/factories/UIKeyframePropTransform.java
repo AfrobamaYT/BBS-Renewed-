@@ -71,7 +71,7 @@ public abstract class UIKeyframePropTransform extends UIDeltaPropTransform
     @Override
     protected void applyToTarget(Consumer<Transform> consumer)
     {
-        if (this.isTransformRecording())
+        if (this.isTransformRecording() || mchorse.bbs_mod.ui.film.FilmAutoKey.isEditing(this))
         {
             this.applyDuringRecording(this.getRecordingTick(), consumer);
         }

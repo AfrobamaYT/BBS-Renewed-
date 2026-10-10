@@ -737,7 +737,7 @@ public class UIReplaysEditorUtils
                     {
                         forceSelectInSheet(graph, currentSheet, closest);
                     }
-                    cursor.setCursor((int) closest.getTick());
+                    cursor.setCursor(mchorse.bbs_mod.ui.film.FilmAutoKey.pickTick(keyframeEditor.view, (int) closest.getTick(), cursor.getCursor()));
                 }
                 updatePoseEditorBoneSelection(keyframeEditor, bone);
                 return;
@@ -899,7 +899,7 @@ public class UIReplaysEditorUtils
                 forceSelectInSheet(graph, sheet, closest);
             }
             updatePoseEditorBoneSelection(keyframeEditor, boneForEditor);
-            filmPanel.setCursor((int) closest.getTick());
+            filmPanel.setCursor(mchorse.bbs_mod.ui.film.FilmAutoKey.pickTick(keyframeEditor.view, (int) closest.getTick(), filmPanel.getCursor()));
         }
         else
         {
