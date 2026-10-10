@@ -202,8 +202,26 @@ public final class Readback
 		ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * 4);
 
 		/* Tight packing so rows are width*4 bytes with no padding — matters for non-4-aligned widths. */
-		GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, 1);
-		GL11.glReadPixels(0, 0, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, buffer);
+		int[] pack = {GL11.GL_PACK_ALIGNMENT, GL12.GL_PACK_ROW_LENGTH, GL11.GL_PACK_SKIP_ROWS, GL11.GL_PACK_SKIP_PIXELS};
+		int[] previousPack = new int[pack.length];
+
+		for (int i = 0; i < pack.length; i++)
+		{
+			previousPack[i] = GL11.glGetInteger(pack[i]);
+			GL11.glPixelStorei(pack[i], i == 0 ? 1 : 0);
+		}
+
+		try
+		{
+			GL11.glReadPixels(0, 0, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, buffer);
+		}
+		finally
+		{
+			for (int i = 0; i < pack.length; i++)
+			{
+				GL11.glPixelStorei(pack[i], previousPack[i]);
+			}
+		}
 
 		/* Restore the default framebuffer binding so we do not leave the read-FBO bound. */
 		GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, 0);
