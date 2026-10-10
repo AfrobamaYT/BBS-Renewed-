@@ -4,6 +4,8 @@ import mchorse.bbs_mod.utils.interps.easings.EasingArgs;
 
 public class InterpContext
 {
+    private static final ThreadLocal<InterpContext> SCRATCH = ThreadLocal.withInitial(InterpContext::new);
+
     public double a;
     public double b;
     public double x;
@@ -30,6 +32,12 @@ public class InterpContext
 
     public InterpContext set(double a0, double a, double b, double b0, double x)
     {
+        /* The public fluent scratch entry point is shared, not the returned per-thread state. */
+        if (this == IInterp.context)
+        {
+            return SCRATCH.get().set(a0, a, b, b0, x);
+        }
+
         this.a0 = a0;
         this.a = a;
         this.b = b;

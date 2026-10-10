@@ -8,7 +8,7 @@ import mchorse.bbs_mod.utils.pose.Transform;
 
 public class TransformKeyframeFactory implements IKeyframeFactory<Transform>
 {
-    private Transform i = new Transform();
+    private final ThreadLocal<Transform> output = ThreadLocal.withInitial(Transform::new);
 
     @Override
     public Transform fromData(BaseType data)
@@ -46,13 +46,14 @@ public class TransformKeyframeFactory implements IKeyframeFactory<Transform>
     {
         if (interpolation.has(Interpolations.AUTO) || interpolation.has(Interpolations.AUTO_CLAMPED))
         {
-            this.i.autoLerp(
+            Transform i = this.output.get();
+            i.autoLerp(
                 preA.getValue(), a.getValue(), b.getValue(), postB.getValue(),
                 preA.getTick(), a.getTick(), b.getTick(), postB.getTick(),
                 interpolation.has(Interpolations.AUTO_CLAMPED), x
             );
 
-            return this.i;
+            return i;
         }
 
         return IKeyframeFactory.super.interpolate(preA, a, b, postB, interpolation, x);
@@ -61,8 +62,9 @@ public class TransformKeyframeFactory implements IKeyframeFactory<Transform>
     @Override
     public Transform interpolate(Transform preA, Transform a, Transform b, Transform postB, IInterp interpolation, float x)
     {
-        this.i.lerp(preA, a, b, postB, interpolation, x);
+        Transform i = this.output.get();
+        i.lerp(preA, a, b, postB, interpolation, x);
 
-        return this.i;
+        return i;
     }
 }

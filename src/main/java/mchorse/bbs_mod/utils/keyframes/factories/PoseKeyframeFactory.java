@@ -12,9 +12,8 @@ import java.util.Set;
 
 public class PoseKeyframeFactory implements IKeyframeFactory<Pose>
 {
-    private static Set<String> keys = new HashSet<>();
-
-    private Pose i = new Pose();
+    private final ThreadLocal<Set<String>> keys = ThreadLocal.withInitial(HashSet::new);
+    private final ThreadLocal<Pose> output = ThreadLocal.withInitial(Pose::new);
 
     @Override
     public Pose fromData(BaseType data)
@@ -57,7 +56,8 @@ public class PoseKeyframeFactory implements IKeyframeFactory<Pose>
             Pose bp = b.getValue();
             Pose postBp = postB.getValue();
 
-            this.collect(preAp, ap, bp, postBp);
+            Set<String> keys = this.collect(preAp, ap, bp, postBp);
+            Pose i = this.output.get();
 
             boolean clamped = interpolation.has(Interpolations.AUTO_CLAMPED);
             float pt = preA.getTick();
@@ -67,10 +67,10 @@ public class PoseKeyframeFactory implements IKeyframeFactory<Pose>
 
             for (String key : keys)
             {
-                this.i.get(key).autoLerp(preAp.get(key), ap.get(key), bp.get(key), postBp.get(key), pt, at, bt, qt, clamped, x);
+                i.get(key).autoLerp(preAp.get(key), ap.get(key), bp.get(key), postBp.get(key), pt, at, bt, qt, clamped, x);
             }
 
-            return this.i;
+            return i;
         }
 
         return IKeyframeFactory.super.interpolate(preA, a, b, postB, interpolation, x);
@@ -79,18 +79,20 @@ public class PoseKeyframeFactory implements IKeyframeFactory<Pose>
     @Override
     public Pose interpolate(Pose preA, Pose a, Pose b, Pose postB, IInterp interpolation, float x)
     {
-        this.collect(preA, a, b, postB);
+        Set<String> keys = this.collect(preA, a, b, postB);
+        Pose i = this.output.get();
 
         for (String key : keys)
         {
-            this.i.get(key).lerp(preA.get(key), a.get(key), b.get(key), postB.get(key), interpolation, x);
+            i.get(key).lerp(preA.get(key), a.get(key), b.get(key), postB.get(key), interpolation, x);
         }
 
-        return this.i;
+        return i;
     }
 
-    private void collect(Pose preA, Pose a, Pose b, Pose postB)
+    private Set<String> collect(Pose preA, Pose a, Pose b, Pose postB)
     {
+        Set<String> keys = this.keys.get();
         keys.clear();
 
         if (preA != a && preA != null) keys.addAll(preA.transforms.keySet());
@@ -98,9 +100,11 @@ public class PoseKeyframeFactory implements IKeyframeFactory<Pose>
         if (b != null) keys.addAll(b.transforms.keySet());
         if (postB != b && postB != null) keys.addAll(postB.transforms.keySet());
 
-        for (PoseTransform value : this.i.transforms.values())
+        for (PoseTransform value : this.output.get().transforms.values())
         {
             value.identity();
         }
+
+        return keys;
     }
 }

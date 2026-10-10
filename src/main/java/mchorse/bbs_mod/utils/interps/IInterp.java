@@ -2,6 +2,7 @@ package mchorse.bbs_mod.utils.interps;
 
 public interface IInterp
 {
+    /** Fluent scratch entry point: consume set(...)'s returned thread-confined context. */
     public static final InterpContext context = new InterpContext();
 
     public default boolean has(IInterp interp)

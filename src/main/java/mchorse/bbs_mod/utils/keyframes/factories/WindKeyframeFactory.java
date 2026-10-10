@@ -12,7 +12,7 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
  */
 public class WindKeyframeFactory implements IKeyframeFactory<WindControl>
 {
-    private WindControl i = new WindControl();
+    private final ThreadLocal<WindControl> output = ThreadLocal.withInitial(WindControl::new);
 
     @Override
     public WindControl fromData(BaseType data)
@@ -51,10 +51,11 @@ public class WindKeyframeFactory implements IKeyframeFactory<WindControl>
         if (interpolation.has(Interpolations.AUTO) || interpolation.has(Interpolations.AUTO_CLAMPED))
         {
             boolean clamped = interpolation.has(Interpolations.AUTO_CLAMPED);
+            WindControl i = this.output.get();
 
-            this.i.autoLerp(preA.getValue(), a.getValue(), b.getValue(), postB.getValue(), preA.getTick(), a.getTick(), b.getTick(), postB.getTick(), clamped, x);
+            i.autoLerp(preA.getValue(), a.getValue(), b.getValue(), postB.getValue(), preA.getTick(), a.getTick(), b.getTick(), postB.getTick(), clamped, x);
 
-            return this.i;
+            return i;
         }
 
         return IKeyframeFactory.super.interpolate(preA, a, b, postB, interpolation, x);
@@ -63,8 +64,9 @@ public class WindKeyframeFactory implements IKeyframeFactory<WindControl>
     @Override
     public WindControl interpolate(WindControl preA, WindControl a, WindControl b, WindControl postB, IInterp interpolation, float x)
     {
-        this.i.lerp(preA, a, b, postB, interpolation, x);
+        WindControl i = this.output.get();
+        i.lerp(preA, a, b, postB, interpolation, x);
 
-        return this.i;
+        return i;
     }
 }

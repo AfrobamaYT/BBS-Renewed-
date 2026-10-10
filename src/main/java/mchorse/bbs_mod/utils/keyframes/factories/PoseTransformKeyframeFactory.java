@@ -8,7 +8,7 @@ import mchorse.bbs_mod.utils.pose.PoseTransform;
 
 public class PoseTransformKeyframeFactory implements IKeyframeFactory<PoseTransform>
 {
-    private PoseTransform i = new PoseTransform();
+    private final ThreadLocal<PoseTransform> output = ThreadLocal.withInitial(PoseTransform::new);
 
     @Override
     public PoseTransform fromData(BaseType data)
@@ -46,13 +46,14 @@ public class PoseTransformKeyframeFactory implements IKeyframeFactory<PoseTransf
     {
         if (interpolation.has(Interpolations.AUTO) || interpolation.has(Interpolations.AUTO_CLAMPED))
         {
-            this.i.autoLerp(
+            PoseTransform i = this.output.get();
+            i.autoLerp(
                 preA.getValue(), a.getValue(), b.getValue(), postB.getValue(),
                 preA.getTick(), a.getTick(), b.getTick(), postB.getTick(),
                 interpolation.has(Interpolations.AUTO_CLAMPED), x
             );
 
-            return this.i;
+            return i;
         }
 
         return IKeyframeFactory.super.interpolate(preA, a, b, postB, interpolation, x);
@@ -61,8 +62,9 @@ public class PoseTransformKeyframeFactory implements IKeyframeFactory<PoseTransf
     @Override
     public PoseTransform interpolate(PoseTransform preA, PoseTransform a, PoseTransform b, PoseTransform postB, IInterp interpolation, float x)
     {
-        this.i.lerp(preA, a, b, postB, interpolation, x);
+        PoseTransform i = this.output.get();
+        i.lerp(preA, a, b, postB, interpolation, x);
 
-        return this.i;
+        return i;
     }
 }

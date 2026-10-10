@@ -12,7 +12,7 @@ import org.joml.Vector3f;
 public class Vector3fKeyframeFactory implements IKeyframeFactory<Vector3f>
 {
     private final Vector3f empty;
-    private Vector3f i = new Vector3f();
+    private final ThreadLocal<Vector3f> output = ThreadLocal.withInitial(Vector3f::new);
 
     public Vector3fKeyframeFactory(Vector3f empty)
     {
@@ -46,23 +46,24 @@ public class Vector3fKeyframeFactory implements IKeyframeFactory<Vector3f>
     @Override
     public Vector3f interpolate(Keyframe<Vector3f> preA, Keyframe<Vector3f> a, Keyframe<Vector3f> b, Keyframe<Vector3f> postB, IInterp interpolation, float x)
     {
+        Vector3f i = this.output.get();
         if (interpolation.has(Interpolations.BEZIER))
         {
-            this.i.x = (float) BezierUtils.get(
+            i.x = (float) BezierUtils.get(
                 a.getValue().x, b.getValue().x,
                 a.getTick(), b.getTick(),
                 a.getRx(0), a.getRy(0),
                 b.getLx(0), b.getLy(0),
                 x
             );
-            this.i.y = (float) BezierUtils.get(
+            i.y = (float) BezierUtils.get(
                 a.getValue().y, b.getValue().y,
                 a.getTick(), b.getTick(),
                 a.getRx(1), a.getRy(1),
                 b.getLx(1), b.getLy(1),
                 x
             );
-            this.i.z = (float) BezierUtils.get(
+            i.z = (float) BezierUtils.get(
                 a.getValue().z, b.getValue().z,
                 a.getTick(), b.getTick(),
                 a.getRx(2), a.getRy(2),
@@ -70,30 +71,30 @@ public class Vector3fKeyframeFactory implements IKeyframeFactory<Vector3f>
                 x
             );
 
-            return this.i;
+            return i;
         }
 
         if (interpolation.has(Interpolations.AUTO) || interpolation.has(Interpolations.AUTO_CLAMPED))
         {
             boolean clamped = interpolation.has(Interpolations.AUTO_CLAMPED);
 
-            this.i.x = (float) AutoBezier.get(
+            i.x = (float) AutoBezier.get(
                 preA.getValue().x, a.getValue().x, b.getValue().x, postB.getValue().x,
                 preA.getTick(), a.getTick(), b.getTick(), postB.getTick(),
                 clamped, x
             );
-            this.i.y = (float) AutoBezier.get(
+            i.y = (float) AutoBezier.get(
                 preA.getValue().y, a.getValue().y, b.getValue().y, postB.getValue().y,
                 preA.getTick(), a.getTick(), b.getTick(), postB.getTick(),
                 clamped, x
             );
-            this.i.z = (float) AutoBezier.get(
+            i.z = (float) AutoBezier.get(
                 preA.getValue().z, a.getValue().z, b.getValue().z, postB.getValue().z,
                 preA.getTick(), a.getTick(), b.getTick(), postB.getTick(),
                 clamped, x
             );
 
-            return this.i;
+            return i;
         }
 
         return IKeyframeFactory.super.interpolate(preA, a, b, postB, interpolation, x);
@@ -102,11 +103,11 @@ public class Vector3fKeyframeFactory implements IKeyframeFactory<Vector3f>
     @Override
     public Vector3f interpolate(Vector3f preA, Vector3f a, Vector3f b, Vector3f postB, IInterp interpolation, float x)
     {
-        this.i.x = (float) interpolation.interpolate(IInterp.context.set(preA.x, a.x, b.x, postB.x, x));
-        this.i.y = (float) interpolation.interpolate(IInterp.context.set(preA.y, a.y, b.y, postB.y, x));
-        this.i.z = (float) interpolation.interpolate(IInterp.context.set(preA.z, a.z, b.z, postB.z, x));
+        Vector3f i = this.output.get();
+        i.x = (float) interpolation.interpolate(IInterp.context.set(preA.x, a.x, b.x, postB.x, x));
+        i.y = (float) interpolation.interpolate(IInterp.context.set(preA.y, a.y, b.y, postB.y, x));
+        i.z = (float) interpolation.interpolate(IInterp.context.set(preA.z, a.z, b.z, postB.z, x));
 
-        return this.i;
+        return i;
     }
 }
-

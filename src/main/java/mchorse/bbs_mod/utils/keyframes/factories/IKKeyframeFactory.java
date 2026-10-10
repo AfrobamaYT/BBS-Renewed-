@@ -12,9 +12,8 @@ import java.util.Set;
 
 public class IKKeyframeFactory implements IKeyframeFactory<IKControls>
 {
-    private static Set<String> keys = new HashSet<>();
-
-    private IKControls i = new IKControls();
+    private final ThreadLocal<Set<String>> keys = ThreadLocal.withInitial(HashSet::new);
+    private final ThreadLocal<IKControls> output = ThreadLocal.withInitial(IKControls::new);
 
     @Override
     public IKControls fromData(BaseType data)
@@ -57,7 +56,8 @@ public class IKKeyframeFactory implements IKeyframeFactory<IKControls>
             IKControls bp = b.getValue();
             IKControls postBp = postB.getValue();
 
-            this.collect(preAp, ap, bp, postBp);
+            Set<String> keys = this.collect(preAp, ap, bp, postBp);
+            IKControls i = this.output.get();
 
             boolean clamped = interpolation.has(Interpolations.AUTO_CLAMPED);
             float pt = preA.getTick();
@@ -67,10 +67,10 @@ public class IKKeyframeFactory implements IKeyframeFactory<IKControls>
 
             for (String key : keys)
             {
-                this.i.get(key).autoLerp(preAp.get(key), ap.get(key), bp.get(key), postBp.get(key), pt, at, bt, qt, clamped, x);
+                i.get(key).autoLerp(preAp.get(key), ap.get(key), bp.get(key), postBp.get(key), pt, at, bt, qt, clamped, x);
             }
 
-            return this.i;
+            return i;
         }
 
         return IKeyframeFactory.super.interpolate(preA, a, b, postB, interpolation, x);
@@ -79,18 +79,20 @@ public class IKKeyframeFactory implements IKeyframeFactory<IKControls>
     @Override
     public IKControls interpolate(IKControls preA, IKControls a, IKControls b, IKControls postB, IInterp interpolation, float x)
     {
-        this.collect(preA, a, b, postB);
+        Set<String> keys = this.collect(preA, a, b, postB);
+        IKControls i = this.output.get();
 
         for (String key : keys)
         {
-            this.i.get(key).lerp(preA.get(key), a.get(key), b.get(key), postB.get(key), interpolation, x);
+            i.get(key).lerp(preA.get(key), a.get(key), b.get(key), postB.get(key), interpolation, x);
         }
 
-        return this.i;
+        return i;
     }
 
-    private void collect(IKControls preA, IKControls a, IKControls b, IKControls postB)
+    private Set<String> collect(IKControls preA, IKControls a, IKControls b, IKControls postB)
     {
+        Set<String> keys = this.keys.get();
         keys.clear();
 
         if (preA != a && preA != null) keys.addAll(preA.controls.keySet());
@@ -98,9 +100,11 @@ public class IKKeyframeFactory implements IKeyframeFactory<IKControls>
         if (b != null) keys.addAll(b.controls.keySet());
         if (postB != b && postB != null) keys.addAll(postB.controls.keySet());
 
-        for (IKControl value : this.i.controls.values())
+        for (IKControl value : this.output.get().controls.values())
         {
             value.identity();
         }
+
+        return keys;
     }
 }

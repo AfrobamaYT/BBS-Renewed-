@@ -13,8 +13,8 @@ import java.util.Set;
 
 public class ShapeKeysKeyframeFactory implements IKeyframeFactory<ShapeKeys>
 {
-    private static Set<String> keys = new HashSet<>();
-    private ShapeKeys i = new ShapeKeys();
+    private final ThreadLocal<Set<String>> keys = ThreadLocal.withInitial(HashSet::new);
+    private final ThreadLocal<ShapeKeys> output = ThreadLocal.withInitial(ShapeKeys::new);
 
     @Override
     public ShapeKeys fromData(BaseType data)
@@ -48,13 +48,15 @@ public class ShapeKeysKeyframeFactory implements IKeyframeFactory<ShapeKeys>
     public ShapeKeys interpolate(Keyframe<ShapeKeys> preA, Keyframe<ShapeKeys> a,
         Keyframe<ShapeKeys> b, Keyframe<ShapeKeys> postB, IInterp interpolation, float x)
     {
-        this.i.shapeKeys.clear();
+        ShapeKeys i = this.output.get();
+        Set<String> keys = this.keys.get();
+        i.shapeKeys.clear();
         keys.clear();
 
-        addKeys(preA.getValue());
-        addKeys(a.getValue());
-        addKeys(b.getValue());
-        addKeys(postB.getValue());
+        addKeys(keys, preA.getValue());
+        addKeys(keys, a.getValue());
+        addKeys(keys, b.getValue());
+        addKeys(keys, postB.getValue());
 
         for (String key : keys)
         {
@@ -82,16 +84,18 @@ public class ShapeKeysKeyframeFactory implements IKeyframeFactory<ShapeKeys>
                     IInterp.context.set(before, first, second, after, x));
             }
 
-            this.i.shapeKeys.put(key, result);
+            i.shapeKeys.put(key, result);
         }
 
-        return this.i;
+        return i;
     }
 
     @Override
     public ShapeKeys interpolate(ShapeKeys preA, ShapeKeys a, ShapeKeys b, ShapeKeys postB, IInterp interpolation, float x)
     {
-        this.i.shapeKeys.clear();
+        ShapeKeys i = this.output.get();
+        Set<String> keys = this.keys.get();
+        i.shapeKeys.clear();
 
         keys.clear();
 
@@ -107,7 +111,7 @@ public class ShapeKeysKeyframeFactory implements IKeyframeFactory<ShapeKeys>
             Float fb = b.shapeKeys.get(key);
             Float fpostB = postB.shapeKeys.get(key);
 
-            this.i.shapeKeys.put(key, (float) interpolation.interpolate(
+            i.shapeKeys.put(key, (float) interpolation.interpolate(
                 IInterp.context.set(
                     fpreA == null ? 0F : fpreA,
                     fa == null ? 0F : fa,
@@ -117,10 +121,10 @@ public class ShapeKeysKeyframeFactory implements IKeyframeFactory<ShapeKeys>
             ));
         }
 
-        return this.i;
+        return i;
     }
 
-    private static void addKeys(ShapeKeys shapes)
+    private static void addKeys(Set<String> keys, ShapeKeys shapes)
     {
         if (shapes != null)
         {

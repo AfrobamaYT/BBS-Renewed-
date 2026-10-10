@@ -7,7 +7,7 @@ import org.joml.Vector4f;
 
 public class Vector4fKeyframeFactory implements IKeyframeFactory<Vector4f>
 {
-    private Vector4f i = new Vector4f();
+    private final ThreadLocal<Vector4f> output = ThreadLocal.withInitial(Vector4f::new);
 
     @Override
     public Vector4f fromData(BaseType data)
@@ -36,11 +36,12 @@ public class Vector4fKeyframeFactory implements IKeyframeFactory<Vector4f>
     @Override
     public Vector4f interpolate(Vector4f preA, Vector4f a, Vector4f b, Vector4f postB, IInterp interpolation, float x)
     {
-        this.i.x = (float) interpolation.interpolate(IInterp.context.set(preA.x, a.x, b.x, postB.x, x));
-        this.i.y = (float) interpolation.interpolate(IInterp.context.set(preA.y, a.y, b.y, postB.y, x));
-        this.i.z = (float) interpolation.interpolate(IInterp.context.set(preA.z, a.z, b.z, postB.z, x));
-        this.i.w = (float) interpolation.interpolate(IInterp.context.set(preA.w, a.w, b.w, postB.w, x));
+        Vector4f i = this.output.get();
+        i.x = (float) interpolation.interpolate(IInterp.context.set(preA.x, a.x, b.x, postB.x, x));
+        i.y = (float) interpolation.interpolate(IInterp.context.set(preA.y, a.y, b.y, postB.y, x));
+        i.z = (float) interpolation.interpolate(IInterp.context.set(preA.z, a.z, b.z, postB.z, x));
+        i.w = (float) interpolation.interpolate(IInterp.context.set(preA.w, a.w, b.w, postB.w, x));
 
-        return this.i;
+        return i;
     }
 }
