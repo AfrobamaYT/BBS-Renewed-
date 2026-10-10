@@ -191,7 +191,7 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 				panel.replayEditor.replaysList.replays.scrollToReplay(ziel);
 				panel.replayEditor.replaysList.replays.removeReplay();
 			}
-		});
+		}).inside();
 		this.flaeche.relative(this).x(0).y(0).w(1F).h(1F);
 		this.add(this.flaeche);
 		this.h(300);
