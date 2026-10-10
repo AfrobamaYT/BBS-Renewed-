@@ -18,16 +18,26 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
  */
 public class UIViewportHudNano extends UIElement
 {
+	private final UIFilmPreview preview;
 	private final NanoFlaeche flaeche;
 	private String stand = "";
 
 	public UIViewportHudNano(UIFilmPreview preview)
 	{
+		this.preview = preview;
 		this.flaeche = new NanoFlaeche(this::zeichnen);
 		this.flaeche.relative(this).x(0).y(0).w(1F).h(1F);
 		this.flaeche.setEnabled(false);
 		this.setEnabled(false);
 		this.add(this.flaeche);
+	}
+
+	@Override
+	public void afterResizeApplied()
+	{
+		super.afterResizeApplied();
+		this.area.x = this.preview.werkzeuge.area.ex() + 7;
+		this.area.w = Math.max(0, this.preview.area.ex() - this.area.x - 40);
 	}
 
 	private static UIFilmPanel filmPanel()

@@ -649,7 +649,7 @@
     "bbs.ui.film.screenshot": "Screenshot schießen",
     "bbs.ui.film.screenshot-description": "Dein Screenshot wurde erfolgreich geschossen! Drücke das Icon rechts um den Ordner zu öffnen...",
     "bbs.ui.film.screenshot-title": "Screenshot geschossen",
-    "bbs.ui.film.teleport-description": "Es scheint als wärst du zu weit weg von der Szene. Falls du dich zur Kamera teleportieren möchtest, drücke das Teleport-Icon in der rechten Seitenleiste!",
+    "bbs.ui.film.teleport-description": "Es scheint, als wärst du zu weit von der Szene entfernt. Zum Teleportieren zur Kamera drücke das Teleport-Symbol in der Werkzeugleiste der Vorschau!",
     "bbs.ui.film.teleport-title": "Teleportieren",
     "bbs.ui.film.teleport.context.player": "Spieler zur Kamera teleportieren",
     "bbs.ui.film.title": "Filme",

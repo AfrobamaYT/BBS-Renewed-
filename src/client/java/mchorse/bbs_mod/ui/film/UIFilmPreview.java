@@ -296,7 +296,7 @@ public class UIFilmPreview extends UIElement
          * Werkzeuge · Ansicht · Aufnahme. */
         this.werkzeuge = new UIWerkzeugleisteNano(this);
         this.werkzeuge.relative(this).x(7).y(7)
-            .w(UIWerkzeugleisteNano.breite()).h(UIWerkzeugleisteNano.hoehe(6, 1));
+            .w(UIWerkzeugleisteNano.breite()).h(UIWerkzeugleisteNano.hoehe(8, 1));
 
         /* Kontextzeile am Bild wie im Entwurf: Ansichtsart, Film, gewaehltes Replay. */
         this.hud = new UIViewportHudNano(this);

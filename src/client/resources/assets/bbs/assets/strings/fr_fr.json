@@ -628,7 +628,7 @@
     "bbs.ui.film.screenshot": "Capture d'écran",
     "bbs.ui.film.screenshot-description": "Votre capture d'écran a parfaitement été prise! Cliquez sur l'icone à droite pour ouvrir le dossier...",
     "bbs.ui.film.screenshot-title": "La capture d'écran à été prise",
-    "bbs.ui.film.teleport-description": "Il semble que vous êtes trop loin de la scène. Si vous souhaitez vous téléporter à la caméra, appuyez sur l'icone de téléportation a droite dans la barre latérale!",
+    "bbs.ui.film.teleport-description": "Il semble que vous êtes trop loin de la scène. Pour vous téléporter à la caméra, appuyez sur l'icone de téléportation dans la barre d'outils de la vue!",
     "bbs.ui.film.teleport-title": "Téléporter",
     "bbs.ui.film.teleport.context.player": "Teleporter le joueur à la caméra",
     "bbs.ui.film.video_recording": "Enregistrement de %s, appuyez sur %s pour arrêter...",
