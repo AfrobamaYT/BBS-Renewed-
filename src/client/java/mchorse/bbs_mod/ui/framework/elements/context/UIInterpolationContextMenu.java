@@ -146,6 +146,10 @@ public class UIInterpolationContextMenu extends UIContextMenu
             }
 
             BaseValue.edit(this.interpolation, (v) -> v.fromData(copy.get("interp")));
+            this.v1.setValue(this.interpolation.getV1());
+            this.v2.setValue(this.interpolation.getV2());
+            this.v3.setValue(this.interpolation.getV3());
+            this.v4.setValue(this.interpolation.getV4());
 
             if (this.callback != null)
             {
