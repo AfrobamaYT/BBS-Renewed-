@@ -72,48 +72,19 @@ public class BBSRendering
     public static final Matrix4f camera = new Matrix4f();
 
     /**
-     * Die Projektion, mit der die Welt in DIESEM Bild wirklich gezeichnet wird.
-     *
-     * <p>⛔ WARUM DAS FELD EXISTIERT (2026-08-03, Umriss-Versatz): sie ist NICHT dieselbe wie
-     * {@code cameraRenderState.projectionMatrix}. Gemessen in einem Bild:</p>
-     * <pre>
-     *   gezeichnet     m00=0,9985  m11=0,2450     <- der Parameter von LevelRenderer#render
-     *   kamerazustand  m00=0,7505  m11=1,4281     <- Fenster-Seitenverhaeltnis 1920x1009
-     *   gleich=false
-     * </pre>
-     *
-     * <p>{@code UIFilmPanel#lastProjection} las den Kamerazustand, weil 26.2 die aktive
-     * Projektion nur noch als GPU-Puffer herausgibt und der Kamerazustand als „derselbe Wert,
-     * nur lesbar" galt. Diese Annahme war falsch. Der Auswahlpuffer aktiviert lastProjection
-     * und rendert die Figuren damit in einer anderen Projektion als das Bild darunter — in der
-     * Bildmitte deckungsgleich, nach aussen zunehmend daneben. Genau das Muster, das gemessen
-     * wurde: im Stillstand mit mittiger Figur 1-2 px, bei ausgelenkter Kamera ~50 px.</p>
-     *
-     * <p>Gestempelt am HEAD von {@code LevelRenderer#render} (WorldRendererMixin), eine Zeile
-     * neben {@link #camera} — dort liegt der Parameter als Zahlen vor, und es ist derselbe
-     * Augenblick, aus dem auch die Ansichtsdrehung stammt.</p>
-     *
-     * <p>⛔ LAZY, NICHT IM FELDINITIALISIERER: nach einem Hotswap laufen statische
-     * Initialisierer nicht, das Feld bliebe {@code null} und der erste Zugriff wuerde in JEDEM
-     * Bild werfen. Derselbe Grund wie bei {@code UIFilmControllerStencilThrottleLogik
-     * #tickSpeicher()}; der Hotswap-Waechter blockt einen Tausch mit neuem statischem Feld
-     * genau deswegen.</p>
+     * Active world projection from CameraRenderState, copied at LevelRenderer.render HEAD.
+     * The render method's Matrix4fc parameter contains view rotation, not projection.
+     * Lazily initialized so existing instances remain usable after a body hotswap.
      */
     private static Matrix4f zeichenProjektion;
 
-    /** Siehe {@link #zeichenProjektion}. {@code null}, solange in diesem Lauf nie gestempelt. */
+    /** Active projection from the latest world pass, or null before the first stamp. */
     public static Matrix4f zeichenProjektion()
     {
         return zeichenProjektion;
     }
 
-    /**
-     * Am HEAD des Weltdurchgangs gerufen; legt das Feld beim ersten Mal an.
-     *
-     * <p>⛔ Der Parameter ist NICHT die Weltprojektion, sondern konstant eine Ortho-/Blit-
-     * Matrix (m00=-1/m11=1; gemessen 2026-08-04, 109 Logpoint-Treffer — die Kamera fuehrt
-     * daneben 0.8027/1.4281). Folgenlos, solange {@link #zeichenProjektion()} keinen
-     * Aufrufer hat — wer den Stempel nutzen will, repariert ihn vorher: falsch UND egal. */
+    /** Copy the native world projection, initializing its storage on the first pass. */
     public static void zeichenProjektionStempeln(org.joml.Matrix4fc projektion)
     {
         if (projektion == null)
