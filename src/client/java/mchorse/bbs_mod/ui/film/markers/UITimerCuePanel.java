@@ -1,0 +1,249 @@
+package mchorse.bbs_mod.ui.film.markers;
+
+import mchorse.bbs_mod.camera.Camera;
+import mchorse.bbs_mod.camera.data.Point;
+import mchorse.bbs_mod.film.Film;
+import mchorse.bbs_mod.film.markers.TimerCue;
+import mchorse.bbs_mod.film.markers.TimerCueActions;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.film.UISeitenleiste;
+import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
+import mchorse.bbs_mod.ui.framework.elements.input.list.UIList;
+import mchorse.bbs_mod.ui.framework.elements.utils.UIText;
+import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.utils.colors.Colors;
+import org.joml.Vector3d;
+
+import java.util.function.Consumer;
+
+/** Reachable viewport sidebar: create/configure cues and select their native transform gizmos. */
+public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffrischbar
+{
+    public final UIList<TimerCue> list;
+    public final UIButton create;
+    public final UIText status;
+    public final UITimerCueFields fields;
+    private final UIFilmPanel panel;
+    private String selected = "";
+    private String snapshot = "";
+    private String editError = "";
+
+    public UITimerCuePanel(UIFilmPanel panel)
+    {
+        this.panel = panel;
+        this.create = new UIButton(IKey.raw("+ Timer pair"), (button) -> this.createCue());
+        this.list = new UIList<>((items) ->
+        {
+            this.selected = items.isEmpty() ? "" : items.get(0).uuid.get();
+            this.snapshot = "";
+            this.editError = "";
+            this.auffrischen();
+        })
+        {
+            @Override
+            protected String elementToString(UIContext context, int index, TimerCue cue)
+            {
+                return cue.label.get();
+            }
+        };
+        this.list.h(80);
+        this.list.background();
+        this.status = new UIText();
+        this.fields = new UITimerCueFields(this);
+        UIScrollView scroll = UI.scrollView(4, 5, this.create, this.list, this.fields, this.status);
+
+        scroll.full(this);
+        this.add(scroll);
+        this.auffrischen();
+    }
+
+    public TimerCue selectedCue()
+    {
+        Film film = this.panel.getData();
+
+        return film == null ? null : film.timerCues.find(this.selected);
+    }
+
+    public void createCue()
+    {
+        if (this.panel.getData() == null)
+        {
+            return;
+        }
+
+        Camera camera = this.panel.getCamera();
+        Vector3d point = new Vector3d(camera.getLookDirection()).mul(5D).add(camera.position);
+        Vector3d right = new Vector3d(new org.joml.Matrix4f(camera.view).invert().transformDirection(new org.joml.Vector3f(1F, 0F, 0F))).mul(1.5D);
+        Point start = new Point(point.x - right.x, point.y - right.y, point.z - right.z);
+        Point end = new Point(point.x + right.x, point.y + right.y, point.z + right.z);
+
+        this.fence();
+        TimerCue cue = TimerCueActions.create(this.panel.getData(), this.panel.getCursor(), start, end);
+
+        this.selected = cue.uuid.get();
+        this.persist(true);
+        this.selectEndpoint(false);
+    }
+
+    void edit(Consumer<TimerCue> change)
+    {
+        TimerCue cue = this.selectedCue();
+
+        if (cue != null)
+        {
+            this.fence();
+            BaseValue.edit(cue, change);
+            this.editError = "";
+            this.persist(false);
+        }
+    }
+
+    void rename(String name)
+    {
+        this.edit((cue) -> TimerCueActions.rename(this.panel.getData(), cue, name));
+    }
+
+    public void setTime(boolean end, double seconds)
+    {
+        TimerCue cue = this.selectedCue();
+        long tick = Math.round(seconds * 20D);
+
+        if (cue == null)
+        {
+            return;
+        }
+        if (!Double.isFinite(seconds) || tick < 0 || tick > Integer.MAX_VALUE
+            || (end ? tick <= cue.startTick.get() : tick >= cue.endTick.get()))
+        {
+            this.editError = "ERROR: End must be after start";
+            this.snapshot = "";
+            this.auffrischen();
+
+            return;
+        }
+
+        this.edit((value) ->
+        {
+            if (end)
+            {
+                value.endTick.set((int) tick);
+            }
+            else
+            {
+                value.startTick.set((int) tick);
+            }
+        });
+    }
+
+    public void selectEndpoint(boolean end)
+    {
+        TimerCue cue = this.selectedCue();
+        Replay replay = cue == null ? null : TimerCueActions.endpoint(this.panel.getData(), cue, end);
+
+        if (replay == null)
+        {
+            this.editError = "ERROR: Missing " + (end ? "END" : "START") + " replay";
+            this.snapshot = "";
+            this.auffrischen();
+
+            return;
+        }
+
+        this.panel.replayEditor.setReplay(replay);
+        this.panel.replayEditor.replaysList.replays.scrollToReplay(replay);
+    }
+
+    public void removeCue()
+    {
+        TimerCue cue = this.selectedCue();
+
+        if (cue != null)
+        {
+            this.fence();
+            try
+            {
+                TimerCueActions.remove(this.panel.getData(), cue);
+            }
+            catch (IllegalArgumentException exception)
+            {
+                this.editError = "ERROR: " + exception.getMessage();
+                this.snapshot = "";
+                this.auffrischen();
+
+                return;
+            }
+            this.selected = "";
+            this.editError = "";
+            this.persist(true);
+        }
+    }
+
+    private void fence()
+    {
+        if (this.panel.getUndoHandler() != null)
+        {
+            this.panel.getUndoHandler().submitUndo();
+            this.panel.getUndoHandler().getUndoManager().markLastUndoNoMerging();
+        }
+    }
+
+    private void persist(boolean entitiesChanged)
+    {
+        this.fence();
+        if (entitiesChanged)
+        {
+            this.panel.replayEditor.replaysList.replays.refreshReplayList();
+            this.panel.getController().createEntities();
+        }
+        this.panel.save();
+        this.snapshot = "";
+        this.auffrischen();
+    }
+
+    @Override
+    public void auffrischen()
+    {
+        Film film = this.panel.getData();
+        TimerCue cue = this.selectedCue();
+        String error = cue == null || film == null ? "" : TimerCueActions.error(film, cue);
+        StringBuilder state = new StringBuilder(film == null ? "none" : film.getId());
+
+        if (film != null)
+        {
+            for (TimerCue item : film.timerCues.getList())
+            {
+                state.append('|').append(item.uuid.get()).append(':').append(item.label.get())
+                    .append(':').append(item.startTick.get()).append(':').append(item.endTick.get())
+                    .append(':').append(item.enabled.get()).append(':').append(item.startColor.get())
+                    .append(':').append(item.endColor.get());
+            }
+        }
+        String snapshot = state.append('|').append(this.selected).append('|').append(error)
+            .append('|').append(this.editError).toString();
+
+        if (snapshot.equals(this.snapshot))
+        {
+            return;
+        }
+        this.snapshot = snapshot;
+        this.create.setEnabled(film != null);
+        this.fields.setVisible(cue != null);
+        this.list.setList(film == null ? java.util.List.of() : film.timerCues.getList());
+        if (cue != null)
+        {
+            this.list.setCurrent(cue);
+            this.fields.fill(cue);
+        }
+        String message = !error.isEmpty() ? "ERROR: " + error : !this.editError.isEmpty()
+            ? this.editError : "Select an endpoint and move it with the regular viewport gizmo. Timers stay out of final videos.";
+
+        this.status.text(message).color(!this.editError.isEmpty() || !error.isEmpty() ? Colors.RED : Colors.WHITE, true);
+        this.resize();
+    }
+}
