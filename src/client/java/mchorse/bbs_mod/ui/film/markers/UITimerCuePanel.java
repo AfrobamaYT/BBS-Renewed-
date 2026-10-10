@@ -240,6 +240,14 @@ public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffris
             ? this.editError : "Select an endpoint and move it with the regular viewport gizmo. Timers stay out of final videos.";
 
         this.status.text(message).color(!this.editError.isEmpty() || !error.isEmpty() ? Colors.RED : Colors.WHITE, true);
-        this.resize();
+        /* Reset the owning column's child cursor and update its scroll extent. */
+        if (this.getParent() == null)
+        {
+            this.resize();
+        }
+        else
+        {
+            this.getParent().resize();
+        }
     }
 }
