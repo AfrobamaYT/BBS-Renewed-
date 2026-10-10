@@ -330,73 +330,13 @@ public class UIClipCameraPreview extends UIElement
 
         if (haveFreshPick)
         {
-            /* ⛔ 26.2, STEHENGELASSEN — NICHT ERFUNDEN:
-             *  RenderPipeline und com.mojang.blaze3d.shaders.Uniform gibt es in
-             *  26.2 nicht mehr (jar-auskunft: kein Ersatz unter diesem Namen;
-             *  Uniform existiert nur noch als com.mojang.blaze3d.opengl.Uniform,
-             *  eine leere AutoCloseable-Schnittstelle). Einzelne Uniforms setzt
-             *  man nicht mehr — Werte gehen als UBO in den RenderPass
-             *  (RenderPass.setUniform(String, GpuBufferSlice)). Ein 1:1-Ersatz
-             *  fuer getUniform("Target").set(int) EXISTIERT NICHT; das haengt am
-             *  Port von mchorse.bbs_mod.client.BBSShaders (eigenes Manifest:
-             *  15 eigene Shader, deren .json der ShaderManager nicht mehr liest)
-             *  und an der Shader-Ueberladung von Batcher2D. Alles, was ich hier
-             *  schreiben wuerde, waere geraten — darum bleibt der Block stehen
-             *  und wird gemeldet. */
-            try
-            {
-                RenderPipeline previewProgram =
-                    mchorse.bbs_mod.client.BBSShaders.getPickerPreviewProgram();
-                if (previewProgram != null)
-                {
-                    /* ⛔ 26.2 OFFEN, mit bekanntem Rezept: die Hervorhebung muss VORHER in ein eigenes
-                     * Bild gerechnet werden (Bildfilter.kennungHervorheben), weil ein GUI-Element die
-                     * fuenf Werte nicht binden kann. Vier andere Aufrufstellen sind schon umgestellt.
-                     *
-                     * WAS HIER FEHLT: ein Zwischenbild. Die anderen holen es von ihrem
-                     * StencilFormFramebuffer; BoneHoverPickService.Result haelt aber nur rohe Zahlen
-                     * (stencilTexId, stencilW/H). Es braucht dort eine eigene Zieltextur -- eine
-                     * geteilte waere falsch, weil die Oberflaeche erst nach dem Sammeln zeichnet.
-                     *
-                     * Bis dahin bleibt der Compilerfehler stehen: eine Vorschau, die still die falsche
-                     * Kennung hervorhebt, ist teurer als eine, die nicht baut. */
-                    /* ⛔ DIE HERVORHEBUNG IST WEG, und das ist die ehrlichere von zwei
-                     * schlechten Moeglichkeiten.
-                     *
-                     * Hier wurde dem Shader die Kennung des getroffenen Knochens als Uniform
-                     * uebergeben. Einzel-Uniforms gibt es in 26.2 nicht mehr -- nur noch
-                     * Uniform-BLOECKE, die ueber den Durchgang gebunden werden, und ein
-                     * GUI-Element macht keinen eigenen Durchgang auf.
-                     *
-                     * Der Wert (pick.pickedIndex) waere also stehengeblieben, was immer zuvor
-                     * darin stand: die Vorschau haette den FALSCHEN Knochen blau markiert, und
-                     * nichts haette es gemeldet. Lieber gar keine Markierung.
-                     *
-                     * ZURUECKHOLEN, Rezept steht: die Hervorhebung VORHER in ein eigenes Bild
-                     * rechnen (Bildfilter.kennungHervorheben -- vier andere Aufrufstellen sind
-                     * schon so umgestellt). Was fehlt, ist eine eigene Zieltextur an
-                     * BoneHoverPickService.Result; eine geteilte waere falsch, weil die
-                     * Oberflaeche erst nach dem Sammeln zeichnet. */
-
-                    /* 26.2: enableBlend()/defaultBlendFunc() sind ersatzlos weg —
-                     *  das Mischen haengt jetzt an der Pipeline. Damit es beim
-                     *  Portieren von BBSShaders nicht STILL verlorengeht, hier der
-                     *  gemessene Sollwert: der alte defaultBlendFunc() entspricht
-                     *  exakt BlendFunction.TRANSLUCENT
-                     *  (SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ONE, ONE_MINUS_SRC_ALPHA;
-                     *  javap auf BlendFunction.<clinit>). Die Ersatz-Pipeline fuer
-                     *  picker_preview MUSS diese Mischfunktion tragen, sonst sieht
-                     *  die blaue Knochen-Markierung anders aus, ohne dass etwas meldet. */
-
-                    /* Der Zeichenaufruf ist mit der Hervorhebung entfallen. Er reichte die
-                     * rohe Stencil-Texturkennung durch; rohe GL-Nummern nimmt die GUI in 26.2
-                     * nirgends mehr an (es braucht eine Textursicht samt Abtaster), und ohne
-                     * die Kennung aus dem Uniform haette der Shader ohnehin nicht gewusst,
-                     * WELCHEN Knochen er faerben soll. Beides zusammen ergaebe ein Bild, das
-                     * plausibel aussieht und den falschen Knochen markiert. */
-                }
-            }
-            catch (Throwable ignored) {}
+            mchorse.bbs_mod.ui.utils.StencilFormFramebuffer stencil = BoneHoverPickService.getStencil(this.clipId);
+            mchorse.bbs_mod.graphics.texture.Texture texture = stencil.getFramebuffer().getMainTexture();
+            mchorse.bbs_mod.graphics.texture.Texture highlight = stencil.hervorhebungsbild();
+            mchorse.bbs_mod.graphics.Bildfilter.kennungHervorheben(texture, highlight, pick.pickedIndex,
+                mchorse.bbs_mod.BBSSettings.stencilHighlightColor.get());
+            context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+                highlight, Colors.WHITE, x, y, w, h, 0, texture.height, texture.width, 0, texture.width, texture.height);
 
             String label = pick.form.getFormIdOrName();
             if (pick.bone != null && !pick.bone.isEmpty())

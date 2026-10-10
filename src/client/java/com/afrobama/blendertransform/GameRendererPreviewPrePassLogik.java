@@ -143,6 +143,12 @@ public final class GameRendererPreviewPrePassLogik
                 new Vector4f(0F, 0F, 0F, 1F), target.getDepthTexture(), 0D);
             AltCameraGridRenderer.render(client, camera, perspective, target);
             renderActors(client, camera, ticks.getGameTimeDeltaPartialTick(false));
+            CameraRenderState pickCamera = new CameraRenderState();
+            pickCamera.pos = camera.position();
+            pickCamera.xRot = camera.xRot();
+            pickCamera.yRot = camera.yRot();
+            pickCamera.orientation = new org.joml.Quaternionf(camera.rotation());
+            BoneHoverPickRunner.runHover(active.id, pickCamera, target.width, target.height);
         }
         finally
         {

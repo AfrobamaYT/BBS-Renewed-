@@ -146,6 +146,8 @@ public class UIClipPreviewLayer extends UIElement
             if (!stillActive)
             {
                 this.remove(e.getValue());
+                BoneHoverPickService.releaseClip(e.getKey());
+                AltCamModeOverrides.FREE_POSES.remove(e.getKey());
                 it.remove();
             }
         }
