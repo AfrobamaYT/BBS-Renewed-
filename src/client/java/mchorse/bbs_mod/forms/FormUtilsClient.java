@@ -101,6 +101,8 @@ public class FormUtilsClient
          * getRenderer(form).collectMatrices(...) ohne null-check (gizmo-achsen des ausgewaehlten
          * actors) — eine registrierte form ohne renderer ist dort eine NPE. */
         register(mchorse.bbs_mod.forms.forms.LightForm.class, mchorse.bbs_mod.forms.renderers.LightFormRenderer::new);
+        mchorse.bbs_mod.ui.forms.editors.UIFormEditor.register(mchorse.bbs_mod.forms.forms.LightForm.class,
+            mchorse.bbs_mod.ui.forms.editors.forms.UILightForm::new);
     }
 
     /**
