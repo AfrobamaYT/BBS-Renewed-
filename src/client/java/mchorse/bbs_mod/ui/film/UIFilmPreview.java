@@ -515,6 +515,8 @@ public class UIFilmPreview extends UIElement
 
             context.batcher.texturedBox(texture, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
 
+            this.renderViewportHud(context, area);
+
             /* Runde Ecken wie an Zeitleiste und Panels. texturedBox kann nur ein hartes
              * Rechteck, also werden die vier Ecken danach in der Nahtfarbe uebermalt —
              * eine Treppe aus Pixelzeilen entlang der Kreisgleichung. Bei 6 px Radius sind
@@ -622,9 +624,8 @@ public class UIFilmPreview extends UIElement
     /**
      * Draws Minecraft's HUD inside the viewport when a tracker clip asks for it.
      *
-     * MC only renders InGameHud when no screen covers the display, so with the editor
-     * open our InGameHudMixin never fires. The viewport has to call it itself, scaled
-     * from the window's GUI space down to the viewport rectangle.
+     * Extract only the HUD into the existing screen state. Calling Gui.extractRenderState
+     * here would reset that state and recursively extract the dashboard again.
      */
     private void renderViewportHud(UIContext context, Area area)
     {
@@ -639,26 +640,6 @@ public class UIFilmPreview extends UIElement
         {
             return;
         }
-
-        /* Die GUI-flaeche des VIDEOS auf das viewport-rechteck abbilden, nicht die des
-         * fensters: der viewport hat das seitenverhaeltnis der video-aufloesung
-         * (getViewport()), und das HUD soll dort sitzen, wo es im export landet.
-         * MCs HUD zentriert auf der GUI-breite und haengt an der GUI-hoehe. */
-        int videoW = BBSRendering.getVideoWidth();
-        int videoH = BBSRendering.getVideoHeight();
-
-        if (videoW <= 0 || videoH <= 0)
-        {
-            return;
-        }
-
-        int guiScale = mchorse.bbs_mod.utils.MathUtils.clamp(
-            Math.min(videoW / 320, videoH / 240), 1, 4);
-        int guiW = videoW / guiScale;
-        int guiH = videoH / guiScale;
-
-        float scaleX = area.w / (float) guiW;
-        float scaleY = area.h / (float) guiH;
 
         context.batcher.flush();
 
@@ -675,10 +656,6 @@ public class UIFilmPreview extends UIElement
          * dashboard (hotbar neben der replay-liste, siehe screenshot des nutzers). */
         context.batcher.clip(area.x, area.y, area.w, area.h, context.menu.width, context.menu.height);
 
-        matrices.pushMatrix();
-        matrices.translate(area.x, area.y);
-        matrices.scale(scaleX, scaleY);
-
         boolean hidden = mchorse.bbs_mod.client.HudSichtbarkeit.istVersteckt();
 
         /* Unser debug-overlay haengt am HudRenderCallback und wuerde den viewport
@@ -689,25 +666,29 @@ public class UIFilmPreview extends UIElement
 
         try
         {
-            /* renderMainHud statt render: render() steigt im editor-kontext still aus
-             * (screen offen, kein spiel-tick). renderMainHud zeichnet hotbar, herzen,
-             * hunger und fadenkreuz ohne diese guards — das ist genau das, was im
-             * exportierten video landet. */
-            /* ⛔ 26.2, OFFEN BIS AM LAUFENDEN SPIEL GEPRUEFT: extractRenderState SAMMELT nur.
-             * Frueher zeichnete renderHotbarAndDecorations sofort in unser Bild; jetzt geht
-             * die HUD in den gemeinsamen GuiRenderState und wird zur normalen Zeit gezeichnet.
-             * Ob sie damit noch im exportierten Video landet oder nur auf dem Bildschirm, ist
-             * NICHT bewiesen. Erster Punkt der Sichtpruefliste. */
-            ((mchorse.bbs_mod.mixin.client.InGameHudAccessor) mc.gui)
-                .bbs$renderMainHud(mc.getDeltaTracker(), false, false);
+            mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.beginHudRendering(draw);
+            matrices.pushMatrix();
+
+            try
+            {
+                /* Hud reads the extractor's current window dimensions. Pre-multiply the
+                 * viewport mapping so the tracker's slide is scaled with the HUD too. */
+                matrices.scaleLocal(area.w / (float) draw.guiWidth(), area.h / (float) draw.guiHeight());
+                matrices.translateLocal(area.x, area.y);
+                mc.gui.hud.extractRenderState(draw, mc.getDeltaTracker());
+            }
+            finally
+            {
+                matrices.popMatrix();
+            }
         }
         finally
         {
+            mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.endHudRendering(draw);
             mchorse.bbs_mod.sonden.Sonden.ueberlagerung.wiederherstellen(debugOverlay);
             mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(hidden);
 
             context.batcher.flush();
-            matrices.popMatrix();
             context.batcher.unclip(context);
         }
     }
