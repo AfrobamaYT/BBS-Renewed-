@@ -79,6 +79,7 @@ public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffris
             {
                 menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.VISIBLE, IKey.raw("Show timer"), cue.enabled.get(),
                     () -> this.edit((value) -> value.enabled.set(!value.enabled.get())));
+                menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.REMOVE, IKey.raw("Delete timer pair"), this::removeCue);
             }
         });
         this.status = new UIText();

@@ -211,4 +211,19 @@ public final class TimerCueActions
             }
         });
     }
+
+    /** Called inside the replay deletion transaction; partial cues remain repairable. */
+    public static void removeDeletedCues(Film film, java.util.List<Replay> deleted)
+    {
+        for (TimerCue cue : new java.util.ArrayList<>(film.timerCues.getList()))
+        {
+            boolean affected = deleted.stream().anyMatch((replay) ->
+                replay.uuid.get().equals(cue.startReplay.get()) || replay.uuid.get().equals(cue.endReplay.get()));
+
+            if (affected && endpoint(film, cue, false) == null && endpoint(film, cue, true) == null)
+            {
+                film.timerCues.remove(cue);
+            }
+        }
+    }
 }

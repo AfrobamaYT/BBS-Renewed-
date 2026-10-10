@@ -2,6 +2,8 @@ package mchorse.bbs_mod.ui.film.utils;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.film.markers.TimerCueActions;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -11,6 +13,7 @@ import mchorse.bbs_mod.utils.clips.Clips;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,6 +25,23 @@ public class UIFilmUndoHandler extends UIFormUndoHandler
     public UIFilmUndoHandler(UIFilmPanel panel)
     {
         super(panel);
+    }
+
+    /** Replay and cue removal is one non-mergeable editor transaction. */
+    public void deleteReplays(List<Replay> replays)
+    {
+        this.submitUndo();
+        this.undoManager.markLastUndoNoMerging();
+        BaseValue.edit(((UIFilmPanel) this.uiElement).getData(), (film) ->
+        {
+            for (Replay replay : replays)
+            {
+                film.replays.remove(replay);
+            }
+            TimerCueActions.removeDeletedCues(film, replays);
+        });
+        this.submitUndo();
+        this.undoManager.markLastUndoNoMerging();
     }
 
     @Override

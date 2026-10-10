@@ -2162,10 +2162,7 @@ public class UIReplayList extends UIList<ReplayListEntry>
         Replay focus = removing.get(0);
         int globalFocus = film.replays.getList().indexOf(focus);
 
-        for (Replay replay : removing)
-        {
-            film.replays.remove(replay);
-        }
+        this.panel.getUndoHandler().deleteReplays(removing);
 
         List<Replay> remaining = film.replays.getList();
 
@@ -2186,6 +2183,7 @@ public class UIReplayList extends UIList<ReplayListEntry>
         }
 
         this.updateFilmEditor();
+        this.panel.save();
     }
 
     @Override
