@@ -224,7 +224,8 @@ public final class ZeitleisteZweig
 					mchorse.bbs_mod.utils.Pair<String, Boolean> gewaehlt = this.editor.keyframeEditor == null
 						? null : this.editor.keyframeEditor.getBone();
 
-					return gewaehlt != null && pfad.bone().equals(gewaehlt.a);
+					/* Without an active bone there is no selection to restrict to. */
+					return gewaehlt == null || pfad.bone().equals(gewaehlt.a);
 				}
 			}
 

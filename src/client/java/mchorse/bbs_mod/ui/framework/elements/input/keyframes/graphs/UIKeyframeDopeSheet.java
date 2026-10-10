@@ -185,7 +185,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     boolean isVisible(UIKeyframeSheet sheet)
     {
         /* Filter HIER: der einzige Punkt, an dem Layout und Bedienung zusammenlaufen. */
-        if (this.nurBewegte && sheet.channel != null && sheet.channel.getKeyframes().isEmpty())
+        if (this.nurBewegte && !mchorse.bbs_mod.ui.framework.elements.input.keyframes.PoseTrackVisibility.isAnimated(sheet, this.poseTabRoots.get(sheet)))
         {
             return false;
         }
