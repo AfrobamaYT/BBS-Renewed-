@@ -122,7 +122,8 @@ public class FilmEditorController extends BaseFilmController
         /* Pausiert 0F — ausser eine Sub-Tick-Fahrt erzwingt den Rest t−⌊t⌋ (siehe
          * com.mcstudio.see.SubTick): dann werden die Actor-Eigenschaften (Pose) zum selben
          * Zwischen-Tick ausgewertet wie die Kamera. Ohne Fahrt bleibt es die alte Null. */
-        float delta = !this.controller.isPlaying() && !current ? com.mcstudio.see.SubTick.oder(0F) : transition;
+        boolean playing = this.controller.panel.isRunning() && this.controller.isPlaying();
+        float delta = !playing && !current ? com.mcstudio.see.SubTick.oder(0F) : transition;
 
         return delta;
     }
