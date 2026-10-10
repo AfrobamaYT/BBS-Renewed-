@@ -80,7 +80,7 @@ public final class GameRendererPreviewPrePassLogik
                     if (target != null)
                     {
                         CameraPreviewProfiler.recordPassStart();
-                        renderCamera(client, camera, target, ticks);
+                        renderCamera(client, camera, target, ticks, false);
                         CameraPreviewProfiler.recordPassEnd();
                         rendered.add(camera.id);
                     }
@@ -99,8 +99,46 @@ public final class GameRendererPreviewPrePassLogik
         }
     }
 
+    public static com.afrobama.bbstools.client.campreview.BoneHoverPickService.Result pickNow(UUID id,
+        com.afrobama.bbstools.client.campreview.BoneHoverPickService.Request request)
+    {
+        RenderSystem.assertOnRenderThread();
+        for (ActiveCameraClipRegistry.Active camera : ActiveCameraClipRegistry.snapshot())
+        {
+            if (!camera.id.equals(id) || !camera.poseValid)
+            {
+                continue;
+            }
+            TextureTarget target = ClipViewportFramebuffers.get(id);
+            if (target == null)
+            {
+                return null;
+            }
+            com.afrobama.bbstools.client.campreview.BoneHoverPickService.Request previous =
+                com.afrobama.bbstools.client.campreview.BoneHoverPickService.REQUESTS.put(id, request);
+            try
+            {
+                Minecraft client = Minecraft.getInstance();
+                renderCamera(client, camera, target, client.getDeltaTracker(), true);
+                return com.afrobama.bbstools.client.campreview.BoneHoverPickService.RESULTS.get(id);
+            }
+            finally
+            {
+                if (previous == null)
+                {
+                    com.afrobama.bbstools.client.campreview.BoneHoverPickService.REQUESTS.remove(id);
+                }
+                else
+                {
+                    com.afrobama.bbstools.client.campreview.BoneHoverPickService.REQUESTS.put(id, previous);
+                }
+            }
+        }
+        return null;
+    }
+
     private static void renderCamera(Minecraft client, ActiveCameraClipRegistry.Active active,
-        TextureTarget target, DeltaTracker ticks)
+        TextureTarget target, DeltaTracker ticks, boolean pickingOnly)
     {
         Camera camera = client.gameRenderer.mainCamera();
         net.minecraft.world.phys.Vec3 previousPosition = camera.position();
@@ -139,10 +177,13 @@ public final class GameRendererPreviewPrePassLogik
             RenderSystem.outputDepthTextureOverride = target.getDepthTextureView();
             Zeichenziel.setzen(target.getColorTextureView(), target.getDepthTextureView());
             RenderSystem.disableScissorForRenderTypeDraws();
-            RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(target.getColorTexture(),
-                new Vector4f(0F, 0F, 0F, 1F), target.getDepthTexture(), 0D);
-            AltCameraGridRenderer.render(client, camera, perspective, target);
-            renderActors(client, camera, ticks.getGameTimeDeltaPartialTick(false));
+            if (!pickingOnly)
+            {
+                RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(target.getColorTexture(),
+                    new Vector4f(0F, 0F, 0F, 1F), target.getDepthTexture(), 0D);
+                AltCameraGridRenderer.render(client, camera, perspective, target);
+                renderActors(client, camera, ticks.getGameTimeDeltaPartialTick(false));
+            }
             CameraRenderState pickCamera = new CameraRenderState();
             pickCamera.pos = camera.position();
             pickCamera.xRot = camera.xRot();

@@ -416,14 +416,18 @@ public class UIClipCameraPreview extends UIElement
         int relX = context.mouseX - this.area.x;
         if (relX >= this.area.w - RESIZE_HANDLE_PX && relY >= this.area.h - RESIZE_HANDLE_PX) return false;
 
-        BoneHoverPickService.Result pick = BoneHoverPickService.RESULTS.get(this.clipId);
-        if (pick == null || pick.form == null) return true;
-
         Window handle = Minecraft.getInstance().getWindow();
         boolean shift = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT)
             || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT);
         boolean ctrl = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)
             || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL);
+
+        BoneHoverPickService.Result pick = com.afrobama.blendertransform.GameRendererPreviewPrePassLogik.pickNow(this.clipId,
+            new BoneHoverPickService.Request(relX, relY, this.area.w, this.area.h, shift, ctrl));
+        if (pick == null || pick.form == null)
+        {
+            return true;
+        }
 
         mchorse.bbs_mod.ui.film.UIFilmPanel panel = BoneHoverPickRunner.findPanel();
         if (panel == null) return true;
