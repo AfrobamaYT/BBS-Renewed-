@@ -53,6 +53,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 	 * hinzugefuegtes Instanzfeld steht nach einem Hotswap auf null.
 	 */
 	private java.util.Map<String, Boolean> offen;
+	private final ZeitleisteZweig.LoopInput loopInput = new ZeitleisteZweig.LoopInput();
 
 	public static UIElement neu()
 	{
@@ -735,22 +736,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 		f.zone("schleife", x, y, bw, bh, () ->
 		{
-			/* Drei Zustaende im Ring: Anfang setzen -> Ende setzen -> aufheben.
-			 * Erkennbar an loopMax: 0 heisst „Anfang steht, Ende fehlt noch". */
-			if (clips.loopMin != clips.loopMax && clips.loopMax != 0)
-			{
-				clips.loopMin = 0;
-				clips.loopMax = 0;
-			}
-			else if (clips.loopMin != 0 && clips.loopMax == 0 && cursor > clips.loopMin)
-			{
-				clips.setLoopMax();
-			}
-			else
-			{
-				clips.setLoopMin();
-				clips.loopMax = 0;
-			}
+			this.loopInput.klick(panel, cursor);
 
 			this.stand = "";
 			this.flaeche.neuMalen();
