@@ -125,8 +125,6 @@ public class BBSRendering
     private static Texture texture;
     private static mchorse.bbs_mod.graphics.Framebuffer /* NECESSARY */ exportFramebuffer;
 
-    private static Runnable pendingExportResolutionAction;
-
     public static int getMotionBlur()
     {
         return getMotionBlur(BBSSettings.videoFrameRate.get(), getMotionBlurFactor());
@@ -618,43 +616,12 @@ public class BBSRendering
         abschliessen();
     }
 
-    /**
-     * Nur die Vorschau-Textur fuellen, ohne den Framebuffer abzuhaengen.
-     *
-     * <p>⛔ WOFUER (2026-08-02, #19): im Editor haengt das Fuellen am TAIL von
-     * {@code Gui.extractRenderState} — gemessen per Stapelabzug. In 26.2 werden dort erst
-     * ALLE UI-Elemente eingesammelt und danach gezeichnet: der Blit des Vorschaufeldes ist
-     * also schon eingereiht, wenn die Textur gefuellt wird. Das Feld zeigt deshalb immer
-     * das Bild des VORIGEN Durchgangs (gemessen: beim Blit stand die Fuellung auf 132,
-     * waehrend sie bei 133 war), und der aktuelle Replay-Umriss darueber sitzt bei
-     * Kamerabewegung daneben.
-     *
-     * <p>Das Fuellen darf deshalb vorziehen, das ABHAENGEN nicht: InGameHudMixin sagt
-     * "dort muss der framebuffer bis zum TAIL gebunden bleiben, sonst landet das HUD im
-     * haupt-framebuffer statt im viewport". Genau diese Trennung macht diese Methode.
-     */
+    /** Copies the world target into the preview/export texture without changing its owner.
+     * GUI extraction may reuse the previous frame; exports refresh at world completion. */
     public static void fuellen()
     {
-        /* ⛔ OHNE DIESEN TEST STIRBT DER VIDEO-EXPORT MIT EINEM NULLZEIGER.
-         *
-         * Belegt durch crash-2026-07-31_15.03: BBSRendering.leseFboFuer dereferenziert sein
-         * Argument in der ersten Zeile, und der Aufruf unten reicht das statische Feld
-         * `framebuffer` durch. Ist der Puffer noch nicht angelegt -- oder nach einem
-         * Groessenwechsel gerade abgeraeumt -- reisst es genau den Vorgang ab, bei dem am
-         * meisten Arbeit verloren geht.
-         *
-         * ⚠️ Der Test gehoert HIERHER und nicht in leseFboFuer: dort waere er
-         * Symptombehandlung, die einen halb aufgebauten Blit trotzdem weiterlaufen liesse.
-         *
-         * ⛔ ZWEITE NULL, 2026-08-04 nachgezogen. Der Test oben deckte nur ein null-ZIEL ab.
-         * Der Absturzbericht nennt aber eine ANDERE Null: die Meldung lautet
-         * `NPE: RenderTarget.getColorTexture()`, also war das Ziel da und seine Farbtextur
-         * nicht. leseFboFuer dereferenziert sie in der ersten Zeile
-         * (`((GlTexture) ziel.getColorTexture()).glId()`), und genau dort riss der
-         * Video-Export ab (docs/ABSTURZ-HISTORIE.md, G8, 31.07. 15:03).
-         *
-         * Ein halb angelegtes Ziel ist derselbe Fall wie gar keins: ohne Farbtextur gibt es
-         * nichts zu lesen, also wird der Durchgang uebersprungen statt geraten. */
+        /* Resizing or reload may temporarily release the target or its color attachment.
+         * Both must exist before attempting the framebuffer readback. */
         if (framebuffer == null || framebuffer.getColorTexture() == null)
         {
             return;
@@ -807,18 +774,11 @@ public class BBSRendering
         renderRecordingOverlay();
 
         toggleFramebuffer(false);
-
-        if (pendingExportResolutionAction != null)
-        {
-            Runnable action = pendingExportResolutionAction;
-            pendingExportResolutionAction = null;
-            Minecraft.getInstance().execute(action);
-        }
     }
 
     public static void scheduleAfterNextExportFrame(Runnable action)
     {
-        pendingExportResolutionAction = action;
+        ExportFrameCallbacks.schedule(action);
     }
 
     /**

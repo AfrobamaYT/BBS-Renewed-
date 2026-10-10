@@ -52,7 +52,7 @@ public abstract class VideoExportSession
 
     public static boolean laeuftExport()
     {
-        return laufendeExporte > 0;
+        return laufendeExporte > 0 || mchorse.bbs_mod.client.ExportFrameCallbacks.hasPending();
     }
 
     /** Haelt {@link #laufendeExporte} an JEDEM zustandswechsel synchron. */

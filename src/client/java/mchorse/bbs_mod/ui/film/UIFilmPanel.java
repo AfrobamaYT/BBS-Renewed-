@@ -1961,11 +1961,10 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
      */
     private void applyPreviewSizeToBBS()
     {
-        if (this.recorder.isExporting())
+        if (this.recorder.isExporting() || mchorse.bbs_mod.client.ExportFrameCallbacks.hasPending())
         {
             return;
         }
-
         int w;
         int h;
 

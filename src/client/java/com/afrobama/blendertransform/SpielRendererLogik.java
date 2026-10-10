@@ -154,6 +154,7 @@ public final class SpielRendererLogik
         }
 
         BBSRendering.onWorldRenderEnd();
+        mchorse.bbs_mod.client.ExportFrameCallbacks.completeFrame();
         Stapelwache.abschnitt("level:ende");
     }
 
