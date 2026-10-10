@@ -24,6 +24,8 @@ public final class TimerCuePreview
             return;
         }
 
+        TimerGroundGuidance.register();
+
         List<Replay> replays = film.replays.getList();
 
         for (TimerCue cue : film.timerCues.getList())

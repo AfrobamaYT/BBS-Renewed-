@@ -34,6 +34,7 @@ public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffris
 
     public UITimerCuePanel(UIFilmPanel panel)
     {
+        mchorse.bbs_mod.film.markers.TimerGroundGuidance.register();
         this.panel = panel;
         this.create = new UIButton(IKey.raw("+ Timer pair"), (button) -> this.createCue());
         this.list = new UIList<>((items) ->
@@ -217,10 +218,11 @@ public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffris
                 state.append('|').append(item.uuid.get()).append(':').append(item.label.get())
                     .append(':').append(item.startTick.get()).append(':').append(item.endTick.get())
                     .append(':').append(item.enabled.get()).append(':').append(item.startColor.get())
-                    .append(':').append(item.endColor.get());
+                    .append(':').append(item.endColor.get()).append(':').append(item.groundRoute.get());
             }
         }
-        String snapshot = state.append('|').append(this.selected).append('|').append(error)
+        String navigation = cue == null ? "" : mchorse.bbs_mod.film.markers.TimerGroundGuidance.status(film, cue);
+        String snapshot = state.append('|').append(this.selected).append('|').append(error).append('|').append(navigation)
             .append('|').append(this.editError).toString();
 
         if (snapshot.equals(this.snapshot))
@@ -237,9 +239,9 @@ public class UITimerCuePanel extends UIElement implements UISeitenleiste.Auffris
             this.fields.fill(cue);
         }
         String message = !error.isEmpty() ? "ERROR: " + error : !this.editError.isEmpty()
-            ? this.editError : "Select an endpoint and move it with the regular viewport gizmo. Timers stay out of final videos.";
+            ? this.editError : !navigation.isEmpty() ? navigation : "Select an endpoint and move it with the regular viewport gizmo. Timers stay out of final videos.";
 
-        this.status.text(message).color(!this.editError.isEmpty() || !error.isEmpty() ? Colors.RED : Colors.WHITE, true);
+        this.status.text(message).color(message.startsWith("ERROR:") ? Colors.RED : Colors.WHITE, true);
         /* Reset the owning column's child cursor and update its scroll extent. */
         if (this.getParent() == null)
         {

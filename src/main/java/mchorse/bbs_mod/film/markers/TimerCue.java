@@ -19,6 +19,7 @@ public class TimerCue extends ValueGroup
     public final ValueInt startColor = new ValueInt("start_color", 0xFF4EC1FF).colorAlpha();
     public final ValueInt endColor = new ValueInt("end_color", 0xFFFF854E).colorAlpha();
     public final ValueBoolean enabled = new ValueBoolean("enabled", true);
+    public final ValueBoolean groundRoute = new ValueBoolean("ground_route", false);
 
     public TimerCue(String id)
     {
@@ -33,6 +34,7 @@ public class TimerCue extends ValueGroup
         this.add(this.startColor);
         this.add(this.endColor);
         this.add(this.enabled);
+        this.add(this.groundRoute);
         this.uuid.set(UUID.randomUUID().toString());
     }
 

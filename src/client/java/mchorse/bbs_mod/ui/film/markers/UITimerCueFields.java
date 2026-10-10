@@ -16,6 +16,7 @@ public class UITimerCueFields extends UIElement
     public final UITrackpad start;
     public final UITrackpad end;
     public final UIToggle enabled;
+    public final UIToggle groundRoute;
     public final UIButton selectStart;
     public final UIButton selectEnd;
     public final UIButton remove;
@@ -28,13 +29,15 @@ public class UITimerCueFields extends UIElement
         this.start.limit(0, Integer.MAX_VALUE / 20D).increment(0.05D);
         this.end.limit(0, Integer.MAX_VALUE / 20D).increment(0.05D);
         this.enabled = new UIToggle(IKey.raw("Show timer"), (button) -> panel.edit((cue) -> cue.enabled.set(button.getValue())));
+        this.groundRoute = new UIToggle(IKey.raw("Ground route"), (button) -> panel.edit((cue) -> cue.groundRoute.set(button.getValue())));
+        this.groundRoute.tooltip(IKey.raw("Walking guide to START, then END. Loaded terrain within 48 blocks; never included in video export."));
         this.selectStart = new UIButton(IKey.raw("Position START"), (button) -> panel.selectEndpoint(false));
         this.selectEnd = new UIButton(IKey.raw("Position END"), (button) -> panel.selectEndpoint(true));
         this.remove = new UIButton(IKey.raw("Delete timer pair"), (button) -> panel.removeCue());
 
         this.column(3).vertical().stretch();
         this.add(this.name, new UILabel(IKey.raw("Start (seconds)")).h(12), this.start,
-            new UILabel(IKey.raw("End (seconds)")).h(12), this.end, this.enabled,
+            new UILabel(IKey.raw("End (seconds)")).h(12), this.end, this.enabled, this.groundRoute,
             this.selectStart, this.selectEnd, this.remove);
     }
 
@@ -47,6 +50,7 @@ public class UITimerCueFields extends UIElement
         this.start.setValue(cue.startTick.get() / 20D);
         this.end.setValue(cue.endTick.get() / 20D);
         this.enabled.setValue(cue.enabled.get());
+        this.groundRoute.setValue(cue.groundRoute.get());
         this.selectStart.color(cue.startColor.get());
         this.selectEnd.color(cue.endColor.get());
     }
