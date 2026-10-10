@@ -636,17 +636,20 @@ public class UIFilmPreview extends UIElement
 
         Minecraft mc = Minecraft.getInstance();
 
-        if (mc.gui == null || mc.player == null)
+        if (mc.gui == null || mc.player == null || area.w <= 0 || area.h <= 0)
         {
             return;
         }
 
         context.batcher.flush();
 
-        net.minecraft.client.gui.GuiGraphicsExtractor draw = context.batcher.getContext();
         com.mojang.blaze3d.platform.Window window = mc.getWindow();
-        int editorScale = window.getGuiScale();
-        boolean customScale = BBSModClient.getCustomGUIScale() > 0F;
+        int gameScale = window.calculateScale(mc.options.guiScale().get(), mc.isEnforceUnicode());
+        int guiWidth = (int) Math.ceil(window.getWidth() / (double) gameScale);
+        float scale = area.w / (float) guiWidth;
+        int guiHeight = Math.max(1, (int) Math.ceil(area.h / scale));
+        net.minecraft.client.gui.GuiGraphicsExtractor draw = new ViewportHudGraphics(
+            mc, ((mchorse.bbs_mod.mixin.client.GuiRenderStateAccessor) mc.gui).bbs$getGuiRenderState(), guiWidth, guiHeight);
 
         /* ⚠️ 26.2: der Zeichen-Stapel der Oberflaeche ist ZWEIDIMENSIONAL geworden
          * (Matrix3x2fStack statt PoseStack) — die Oberflaeche kennt kein Z mehr, die Tiefe
@@ -657,7 +660,7 @@ public class UIFilmPreview extends UIElement
 
         /* Scissor auf das viewport-rechteck: ohne das zeichnet das HUD ueber das ganze
          * dashboard (hotbar neben der replay-liste, siehe screenshot des nutzers). */
-        context.batcher.clip(area.x, area.y, area.w, area.h, context.menu.width, context.menu.height);
+        draw.enableScissor(area.x, area.y, area.ex(), area.ey());
 
         boolean hidden = mchorse.bbs_mod.client.HudSichtbarkeit.istVersteckt();
 
@@ -669,21 +672,17 @@ public class UIFilmPreview extends UIElement
 
         try
         {
-            /* Use the same calculation as Minecraft.resizeGui, without resizing the
-             * dashboard. Its own scale must not override the game's HUD preference. */
-            if (customScale)
-            {
-                BBSModClient.setCustomGUIScale(false);
-                window.setGuiScale(window.calculateScale(mc.options.guiScale().get(), mc.isEnforceUnicode()));
-            }
             mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.beginHudRendering(draw);
+            /* Tracker's slide uses the real window height; this fresh HUD-only stack
+             * maps that offset into the virtual canvas before the viewport transform. */
+            matrices.translate(0F, matrices.m21() * (guiHeight / Math.max(1F, window.getGuiScaledHeight()) - 1F));
             matrices.pushMatrix();
 
             try
             {
                 /* Hud reads the extractor's current window dimensions. Pre-multiply the
                  * viewport mapping so the tracker's slide is scaled with the HUD too. */
-                matrices.scaleLocal(area.w / (float) draw.guiWidth(), area.h / (float) draw.guiHeight());
+                matrices.scaleLocal(scale, scale);
                 matrices.translateLocal(area.x, area.y);
                 mc.gui.hud.extractRenderState(draw, mc.getDeltaTracker());
             }
@@ -700,18 +699,11 @@ public class UIFilmPreview extends UIElement
             }
             finally
             {
-                /* ui_scale=0 already uses Minecraft's scale: leave the override flag
-                 * untouched in that case, rather than inferring its value from zero. */
-                if (customScale)
-                {
-                    window.setGuiScale(editorScale);
-                    BBSModClient.setCustomGUIScale(true);
-                }
                 mchorse.bbs_mod.sonden.Sonden.ueberlagerung.wiederherstellen(debugOverlay);
                 mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(hidden);
 
                 context.batcher.flush();
-                context.batcher.unclip(context);
+                draw.disableScissor();
             }
         }
     }
@@ -756,4 +748,31 @@ public class UIFilmPreview extends UIElement
     }
 
 
+}
+
+/** HUD-only canvas, kept package-private beside its sole renderer. */
+final class ViewportHudGraphics extends net.minecraft.client.gui.GuiGraphicsExtractor
+{
+    private final int width;
+    private final int height;
+
+    ViewportHudGraphics(Minecraft minecraft, net.minecraft.client.renderer.state.gui.GuiRenderState state, int width, int height)
+    {
+        super(minecraft, state, 0, 0);
+        this.width = width;
+        this.height = height;
+    }
+
+    @Override
+    public int guiWidth()
+    {
+        /* Base construction needs the real screen for its root scissor. */
+        return this.width > 0 ? this.width : super.guiWidth();
+    }
+
+    @Override
+    public int guiHeight()
+    {
+        return this.height > 0 ? this.height : super.guiHeight();
+    }
 }
