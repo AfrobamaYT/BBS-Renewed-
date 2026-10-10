@@ -127,7 +127,8 @@ public class GehaltenesNetz implements AutoCloseable
         RenderTarget echtes = ziel != null ? ziel : Minecraft.getInstance().gameRenderer.mainRenderTarget();
 
         this.zeichnen(pipeline, modelView, farbe, textur,
-            echtes.getColorTextureView(), echtes.getDepthTextureView(), zusatz);
+            ziel == null ? null : echtes.getColorTextureView(),
+            ziel == null ? null : echtes.getDepthTextureView(), zusatz);
     }
 
     /**
@@ -146,6 +147,15 @@ public class GehaltenesNetz implements AutoCloseable
     public void zeichnen(RenderPipeline pipeline, Matrix4f modelView, Vector4f farbe,
         TextureSetup textur, GpuTextureView farbZiel, GpuTextureView tiefenZiel, Consumer<RenderPass> zusatz)
     {
+        if (farbZiel == null)
+        {
+            RenderTarget target = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+            farbZiel = RenderSystem.outputColorTextureOverride != null
+                ? RenderSystem.outputColorTextureOverride : target.getColorTextureView();
+            tiefenZiel = RenderSystem.outputColorTextureOverride != null
+                ? RenderSystem.outputDepthTextureOverride : target.getDepthTextureView();
+        }
+
         if (this.eckenAnsicht == null || this.zustand.vertexCount() <= 0)
         {
             messen("leer", pipeline);
