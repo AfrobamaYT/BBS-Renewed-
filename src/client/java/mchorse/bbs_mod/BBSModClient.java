@@ -653,20 +653,6 @@ public class BBSModClient implements ClientModInitializer
             }
         });
 
-        /* ⚠️ PHASE NICHT BELEGT GLEICHWERTIG. Alt war WorldRenderEvents.LAST -- die Phase NACH
-         * allem, einschliesslich Wolken, Wetter und Nachbearbeitung. In 26.2 gibt es dafuer
-         * kein benanntes Gegenstueck; END_MAIN ist die letzte verfuegbare Phase, aber ob sie
-         * an derselben Stelle liegt, ist aus dem Bytecode NICHT ablesbar.
-         * Zu pruefen am laufenden Bild: sieht ein Export genauso aus wie das Fenster? */
-        LevelRenderEvents.END_MAIN.register((context) ->
-        {
-            if (videoRecorder.isRecording() && BBSRendering.canRender)
-            {
-                minecraftSoundCapture.captureFrame();
-                videoRecorder.recordFrame();
-            }
-        });
-
         /* ⚠️ DER AUFBAU DER FORMKATEGORIEN HAENGT AM WELT-BEITRITT, nicht am Client-Start.
          * Er legt Vorlage-Formen an, darunter einen ItemStack -- und dessen Komponenten sind
          * in 26.2 datengetrieben, kommen also erst mit dem Datenpaket der Welt. Zweimal zu

@@ -146,6 +146,13 @@ public final class SpielRendererLogik
     public static void weltEnde()
     {
         TrackerClientClip.endLevelRendering();
+
+        if (BBSModClient.getVideoRecorder().isRecording() && BBSRendering.canRender)
+        {
+            BBSModClient.getMinecraftSoundCapture().captureFrame();
+            BBSModClient.getVideoRecorder().recordFrame();
+        }
+
         BBSRendering.onWorldRenderEnd();
         Stapelwache.abschnitt("level:ende");
     }
