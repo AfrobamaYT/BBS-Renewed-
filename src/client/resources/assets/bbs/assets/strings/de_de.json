@@ -329,6 +329,8 @@
     "bbs.ui.audio_editor.context.add": "Füge Farb-Code hinzu",
     "bbs.ui.audio_editor.context.remove": "Entferne Farb-Code",
     "bbs.ui.audio_editor.title": "Audio Editor",
+    "bbs.ui.camera.clips.bbstools:damage_hitbox": "Schadens-Hitbox",
+    "bbs.ui.camera.clips.bbs:bbstools_add_camera": "Zusätzliche Kamera",
     "bbs.ui.camera.clips.bbs:angle": "Winkel",
     "bbs.ui.camera.clips.bbs:attack": "Attacke",
     "bbs.ui.camera.clips.bbs:break_block": "Block Zerstörungs Fortschritt",

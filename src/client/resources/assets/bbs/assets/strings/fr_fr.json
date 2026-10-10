@@ -313,6 +313,8 @@
     "bbs.ui.audio_editor.context.add": "Ajouter un code couleur",
     "bbs.ui.audio_editor.context.remove": "Retirer un code couleur",
     "bbs.ui.audio_editor.title": "Éditeur audio",
+    "bbs.ui.camera.clips.bbstools:damage_hitbox": "Zone de dégâts",
+    "bbs.ui.camera.clips.bbs:bbstools_add_camera": "Caméra supplémentaire",
     "bbs.ui.camera.clips.bbs:attack": "Attaque",
     "bbs.ui.camera.clips.bbs:break_block": "Progression de la cassure du bloc",
     "bbs.ui.camera.clips.bbs:chat": "Message du chat",
