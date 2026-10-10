@@ -119,10 +119,7 @@ public final class SpielRendererLogik
     /** {@code renderItemInHand} @RETURN — Gegenstueck zu {@link #handAnfang}. */
     public static void handEnde()
     {
-        if (TrackerClientClip.shouldRenderHand() && BBSModClient.getCameraController().getCurrent() != null)
-        {
-            TrackerClientClip.endHandRendering();
-        }
+        TrackerClientClip.endHandRendering();
     }
 
     /** {@code renderLevel} @HEAD. */

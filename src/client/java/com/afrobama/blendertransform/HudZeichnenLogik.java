@@ -15,10 +15,9 @@ import mchorse.bbs_mod.camera.controller.PlayCameraController;
  * <p>Zwei Haelften desselben Bildes: {@link #anfang} bei {@code extractRenderState} @HEAD,
  * {@link #ende} bei @TAIL.</p>
  *
- * <p>⛔ DIE BEIDEN GEHOEREN ZUSAMMEN. {@code beginHudRendering} und {@code endHudRendering}
- * sind ein Paar; wer nur eine Seite abbricht, laesst die Aufzeichnung im halb geoeffneten
- * Zustand stehen. Deshalb faellt die Entscheidung "HUD ueberhaupt zeichnen" an BEIDEN Stellen
- * ueber dieselbe Abfrage {@code shouldRenderHud()} und nicht ueber ein gemerktes Flag.</p>
+ * <p>{@code beginHudRendering} and {@code endHudRendering} own one scope. Its end
+ * must restore the player even if the tracker or camera controller has stopped
+ * in the meantime.</p>
  */
 public final class HudZeichnenLogik
 {
@@ -70,10 +69,10 @@ public final class HudZeichnenLogik
         var zeichner = GuiZeichner.aktuell(Minecraft.getInstance());
 
         BBSRendering.abschliessen();
+        TrackerClientClip.endHudRendering(zeichner);
 
         if (TrackerClientClip.shouldRenderHud() && BBSModClient.getCameraController().getCurrent() != null)
         {
-            TrackerClientClip.endHudRendering(zeichner);
             HudSichtbarkeit.verstecken(true);
         }
     }

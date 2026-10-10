@@ -103,6 +103,7 @@ public class TrackerClientClip extends TrackerClip
     /* === Hand swap state === */
     private static boolean handStateSwapped;
     private static int handSavedSelectedSlot;
+    private static int handSavedHurtTime;
     private static int handSwappedSlotIndex = -1;
     private static ItemStack handSavedSlotItem;
     private static ItemStack handSavedOffHandItem;
@@ -195,8 +196,8 @@ public class TrackerClientClip extends TrackerClip
 
         if (!levelRenderingActive)
         {
-            if (entityStateSwapped) restorePlayer();
             if (handStateSwapped) restoreHandState();
+            if (entityStateSwapped) restorePlayer();
         }
 
         prevFrameRenderHand = renderHand;
@@ -470,11 +471,10 @@ public class TrackerClientClip extends TrackerClip
 
         int entitySlot = currentEntity.getSelectedSlot();
         ItemStack entityMain = currentEntity.getHotbarItem(entitySlot);
-        boolean entityHasMainItem = entityMain != null && !entityMain.isEmpty();
 
         handSavedSelectedSlot = player.getInventory().getSelectedSlot();
 
-        if (entityHasMainItem)
+        if (entityMain != null && !entityMain.isEmpty())
         {
             player.getInventory().setSelectedSlot(entitySlot);
             handSwappedSlotIndex = entitySlot;
@@ -494,7 +494,7 @@ public class TrackerClientClip extends TrackerClip
             player.getInventory().setItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND, entityOff.copy());
         }
 
-        savedHurtTime = player.hurtTime;
+        handSavedHurtTime = player.hurtTime;
         player.hurtTime = currentEntity.getHurtTimer();
 
         savedSwingProgress = player.attackAnim;
@@ -507,9 +507,7 @@ public class TrackerClientClip extends TrackerClip
 
         if (player.attackAnim > 0F || entitySwing > 0F) player.swinging = true;
 
-        savedHealth = player.getHealth();
-        player.setHealth(currentEntity.getHealth());
-
+        /* Health belongs only to scoped HUD extraction, never a world/hand pass. */
         updateEquipProgress();
         initHeldItemReflection();
 
@@ -554,12 +552,10 @@ public class TrackerClientClip extends TrackerClip
             }
             player.getInventory().setItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND, handSavedOffHandItem);
             player.getInventory().setSelectedSlot(handSavedSelectedSlot);
-            player.hurtTime = savedHurtTime;
+            player.hurtTime = handSavedHurtTime;
             player.attackAnim = savedSwingProgress;
             player.oAttackAnim = savedLastSwingProgress;
             player.swinging = savedHandSwinging;
-            player.setHealth(savedHealth);
-
             if (cachedHeldItemRenderer != null && heldMainHandField != null)
             {
                 try
@@ -852,6 +848,8 @@ public class TrackerClientClip extends TrackerClip
 
     public static void endHandRendering()
     {
+        if (!handStateSwapped && !handProjectionSwapped) return;
+
         if (!levelRenderingActive)
         {
             restoreHandState();
@@ -885,6 +883,8 @@ public class TrackerClientClip extends TrackerClip
 
     public static void endHudRendering(GuiGraphicsExtractor drawContext)
     {
+        if (!entityStateSwapped && hudMatrixKontext == null && !scaleChanged) return;
+
         /* Nur poppen, wenn der Anfang in DIESEM Kontext lag -- sonst gehoert der Stapel
          * einem anderen Bild und ist leer. */
         if (drawContext != null && hudMatrixKontext == drawContext)
@@ -1059,8 +1059,8 @@ public class TrackerClientClip extends TrackerClip
 
     public static void resetBob()
     {
-        if (entityStateSwapped) restorePlayer();
         if (handStateSwapped) restoreHandState();
+        if (entityStateSwapped) restorePlayer();
         clearBobState();
 
         entityEquipMain = 1F;
