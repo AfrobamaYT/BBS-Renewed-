@@ -44,6 +44,7 @@
     ],
     "client": [
       "mchorse.bbs_mod.BBSModClient",
+      "mchorse.bbs_mod.film.markers.TimerGroundClient",
       "com.afrobama.bbstools.client.BBSToolsModClient"
     ]
   },
