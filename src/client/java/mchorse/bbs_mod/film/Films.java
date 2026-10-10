@@ -319,6 +319,7 @@ public class Films
     public void renderHud(Batcher2D batcher2D, float tickDelta)
     {
         Recorder recorder = BBSModClient.getFilms().getRecorder();
+        mchorse.bbs_mod.film.markers.TimerCuePreview.renderErrors(batcher2D, recorder);
 
         if (recorder != null && BBSSettings.recordingOverlays.get())
         {

@@ -4,6 +4,7 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.film.markers.Markers;
+import mchorse.bbs_mod.film.markers.TimerCues;
 import mchorse.bbs_mod.film.replays.Inventory;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.Replays;
@@ -38,6 +39,7 @@ public class Film extends ValueGroup
 
     /** Merkstellen auf der Zeitleiste — siehe {@link mchorse.bbs_mod.film.markers.Marker}. */
     public final Markers markers = new Markers("markers");
+    public final TimerCues timerCues = new TimerCues("timer_cues");
 
     public final Inventory inventory = new Inventory("inventory");
     public final ValueFloat hp = new ValueFloat("hp", 20F);
@@ -70,6 +72,7 @@ public class Film extends ValueGroup
         this.add(this.replays);
         this.add(this.replayCategoryNames);
         this.add(this.markers);
+        this.add(this.timerCues);
 
         this.add(this.inventory);
         this.add(this.hp);

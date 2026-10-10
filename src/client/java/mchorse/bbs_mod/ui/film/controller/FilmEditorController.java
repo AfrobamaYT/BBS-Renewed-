@@ -116,6 +116,14 @@ public class FilmEditorController extends BaseFilmController
     }
 
     @Override
+    public void startRenderFrame(float transition)
+    {
+        super.startRenderFrame(transition);
+        mchorse.bbs_mod.film.markers.TimerCuePreview.apply(this.film, this.entities, this.getTick(),
+            this.controller.isRecording() ? this.controller.getRecordingCountdown() : 0);
+    }
+
+    @Override
     protected float getTransition(IEntity entity, float transition)
     {
         boolean current = this.isCurrent(entity) && this.controller.isControlling();
@@ -131,6 +139,11 @@ public class FilmEditorController extends BaseFilmController
     @Override
     protected boolean canUpdate(int i, Replay replay, IEntity entity, UpdateMode updateMode)
     {
+        if (com.afrobama.blendertransform.NurVorschauLogik.ueberspringen(replay, updateMode == UpdateMode.RENDER))
+        {
+            return false;
+        }
+
         return super.canUpdate(i, replay, entity, updateMode)
             || this.controller.getPovMode() != UIFilmController.CAMERA_MODE_FIRST_PERSON
             || !this.isCurrent(entity)
