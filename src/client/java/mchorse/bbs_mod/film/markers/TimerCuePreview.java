@@ -19,7 +19,7 @@ public final class TimerCuePreview
 
     public static void apply(Film film, IntObjectMap<IEntity> entities, int tick, int countdown)
     {
-        if (film.timerCues.getList().isEmpty())
+        if (film == null || film.timerCues.getList().isEmpty())
         {
             return;
         }
