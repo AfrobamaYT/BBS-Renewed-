@@ -65,7 +65,6 @@
     "ModelPartAccessor",
     "PreviewLightOverrideMixin",
     "UIBaseMenuAccessor",
-    "UIDashboardAnnouncementMixin",
     "UIDashboardCamPreviewMixin",
     "UIBaseMenuKeybindMixin",
     "UIFilmControllerTrackerPovMixin",

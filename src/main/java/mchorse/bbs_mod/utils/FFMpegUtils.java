@@ -43,7 +43,7 @@ public class FFMpegUtils
                 return bin;
             }
 
-            bin = new File(file, "bin" + File.pathSeparator + subpath);
+            bin = new File(file, "bin" + File.separator + subpath);
 
             if (bin.isFile())
             {

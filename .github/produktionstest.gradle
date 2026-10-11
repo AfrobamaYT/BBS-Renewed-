@@ -1,0 +1,49 @@
+/*
+ * Production test: starts the built mod jar the way players get it (Fabric installer,
+ * isDevelopmentEnvironment=false) and runs the client gametest from src/gametest in it.
+ * The gametest creates a world, opens the BBS dashboard and saves a screenshot; any crash
+ * fails the run. Used by .github/workflows/produktionstest.yml on Windows and Linux.
+ *
+ *   ./gradlew -I .github/produktionstest.gradle produktionstest
+ *
+ * The screenshot is not compared against the reference image here: another OS and a
+ * software OpenGL driver draw text slightly differently, so bbs.gametest.aufnehmen only
+ * records it for the workflow artifact.
+ */
+rootProject {
+	afterEvaluate { p ->
+		def loader = p.extensions.getByName("loom").getClass().getClassLoader()
+		def runType = loader.loadClass("net.fabricmc.loom.task.prod.ClientProductionRunTask")
+
+		def fabricApi = p.configurations.detachedConfiguration(
+			p.dependencies.create("net.fabricmc.fabric-api:fabric-api:${p.property('fabric_version')}"))
+		fabricApi.transitive = false
+
+		/* The fabric-api jar does not bundle the client gametest module; take the exact
+		 * version Loom resolved for the gametest source set. */
+		def gametestApi = p.configurations.getByName("gametestRuntimeClasspath").incoming.artifactView { view ->
+			view.componentFilter { id -> id.displayName.contains("fabric-client-gametest-api-v1") }
+		}.files
+
+		def gametestJar = p.tasks.register("gametestJar", org.gradle.api.tasks.bundling.Jar) { jar ->
+			jar.from(p.sourceSets.gametest.output)
+			jar.archiveClassifier.set("gametest")
+		}
+
+		p.tasks.register("produktionstest", runType) { run ->
+			run.dependsOn(p.tasks.named("jar"), gametestJar)
+			run.mods.from(p.tasks.named("jar").flatMap { it.archiveFile })
+			run.mods.from(fabricApi)
+			run.mods.from(gametestApi)
+			run.mods.from(gametestJar.flatMap { it.archiveFile })
+			run.runDir = p.file("build/produktionstest")
+			run.useXVFB = System.getProperty("os.name").toLowerCase().contains("linux")
+			/* Without this, a loader error (missing dependency, incompatible mod) opens an
+			 * error window and the run waits for a click forever instead of failing. */
+			run.jvmArgs.add("-Dfabric.noGui=true")
+			run.jvmArgs.add("-Dfabric.client.gametest")
+			run.jvmArgs.add("-Dbbs.gametest.aufnehmen=true")
+			run.jvmArgs.add("-Xmx3G")
+		}
+	}
+}

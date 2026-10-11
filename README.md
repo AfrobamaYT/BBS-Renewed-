@@ -53,6 +53,19 @@ gaps are in the [changelog](CHANGELOG.md#bekannte-lücken).
 | `icons/` | The fork's own SVG icons, source of the vector interface. |
 | `docs/` | Feature inventory and images. |
 
+## ffmpeg
+
+Video export runs through [ffmpeg](https://ffmpeg.org/download.html), which is not bundled with
+the mod. Install it once, then point BBS at it under **Settings → Video recording → Encoder
+path**:
+
+- **Windows:** download a build from the ffmpeg download page and unpack it. As the encoder path,
+  enter either `ffmpeg.exe` itself or the unpacked folder — BBS also finds `bin\ffmpeg.exe`
+  inside it.
+- **Linux:** install the `ffmpeg` package of your distribution. The default path `ffmpeg` then
+  works as is.
+- **macOS:** `brew install ffmpeg`, then enter the path that `which ffmpeg` prints.
+
 ## Building
 
 Minecraft 26.2 requires **Java 25**, so Gradle itself has to run on it:
