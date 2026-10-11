@@ -162,7 +162,23 @@ public final class BBSPerfConfig
      *  wasted-channel ratio. */
     public static volatile long lazyKeyframeChannelBuilds = 0L;
 
-
+    /** iter 82 — gate for the wrapped renderer's Sodium fast-path.
+     *
+     *  When true: write 54-byte Iris-extended vertex format off-heap +
+     *  Sodium VertexBufferWriter.push(IrisVertexFormats.ENTITY) →
+     *  memcpy fast-path (~30-40 FPS at 100k villagers + shader).
+     *  KNOWN ISSUE: villagers render TRANSPARENT under Complementary
+     *  Unbound, root cause not yet identified (iter 78-81 all failed
+     *  to restore visibility). Either at_tangent handedness, mc_midTex
+     *  or iris_Entity values are subtly wrong vs Iris's serializer.
+     *
+     *  When false: skip the fast push → fall through to the slow VC-chain
+     *  fallback inside Phase 2 → Iris's MixinBufferBuilder fills
+     *  extensions correctly (~7 FPS but villagers visible).
+     *
+     *  Default false: user gets visible villagers out of the box.
+     *  Toggle true via /bbstools fastpath on for 30-40 FPS at the cost
+     *  of transparency. */
     public static volatile boolean CROWD_IRIS_FAST_PATH = false;
 
     /** Crowd frustum culling. DEFAULT OFF per user: everything must stay
@@ -906,7 +922,10 @@ public final class BBSPerfConfig
      * Coded by Afrobama/Claude — Tier 2a Sodium-style worker pool.
      * ------------------------------------------------------------------ */
 
-
+    /** Master switch for the Tier 2a dedicated worker pool. When true,
+     *  the wrapped renderer's Phase 1b dispatches 256-instance
+     *  batches to BBSEntityWorkerPool instead of using parallelStream.
+     *  Default OFF. */
     public static volatile boolean CROWD_USE_DEDICATED_POOL = false;
 
     /** Counters for the Tier 2a worker pool. Read by
@@ -922,7 +941,13 @@ public final class BBSPerfConfig
      * Coded by Afrobama/Claude — Tier 2c indirect multi-draw.
      * ------------------------------------------------------------------ */
 
-
+    /** Master gate for the Tier 2c multi-draw path in
+     *  the GPU-instanced renderer. When true, the renderer consults
+     *  BBSCrowdMeshAtlas + BBSMultiDrawBatch instead of calling
+     *  glDrawElementsInstanced directly. Default OFF — opt-in via
+     *  /bbsdebug multidraw on. For the single-mesh villager crowd the
+     *  batch holds exactly 1 entry (degenerate but safe); the real
+     *  benefit shows up at 3000+ BBS replays with varied meshes. */
     public static volatile boolean ENABLE_INDIRECT_MULTIDRAW = false;
 
     /** Tier 2c — counter: number of multi-draw flush calls issued. */

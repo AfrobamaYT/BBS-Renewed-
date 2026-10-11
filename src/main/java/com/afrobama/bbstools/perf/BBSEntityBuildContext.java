@@ -1,3 +1,18 @@
+// Coded by Afrobama/Claude — Tier 2a Sodium-style worker pool.
+//
+// Per-worker scratch context. Mirrors Sodium's ChunkBuildContext: one
+// instance per worker thread, owned by that thread for its full lifetime,
+// reset between jobs. Holds the off-heap vertex bake buffer + small
+// per-job scratch arrays + reusable JOML matrices so the worker can run
+// CPU-bake math without per-job allocations.
+//
+// STRIDE: vertex stride in bytes (defaults to 54 — the Iris-extended
+// entity format the wrapped renderer bakes into). Total off-heap
+// size = STRIDE * 4096 = 216 KiB / worker. With max-10 workers that's
+// ~2 MiB pool-wide off-heap — negligible.
+//
+// Lifetime: created lazily by BBSEntityWorkerPool when the worker thread
+// starts. Released via close() on pool shutdown.
 package com.afrobama.bbstools.perf;
 
 import org.joml.Matrix3f;
@@ -14,7 +29,7 @@ public final class BBSEntityBuildContext implements AutoCloseable
     /** Off-heap scratch — direct ByteBuffer wrapping a memAlloc'd block. */
     public final ByteBuffer scratch;
 
-
+    /** Bone-pivot scratch — 6 floats per bone slot. */
     public final float[] boneAng = new float[6];
 
     /** Reusable per-job transform matrix. */

@@ -1,3 +1,7 @@
+// Coded by Afrobama/Claude — Tier 3d async mesh loading.
+//
+// SCAFFOLD STATUS: API + cache map in place. Integration and WatchService
+// hot-reload are TODO.
 package com.afrobama.bbstools.perf;
 
 import com.afrobama.bbstools.debug.IFeatureDebugger;

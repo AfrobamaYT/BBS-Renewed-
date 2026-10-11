@@ -717,7 +717,7 @@ public class BBSSettings {
 		editorCameraSmoothness = builder.getFloat("camera_smoothness", 0.1F, 0F, 0.95F).slider();
 		editorCameraMode = builder.getInt("camera_mode", 0, 0, 5);
 		editorCameraMode.invisible();
-		/* P7 Render-Reiter: 0=BBS, 1=Eevee, 2=Cycles — bedient im Seitenpanel, nicht hier. */
+		/* P7 Render-Reiter: 0=BBS, 1-2 = Engines einer Begleit-Mod — bedient im Seitenpanel, nicht hier. */
 		(renderEngine = builder.getInt("render_engine", 0, 0, 2)).invisible();
 		editorPlayerFollowsCamera = builder.getBoolean("player_follows_camera", false);
 		/* Dock-layout: durch panel-verschieben geschrieben, nicht in den settings eingestellt. */

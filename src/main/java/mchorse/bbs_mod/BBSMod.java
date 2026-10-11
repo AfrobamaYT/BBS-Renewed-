@@ -455,7 +455,10 @@ public class BBSMod implements ModInitializer
             .register(Link.bbs("vanilla_particles"), VanillaParticleForm.class, null)
             .register(Link.bbs("trail"), TrailForm.class, null)
             .register(Link.bbs("framebuffer"), FramebufferForm.class, null)
-
+            /* PFLICHT, kein optionaler eintrag: eine nicht registrierte form kann nicht serialisiert
+             * und nicht kopiert werden (MapFactory.getType wirft). LightForm-actors entstehen ueber
+             * importe — ohne diese zeile crasht dort das erste speichern bzw. das
+             * erzeugen der actor-entities. Siehe klassendoc von LightForm. */
             .register(Link.bbs("light"), LightForm.class, null);
 
         films = new FilmManager(() -> new File(worldFolder, "bbs/films"));

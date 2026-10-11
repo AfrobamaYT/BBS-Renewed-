@@ -1,3 +1,26 @@
+// Coded by Afrobama/Claude — Tier 2c indirect multi-draw.
+//
+// Shared-VBO+EBO atlas for the BBS crowd path. Lets us consolidate all
+// unique crowd meshes onto a single VBO+EBO pair so a single
+// glMultiDrawElementsBaseVertex covers every visible sub-mesh in ONE GL
+// call (see BBSMultiDrawBatch).
+//
+// PER-SUB-MESH RECORDS: registerMesh() appends vertex + index data to
+// the shared buffers and stores a SubMeshRecord (firstIndex / indexCount
+// / baseVertex) keyed by mesh ID. lookup(id) retrieves it later.
+//
+// GL_STATIC_DRAW: crowd meshes don't change at runtime. We allocate
+// buffers up front (lazy on first registerMesh call) at a generous
+// initial size and grow as needed via re-alloc + copy. Production code
+// would pre-size from a manifest scan; for now, geometric growth handles
+// any size.
+//
+// VERTEX FORMAT: matches the GPU-instanced renderer's 24-byte
+// per-vertex layout exactly — pos(12) + uv(8) + boneId(4). Caller passes
+// raw FloatBuffer-of-floats matching that interleave; we appendBytes.
+//
+// This is the KEY prerequisite Sodium relies on: without one shared VBO
+// you can't multi-draw across mesh boundaries.
 package com.afrobama.bbstools.perf;
 
 import org.lwjgl.opengl.GL15;
@@ -17,7 +40,7 @@ public final class BBSCrowdMeshAtlas
 {
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/perf/multidraw-atlas");
 
-
+    /** Per-vertex stride (must match the GPU-instanced renderer). */
     private static final int VERTEX_STRIDE_BYTES = 24;
 
     /** Bytes per index (GL_UNSIGNED_INT). */
