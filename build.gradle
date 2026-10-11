@@ -179,7 +179,8 @@ loom {
 			 * Deshalb STANDARD AN (User-Order 2026-07-29: „will nie wieder restarts sehen").
 			 * Abschalten, falls der Agent je im Weg steht:  ./gradlew runQuick -PkeinMixinHotswap
 			 */
-			if (!project.hasProperty("keinMixinHotswap"))
+			/* Nur mit dev/: sonst warf der kalte Cache jeden frischen Klon ab (CI 2026-10-11). */
+			if (!project.hasProperty("keinMixinHotswap") && rootProject.file("dev").isDirectory())
 			{
 				/* ⛔ NICHT ÜBER EINE PROJEKT-KONFIGURATION. Der jar hängt an fabric-loader
 				 * und steht auf LOOMS launch-classpath, nicht in compileClasspath oder
@@ -431,7 +432,6 @@ sourceSets {
 			 * das kostete achtunddreissig funktionierende Debugger mit, darunter eval (unser
 			 * Messkanal) und live-log. Die zwei Huellen stehen jetzt allein in LegacyCrowdDebuggers,
 			 * und nur die bleibt draussen. */
-			exclude "com/afrobama/bbstools/client/debug/LegacyCrowdDebuggers.java"
 			/* Nachlauf: reine Debug-Tracer FUER die oben ausgeschlossenen Klassen.
 			 * Sie tauchten erst im zweiten Bau auf -- ein Ausschluss erzeugt eine kleine
 			 * Welle, weil andere Dateien die entfernten Pakete importieren. */
