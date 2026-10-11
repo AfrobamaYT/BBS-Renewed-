@@ -136,7 +136,10 @@ public class BBSModClient implements ClientModInitializer
 
     private static float originalFramebufferScale;
     private static boolean customGUIScale;
-
+    /** Das dashboard, ohne es zu erzeugen (null wenn noch keins offen ist).
+     *
+     *  MERGE 2026-07-27: aus dem CML-fork — fragt den UI-zustand ab, ohne ein dashboard
+     *  zu oeffnen. */
     public static UIDashboard peekDashboard()
     {
         return dashboard;

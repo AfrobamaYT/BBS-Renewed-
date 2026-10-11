@@ -551,7 +551,39 @@ public final class MixinBruecke
         return false;
     }
 
-
+    /**
+     * Holt einen wiederverwendbaren griff auf eine kernel-methode — für PRO-ENTITY-pfade.
+     *
+     * <h2>Warum es das braucht</h2>
+     *
+     * <p>{@link #rufe} kostet gemessen <b>1307 ns</b> mehr als ein direkter aufruf (median über
+     * 9 läufe, 200k runden mit warmlauf; map-lookup + MethodHandle-invoke + boxing). Für einen
+     * aufruf pro frame ist das nichts. Sechs mixins feuern aber PRO ENTITY — bei army-scale
+     * 3000× pro frame. Das wären <b>23,5% eines 16,7ms-frames</b>, nur für den aufrufweg.
+     * Genau diese mixins existieren, um zeit zu sparen; sie über {@code rufe} zu leiten wäre
+     * absurd.</p>
+     *
+     * <h2>Die lösung</h2>
+     *
+     * <p>Den griff EINMAL pro frame holen, dann die schleife direkt dagegen laufen lassen:</p>
+     * <pre>
+     *   // einmal am frame-anfang (oder batch-start):
+     *   MethodHandle h = MixinBruecke.griff("BeispielLogik", "pruefe", 2);
+     *
+     *   // dann pro entity, ohne lookup:
+     *   for (Entity e : entities) { if (h != null) h.invoke(e, dist); }
+     * </pre>
+     *
+     * <p>Aus 3000 brücken-lookups pro frame wird EINER. Die hotswapbarkeit bleibt: der griff
+     * wird pro frame neu geholt, ein swap zwischen zwei frames wirkt also spätestens im
+     * nächsten frame. Ein griff DARF NICHT über frame-grenzen hinweg gecacht werden — dann
+     * zeigte er nach einem swap auf eine tote generation.</p>
+     *
+     * @param klasse      einfacher klassenname im kernel-paket
+     * @param methode     methodenname
+     * @param parameterZahl anzahl der parameter (zur unterscheidung überladener methoden)
+     * @return der griff, oder {@code null} wenn kein agent/kernel läuft oder die methode fehlt
+     */
     public static MethodHandle griff(String klasse, String methode, int parameterZahl)
     {
         try

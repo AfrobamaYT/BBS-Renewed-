@@ -24,7 +24,10 @@ public final class ShaderHotReload implements IFeatureDebugger
 
     private ShaderHotReload() {}
 
-
+    /**
+     * Reflectively trigger Iris's shaderpack reload, picking up edited
+     * shader files from the JAR classpath.
+     */
     public boolean reload()
     {
         if (!ENABLED) return false;

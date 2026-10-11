@@ -134,7 +134,9 @@ public class Films
         return null;
     }
 
-
+    /** Alle aktiven film-controller.
+     *
+     *  MERGE 2026-07-27: getter aus dem CML-fork. Das feld gibt es hier bereits. */
     public List<BaseFilmController> getControllers()
     {
         return this.controllers;

@@ -46,7 +46,7 @@ public final class QuickWinKeybinds
 
     /** F5 — pin a marker at the current scrub cursor. */
 
-
+    /** F2 — dev-only A/B toggle. */
     private static KeyMapping veilCrowdToggle;
 
     /** F7 — Tier 4c: trigger Iris shaderpack hot-reload. Chosen over F5
@@ -167,15 +167,20 @@ public final class QuickWinKeybinds
     }
 
 
-
+    /** F2: dev-only A/B toggle; the renderer it switched needs Veil. */
     private static void handleVeilCrowd(Minecraft client)
     {
-
+        /* ⛔ P3-26.2-AUS: der renderer haengt an Veil, das keinen 26.2-bau hat.
+         * Die taste bleibt belegt und sagt es -- stiller nichtstuer waere schlimmer als
+         * eine klare meldung, weil der nutzer sonst den renderer fuer kaputt haelt. */
         actionBar(client, "§b[bbstools] §fVeil-crowd renderer: §cnicht verfuegbar (Veil fehlt fuer 26.2)");
         BBSToolsMod.LOG.info("F2 → Veil-crowd angefragt, aber Veil ist in P3 stillgelegt");
     }
 
-
+    /** F7 (Tier 4c): trigger an Iris shaderpack hot-reload. Routes through
+     *  ShaderHotReload.INSTANCE.reload() which reflectively invokes
+     *  net.irisshaders.iris.Iris.reload() — after the reload completes
+     *  edited shader files land without restarting. */
     private static void handleShaderReload(Minecraft client)
     {
         actionBar(client, "§a[BBSTools] Reloading shaders (Iris pack + BBS core/instancing)…");

@@ -5,7 +5,11 @@ import net.minecraft.client.model.geom.ModelPart;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-
+/**
+ * Exposes {@code ModelPart#children} (private in vanilla 1.21.1) so
+ * callers can walk the part tree. Vanilla MC offers no public traversal API for child
+ * parts — Accessor mixin is the cleanest no-access-widener approach.
+ */
 @Mixin(ModelPart.class)
 public interface ModelPartAccessor
 {

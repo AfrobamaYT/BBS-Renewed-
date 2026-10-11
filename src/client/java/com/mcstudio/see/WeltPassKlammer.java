@@ -11,7 +11,22 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * WeltPassKlammer — richtet den Editor fuer einen Welt-Frame-Sweep her und stellt ihn danach
+ * exakt wieder her. Drei Handgriffe, alle aus gemessenen Fehllaeufen (2026-08-16):
+ *
+ * <ul>
+ * <li>⛔ Besitz-Guard: haelt ein externes Werkzeug die Kamera, zeigt
+ * der Sweep dessen Pose statt der Film-Fahrt — die ersten zwei E2E-Laeufe filmten genau das.
+ * Laut scheitern; den Besitz still zu entziehen waere ein Besitz-Grab.</li>
+ * <li>POV-Klammer: Modus 0 = Film-Kamera (Orbit aus, Runner uebernimmt) — der Sweep muss die
+ * CLIP-Fahrt zeigen, egal in welchem Editor-Modus der Nutzer steht.</li>
+ * <li>M1-Kern: Replays, die Blender rendert (ModelForm MIT .bobj — Spiegel der Addon-Import-
+ * Logik), werden im Welt-Pass VERSTECKT, sonst laegen BBS-Double und MC-Schatten unter dem
+ * Blender-Modell (gemessen: bbs_frame_0000 trug den BBS-Verity). Ihr Schatten verschwindet mit —
+ * den ersetzt Blenders Shadow Catcher.</li>
+ * </ul>
+ */
 final class WeltPassKlammer
 {
 	private final UIFilmPanel panel;

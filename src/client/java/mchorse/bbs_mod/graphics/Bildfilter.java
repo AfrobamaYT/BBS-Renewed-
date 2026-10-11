@@ -177,7 +177,23 @@ public final class Bildfilter
             bauer.addVertex(1F, 1F, 0F).setUv(1F, 1F);
             bauer.addVertex(1F, 0F, 0F).setUv(1F, 0F);
 
-
+            /* ⚗️ FRAME-DEBUGGER AN DIESEN ZEICHENAUFRUF (2026-08-03).
+             *
+             * BBSGpuDebug ist gebaut und laeuft, aber sein beforeDraw-Haken sitzt an FUENF
+             * Stellen — alle in stillgelegten Veil-Pfaden, keine im Film-Editor. Deshalb wartet
+             * autoCapture im Editor ewig und der Debugger schweigt, obwohl er eingeschaltet
+             * ist. Der dokumentierte F11-Keybind existiert nirgends, auch nicht im
+             * Vorgaengerbaum — nur in Kommentaren.
+             *
+             * Hier ist der Zeichenaufruf des Auswahl-Umrisses (Stapelabzug: Bildfilter.lauf
+             * <- umrissZeichnen <- StencilAnzeige.umriss). Mit dem Haken dumpt ein Capture an
+             * genau dieser Stelle Programm, VAO, FRAMEBUFFER und Pipeline-Zustand — der
+             * Framebuffer ist der Wert, der beim Umriss-Versatz zwei Tage lang gefehlt hat.
+             *
+             * Kostet nichts, solange gpu-debug aus ist: die erste Zeile in beforeDraw ist
+             * `if (!enabled) return;`. Die GL-Zahlen kennt 26.2 an dieser Stelle nicht mehr
+             * (Blaze3D bindet ueber Pipelines) — darum 0, der Capture liest den Zustand
+             * ohnehin selbst. */
             mchorse.bbs_mod.sonden.Sonden.gpu.vorZeichnen(
                 "Bildfilter.lauf/umriss", 0, 0, 0, 4, 1);
 

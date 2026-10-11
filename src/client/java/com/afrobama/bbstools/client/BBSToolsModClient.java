@@ -230,10 +230,6 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  unresolved). OFF = 7 FPS visible. Default OFF for safe
          *  rendering. */
         if (com.afrobama.bbstools.client.qol.QuickWinKeybinds.DEV_ENV) com.afrobama.bbstools.client.cinematic.FastPathCommand.register();
-        /* /bbstools accelrender on|off|status: Tier 1a — toggle the
-         *  AcceleratedRendering GPU-compute crowd path. Requires
-         *  AccelRender mod installed. Default OFF until tested. */
-
         /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         /* Tier 1 — replay fast-path measure-mode toggle. Coded by Afrobama/Claude. */
         if (com.afrobama.bbstools.client.qol.QuickWinKeybinds.DEV_ENV) com.afrobama.bbstools.client.cinematic.ReplayFastPathCommand.register();
