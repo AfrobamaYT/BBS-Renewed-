@@ -213,8 +213,10 @@ public final class Blockmodell
                 stapel.mulPose(anzeigeM);
             }
 
+            net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh eingefroren =
+                ((net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableMesh) masche(ZUSTAND)).immutableCopy();
             sammler.submitCustomGeometry(stapel, ebene, (pose, verbraucher) ->
-                viereckeAusMasche(pose, umfaerbungM.apply(verbraucher), toenungM, hellM, overlay, ZUSTAND));
+                viereckeAusMasche(pose, umfaerbungM.apply(verbraucher), toenungM, hellM, overlay, eingefroren));
 
             if (anzeigeM != null)
             {
@@ -466,11 +468,11 @@ public final class Blockmodell
      * @return {@code false}, wenn keine Masche da ist oder sie leer ist
      */
     private static boolean viereckeAusMasche(PoseStack.Pose pose, VertexConsumer verbraucher,
-        int[] toenung, int licht, int overlay, BlockModelRenderState zustand)
+        int[] toenung, int licht, int overlay, Object zustand)
     {
-        Object masche = masche(zustand);
+        Object masche = zustand instanceof BlockModelRenderState modell ? masche(modell) : zustand;
 
-        if (!(masche instanceof net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableMesh mm)
+        if (!(masche instanceof net.fabricmc.fabric.api.client.renderer.v1.mesh.MeshView mm)
             || mm.size() == 0)
         {
             return false;
