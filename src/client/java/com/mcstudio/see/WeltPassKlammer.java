@@ -21,10 +21,8 @@ import java.util.List;
  * Laut scheitern; den Besitz still zu entziehen waere ein Besitz-Grab.</li>
  * <li>POV-Klammer: Modus 0 = Film-Kamera (Orbit aus, Runner uebernimmt) — der Sweep muss die
  * CLIP-Fahrt zeigen, egal in welchem Editor-Modus der Nutzer steht.</li>
- * <li>M1-Kern: Replays, die Blender rendert (ModelForm MIT .bobj — Spiegel der Addon-Import-
- * Logik), werden im Welt-Pass VERSTECKT, sonst laegen BBS-Double und MC-Schatten unter dem
- * Blender-Modell (gemessen: bbs_frame_0000 trug den BBS-Verity). Ihr Schatten verschwindet mit —
- * den ersetzt Blenders Shadow Catcher.</li>
+ * <li>M1-Kern: Replays mit ModelForm MIT .bobj werden im Welt-Pass VERSTECKT; ihr Schatten
+ * verschwindet mit.</li>
  * </ul>
  */
 final class WeltPassKlammer

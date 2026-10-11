@@ -340,14 +340,6 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  inaccurate/annoying and is superseded by the BBS-side WorldBlockCapture
          *  (drag-box marquee → StructureForm/BlockForm replays). Dead code deleted. */
 
-
-
-
-        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
-
-        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
-
-
         /* Phase 2 Editor: Block Animation. Captures Block-Selection region,
          *  animates per-block transforms over time. Primary trigger via
          *  bbs:block_animation BBS clip (registered below). /bbsanim

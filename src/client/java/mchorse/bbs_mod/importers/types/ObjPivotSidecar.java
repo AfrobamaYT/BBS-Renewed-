@@ -6,7 +6,37 @@ import java.io.File;
 import java.util.List;
 import java.util.Locale;
 
-
+/**
+ * ObjPivotSidecar — pivots für Wavefront-OBJ-drops über die {@code .bbs.json}-sidecar retten.
+ *
+ * WARUM (root-cause, gemessen 2026-07-22): Das OBJ-format KENNT keine pivot/origin-direktive
+ * (nur v/vt/vn/f/o/g/s/usemtl/mtllib — siehe {@code OBJParser.readOBJ}, der genau diese liste
+ * parst). Der pivot eines Blender-objekts ({@code obj.location}) kann also gar nicht in der
+ * OBJ reisen — er lebt in der begleitenden {@code .bbs.json} (unser bbs_json_exporter.py,
+ * origin = location × 16 in pixel-space). BBS' {@code CubicModelLoader.load} MERGED beide
+ * bereits von haus aus: liegt im modell-ordner IRGENDEINE *.bbs.json neben der *.obj, werden
+ * die OBJ-meshes per objekt-NAME an die gruppen aus der .bbs.json gehängt (getGroup(name)) —
+ * inklusive origin/pivot ({@code ModelGroup.fromData}: origin→initial.translate, pivot
+ * default = translate). OHNE .bbs.json baut der loader {@code new ModelGroup(name)} mit
+ * default-Transform → pivot (0,0,0) = "pivots kaputt".
+ *
+ * Unser {@link ModelDropImporter} kopierte bisher NUR die modell-datei — die sidecar wurde
+ * (a) nie mit in den modell-ordner gelegt und (b) sogar als EIGENES modell installiert, wenn
+ * sie mit im drop lag (.bbs.json ist selbst eine modell-endung). Diese klasse schließt die
+ * lücke; die wiring-punkte sind zwei BODY-only-edits in ModelDropImporter (geladene klasse,
+ * hotswap-sicher) — die logik lebt hier in einer NEUEN, lazy geladenen klasse
+ * (Static-Holder-muster, deploy-window-free).
+ *
+ * EINHEITEN-BEWEIS (falle geprüft, kein bug): OBJ-vertices werden beim laden ×16 in
+ * pixel-space gehoben ({@code ModelData.fill}), group-origins stehen in der .bbs.json schon
+ * in pixeln (exporter ×16), gerendert wird beides ÷16 ({@code ICubicRenderer.translateGroup},
+ * {@code ModelVertex.set}) — merge ist einheiten-konsistent. UVs: fill ×textureWidth,
+ * ModelVertex ÷textureWidth → kürzt sich, texture [16,16] in der sidecar bricht NICHTS.
+ *
+ * MATCHING: basename-vergleich TRIMMED + case-insensitive — Blender-exporte heißen real
+ * "verity .bbs.json" (leerzeichen vor der endung, weil filename_ext="" im exporter), das
+ * muss "verity.obj" matchen.
+ */
 public final class ObjPivotSidecar
 {
     private ObjPivotSidecar()

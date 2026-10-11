@@ -1,6 +1,22 @@
 package mchorse.bbs_mod.forms.renderers.utils;
 
-
+/**
+ * Ein {@link FormFrameCache}, den mehrere Aufrufe DESSELBEN Bildes teilen.
+ *
+ * <p>⛔ Warum es das braucht: {@code BaseFilmController.getBoneCompositeMatrix} legt je
+ * Aufruf einen frischen Cache an, der damit nie greift — jeder Aufruf baut die
+ * Armature-Matrizen komplett neu. Der Control-Rig-Zeichner ruft einmal JE CONTROL auf:
+ * beim Rigify-Menschen bis zu 220 volle Aufbauten pro Bild. Gemessen waren 23 von 30
+ * Render-Stapelabzuegen unter diesem Pfad, der Editor lief mit 3 FPS.
+ *
+ * <p>Static-Holder statt neuem Parameter: die Zielmethode liegt
+ * in einer 1552-Zeilen-Klasse, die laut Monolith-Waechter nur noch schrumpfen darf, und
+ * ein reiner Body-Edit ist ausserdem hotswapbar.
+ *
+ * <p>⛔ {@link #frei()} gehoert in ein {@code finally}. Ein liegengebliebener Cache
+ * liefert im naechsten Bild veraltete Matrizen — ein Fehler, der wie ein Ruckler aussieht
+ * und keiner ist. Nur Render-Thread, darum ein einfaches Feld.
+ */
 public final class BildFrameCache
 {
     private static final FormFrameCache WIEDERVERWENDET = new FormFrameCache();

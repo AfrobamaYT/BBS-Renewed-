@@ -219,7 +219,34 @@ public final class BlockSpawnAnimEffect
         activeAnim = null;
     }
 
-
+    /**
+     * Append a single block to the currently-running animation (or start a
+     * fresh one if nothing is active). Used by per-place feeders so each
+     * freshly-placed block gets its own drop-in flair without the bulk-{@link #trigger}
+     * AABB rescan. Thread-safe enough for main-thread callers — the render
+     * thread iterates the list with a stable snapshot reference, so the
+     * worst-case race is one frame where the new block isn't rendered yet.
+     *
+     * <p>Behaviour notes vs {@link #trigger}:
+     * <ul>
+     *   <li>Each call REUSES {@code animStartNanos} if an animation is
+     *       already running, so the new block's drop is timed relative to
+     *       the existing animation clock. delay is 0 → block starts
+     *       falling immediately.</li>
+     *   <li>If no animation is active, a fresh one is started with the
+     *       given duration.</li>
+     *   <li>The total-span / lazy-expiry check in {@link #onRender} reads
+     *       {@code animMaxDelayTicks + animDurationTicks}. We bump
+     *       {@code animDurationTicks} to {@code max(current, durationTicks)}
+     *       and reset {@code animStartNanos} when the existing animation
+     *       has already expired, so the new block always gets its full
+     *       fall window.</li>
+     * </ul>
+     *
+     * @param pos            target block position (world coords)
+     * @param state          block state to render falling
+     * @param durationTicks  fall duration in ticks (clamped ≥1)
+     */
     public static void triggerSingle(BlockPos pos, BlockState state, int durationTicks)
     {
         if (state == null || state.isAir())

@@ -6,7 +6,25 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import java.io.File;
 
-
+/**
+ * WeltbildFahrt — die Kamerafahrt des offenen Films als Sequenz UI-freier Welt-Frames, einer je
+ * Film-Tick. Route: {@code /welt_fahrt?frames=N[&start=t0][&name=basis][&film=id]}. Nachfolger von
+ * /shot_world_seq (v1), dessen Off-Schedule-renderLevel auf 26.2 den Folgeframe toetet.
+ *
+ * <p>MECHANIK: pro Tick zwei Schritte — (a) auf dem Render-Thread {@code UIFilmPanel.setCursor(tick)}
+ * (derselbe Scrub wie Timeline-Drag), (b) {@link WorldShot#fangen} vom Aufrufer-Thread:
+ * scharfstellen und den NAECHSTEN echten Frame am Ende des Level-Passes abgreifen. Zwischen Scrub und
+ * Fang liegt damit immer eine echte Frame-Grenze; die Pose des Ticks steht, wenn gefangen wird.
+ * Der ganze Sweep laeuft auf dem HTTP-Thread — der Render-Thread wird nie blockiert.</p>
+ *
+ * <p>Playhead wird vorher gemerkt und im finally restauriert (die Fahrt darf die Timeline des
+ * Nutzers nicht ans Ende scrubben). Film-Guard wie ueberall: ein benannter Film muss der offene
+ * sein, sonst Fehler statt stiller Falschrender.</p>
+ *
+ * <p>EHRLICHE GRENZE (geerbt von v1, dort dokumentiert): die KAMERA folgt dem Scrub sicher je Tick;
+ * ob jede Replay-KOERPERpose im selben Frame nachzieht, ist nicht zugesichert. Fuer einen
+ * Welt-Hintergrund (Welt + Kamera) reicht das.</p>
+ */
 public final class WeltbildFahrt
 {
 	/** Obergrenze je Aufruf — laengere Fahrten in Folgeaufrufen mit start-Offset (Antwort nennt es). */

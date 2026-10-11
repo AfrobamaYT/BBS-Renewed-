@@ -14,8 +14,8 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
  * als Feldstapel, unten die beiden Startknöpfe.
  *
  * <p>Alle Werte sind echte BBS-Einstellungen ({@code videoWidth/Height/FrameRate/MotionBlur},
- * {@code renderEngine}) und per Ziehen änderbar. „Samples" aus dem Entwurf fehlt bewusst — das
- * ist ein Cycles-Begriff, den BBS nicht kennt; ein Feld ohne Wert dahinter wäre erfunden.</p>
+ * {@code renderEngine}) und per Ziehen änderbar. „Samples" aus dem Entwurf fehlt bewusst — BBS
+ * kennt den Begriff nicht; ein Feld ohne Wert dahinter wäre erfunden.</p>
  */
 public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auffrischbar
 {

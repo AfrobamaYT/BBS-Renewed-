@@ -117,6 +117,7 @@ public final class VeilCubicBatchRenderer implements IFeatureDebugger
         /* Iris shadow-pass: replays cast shadows from the gbuffer depth,
          * no need to re-render in shadow phase. Same gate the skinned
          * renderer uses. */
+        if (mchorse.bbs_mod.client.BBSRendering.isIrisShadowPass())
         {
             ShadowSkipStats.INSTANCE.bump("veil-cubic");
             groups.clear();

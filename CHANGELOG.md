@@ -42,16 +42,6 @@ und durch Blenders echten Löser ersetzt — aus Blenders C++-Quelle übersetzt,
   *Teilweise:* 2 von 518 Constraints weichen ab (Fußrollen-Paar, bekannt und eingegrenzt).
 - Treiber (Driver) werden exportiert und ausgewertet, statt eingefrorene Werte zu schreiben.
 
-### Rendern mit Blender
-
-- **Ein Klick rendert den ganzen Film über Blenders echte Engine** — Eevee oder Cycles.
-  Kamera, Darsteller und ein Weltausschnitt werden je Auftrag frisch nach Blender gebacken.
-  Ende-zu-Ende gemessen: Klick bis fertiges mp4 in **24 s für 30 Frames**.
-- Das mitgelieferte Blender-Addon richtet sich selbst ein: Bildrate, Importe und Asset-Pfad
-  kommen aus BBS, nichts wird von Hand gepflegt.
-- Ein Render-Reiter in der Seitenleiste wählt die Engine — BBS, Eevee oder Cycles — und
-  startet den Lauf.
-
 ### Bedienung im Viewport — nach Blenders Vorbild
 
 - Verschieben, Drehen und Skalieren rechnen wie Blender: Mausabstand zum Pivot, Spiegeln
@@ -196,8 +186,7 @@ abzuarbeiten, die Rechte Dritter berühren — sie stehen in
 ### Bewusst nicht gebaut
 
 - **Kein eigenes Vulkan-Backend und kein eigener Raytracer.** Mojang liefert Vulkan selbst;
-  ein Eigenbau kämpft gegen die Plattform. Der Weg zu Pfadverfolgungs-Qualität führt hier
-  über den Export nach Blender — ein Bild darf dort Sekunden dauern.
+  ein Eigenbau kämpft gegen die Plattform.
 - **Keine IK-Mathematik in-place.** Die Caches haben die Last bereits auf etwa 0 % gebracht.
 - **Kein eigener Rig-Editor.** Das Rig wird in Blender gebaut und importiert, statt eine
   zweite Wahrheit zu erfinden.

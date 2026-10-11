@@ -51,7 +51,7 @@ public final class Erweiterungen
     /** Ein externer Render-Weg im Render-Reiter, zusaetzlich zu BBS' eigenem Export. */
     public interface Render
     {
-        /** Die waehlbaren Engines nach "BBS", z. B. {@code {"Eevee", "Cycles"}}. */
+        /** Die waehlbaren Engines nach "BBS". */
         String[] engines();
 
         boolean laeuft();

@@ -201,7 +201,17 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
         catch (Exception e)
         {}
 
-
+        /* ⚠️ 26.2: create(Level) gibt es nicht mehr. ignoreChecks=TRUE ist Absicht und kein
+         * Bequemlichkeits-Flag: die kurze Variante create(Level, EntitySpawnReason) laeuft
+         * intern durch canSpawn(level), und canSpawn prueft jetzt ZUSAETZLICH die
+         * Schwierigkeit — ein nicht-friedlicher Mob liefert auf FRIEDLICH still null, ein
+         * Zombie-MobForm waere also in Vorschau und Welt einfach verschwunden. Preis: die
+         * Feature-Flag-Pruefung faellt damit weg, eine abgeschaltete Entity-Art ist
+         * konstruierbar statt null — fuer ein reines Anzeige-Objekt folgenlos. Der
+         * EntitySpawnReason selbst hat keine Wirkung (er erreicht die Factory nie).
+         *
+         * ⚠️ MUSS IDENTISCH BLEIBEN zu den anderen Wegwerf-Entity-Pfaden (siehe
+         * AnzeigeEntity). */
         this.entity = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(id))
             .create(Minecraft.getInstance().level, new EntitySpawnRequest(EntitySpawnReason.MOB_SUMMONED, true));
 

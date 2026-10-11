@@ -168,7 +168,20 @@ public final class Tier2hInstancedDraw
 
     private Tier2hInstancedDraw() {}
 
-
+    /** Register the AFTER_ENTITIES deferred-draw hook once. Called from
+     *  BBSToolsModClient init.
+     *
+     *  AFTER_ENTITIES (not AFTER_TRANSLUCENT) is the integration point the
+     *  working older instanced renderers use:
+     *  Iris has the entity-pass gbuffer FBO bound with drawBuffers=[0..3],
+     *  so our raw glDrawElementsInstanced lands in the same MRT attachments
+     *  as vanilla entities and the composite pass picks it up with full
+     *  shaderpack lighting. Without a shaderpack it's the vanilla main FBO,
+     *  surplus outputs dropped — same code path works both ways. Crucially
+     *  this is a clean Fabric event boundary OUTSIDE Iris's per-entity
+     *  rendering, so raw GL here doesn't desync Iris's ImmediateState (which
+     *  crashed the next particle draw when we drew inside the pass / at
+     *  AFTER_TRANSLUCENT). */
     public static void register()
     {
         if (EVENT_REGISTERED) return;
@@ -334,7 +347,9 @@ public final class Tier2hInstancedDraw
         int submissionsDrawn = 0;
         int instancedDraws   = 0;
 
-
+        /* Minimal state — match the older working instanced renderer. Fullbright
+         * shader, so NO lightmap/overlay enable (those bind textures to
+         * units 1/2 + change state, an extra desync surface we don't need). */
         /* 26.2: enableBlend/defaultBlendFunc sind entfallen. Eigenes GL-Programm, also
          * eigener Zustand -- Standardmischung ist Quell-Alpha ueber Gegen-Alpha. */
         Tier2hGlZustand.mischenAn();
@@ -670,7 +685,11 @@ public final class Tier2hInstancedDraw
             com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
         }
 
-
+        /* ======================================================
+         * GL handling MATCHES the older proven-working instanced renderer:
+         * pure raw GL, sampled textures (NO SSBO — glBindBufferBase
+         * mid-Iris-pipeline clobbers Iris's SSBO bindings → crash).
+         * ====================================================== */
 
         /* Upload instance VBO (raw). */
         GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, b.instanceVbo);
@@ -704,7 +723,7 @@ public final class Tier2hInstancedDraw
             try { BBSModClient.getTextures().bindTexture(texture); } catch (Throwable ig) {}
         }
 
-
+        /* Depth/cull state — match the older instanced renderer. */
         Tier2hGlZustand zustand = new Tier2hGlZustand();
         GL11C.glEnable(GL11C.GL_DEPTH_TEST);
         GL11C.glDepthFunc(GL11C.GL_LEQUAL);
@@ -730,7 +749,8 @@ public final class Tier2hInstancedDraw
         }
         finally
         {
-
+            /* Raw cleanup — match the older instanced renderer. Unbind both texture units
+             * we touched (0 diffuse, 1 bone), restore active unit. */
             zustand.zurueck();
             GL20C.glUseProgram(0);
             GL30C.glBindVertexArray(0);
@@ -856,7 +876,11 @@ public final class Tier2hInstancedDraw
         b.instanceVboCap = initialInst;
         GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
 
-
+        /* Bone-palette texture (RGBA32F). Each instance is one row;
+         * each bone = 4 texels (its mat4 columns). NEAREST filter +
+         * texelFetch in the shader. NO SSBO — glBindBufferBase mid-Iris
+         * pipeline crashed; a sampled texture is Iris-safe (same approach
+         * as the older working anim atlas). */
         b.boneTexWidth = b.boneCount * 4;
         int initialRows = 256;
         b.boneTex = GL11C.glGenTextures();
