@@ -48,6 +48,8 @@ public class BBSToolsAddon
          *  registration is performed by BBS via the typed event below
          *  (added once we verify RegisterActionClipsEvent signature). */
         WorldSnapshotClipFactory.tryReflectiveRegister();
+        mchorse.bbs_mod.ui.film.clips.UIClip.register(com.afrobama.bbstools.clips.WorldSnapshotClip.class,
+            com.afrobama.bbstools.client.clip.UIWorldSnapshotClip::new);
     }
 
     /**
