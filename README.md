@@ -1,123 +1,107 @@
-# BBS — Fork auf Minecraft 26.2
+# BBS — Minecraft 26.2 fork
 
-Ein Fork des BBS-Animationsmods für Minecraft (Fabric), portiert auf **26.2** und um
-Werkzeuge erweitert, die Animationsarbeit in Minecraft näher an das heranbringen, was
-Blender und klassische Sequencer können.
+A fork of the BBS animation mod for Minecraft (Fabric), ported to **26.2** and extended with
+tools that bring animation work in Minecraft closer to what Blender and traditional sequencers
+can do.
 
-> **Privates Repository.** Dieser Baum ist nicht veröffentlicht. Er ist die Arbeits- und
-> Sicherungsablage des Forks.
->
-> ⛔ **Vor dem Umschalten auf öffentlich: [`docs/VOR-VEROEFFENTLICHUNG.md`](docs/VOR-VEROEFFENTLICHUNG.md) abarbeiten.**
-> Drei Punkte stehen offen und berühren Rechte Dritter — darunter einer, der **nur von
-> GitHub selbst** erledigt werden kann und deshalb Vorlauf braucht.
-
-![Der Film-Editor mit dem Render-Reiter](design/bbs-design-system/briefing/ist-editor-mit-nano-panel.png)
-
-*Der Film-Editor mit dem Render-Reiter: Engine wählen — BBS, Blender Eevee oder Blender
-Cycles — und der Film rendert mit einem Knopf. Das Panel zeigt die neue Vektor-Oberfläche;
-der Rest des Bildes ist noch der bisherige Look.*
+<!-- Screenshots go here, e.g.  ![The film editor](docs/images/editor.png)  — files in docs/images/ -->
 
 ---
 
-## Was diesen Fork ausmacht
+## What sets this fork apart
 
-**Blenders echter IK-Löser statt eines Eigenbaus.** BBS' eigener Löser wurde entfernt
-(3.619 Zeilen) und durch Blenders Löser ersetzt, aus dessen C++-Quelle übersetzt. Ein
-beliebiges Blender-Rig lässt sich importieren; BBS führt Blenders Constraint-Graph zur
-Laufzeit aus. Gemessen: **706 von 706 Knochen decken sich exakt** mit Blender, größte
-IK-Abweichung 7e-06. Rigify, mixamo_rig und Auto-Rig Pro laufen durch.
+**Blender's real IK solver instead of a home-grown one.** BBS's own solver was removed
+(3,619 lines) and replaced with Blender's, translated from its C++ source. Any Blender rig can
+be imported; BBS runs Blender's constraint graph at runtime. Measured: **706 of 706 bones match
+Blender exactly**, largest IK deviation 7e-06. Rigify, mixamo_rig and Auto-Rig Pro all pass.
 
-**Ein Klick rendert den Film mit Blender.** Kamera, Darsteller und ein Weltausschnitt
-werden je Auftrag frisch nach Blender gebacken und dort mit Eevee oder Cycles gerendert.
-Ende-zu-Ende gemessen: Klick bis fertiges mp4 in 24 Sekunden für 30 Bilder. Das
-mitgelieferte Addon richtet sich selbst ein.
+**Controls modelled on Blender.** Move, rotate and scale compute the way Blender does — mouse
+distance to the pivot, mirroring when you cross it, Shift slowing to 1/30 — with the full visual
+feedback: a cursor per mode, a dashed line from the pivot, anchored axis lines, an orange origin
+point.
 
-**Bedienung nach Blenders Vorbild.** Verschieben, Drehen und Skalieren rechnen wie in
-Blender — Mausabstand zum Pivot, Spiegeln beim Überschreiten, Shift verlangsamt auf 1/30 —
-mit der vollen visuellen Rückmeldung: Maussymbol je Modus, gestrichelte Strähne vom Pivot,
-verankerte Achslinien, orangefarbener Ursprungspunkt.
+**The editor runs smoothly.** From 3 to 43 frames per second.
 
-**Der Editor läuft flüssig.** Von 3 auf 43 Bilder je Sekunde.
+The full list is in the [changelog](CHANGELOG.md).
 
-Die vollständige Liste steht im [Changelog](CHANGELOG.md).
+## Honesty about the state
 
-## Ehrlichkeit über den Stand
+The tree keeps an audited feature inventory: **[`docs/FEATURES-RELEASE.md`](docs/FEATURES-RELEASE.md)**.
+Every feature is marked individually — *done*, *partial*, *skeleton only* or *unverified* — with
+the evidence behind it.
 
-Der Baum führt eine geprüfte Feature-Aufnahme:
-**[`docs/FEATURES-RELEASE.md`](docs/FEATURES-RELEASE.md)**. Dort ist jedes Feature einzeln
-markiert — *fertig*, *teilweise*, *nur Gerüst* oder *ungeprüft* — mit dem Beleg dazu.
-
-Stand 2026-08-23, am Baum gemessen und nicht geschätzt:
+As of 2026-08-23, measured against the tree rather than estimated:
 
 | | |
 |---|---|
-| Aufgenommene Features | **91** — 71 fertig, 8 teilweise, 1 nur Gerüst, 10 ungeprüft |
-| Eigener Code gegenüber den Upstreams | **202.884 Java-Zeilen** in 916 Dateien |
-| Methoden mit leerem Körper | 57 von 5.833 (**1,0 %**) |
-| Eigene Klassen ohne Aufrufer | **3 von 804** |
-| Abnahme-Akten | 32, alle belegt, **0 offene Symptome** |
+| Features inventoried | **91** — 71 done, 8 partial, 1 skeleton only, 10 unverified |
+| Own code on top of the upstreams | **202,884 lines of Java** across 916 files |
+| Methods with an empty body | 57 of 5,833 (**1.0 %**) |
+| Own classes with no caller | **3 of 804** |
+| Acceptance records | 32, all evidenced, **0 open symptoms** |
 
-Was nicht gemessen ist, steht als *ungeprüft* dort und wird hier nicht als fertig verkauft.
-Die bekannten Lücken stehen im [Changelog](CHANGELOG.md#bekannte-lücken).
+Anything not measured is listed as *unverified* there and is not sold as finished here. Known
+gaps are in the [changelog](CHANGELOG.md#bekannte-lücken).
 
-## Aufbau des Repositorys
+## Repository layout
 
-| Ordner | Inhalt |
+| Folder | Contents |
 |---|---|
-| `src/gametest` | Bildvergleichs-Tests über Fabrics Vergleichs-API. Laufen nie im ausgelieferten Mod. |
-| `blender/addon` | Das Blender-Addon der Render-Brücke (`blender_bbs_bridge`) samt BOBJ-Exporter. |
-| `tools/` | 40 Werkzeuge: Rig-Export, FBX-Wandlung, Abnahme-Akten, Hotswap, Gates. Übersicht in [`tools/WERKZEUGE.md`](tools/WERKZEUGE.md). |
-| `docs/` | Feature-Aufnahme, Umbau-Programm, Buglisten, Messprotokolle. |
-| `design/`, `icons/` | Design-System, Icon-Entwürfe, Briefing-Screenshots. |
-| `probleme/` | Die Abnahme-Akten — je Befund ein Symptom mit Beleg. |
+| `src/main`, `src/client` | The mod. Own code lives under `com.afrobama.*` and `com.mcstudio.*`; extensions to the original under `mchorse.bbs_mod.*`. |
+| `src/gametest` | Screenshot comparison tests via Fabric's comparison API. They never run in the shipped mod. |
+| `blender/io_export_bobj` | The Blender add-on that exports models and rigs to BBS (BOBJ). |
+| `icons/` | The fork's own SVG icons, source of the vector interface. |
+| `docs/` | Feature inventory and images. |
 
-### Zweige
+## Building
 
-| Zweig | Stand |
-|---|---|
-| `port-26.2` | Der aktive Zweig. Minecraft 26.2, Fabric. |
-| `1.21.1` | Der Stand vor dem Port. |
-
-Die Upstreams sind als Remotes eingehängt: `cmlup` (bbs-mod-cml-edition) und `fsgh` (bbs-fs).
-Beide Push-URLs sind absichtlich unbrauchbar gesetzt — es sind fremde Repositories.
-
-## Bauen
-
-Gebaut wird mit Gradle gegen eine JBR mit DCEVM (Pfad in `gradle.properties`):
+Minecraft 26.2 requires **Java 25**, so Gradle itself has to run on it:
 
 ```
 ./gradlew build
 ```
 
-Die wichtigsten Werte stehen in `gradle.properties`: `minecraft_version=26.2`,
-`loader_version`, `fabric_version`, `mod_version`.
+If your default JDK is older, point Gradle at a Java 25 installation without editing the
+repository — either export `JAVA_HOME`, or add a line to your personal
+`~/.gradle/gradle.properties`:
 
-## Herkunft und Lizenz
+```
+org.gradle.java.home=/path/to/jdk-25
+```
 
-Dieser Fork baut auf:
+The key values live in `gradle.properties`: `minecraft_version=26.2`, `loader_version`,
+`fabric_version`, `mod_version`.
 
-- **BBS mod** von [McHorse](https://github.com/mchorse) — der ursprüngliche Mod
-- **bbs-fs** von [Wemppy4](https://github.com/Wemppy4)
-- **bbs-mod-cml-edition** von [ElGatoPro300](https://github.com/ElGatoPro300)
+**Optional dependency.** Three mixins and one bridge class compile against Physics Mod Pro,
+which is "all rights reserved" and therefore not part of this repository. Without it the build
+simply leaves those four files out and drops their mixin configuration — everything else builds
+and runs unchanged. With the jar in `libs/`, the physics integration compiles in as well.
 
-**Das kombinierte BBS-CML-Edition-Paket wird unter GPL-2.0-or-later veröffentlicht.** Der
-IK-Löser unter `cubic/ik/blender/` ist zeilenweise aus Blenders GPL-Quellcode übersetzt; am
-2026-09-15 wurde deshalb bewusst entschieden, das Gesamtpaket GPL-kompatibel weiterzuentwickeln,
-statt den Löser nur zum Erhalt eines MIT-Gesamtpakets abzuspalten.
+## Origins and licence
 
-Die geerbten MIT-Dateien behalten ihre MIT-Vermerke und bleiben einzeln unter MIT nutzbar.
-Direkte neue Blender-Ports folgen dem Herkunfts- und Lizenzgate in
-[`docs/BLENDER-PORT-GATE.md`](docs/BLENDER-PORT-GATE.md); ihre konkrete SPDX-Lizenz kann
-eine strengere GPL-Fassung fuer einen spaeteren Release verlangen.
+This fork builds on:
 
-Rechteinhaber sind McHorse, Wemppy, ElGatoPro300 und Afrobama; weitere Beitragende stehen
-in der Git-Historie (`git shortlog -sn`). Alle **MIT**-Vermerke bleiben stehen — wer sie
-entfernt, verliert damit die Lizenz.
+- **BBS mod** by [McHorse](https://github.com/mchorse) — the original mod
+- **bbs-fs** by [Wemppy4](https://github.com/Wemppy4)
+- **bbs-mod-cml-edition** by [ElGatoPro300](https://github.com/ElGatoPro300)
 
-> ⛔ **Assets sind ausdrücklich ausgenommen.** Texturen, Modelle, Klänge, Schriften und
-> Icons fallen **nicht** unter die GPL dieses Repositorys. Sie behalten die Rechte ihrer
-> jeweiligen Urheber; wer den Code unter der GPL weiterverwendet, erwirbt damit **keine**
-> Rechte an den Assets.
+**The combined BBS CML Edition package is released under GPL-2.0-or-later.** The IK solver
+under `cubic/ik/blender/` is translated line by line from Blender's GPL source. On
+2026-09-15 the project therefore deliberately chose a GPL-compatible combined release instead
+of separating the solver merely to preserve an MIT licence for the whole package.
 
-Welcher Teil unter welcher Lizenz steht, welche Blender-Dateien übersetzt wurden und welche
-Fremdbestandteile mitliegen, steht vollständig in [`LICENSE.md`](LICENSE.md).
+Inherited MIT files retain their MIT notices and remain reusable individually under MIT.
+Any new direct Blender source port must pass the provenance and licensing gate in
+[`BLENDER-PORT-GATE.md`](BLENDER-PORT-GATE.md); the SPDX licence of those exact sources may
+require a stricter GPL version for a future release.
+
+Rights holders are McHorse, Wemppy, ElGatoPro300 and Afrobama; further contributors are in the
+git history (`git shortlog -sn`). All **MIT** notices stay where they are — removing them
+forfeits the licence.
+
+> ⛔ **Assets are explicitly excluded.** Textures, models, sounds, fonts and icons do **not**
+> fall under this repository's GPL. They keep the rights of their respective authors; reusing
+> the code under the GPL grants **no** rights to the assets.
+
+Which part is under which licence, which Blender files were translated and which third-party
+components ship along is set out in full in [`LICENSE.md`](LICENSE.md).
