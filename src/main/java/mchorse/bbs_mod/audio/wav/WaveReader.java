@@ -44,11 +44,24 @@ public class WaveReader extends BinaryReader
             List<WaveList> lists = new ArrayList<>();
             List<WaveCue> cues = new ArrayList<>();
 
-            while (true)
+            long remaining = main.size - 4L;
+
+            while (remaining > 0L)
             {
                 try
                 {
+                    if (remaining < 8L)
+                    {
+                        throw new EOFException("Truncated WAVE chunk header");
+                    }
+
                     BinaryChunk chunk = this.readChunk(stream);
+                    long paddedSize = chunk.size + (chunk.size & 1L);
+
+                    if (chunk.size < 0 || paddedSize > remaining - 8L)
+                    {
+                        throw new EOFException("WAVE chunk exceeds the RIFF length");
+                    }
 
                     this.log("Reading chunk: " + chunk.id + " " + chunk.size + " " + stream.available());
 
@@ -71,8 +84,12 @@ public class WaveReader extends BinaryReader
                     }
                     else if (chunk.id.equals("data"))
                     {
-                        data = new byte[chunk.size];
-                        stream.read(data);
+                        data = stream.readNBytes(chunk.size);
+
+                        if (data.length != chunk.size)
+                        {
+                            throw new EOFException("Truncated WAVE audio data");
+                        }
                     }
                     /* https://www.recordingblogs.com/wiki/list-chunk-of-a-wave-file */
                     else if (chunk.id.equals("LIST"))
@@ -134,12 +151,17 @@ public class WaveReader extends BinaryReader
                     {
                         this.skip(stream, chunk.size);
                     }
+
+                    if ((chunk.size & 1) != 0)
+                    {
+                        this.skip(stream, 1);
+                    }
+
+                    remaining -= 8L + paddedSize;
                 }
                 catch (EOFException e)
                 {
-                    e.printStackTrace();
-
-                    break;
+                    throw e;
                 }
             }
 

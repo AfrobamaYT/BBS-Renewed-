@@ -1,220 +1,272 @@
 package mchorse.bbs_mod.ui.film.audio;
 
 import mchorse.bbs_mod.audio.Wave;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.ALC10;
 import org.lwjgl.openal.ALC11;
+import org.lwjgl.openal.ALUtil;
 import org.lwjgl.system.MemoryUtil;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.function.Consumer;
 
+/** A selected input is armed for metering; only an explicit begin stores a take. */
 public class OpenALRecorder implements Runnable
 {
-    private static final int SAMPLE_RATE = 44100;
-    private static final int FORMAT = AL10.AL_FORMAT_MONO16;
-    /* Capture ring buffer size, in samples. It must comfortably exceed the samples produced
-     * between two polls (SAMPLE_RATE * sleep), otherwise the device drops the overflow and the
-     * take ends up with fewer samples than real time — which, tagged at the full sample rate,
-     * plays back too fast. One second of headroom survives even a stalled poll (e.g. while the
-     * scene is playing back during the recording). */
-    private static final int BUFFER_SAMPLES = SAMPLE_RATE;
-
-    /** Rolling history of peak amplitudes (0..1) for the live waveform display. */
-    private static final int WAVEFORM_RESOLUTION = 256;
-    /** Peaks pushed per poll; sets how fast the waveform scrolls regardless of chunk size. */
-    private static final int WAVEFORM_POINTS_PER_POLL = 8;
-
-    private long captureDevice;
+    private final String deviceName;
+    private final int sampleRate;
+    private final ByteArrayOutputStream pcm = new ByteArrayOutputStream();
+    private final float[] peaks = new float[256];
+    private final float[] averages = new float[256];
+    private final Consumer<Wave> legacyConsumer;
+    private long device;
     private ByteBuffer buffer;
-    private boolean running = true;
-    private boolean cancelled;
-    private Consumer<Wave> consumer;
-    private long startTime;
-    private float volume;
-
-    private final float[] waveformPeak = new float[WAVEFORM_RESOLUTION];
-    private final float[] waveformAverage = new float[WAVEFORM_RESOLUTION];
     private int waveformHead;
+    private volatile boolean running = true;
+    private volatile boolean ready;
+    private volatile boolean recording;
+    private volatile boolean done;
+    private volatile boolean cancelled;
+    private volatile long samples;
+    private volatile float volume;
+    private volatile Throwable failure;
+    private volatile Wave result;
 
+    public static List<String> devices()
+    {
+        List<String> names = ALUtil.getStringList(0L, ALC11.ALC_CAPTURE_DEVICE_SPECIFIER);
+
+        return names == null ? List.of() : List.copyOf(names);
+    }
+
+    public OpenALRecorder(String deviceName, int sampleRate)
+    {
+        this(deviceName, sampleRate, null);
+    }
+
+    /** Retain the existing callback-based recorder API for callers outside the new panel. */
     public OpenALRecorder(Consumer<Wave> consumer)
     {
-        this.consumer = consumer;
+        this(null, 44100, consumer);
     }
 
-    public void stop()
+    private OpenALRecorder(String deviceName, int sampleRate, Consumer<Wave> legacyConsumer)
     {
-        this.running = false;
-    }
-
-    /** Stop recording and discard the take — the wave is never delivered to the consumer. */
-    public void cancel()
-    {
-        this.cancelled = true;
-        this.running = false;
-    }
-
-    public long getTime()
-    {
-        return System.currentTimeMillis() - this.startTime;
-    }
-
-    public float getVolume()
-    {
-        return this.volume;
-    }
-
-    /**
-     * Snapshot the rolling waveform history in chronological order (oldest first), reusing
-     * {@code out} when sized right. Returns {@code [peak, average]} amplitude arrays — the
-     * average is the darker inner envelope, like {@link mchorse.bbs_mod.audio.Waveform}.
-     * The recorder thread keeps appending, so this is synchronized against it.
-     */
-    public synchronized float[][] getWaveform(float[][] out)
-    {
-        int n = this.waveformPeak.length;
-
-        if (out == null || out.length != 2 || out[0].length != n)
+        if (sampleRate != 44100 && sampleRate != 48000)
         {
-            out = new float[][] { new float[n], new float[n] };
+            throw new IllegalArgumentException("Unsupported voice-over sample rate: " + sampleRate);
         }
 
-        for (int i = 0; i < n; i++)
-        {
-            int idx = (this.waveformHead + i) % n;
+        this.deviceName = deviceName;
+        this.sampleRate = sampleRate;
+        this.legacyConsumer = legacyConsumer;
+    }
 
-            out[0][i] = this.waveformPeak[idx];
-            out[1][i] = this.waveformAverage[idx];
+    public boolean isReady() { return this.running && this.ready && !this.done && this.failure == null; }
+    public boolean isRecording() { return this.recording && !this.done; }
+    public boolean isDone() { return this.done; }
+    public Throwable getFailure() { return this.failure; }
+    public Wave getResult() { return this.result; }
+    public float getVolume() { return this.volume; }
+    public long getTime() { return this.samples * 1000L / this.sampleRate; }
+
+    public synchronized float[] getWaveform(float[] out)
+    {
+        if (out == null || out.length != this.peaks.length)
+        {
+            out = new float[this.peaks.length];
+        }
+
+        for (int i = 0; i < out.length; i++)
+        {
+            out[i] = this.peaks[(this.waveformHead + i) % this.peaks.length];
         }
 
         return out;
     }
 
-    /**
-     * Downsample the freshly captured chunk into {@link #WAVEFORM_POINTS_PER_POLL} buckets,
-     * recording the peak and mean absolute amplitude of each, and append them to the history.
-     */
-    private synchronized void captureWaveform(ByteBuffer chunk, int available)
+    public synchronized float[][] getWaveform(float[][] out)
     {
-        int per = Math.max(1, available / WAVEFORM_POINTS_PER_POLL);
-
-        for (int p = 0; p < WAVEFORM_POINTS_PER_POLL; p++)
+        if (out == null || out.length != 2 || out[0].length != this.peaks.length || out[1].length != this.peaks.length)
         {
-            int start = p * per;
-            int end = p == WAVEFORM_POINTS_PER_POLL - 1 ? available : Math.min(available, start + per);
-            float peak = 0F;
-            float sum = 0F;
-            int count = 0;
+            out = new float[][] {new float[this.peaks.length], new float[this.peaks.length]};
+        }
 
-            for (int i = start; i < end; i++)
-            {
-                float sample = Math.abs(chunk.getShort(i * 2) / 32768F);
+        for (int i = 0; i < this.peaks.length; i++)
+        {
+            out[0][i] = this.peaks[(this.waveformHead + i) % this.peaks.length];
+            out[1][i] = this.averages[(this.waveformHead + i) % this.peaks.length];
+        }
 
-                peak = Math.max(peak, sample);
-                sum += sample;
-                count++;
-            }
+        return out;
+    }
 
-            this.waveformPeak[this.waveformHead] = peak;
-            this.waveformAverage[this.waveformHead] = count > 0 ? sum / count : 0F;
-            this.waveformHead = (this.waveformHead + 1) % this.waveformPeak.length;
+    /** Restart capture before playback, excluding all input from preview/count-in. */
+    public synchronized void begin()
+    {
+        if (!this.isReady() || this.recording)
+        {
+            throw new IllegalStateException("Microphone is not ready for a new take");
+        }
+
+        ALC11.alcCaptureStop(this.device);
+        this.poll();
+        this.pcm.reset();
+        this.samples = 0L;
+        ALC11.alcCaptureStart(this.device);
+        this.checkError();
+        this.recording = true;
+    }
+
+    public synchronized void stop()
+    {
+        if (this.ready)
+        {
+            ALC11.alcCaptureStop(this.device);
+        }
+
+        this.running = false;
+    }
+
+    public synchronized void cancel()
+    {
+        this.cancelled = true;
+        this.stop();
+    }
+
+    private synchronized void init()
+    {
+        if (!this.running)
+        {
+            return;
+        }
+
+        this.device = ALC11.alcCaptureOpenDevice(this.deviceName, this.sampleRate,
+            AL10.AL_FORMAT_MONO16, this.sampleRate);
+
+        if (this.device == 0L)
+        {
+            throw new IllegalStateException("Cannot open microphone: " + this.deviceName);
+        }
+
+        this.buffer = MemoryUtil.memAlloc(this.sampleRate * 2);
+        ALC11.alcCaptureStart(this.device);
+        this.checkError();
+        this.ready = true;
+    }
+
+    private void checkError()
+    {
+        int error = ALC10.alcGetError(this.device);
+
+        if (error != ALC10.ALC_NO_ERROR)
+        {
+            throw new IllegalStateException("Microphone capture error: 0x" + Integer.toHexString(error));
         }
     }
 
-    public void init()
+    private synchronized void poll()
     {
-        String defaultDeviceName = ALC11.alcGetString(0, ALC11.ALC_CAPTURE_DEFAULT_DEVICE_SPECIFIER);
+        int available = ALC10.alcGetInteger(this.device, ALC11.ALC_CAPTURE_SAMPLES);
 
-        if (defaultDeviceName == null)
+        if (available == 0)
         {
-            throw new IllegalStateException("No capture devices available.");
+            this.checkError();
+
+            return;
+        }
+        if (available < 0 || available > this.sampleRate)
+        {
+            throw new IllegalStateException("Microphone capture buffer overrun");
         }
 
-        this.captureDevice = ALC11.alcCaptureOpenDevice(defaultDeviceName, SAMPLE_RATE, FORMAT, BUFFER_SAMPLES);
+        this.buffer.clear();
+        ALC11.alcCaptureSamples(this.device, this.buffer, available);
+        this.checkError();
+        float peak = 0F;
+        float sum = 0F;
 
-        if (this.captureDevice == 0)
+        for (int i = 0; i < available; i++)
         {
-            throw new RuntimeException("Failed to open capture device.");
+            float amplitude = Math.abs(this.buffer.getShort(i * 2) / 32768F);
+
+            peak = Math.max(peak, amplitude);
+            sum += amplitude;
         }
 
-        ALC11.alcCaptureStart(this.captureDevice);
+        this.volume = peak;
+        this.peaks[this.waveformHead] = peak;
+        this.averages[this.waveformHead] = sum / available;
+        this.waveformHead = (this.waveformHead + 1) % this.peaks.length;
 
-        this.buffer = MemoryUtil.memAlloc(SAMPLE_RATE * 2);
-        this.startTime = System.currentTimeMillis();
-    }
-
-    public void pollAndProcess()
-    {
-        int available = ALC10.alcGetInteger(this.captureDevice, ALC11.ALC_CAPTURE_SAMPLES);
-
-        if (available > 0)
+        if (this.recording && !this.cancelled)
         {
-            if (this.buffer.position() + available * 2 > this.buffer.capacity())
-            {
-                ByteBuffer newBuffer = MemoryUtil.memAlloc(this.buffer.capacity() * 2);
+            byte[] chunk = new byte[available * 2];
 
-                this.buffer.flip();
-                newBuffer.put(this.buffer);
-                MemoryUtil.memFree(this.buffer);
-
-                this.buffer = newBuffer;
-            }
-
-            ByteBuffer buffer = BufferUtils.createByteBuffer(available * 2);
-
-            ALC11.alcCaptureSamples(this.captureDevice, buffer, available);
-            this.buffer.put(buffer);
-
-            this.volume = 0F;
-
-            for (int i = 0; i < available; i++)
-            {
-                this.volume = Math.max(Math.abs(buffer.getShort(0) / 65535F), this.volume);
-            }
-
-            this.captureWaveform(buffer, available);
+            this.buffer.get(0, chunk);
+            this.pcm.writeBytes(chunk);
+            this.samples += available;
         }
-    }
-
-    public void cleanup()
-    {
-        ALC11.alcCaptureStop(this.captureDevice);
-        ALC11.alcCaptureCloseDevice(this.captureDevice);
-
-        this.buffer.flip();
-
-        if (!this.cancelled && this.consumer != null)
-        {
-            byte[] pcm = new byte[this.buffer.limit()];
-
-            this.buffer.get(pcm);
-            this.consumer.accept(new Wave(1, 1, SAMPLE_RATE, 16, pcm));
-        }
-
-        MemoryUtil.memFree(this.buffer);
-        this.buffer = null;
     }
 
     @Override
     public void run()
     {
-        this.init();
-
-        while (this.running)
+        try
         {
-            this.pollAndProcess();
+            this.init();
 
-            try
+            if (this.ready && this.legacyConsumer != null)
             {
-                Thread.sleep(50);
+                this.begin();
             }
-            catch (InterruptedException e)
+
+            while (this.running)
             {
-                e.printStackTrace();
+                this.poll();
+                Thread.sleep(20L);
+            }
+
+            if (this.ready)
+            {
+                this.poll();
+            }
+
+            if (this.recording && !this.cancelled)
+            {
+                this.result = new Wave(1, 1, this.sampleRate, 16, this.pcm.toByteArray());
+
+                if (this.legacyConsumer != null)
+                {
+                    this.legacyConsumer.accept(this.result);
+                }
             }
         }
+        catch (Exception error)
+        {
+            this.failure = error;
+        }
+        finally
+        {
+            synchronized (this)
+            {
+                if (this.device != 0L)
+                {
+                    ALC11.alcCaptureStop(this.device);
+                    ALC11.alcCaptureCloseDevice(this.device);
+                    this.device = 0L;
+                }
+                if (this.buffer != null)
+                {
+                    MemoryUtil.memFree(this.buffer);
+                    this.buffer = null;
+                }
 
-        this.cleanup();
+                this.ready = false;
+                this.done = true;
+            }
+        }
     }
 }
