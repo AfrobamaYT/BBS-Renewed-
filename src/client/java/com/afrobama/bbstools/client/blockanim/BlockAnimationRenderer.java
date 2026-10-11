@@ -26,23 +26,29 @@ public final class BlockAnimationRenderer
 
     public static void register()
     {
-        LevelRenderEvents.AFTER_SOLID_FEATURES.register(BlockAnimationRenderer::onRender);
+        LevelRenderEvents.COLLECT_SUBMITS.register(BlockAnimationRenderer::onRender);
         LOG.info("Block-animation renderer registered");
     }
 
     private static void onRender(LevelRenderContext ctx)
     {
-        var blocks = BlockAnimation.getActiveBlocks();
-        if (blocks.isEmpty()) return;
+        java.util.List<BlockAnimation.AnimatedBlock> blocks = BlockAnimation.getActiveBlocks();
+        if (blocks.isEmpty())
+        {
+            return;
+        }
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc == null || mc.level == null) return;
+        if (mc == null || mc.level == null)
+        {
+            return;
+        }
 
         Vec3 camPos = ctx.levelState().cameraRenderState.pos;
         PoseStack matrices = ctx.poseStack();
         SubmitNodeCollector consumers = ctx.submitNodeCollector();
 
-        for (var ab : blocks)
+        for (BlockAnimation.AnimatedBlock ab : blocks)
         {
             Vec3 p = ab.currentPos();
             matrices.pushPose();
@@ -58,9 +64,12 @@ public final class BlockAnimationRenderer
             }
             catch (Throwable t)
             {
-                /* don't log per-block per-frame */
+                LOG.error("Block animation submit failed for {}", ab.state, t);
             }
-            matrices.popPose();
+            finally
+            {
+                matrices.popPose();
+            }
         }
 
         /* 26.2: endBatch ist ersatzlos entfallen. Es leerte den Sofort-Puffer der Ebene, die
