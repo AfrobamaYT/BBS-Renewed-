@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.film;
 
-import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
+import mchorse.bbs_mod.ui.film.audio.VoiceoverTransport;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -472,7 +472,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		/* ⛔ TRANSPORT MITTIG: rechts an der Zeitanzeige liess die Gruppe vor „Marker" ein
 		 * breites Loch (Nutzerpfeil). Sie baut weiter von rechts nach links; nur ihre rechte
 		 * Kante wandert auf Kopfmitte. Reicht der Platz nicht, bleibt sie rechts stehen. */
-		float transportB = 6F * 22F * k + 6F * k;
+		float transportB = 8F * 22F * k + 16F * k;
 		float mittig = b / 2F + transportB / 2F;
 		float transportRechts = Math.min(zx - 8F * k, Math.max(mittig, transportB + 8F * k));
 
@@ -602,7 +602,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		x -= bw;
 		this.transportKnopf(vg, f, "tr-rec", x, y, bw, bh, k, "rec", 0xE58F89, false,
 			() -> panel.preview.recordReplay.clickItself(), "Record replay", kuerzel("record"));
-		/* Auto-key edits do not start replay recording or playback. */
+		x = VoiceoverTransport.draw(vg, f, x, y, bw, bh, k, panel);
 		x -= bw + 6F * k;
 		this.transportKnopf(vg, f, "tr-auto-key", x, y, bw, bh, k, "dopesheet", 0xE58F89, FilmAutoKey.isEnabled(),
 			FilmAutoKey::toggle, "Auto Key: pose/transform edits at playhead (no playback)", "");

@@ -1,196 +1,166 @@
 package mchorse.bbs_mod.ui.film.audio;
 
-import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.audio.Wave;
-import mchorse.bbs_mod.audio.wav.WaveWriter;
 import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
 import mchorse.bbs_mod.film.Film;
-import mchorse.bbs_mod.graphics.window.Window;
-import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.IUITreeEventListener;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
+import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIListOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
-import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
-import mchorse.bbs_mod.ui.framework.elements.utils.EventPropagation;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
+import mchorse.bbs_mod.ui.framework.elements.utils.UIText;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import mchorse.bbs_mod.utils.StringUtils;
-import mchorse.bbs_mod.utils.clips.Clips;
-import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.interps.Interpolations;
-import mchorse.bbs_mod.utils.interps.Lerps;
-import org.lwjgl.glfw.GLFW;
 
-import java.io.File;
-import net.minecraft.client.Minecraft;
+import java.util.List;
 
-public class UIAudioRecorder extends UIElement
+/** Native controls keep the scene visible, with a fixed origin for repeatable takes. */
+public class UIAudioRecorder extends UIOverlayPanel implements IUITreeEventListener
 {
-    private static String lastInput = "";
-
-    /** Count-in before the scene starts playing and the microphone is captured. */
-    private static final long COUNT_IN_MS = 1000L;
-    /** How long a mouse button must be held to confirm finishing/cancelling. */
-    private static final long HOLD_MS = 500L;
-    /** Side length (px) of the hold-progress square drawn at the cursor. */
-    private static final int HOLD_SQUARE = 60;
-
-    private final OpenALRecorder recorder;
+    private static String lastDevice;
+    private static int lastRate = 48000;
+    private static boolean lastCountdown = true;
+    public final UIButton microphone;
+    public final UIButton rate;
+    public final UIButton record;
+    public final UIButton discard;
+    public final UIToggle countdown;
+    public final UITextbox name;
+    public final UIText status;
     private final UIFilmPanel filmPanel;
-    /** Cursor tick the recording was started from; the scene returns here when it ends. */
+    private final Film film;
     private final int originCursor;
-
-    private float volume;
-    private float[][] waveform;
-
-    private final long startTime = System.currentTimeMillis();
-    private boolean recording;
-    private boolean ended;
-
-    /** Held mouse button driving the confirm gesture: 0 = LMB (finish), 1 = RMB (cancel), -1 = none. */
-    private int holdButton = -1;
-    private long holdStart;
-
-    public UIAudioRecorder(UIFilmPanel filmPanel, OpenALRecorder recorder, int originCursor)
-    {
-        this.filmPanel = filmPanel;
-        this.recorder = recorder;
-        this.originCursor = originCursor;
-
-        this.eventPropagataion(EventPropagation.BLOCK);
-    }
+    private OpenALRecorder recorder;
+    private AudioClientClip previous;
+    private float[] waveform;
+    private long deadline;
+    private boolean playing;
+    private boolean finishing;
+    private boolean closed;
+    private String message = "Opening microphone…";
 
     public static void addOption(UIFilmPanel filmPanel, ContextMenuManager menu)
     {
-        UIContext context = filmPanel.getContext();
-        String suggestion = suggestAudioName(filmPanel);
-        String value = lastInput.isEmpty() ? suggestion : lastInput;
-
-        menu.action(Icons.SOUND, UIKeys.CAMERA_TIMELINE_CONTEXT_RECORD_MICROPHONE, () ->
-        {
-            UIPromptOverlayPanel panel = new UIPromptOverlayPanel(
-                UIKeys.CAMERA_TIMELINE_CONTEXT_RECORD_MICROPHONE_TITLE,
-                UIKeys.CAMERA_TIMELINE_CONTEXT_RECORD_MICROPHONE_DESCRIPTION,
-                (t) ->
-                {
-                    String newT = t.isEmpty() ? suggestion : t;
-                    int origin = filmPanel.getCursor();
-                    UIElement overlay = context.menu.overlay;
-
-                    /* The wave is delivered on the recorder thread once it stops (and only when
-                     * finished, not cancelled), so bounce the clip placement onto the main thread. */
-                    OpenALRecorder recorder = new OpenALRecorder((wave) ->
-                        Minecraft.getInstance().execute(() -> saveRecording(filmPanel, newT, value, origin, wave))
-                    );
-
-                    UIAudioRecorder audioRecorder = new UIAudioRecorder(filmPanel, recorder, origin);
-
-                    audioRecorder.full(overlay);
-                    audioRecorder.resize();
-                    overlay.add(audioRecorder);
-                }
-            );
-
-            panel.text.setText(value);
-            panel.text.path();
-
-            UIOverlay.addOverlay(context, panel);
-        });
+        menu.action(Icons.SOUND, UIKeys.CAMERA_TIMELINE_CONTEXT_RECORD_MICROPHONE, () -> open(filmPanel));
     }
 
-    /**
-     * Default recording name: the film's id (which carries its folder path) followed by the
-     * first free trailing number, so repeated recordings of the same film don't clash. Falls
-     * back to a timestamp when no film is loaded or it has no id yet.
-     */
-    private static String suggestAudioName(UIFilmPanel filmPanel)
+    public static void open(UIFilmPanel panel)
     {
-        Film film = filmPanel.getData();
-        String base = film == null ? null : film.getId();
-
-        if (base == null || base.isEmpty())
-        {
-            return StringUtils.createTimestampFilename();
-        }
-
-        File folder = BBSMod.getAudioFolder();
-        int number = 1;
-
-        while (new File(folder, base + "/" + number + ".wav").exists())
-        {
-            number++;
-        }
-
-        return base + "/" + number;
+        UIOverlay.addOverlay(panel.getContext(), new UIAudioRecorder(panel), 350, 228);
     }
 
-    /**
-     * Write the recorded wave and drop an audio clip onto the timeline at the tick the
-     * recording started from, on a fresh top layer. Runs on the main thread.
-     */
-    private static void saveRecording(UIFilmPanel filmPanel, String name, String defaultName, int tick, Wave wave)
+    public UIAudioRecorder(UIFilmPanel panel)
+    {
+        super(IKey.raw("Voice-over"));
+        this.filmPanel = panel;
+        this.film = panel.getData();
+        this.originCursor = panel.getCursor();
+        this.microphone = new UIButton(IKey.raw("Microphone"), (button) -> this.chooseMicrophone());
+        this.rate = new UIButton(IKey.raw(lastRate + " Hz · Mono / 16-bit"), (button) ->
+        {
+            lastRate = lastRate == 48000 ? 44100 : 48000;
+            button.label = IKey.raw(lastRate + " Hz · Mono / 16-bit");
+            this.arm();
+        });
+        this.countdown = new UIToggle(IKey.raw("3-second count-in"), lastCountdown,
+            (button) -> lastCountdown = button.getValue());
+        this.name = new UITextbox(100, null);
+        this.name.setText("Voice-over");
+        this.record = new UIButton(IKey.raw("Record"), (button) -> this.toggleRecord());
+        this.record.color(0xB94D55);
+        this.discard = new UIButton(IKey.raw("Discard take"), (button) -> this.cancelTake());
+        this.status = new UIText().text(this.message);
+        UIElement meter = new UIElement()
+        {
+            @Override
+            public void render(UIContext context)
+            {
+                UIAudioRecorder.this.renderMeter(context, this);
+            }
+        };
+        this.microphone.relative(this.content).xy(12, 8).w(1F, -24).h(22);
+        this.rate.relative(this.content).xy(12, 38).w(0.5F, -18).h(22);
+        this.countdown.relative(this.content).x(0.5F, 6).y(42).w(0.5F, -18).h(14);
+        this.name.relative(this.content).xy(12, 68).w(1F, -24).h(22);
+        this.status.relative(this.content).xy(12, 137).w(1F, -24).h(24);
+        meter.relative(this.content).xy(12, 101).w(1F, -24).h(32);
+        this.record.relative(this.content).xy(12, 168).w(0.5F, -18).h(24);
+        this.discard.relative(this.content).x(0.5F, 6).y(168).w(0.5F, -18).h(24);
+        this.content.add(this.microphone, this.rate, this.countdown, this.name, meter, this.status, this.record, this.discard);
+        this.onClose((event) -> this.shutdown());
+        this.arm();
+    }
+
+    private void arm()
+    {
+        if (this.recorder != null)
+        {
+            this.recorder.cancel();
+        }
+
+        this.microphone.label = IKey.raw("Mic: " + (lastDevice == null ? "System default ▾" : lastDevice + " ▾"));
+        this.message = "Opening microphone…";
+        this.recorder = new OpenALRecorder(lastDevice, lastRate);
+        Thread worker = new Thread(this.recorder, "BBS voice-over input");
+
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void chooseMicrophone()
     {
         try
         {
-            File file = new File(BBSMod.getAudioFolder(), name + ".wav");
-            Clips clips = filmPanel.cameraEditor.clips.getClips();
-            AudioClientClip clip = new AudioClientClip();
+            List<String> devices = OpenALRecorder.devices();
+            UIListOverlayPanel picker = new UIListOverlayPanel(IKey.raw("Microphone"), null);
 
-            file.getParentFile().mkdirs();
-            WaveWriter.write(file, wave);
+            picker.addValues(devices);
+            picker.callback((values) ->
+            {
+                lastDevice = values.get(0);
+                picker.close();
+                this.arm();
+            });
+            UIOverlay.addOverlay(this.getContext(), picker, 340, 220);
 
-            clip.audio.set(Link.assets("audio/" + name + ".wav"));
-            clip.tick.set(tick);
-            clip.duration.set((int) (wave.getDuration() * 20));
-            clip.layer.set(clips.getTopLayer() + 1);
-
-            clips.addClip(clip);
-            filmPanel.cameraEditor.clips.clearSelection();
-            filmPanel.cameraEditor.clips.pickClip(clip);
-
-            lastInput = name.equals(defaultName) ? "" : name;
+            if (devices.isEmpty())
+            {
+                this.message = "No capture devices available";
+            }
         }
-        catch (Exception e)
-        {}
-    }
-
-    /** After the count-in: begin capturing the microphone and play the scene from the cursor. */
-    private void startRecording()
-    {
-        this.recording = true;
-
-        new Thread(this.recorder, "BBS microphone recorder").start();
-
-        if (!this.filmPanel.isRunning())
+        catch (Exception error)
         {
-            this.filmPanel.togglePlayback();
+            this.message = "ERROR: " + error.getMessage();
         }
     }
 
-    /**
-     * End the take. {@code cancel} discards it (no file, no clip); otherwise the recorder
-     * delivers the wave and {@link #saveRecording} places the clip. Either way playback stops
-     * and the cursor snaps back to where the recording began.
-     */
-    private void end(UIContext context, boolean cancel)
+    private void toggleRecord()
     {
-        if (this.ended)
+        if (this.deadline != 0L)
         {
+            this.cancelTake();
+
             return;
         }
-
-        this.ended = true;
-
-        /* Nothing was captured during the count-in, so an early exit is always a discard. */
-        if (this.recording && !cancel)
+        if (this.playing)
         {
             this.recorder.stop();
+            this.finishing = true;
+            this.stopPlayback();
+
+            return;
         }
-        else
+        if (!this.recorder.isReady() || this.film == null || this.filmPanel.getData() != this.film)
         {
-            this.recorder.cancel();
+            this.message = "ERROR: microphone or original film is not ready";
+
+            return;
         }
 
         if (this.filmPanel.isRunning())
@@ -199,178 +169,163 @@ public class UIAudioRecorder extends UIElement
         }
 
         this.filmPanel.setCursor(this.originCursor);
-
-        context.render.postRunnable(this::removeFromParent);
+        this.deadline = System.nanoTime() + (lastCountdown ? 3000000000L : 1L);
     }
 
-    @Override
-    protected boolean subMouseClicked(UIContext context)
+    private void startPlayback()
     {
-        /* LMB begins a finish hold, RMB a cancel hold; the gesture completes in render()
-         * once the button has been held for HOLD_MS. */
-        if (!this.ended && (context.mouseButton == 0 || context.mouseButton == 1))
-        {
-            this.holdButton = context.mouseButton;
-            this.holdStart = System.currentTimeMillis();
+        this.deadline = 0L;
 
-            return true;
+        try
+        {
+            this.recorder.begin();
+            this.filmPanel.setCursor(this.originCursor);
+            this.filmPanel.togglePlayback();
+            this.playing = true;
+        }
+        catch (Exception error)
+        {
+            this.recorder.cancel();
+            this.message = "ERROR: " + error.getMessage();
+        }
+    }
+
+    private void stopPlayback()
+    {
+        if (this.playing && this.filmPanel.isRunning())
+        {
+            this.filmPanel.togglePlayback();
+        }
+        if (this.playing || this.deadline != 0L)
+        {
+            this.filmPanel.setCursor(this.originCursor);
         }
 
-        return super.subMouseClicked(context);
+        this.playing = false;
     }
 
-    @Override
-    protected boolean subKeyPressed(UIContext context)
+    private void cancelTake()
     {
-        /* Keep Escape as an instant cancel so the overlay never leaks the recorder if the
-         * mouse gesture is unavailable; finishing/cancelling is otherwise mouse-driven. */
-        if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
-        {
-            this.end(context, true);
-
-            return true;
-        }
-
-        return super.subKeyPressed(context);
+        this.recorder.cancel();
+        this.stopPlayback();
+        this.deadline = 0L;
+        this.finishing = false;
+        this.arm();
+        this.message = "Take discarded · start " + this.originCursor / 20F + " s";
     }
 
-    /**
-     * Drive the held-button confirm gesture: bail if the button was released early,
-     * otherwise draw the centre-filling square at the cursor and complete the action once
-     * it has been held for {@link #HOLD_MS}. Green ({@link Colors#POSITIVE}) finishes,
-     * red ({@link Colors#NEGATIVE}) cancels.
-     */
-    private void renderHold(UIContext context)
+    private void shutdown()
     {
-        if (!Window.isMouseButtonPressed(this.holdButton))
-        {
-            this.holdButton = -1;
+        this.closed = true;
+        this.stopPlayback();
+        this.deadline = 0L;
+        this.recorder.cancel();
+    }
 
+    private void updateRecording()
+    {
+        if (this.closed)
+        {
             return;
         }
-
-        float progress = Math.min(1F, (System.currentTimeMillis() - this.holdStart) / (float) HOLD_MS);
-        int color = this.holdButton == 1 ? Colors.NEGATIVE : Colors.POSITIVE;
-        int cx = context.mouseX;
-        int cy = context.mouseY;
-        int half = HOLD_SQUARE / 2;
-        int fill = (int) (half * progress);
-
-        context.batcher.box(cx - half, cy - half, cx + half, cy + half, Colors.A50 | color);
-        context.batcher.box(cx - fill, cy - fill, cx + fill, cy + fill, Colors.A100 | color);
-
-        if (progress >= 1F)
+        if (this.filmPanel.getData() != this.film)
         {
-            boolean cancel = this.holdButton == 1;
+            this.shutdown();
+            this.message = "ERROR: film changed; recording cancelled";
+        }
+        else if (this.recorder.getFailure() != null)
+        {
+            this.stopPlayback();
+            this.deadline = 0L;
+            this.finishing = false;
+            this.message = "ERROR: " + this.recorder.getFailure().getMessage();
+        }
+        else if (this.finishing && this.recorder.isDone())
+        {
+            this.finishing = false;
 
-            this.holdButton = -1;
-            this.end(context, cancel);
+            try
+            {
+                this.previous = VoiceoverTake.save(this.filmPanel, this.film, this.originCursor,
+                    this.name.getText(), this.previous, this.recorder.getResult());
+                this.arm();
+                this.message = "Take saved · start " + this.originCursor / 20F + " s · Record for another take";
+            }
+            catch (Exception error)
+            {
+                this.arm();
+                this.message = "ERROR: " + error.getMessage();
+            }
+        }
+        else if (this.deadline != 0L)
+        {
+            long remaining = this.deadline - System.nanoTime();
+
+            this.message = "Starting in " + Math.max(0, (int) Math.ceil(remaining / 1000000000D));
+
+            if (remaining <= 0L)
+            {
+                this.startPlayback();
+            }
+        }
+        else if (this.playing)
+        {
+            this.message = "Recording · " + this.recorder.getTime() / 1000F + " s · start " + this.originCursor / 20F + " s";
+        }
+        else if (this.recorder.isReady() && this.message.equals("Opening microphone…"))
+        {
+            this.message = "Ready · start " + this.originCursor / 20F + " s";
+        }
+
+        boolean busy = this.playing || this.finishing || this.deadline != 0L;
+
+        this.microphone.setEnabled(!busy);
+        this.rate.setEnabled(!busy);
+        this.countdown.setEnabled(!busy);
+        this.name.setEnabled(!busy);
+        this.record.setEnabled(!this.closed && !this.finishing && (busy || this.recorder.isReady()));
+        this.record.label = IKey.raw(this.playing ? "Stop & save" : this.deadline != 0L ? "Cancel count-in" : "Record");
+        this.discard.setEnabled(busy && !this.finishing);
+        if (!this.status.getText().get().equals(this.message))
+        {
+            this.status.text(this.message);
         }
     }
 
     @Override
     public void render(UIContext context)
     {
-        long elapsed = System.currentTimeMillis() - this.startTime;
-
-        if (!this.recording && !this.ended && elapsed >= COUNT_IN_MS)
-        {
-            this.startRecording();
-        }
-
-        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.ey(), Colors.A50);
-
-        if (this.recording)
-        {
-            this.renderRecording(context);
-        }
-        else
-        {
-            this.renderCountdown(context, elapsed);
-        }
-
-        if (this.holdButton != -1)
-        {
-            this.renderHold(context);
-        }
-
+        this.updateRecording();
         super.render(context);
     }
 
-    private void renderCountdown(UIContext context, long elapsed)
+    private void renderMeter(UIContext context, UIElement meter)
     {
-        float remaining = Math.max(0F, (COUNT_IN_MS - elapsed) / 1000F);
-        String label = UIKeys.CAMERA_TIMELINE_CONTEXT_RECORD_MICROPHONE_COUNTDOWN.format(remaining).get();
-        int x = this.area.mx();
-        int y = this.area.my();
-        int w = context.batcher.getFont().getWidth(label);
+        int x = meter.area.x;
+        int y = meter.area.y;
+        int width = meter.area.w;
+        float volume = this.recorder.getVolume();
 
-        context.batcher.icon(Icons.SPHERE, Colors.setA(Colors.RED, 0.5F), x - w / 2 - 12, y + context.batcher.getFont().getHeight() / 2, 0.5F, 0.5F);
-        context.batcher.textShadow(label, x - w / 2, y);
-    }
-
-    private void renderRecording(UIContext context)
-    {
-        this.volume = Lerps.lerp(this.volume, Interpolations.CUBIC_OUT.interpolate(0F, 1F, this.recorder.getVolume()), 0.5F);
-
-        String label = UIKeys.CAMERA_TIMELINE_CONTEXT_RECORD_MICROPHONE_LABEL
-            .format(this.recorder.getTime() / 1000F)
-            .get();
-        int x = this.area.mx();
-        int y = this.area.my();
-        int w = context.batcher.getFont().getWidth(label);
-        double volume = Interpolations.EXP_OUT.interpolate(0F, 1F, this.volume);
-
-        context.batcher.icon(Icons.SPHERE, Colors.RED | Colors.A100, x - w / 2 - 12, y + context.batcher.getFont().getHeight() / 2, 0.5F, 0.5F);
-        context.batcher.textShadow(label, x - w / 2, y);
-
-        label = UIKeys.CAMERA_TIMELINE_CONTEXT_RECORD_MICROPHONE_SUBLABEL.get();
-        w = context.batcher.getFont().getWidth(label);
-
-        context.batcher.textShadow(label, x - w / 2, this.area.y(0.75F));
-
-        x -= w / 2;
-
-        context.batcher.box(x, y + 16, x + w, y + 20, Colors.A100);
-        context.batcher.box(x, y + 16, x + (int) (w * volume), y + 20, Colors.WHITE);
-
-        this.renderWaveform(context, x, y + 24, w, 28);
-    }
-
-    /**
-     * Live incoming microphone waveform: a mirrored peak envelope scrolling in from the
-     * right, clamped to the same width as the volume bar above it.
-     */
-    private void renderWaveform(UIContext context, int x, int top, int w, int h)
-    {
-        if (w <= 0)
-        {
-            return;
-        }
-
+        context.batcher.box(x, y, x + width, y + 10, 0xFF272A30);
+        context.batcher.box(x, y, x + (int) (width * Math.min(1F, volume)), y + 10,
+            volume >= 0.98F ? 0xFFDC6068 : 0xFF54BFA7);
         this.waveform = this.recorder.getWaveform(this.waveform);
 
-        float[] peak = this.waveform[0];
-        float[] average = this.waveform[1];
-        int n = peak.length;
-        int mid = top + h / 2;
-        int half = h / 2;
-        int averageColor = Colors.mulRGB(Colors.WHITE, 0.8F);
-
-        context.batcher.box(x, top, x + w, top + h, Colors.A50);
-
-        for (int px = 0; px < w; px++)
+        for (int px = 0; px < width; px++)
         {
-            int idx = Math.min(n - 1, (int) (px / (float) w * n));
-            int cx = x + px;
+            int sample = Math.min(this.waveform.length - 1, px * this.waveform.length / width);
+            int half = (int) (this.waveform[sample] * 9F);
 
-            /* Bright peak envelope, then the darker mean amplitude on top as an inner core,
-             * matching mchorse.bbs_mod.audio.Waveform's max/average layering. */
-            int peakAmp = (int) (Interpolations.EXP_OUT.interpolate(0F, 1F, Math.min(1F, peak[idx])) * half);
-            int avgAmp = (int) (Interpolations.EXP_OUT.interpolate(0F, 1F, Math.min(1F, average[idx])) * half);
-
-            context.batcher.box(cx, mid - peakAmp, cx + 1, mid + peakAmp + 1, Colors.WHITE);
-            context.batcher.box(cx, mid - avgAmp, cx + 1, mid + avgAmp + 1, averageColor);
+            context.batcher.box(x + px, y + 23 - half, x + px + 1, y + 23 + half, 0xFF54BFA7);
         }
+    }
+
+    @Override
+    public void onAddedToTree(UIElement root) {}
+
+    @Override
+    public void onRemovedFromTree(UIElement root)
+    {
+        this.shutdown();
     }
 }
