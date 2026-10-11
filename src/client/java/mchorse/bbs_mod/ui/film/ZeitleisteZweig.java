@@ -102,6 +102,7 @@ public final class ZeitleisteZweig
 			&& panel.replayEditor.replayProperties.propsNano instanceof UIPropertiesNano props)
 		{
 			panel.cameraEditor.target(props.clipHost());
+			panel.actionEditor.target(props.clipHost());
 		}
 
 		/* Das Dock lebt unabhaengig vom Zweig — die Kategorie-Schiene regelt, was zu
