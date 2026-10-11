@@ -86,7 +86,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             this.renderModel(format, () -> RenderPipelines.ENTITY_TRANSLUCENT,
                 stack,
                 OverlayTexture.NO_OVERLAY, LightCoordsUtil.FULL_BRIGHT, Colors.WHITE,
-                context.getTransition(), false, false
+                context.getTransition(), false, false, -1
             );
         }
         finally
@@ -100,9 +100,9 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
     @Override
     public void render3D(FormRenderingContext context)
     {
-        boolean shading = this.form.shading.get();
+        boolean shading = !context.isPicking() && this.form.shading.get();
 
-        if (BBSRendering.isIrisShadersEnabled())
+        if (!context.isPicking() && BBSRendering.isIrisShadersEnabled())
         {
             shading = true;
         }
@@ -127,10 +127,15 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             shading ? BBSShaders::getPickerBillboardProgram : BBSShaders::getPickerBillboardNoShadingProgram
         );
 
-        this.renderModel(format, shader, context.stack, context.overlay, context.light, context.color, context.getTransition(), !context.isPicking(), true);
+        if (context.isPicking())
+        {
+            shader = () -> TexturedFormPicking.pipeline(PrimitiveTopology.TRIANGLES);
+        }
+
+        this.renderModel(format, shader, context.stack, context.overlay, context.light, context.color, context.getTransition(), !context.isPicking(), true, context.getPickingIndex());
     }
 
-    private void renderModel(VertexFormat format, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer, boolean beideSeiten)
+    private void renderModel(VertexFormat format, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer, boolean beideSeiten, int pickingIndex)
     {
         Link t = this.form.texture.get();
 
@@ -203,16 +208,21 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             uvQuad.transform(matrix);
         }
 
-        this.renderQuad(format, texture, shader, matrices, overlay, light, overlayColor, transition, defer, beideSeiten);
+        this.renderQuad(format, texture, shader, matrices, overlay, light, overlayColor, transition, defer, beideSeiten, pickingIndex);
     }
 
-    private void renderQuad(VertexFormat format, Texture texture, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer, boolean beideSeiten)
+    private void renderQuad(VertexFormat format, Texture texture, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer, boolean beideSeiten, int pickingIndex)
     {
         Color color = new Color().set(overlayColor, true);
         Matrix4f matrix = matrices.last().pose();
         PoseStack.Pose entry = matrices.last();
 
         FormColorBlend.blend(color, this.form.color.get(), this.form.additiveColor.get());
+
+        if (pickingIndex >= 0)
+        {
+            color.set(TexturedFormPicking.color(pickingIndex, (int) (color.a * 255F)), true);
+        }
 
         if (this.form.billboard.get())
         {
@@ -270,13 +280,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
          * FormPipelines.holen(..., mischen = true, ...) in render3D. Ersatzlos zu streichen
          * waere still falsch gewesen -- jede Textur mit weichem Rand und jede Deckkraft unter
          * 1 waere undurchsichtig geworden.
-         *
-         * ⛔ OFFEN, nicht geraten: der AUSWAHL-Durchgang. getShader liefert beim Picken
-         * BBSShaders.getPickerBillboard(NoShading)Program, und das sind Pipelines aus
-         * ModelVAOPipeline -- sie erwarten DREI getrennte Vertexbindungen (Position, Normale,
-         * UV0). Dieser Weg hier baut ein verschraenktes Netz und bindet es an Bindung 0. Das
-         * passt nicht zusammen; es braucht eine Picker-Pipeline fuer das verschraenkte Format,
-         * und das ist ein Entwurf, keine Uebersetzung. */
+         * The picker uses the interleaved POSITION_TEX_COLOR pipeline and unblended ids. */
 
         boolean linear = this.form.linear.get();
         boolean mipmap = this.form.mipmap.get();
@@ -321,8 +325,10 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
              * ueberblendet, waehrend die PiP-Miniaturen NACH ihm komponiert werden. Genau
              * der Fund aus Blockvorschau (2026-08-04). Ausserhalb der PiP-Phase ist das
              * Ziel null und es bleibt beim Hauptbild. */
-            var zielFarbe = mchorse.bbs_mod.graphics.Zeichenziel.farbe();
-            var zielTiefe = mchorse.bbs_mod.graphics.Zeichenziel.tiefe();
+            com.mojang.blaze3d.textures.GpuTextureView zielFarbe = pickingIndex >= 0
+                ? mchorse.bbs_mod.graphics.PickZiel.pflicht() : mchorse.bbs_mod.graphics.Zeichenziel.farbe();
+            com.mojang.blaze3d.textures.GpuTextureView zielTiefe = pickingIndex >= 0
+                ? mchorse.bbs_mod.graphics.PickZiel.tiefe() : mchorse.bbs_mod.graphics.Zeichenziel.tiefe();
 
             /* ⛔ ALLE DREI SAMPLER BINDEN, KEINEN ERBEN (2026-08-11, Restfall Akte 01/1):
              * entityTextur (singleTextureWithLightmap) laesst Sampler1 (Overlay) leer, und
@@ -333,14 +339,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
              * bei identischen renderQuad-Eingaengen (Messfuehler bb.zweig, kalter Boot).
              * Gebunden wird das echte Overlay (NO_OVERLAY-Texel dort ist belegt neutral,
              * die Modell-Kacheln zeichnen damit) — dieselbe Haertung wie Blockvorschau. */
-            var mc = Minecraft.getInstance();
-            var abtaster = RenderSystem.getSamplerCache()
-                .getClampToEdge(com.mojang.blaze3d.textures.FilterMode.NEAREST);
-            var bindung = new net.minecraft.client.gui.render.TextureSetup(
-                texture.view(),
-                mc.gameRenderer.overlayTexture().getTextureView(),
-                mc.gameRenderer.lightmap(),
-                texture.sampler(), abtaster, abtaster);
+            net.minecraft.client.gui.render.TextureSetup bindung = this.textureSetup(texture, pickingIndex >= 0);
 
             if (zielFarbe != null)
             {
@@ -358,6 +357,21 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
 
         texture.setFilterMipmap(false, false);
 
+    }
+
+    private net.minecraft.client.gui.render.TextureSetup textureSetup(Texture texture, boolean picking)
+    {
+        if (picking)
+        {
+            return net.minecraft.client.gui.render.TextureSetup.singleTexture(texture.view(), texture.sampler());
+        }
+
+        Minecraft client = Minecraft.getInstance();
+        com.mojang.blaze3d.textures.GpuSampler sampler = RenderSystem.getSamplerCache()
+            .getClampToEdge(com.mojang.blaze3d.textures.FilterMode.NEAREST);
+        return new net.minecraft.client.gui.render.TextureSetup(texture.view(),
+            client.gameRenderer.overlayTexture().getTextureView(), client.gameRenderer.lightmap(),
+            texture.sampler(), sampler, sampler);
     }
 
     private VertexConsumer fill(VertexFormat format, VertexConsumer consumer, Matrix4f matrix, float x, float y, Color color, float u, float v, int overlay, int light, PoseStack.Pose entry, float nz)

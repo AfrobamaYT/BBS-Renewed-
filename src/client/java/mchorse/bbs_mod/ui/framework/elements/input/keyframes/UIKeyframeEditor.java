@@ -181,8 +181,12 @@ public class UIKeyframeEditor extends UIElement
 
         Pair<String, Boolean> bone = this.getBone();
         Keyframe[] recorded = new Keyframe[1];
+        boolean missing = graph.getSheets().stream().anyMatch(sheet ->
+            sheet.channel.getFactory() == active.channel.getFactory()
+                && (sheet == active || sheet.selection.hasAny())
+                && sheet.channel.getKeyframes().stream().noneMatch(keyframe -> ((Keyframe) keyframe).getTick() == tick));
 
-        BaseValue.edit(parent, IValueListener.FLAG_UNMERGEABLE, (value) ->
+        Runnable record = () ->
         {
             for (UIKeyframeSheet sheet : graph.getSheets())
             {
@@ -201,7 +205,16 @@ public class UIKeyframeEditor extends UIElement
                     recorded[0] = keyframe;
                 }
             }
-        });
+        };
+
+        if (missing)
+        {
+            BaseValue.edit(parent, IValueListener.FLAG_UNMERGEABLE, (value) -> record.run());
+        }
+        else
+        {
+            record.run();
+        }
 
         graph.pickKeyframe(recorded[0]);
 

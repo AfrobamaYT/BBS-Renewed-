@@ -397,6 +397,9 @@ public class VideoRecorder
             int nextPbo = (this.pboIndex + 1) % this.pbos.length;
 
             GL30.glPixelStorei(GL30.GL_PACK_ALIGNMENT, 1);
+            GL30.glPixelStorei(GL30.GL_PACK_ROW_LENGTH, 0);
+            GL30.glPixelStorei(GL30.GL_PACK_SKIP_ROWS, 0);
+            GL30.glPixelStorei(GL30.GL_PACK_SKIP_PIXELS, 0);
             GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, this.pbos[pbo]);
             GlStateManager._bindTexture(this.textureId);
             GL30.glGetTexImage(GL30.GL_TEXTURE_2D, 0, GL30.GL_BGR, GL30.GL_UNSIGNED_BYTE, 0);
@@ -431,6 +434,9 @@ public class VideoRecorder
         this.buffer.clear();
 
         GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, 1);
+        GL11.glPixelStorei(GL12.GL_PACK_ROW_LENGTH, 0);
+        GL11.glPixelStorei(GL11.GL_PACK_SKIP_ROWS, 0);
+        GL11.glPixelStorei(GL11.GL_PACK_SKIP_PIXELS, 0);
         GlStateManager._bindTexture(this.textureId);
         GL11.glGetTexImage(GL11.GL_TEXTURE_2D, 0, GL12.GL_BGR, GL11.GL_UNSIGNED_BYTE, this.buffer);
         this.buffer.rewind();

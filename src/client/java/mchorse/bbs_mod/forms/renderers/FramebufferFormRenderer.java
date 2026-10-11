@@ -15,13 +15,11 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.forms.FormTranslucentQueue;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.FramebufferForm;
 import mchorse.bbs_mod.graphics.Framebuffer;
-import mchorse.bbs_mod.graphics.Renderbuffer;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -42,9 +40,7 @@ import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.system.MemoryStack;
 
-import java.nio.IntBuffer;
 import java.util.function.Supplier;
 
 public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
@@ -52,8 +48,8 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
     private static final Quad quad = new Quad();
     private static final Quad uvQuad = new Quad();
 
-    /* Nested framebuffer forms must each render into their own framebuffer */
-    private static int depth;
+    private final Link framebufferId = Link.bbs("framebuffer_form_" + java.util.UUID.randomUUID());
+    private static final RenderPipeline SHADED = shadedPipeline();
 
     private IEntity entity = new StubEntity();
 
@@ -100,129 +96,125 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
     @Override
     public void renderBodyParts(FormRenderingContext context)
     {
-        Framebuffer framebuffer = BBSModClient.getFramebuffers().getFramebuffer(Link.bbs("framebuffer_form_" + depth), (f) ->
+        Framebuffer framebuffer = BBSModClient.getFramebuffers().getFramebuffer(this.framebufferId, (target) ->
         {
-            Texture texture = new Texture();
-
-            texture.setSize(2, 2);
-            texture.setFilter(GL11.GL_NEAREST);
-            texture.setWrap(GL13.GL_CLAMP_TO_EDGE);
-
-            Renderbuffer renderbuffer = new Renderbuffer();
-
-            renderbuffer.resize(2, 2);
-
-            f.deleteTextures().attach(texture, GL30.GL_COLOR_ATTACHMENT0);
-            f.attach(renderbuffer);
-            f.unbind();
+            Texture color = new Texture();
+            color.setSize(2, 2);
+            color.setFilter(GL11.GL_NEAREST);
+            color.setWrap(GL13.GL_CLAMP_TO_EDGE);
+            Texture depth = new Texture();
+            depth.setFormat(mchorse.bbs_mod.graphics.texture.TextureFormat.DEPTH_F24);
+            depth.setSize(2, 2);
+            target.deleteTextures().attach(color, GL30.GL_COLOR_ATTACHMENT0);
+            target.attach(depth, GL30.GL_DEPTH_ATTACHMENT);
+            target.unbind();
         });
-
-        int width;
-        int height;
-
-        try (MemoryStack stack = MemoryStack.stackPush())
-        {
-            IntBuffer viewport = stack.mallocInt(4);
-
-            GL30.glGetIntegerv(GL30.GL_VIEWPORT, viewport);
-
-            width = viewport.get(2);
-            height = viewport.get(3);
-        }
-
-        Texture mainTexture = framebuffer.getMainTexture();
         int w = MathUtils.clamp(this.form.width.get(), 2, 4096);
         int h = MathUtils.clamp(this.form.height.get(), 2, 4096);
-        int prevDraw = GL30.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
-        int prevRead = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
-        /* 26.2: die Lichtrichtungen sind kein Feld-Paar mehr, sondern ein Uniform-Block
-         * auf der Grafikkarte. Gesichert wird der Ausschnitt selbst. */
-        com.mojang.blaze3d.buffers.GpuBufferSlice gesichertesLicht = RenderSystem.getShaderLights();
-        Matrix4f projectionMatrix = new Matrix4f(mchorse.bbs_mod.graphics.Projektion.lesen());
-
-        GL30.glCullFace(GL30.GL_FRONT);
-        /* Beide Lichter frontal -- die Form soll flach und gleichmaessig ausgeleuchtet in
-         * ihren Puffer, ohne Schattierung von der Weltbeleuchtung. Vanilla hat genau dafuer
-         * eine Voreinstellung; die beiden Richtungsvektoren von Hand gibt es nicht mehr. */
-        Minecraft.getInstance().gameRenderer.lighting().setupFor(com.mojang.blaze3d.platform.Lighting.Entry.ITEMS_FLAT);
-        /* Umkehren: BBS-eigene Matrix in 26.2s GREATER_EQUAL-Test, Beleg an Projektion#setzenUndUmkehren. In BILDPUNKTEN an dieser Stelle ungemessen. */
-        mchorse.bbs_mod.graphics.Projektion.setzenUndUmkehren(new Matrix4f().setOrtho(-1F, 1F, 1F, -1F, -500F, 500F), com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
-        RenderSystem.getModelViewStack().pushMatrix();
-        RenderSystem.getModelViewStack().identity();
-
-        framebuffer.apply();
-
-        if (w != mainTexture.width || h != mainTexture.height)
+        if (w != framebuffer.getMainTexture().width || h != framebuffer.getMainTexture().height)
         {
             framebuffer.resize(w, h);
         }
+        this.renderPartsToTexture(context, framebuffer);
+        boolean picking = context.isPicking();
+        /* The base renderer has already registered this form before rendering its parts. */
+        int pickingIndex = context.getPickingIndex() - (picking && context.stencilMap.increment ? 1 : 0);
+        VertexFormat format = picking ? DefaultVertexFormat.POSITION_TEX_COLOR : DefaultVertexFormat.ENTITY;
+        Supplier<RenderPipeline> shader = picking
+            ? () -> TexturedFormPicking.pipeline(PrimitiveTopology.TRIANGLES) : () -> SHADED;
+        this.renderModel(framebuffer.getMainTexture(), format, shader, context.stack, context.overlay,
+            context.light, context.color, context.getTransition(), !picking, pickingIndex);
+    }
 
-        framebuffer.clear();
-
-        float scale = this.form.scale.get();
-
+    private void renderPartsToTexture(FormRenderingContext context, Framebuffer framebuffer)
+    {
+        com.mojang.blaze3d.textures.GpuTextureView previousColor = RenderSystem.outputColorTextureOverride;
+        com.mojang.blaze3d.textures.GpuTextureView previousDepth = RenderSystem.outputDepthTextureOverride;
+        com.mojang.blaze3d.textures.GpuTextureView previousModelColor = mchorse.bbs_mod.graphics.Zeichenziel.farbe();
+        com.mojang.blaze3d.textures.GpuTextureView previousModelDepth = mchorse.bbs_mod.graphics.Zeichenziel.tiefe();
+        com.mojang.blaze3d.textures.GpuTextureView previousPickColor = mchorse.bbs_mod.graphics.PickZiel.aktiv();
+        com.mojang.blaze3d.textures.GpuTextureView previousPickDepth = mchorse.bbs_mod.graphics.PickZiel.tiefe();
+        com.mojang.blaze3d.systems.RenderPass.RenderArea previousArea = mchorse.bbs_mod.graphics.Zeichenbereich.aktiv();
+        com.mojang.blaze3d.buffers.GpuBufferSlice previousLights = RenderSystem.getShaderLights();
+        com.mojang.blaze3d.buffers.GpuBufferSlice previousProjection = RenderSystem.getProjectionMatrixBuffer();
+        com.mojang.blaze3d.ProjectionType previousType = RenderSystem.getProjectionType();
+        com.mojang.blaze3d.systems.ScissorState previousScissor =
+            new com.mojang.blaze3d.systems.ScissorState(RenderSystem.getScissorStateForRenderTypeDraws());
+        mchorse.bbs_mod.ui.framework.elements.utils.StencilMap previousStencil = context.stencilMap;
+        int previousColorValue = context.color;
+        boolean queueWasActive = FormTranslucentQueue.suspend();
+        Texture color = framebuffer.getMainTexture();
+        Texture depth = framebuffer.textures.get(1);
+        RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(color.gpu(),
+            new Vector4f(0F, 0F, 0F, 0F), depth.gpu(), 0D);
+        RenderSystem.outputColorTextureOverride = color.view();
+        RenderSystem.outputDepthTextureOverride = depth.view();
+        mchorse.bbs_mod.graphics.Zeichenziel.setzen(color.view(), depth.view());
+        mchorse.bbs_mod.graphics.PickZiel.abmelden();
+        mchorse.bbs_mod.graphics.Zeichenbereich.freigeben();
+        RenderSystem.disableScissorForRenderTypeDraws();
+        Minecraft.getInstance().gameRenderer.lighting().setupFor(com.mojang.blaze3d.platform.Lighting.Entry.ITEMS_FLAT);
+        RenderSystem.getModelViewStack().pushMatrix().identity();
         context.stack.pushPose();
         context.stack.last().pose().identity();
         context.stack.last().normal().identity();
-        context.stack.scale(scale, scale, scale);
-
-        depth += 1;
-
-        if (depth == 1)
+        context.stack.scale(this.form.scale.get(), this.form.scale.get(), this.form.scale.get());
+        context.stencilMap = null;
+        context.color = previousStencil == null ? previousColorValue : 0xffffffff;
+        try (net.minecraft.client.renderer.ProjectionMatrixBuffer projection =
+            new net.minecraft.client.renderer.ProjectionMatrixBuffer("bbs-framebuffer-form"))
         {
-            BBSRendering.setIrisMainBound(false);
-        }
-
-        /* The nested forms render under an ortho projection into this framebuffer — deferring
-         * their translucent pixels into the world's queue would replay them with the wrong
-         * projection, so they render single-pass as before. */
-        boolean queueWasActive = FormTranslucentQueue.suspend();
-
-        try
-        {
-            super.renderBodyParts(context);
+            RenderSystem.setProjectionMatrix(projection.getBuffer(mchorse.bbs_mod.graphics.Projektion.umgekehrt(
+                new Matrix4f().setOrtho(-1F, 1F, -1F, 1F, -500F, 500F))), com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
+            net.minecraft.client.renderer.SubmitNodeStorage collector = new net.minecraft.client.renderer.SubmitNodeStorage();
+            mchorse.bbs_mod.forms.FormSammler.mitSammler(collector, () -> super.renderBodyParts(context));
+            Minecraft client = Minecraft.getInstance();
+            /* The world dispatcher owns a prepared frame during world rendering. */
+            try (net.minecraft.client.renderer.feature.FeatureRenderDispatcher dispatcher =
+                new net.minecraft.client.renderer.feature.FeatureRenderDispatcher(client.gameRenderer.renderBuffers(),
+                    client.getModelManager(), client.getAtlasManager(), client.font, client.gameRenderer.gameRenderState()))
+            {
+                dispatcher.renderAllFeatures(collector);
+            }
         }
         finally
         {
-            depth -= 1;
-
-            if (depth == 0)
+            context.stencilMap = previousStencil;
+            context.color = previousColorValue;
+            context.stack.popPose();
+            RenderSystem.getModelViewStack().popMatrix();
+            RenderSystem.setProjectionMatrix(previousProjection, previousType);
+            RenderSystem.setShaderLights(previousLights);
+            RenderSystem.getScissorStateForRenderTypeDraws().setFrom(previousScissor);
+            RenderSystem.outputColorTextureOverride = previousColor;
+            RenderSystem.outputDepthTextureOverride = previousDepth;
+            mchorse.bbs_mod.graphics.Zeichenziel.setzen(previousModelColor, previousModelDepth);
+            mchorse.bbs_mod.graphics.PickZiel.anmelden(previousPickColor, previousPickDepth);
+            if (previousArea != null)
             {
-                BBSRendering.setIrisMainBound(true);
+                mchorse.bbs_mod.graphics.Zeichenbereich.setzen(previousArea.x(), previousArea.y(), previousArea.width(), previousArea.height());
             }
-
             FormTranslucentQueue.restore(queueWasActive);
         }
-
-        context.stack.popPose();
-
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDraw);
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevRead);
-        GL30.glViewport(0, 0, width, height);
-
-        RenderSystem.setShaderLights(gesichertesLicht);
-        RenderSystem.getModelViewStack().popMatrix();
-        mchorse.bbs_mod.graphics.Projektion.setzen(projectionMatrix, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
-        GL30.glCullFace(GL30.GL_BACK);
-
-        boolean shading = !context.isPicking();
-        /* ⚠️ 26.2: der unbeschattete Zweig schreibt POSITION_TEX_COLOR statt
-         * POSITION_TEX_LIGHTMAP_COLOR -- gleicher Grund wie in BillboardFormRenderer: der
-         * Shader dahinter (core/position_tex_color) kennt nur Position, UV0 und Color, die
-         * Lichtkoordinate wurde nie gelesen. In 26.2 wird das Format zur Pipeline-Bindung,
-         * und ein Attribut, das der Shader nicht kennt, ist dort ein Widerspruch. */
-        VertexFormat format = shading ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.POSITION_TEX_COLOR;
-        Supplier<RenderPipeline> shader = shading
-            ? () -> RenderPipelines.ENTITY_TRANSLUCENT
-            /* getPositionTexColorShader ist entfallen: Shader, Blend, Tiefe und Cull stehen in
-             * der Pipeline. Gemischt (das Bild hat einen durchsichtigen Hintergrund), Tiefe an,
-             * beidseitig (der Quad wird vorn UND hinten geschrieben). */
-            : () -> mchorse.bbs_mod.client.FormPipelines.holen(DefaultVertexFormat.POSITION_TEX_COLOR, "position_tex_color", PrimitiveTopology.TRIANGLES, true, true, false);
-
-        this.renderModel(framebuffer.getMainTexture(), format, shader, context.stack, context.overlay, context.light, context.color, context.getTransition(), !context.isPicking());
     }
 
-    private void renderModel(Texture texture, VertexFormat format, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
+    private static RenderPipeline shadedPipeline()
+    {
+        RenderPipeline source = RenderPipelines.ENTITY_TRANSLUCENT;
+        RenderPipeline.Builder builder = RenderPipeline.builder()
+            .withLocation(net.minecraft.resources.Identifier.fromNamespaceAndPath("bbs", "pipeline/framebuffer_entity"))
+            .withVertexShader(source.getVertexShader()).withFragmentShader(source.getFragmentShader())
+            .withVertexBinding(0, DefaultVertexFormat.ENTITY).withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+            .withDepthStencilState(source.getDepthStencilState()).withColorTargetState(source.getColorTargetState())
+            .withShaderDefine("ALPHA_CUTOUT", 0.1F).withShaderDefine("PER_FACE_LIGHTING").withCull(false);
+        for (com.mojang.blaze3d.pipeline.BindGroupLayout layout : source.getBindGroupLayouts())
+        {
+            builder.withBindGroupLayout(layout);
+        }
+        return builder.build();
+    }
+
+    private void renderModel(Texture texture, VertexFormat format, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer, int pickingIndex)
     {
         float w = texture.width;
         float h = texture.height;
@@ -234,10 +226,10 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         float uvBRx = 1 - crop.z / w;
         float uvBRy = 1 - crop.w / h;
 
-        uvQuad.p1.set(uvTLx, uvTLy, 0);
-        uvQuad.p2.set(uvBRx, uvTLy, 0);
-        uvQuad.p3.set(uvTLx, uvBRy, 0);
-        uvQuad.p4.set(uvBRx, uvBRy, 0);
+        uvQuad.p1.set(uvTLx, 1F - uvTLy, 0);
+        uvQuad.p2.set(uvBRx, 1F - uvTLy, 0);
+        uvQuad.p3.set(uvTLx, 1F - uvBRy, 0);
+        uvQuad.p4.set(uvBRx, 1F - uvBRy, 0);
 
         /* Calculate quad's size (vertices, not UV) */
         float ratioX = w > h ? h / w : 1F;
@@ -252,16 +244,20 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         quad.p3.set(TLx, BRy, 0);
         quad.p4.set(BRx, BRy, 0);
 
-        this.renderQuad(format, texture, shader, matrices, overlay, light, overlayColor, transition, defer);
+        this.renderQuad(format, texture, shader, matrices, overlay, light, overlayColor, transition, defer, pickingIndex);
     }
 
-    private void renderQuad(VertexFormat format, Texture texture, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
+    private void renderQuad(VertexFormat format, Texture texture, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer, int pickingIndex)
     {
         Color color = Color.white();
         Matrix4f matrix = matrices.last().pose();
         PoseStack.Pose entry = matrices.last();
 
         color.mul(overlayColor);
+        if (pickingIndex >= 0)
+        {
+            color.set(TexturedFormPicking.color(pickingIndex, (int) (color.a * 255F)), true);
+        }
 
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 
@@ -300,30 +296,54 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
 
         if (defer && FormTranslucentQueue.isActive())
         {
-            /* The framebuffer's content is transparent-background by nature, so the whole quad
-             * defers into the sorted translucent pass. The command binds the framebuffer's live
-             * texture at flush — with several framebuffer forms at the same nesting depth they
-             * share one framebuffer, so their deferred quads would all show the last-rendered
-             * content; a known trade-off of the shared framebuffer scheme. */
+            /* Each form owns its texture until the sorted translucent draw completes. */
             RenderPipeline finalShader = shader.get();
             GehaltenesNetz netz = new GehaltenesNetz(builder.buildOrThrow());
 
             Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrixCopy());
             Vector3f origin = modelView.transformPosition(matrix.getTranslation(new Vector3f()));
 
-            FormTranslucentQueue.add(new FormTranslucentQueue.NetzBefehl(
-                netz, () -> finalShader, texture, modelView, null, origin, true, null, null
-            ));
+            net.minecraft.client.gui.render.TextureSetup bindings = this.textureSetup(texture, false);
+            FormTranslucentQueue.add(new FormTranslucentQueue.DrawCommand(origin, false, false)
+            {
+                @Override
+                public void draw()
+                {
+                    netz.zeichnen(finalShader, modelView, null, bindings,
+                        (com.mojang.blaze3d.pipeline.RenderTarget) null, null);
+                }
+
+                @Override
+                public void release()
+                {
+                    netz.close();
+                }
+            });
         }
         else
         {
             /* build() gibt null zurueck, wenn nichts gezeichnet wurde -- SofortZeichner
              * kommt damit zurecht und zeichnet dann nichts. */
+            net.minecraft.client.gui.render.TextureSetup bindings = this.textureSetup(texture, pickingIndex >= 0);
             SofortZeichner.zeichnen(shader.get(), builder.build(),
-                new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
-                SofortZeichner.entityTextur(texture), null);
+                new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null, bindings,
+                pickingIndex >= 0 ? mchorse.bbs_mod.graphics.PickZiel.pflicht() : RenderSystem.outputColorTextureOverride,
+                pickingIndex >= 0 ? mchorse.bbs_mod.graphics.PickZiel.tiefe() : RenderSystem.outputDepthTextureOverride);
         }
 
+    }
+
+    private net.minecraft.client.gui.render.TextureSetup textureSetup(Texture texture, boolean picking)
+    {
+        if (picking)
+        {
+            return net.minecraft.client.gui.render.TextureSetup.singleTexture(texture.view(), texture.sampler());
+        }
+        GameRenderer renderer = Minecraft.getInstance().gameRenderer;
+        com.mojang.blaze3d.textures.GpuSampler sampler = RenderSystem.getSamplerCache()
+            .getClampToEdge(com.mojang.blaze3d.textures.FilterMode.NEAREST);
+        return new net.minecraft.client.gui.render.TextureSetup(texture.view(),
+            renderer.overlayTexture().getTextureView(), renderer.lightmap(), texture.sampler(), sampler, sampler);
     }
 
     private VertexConsumer fill(VertexFormat format, VertexConsumer consumer, Matrix4f matrix, float x, float y, Color color, float u, float v, int overlay, int light, PoseStack.Pose entry, float nz)

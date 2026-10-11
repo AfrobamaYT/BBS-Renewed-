@@ -135,7 +135,8 @@ public class VorschauModellRenderer extends PictureInPictureRenderer<VorschauMod
                 .camera(zustand.kamera())
                 .modelRenderer();
 
-            FormUtilsClient.render(zustand.form(), kontext);
+            mchorse.bbs_mod.forms.FormSammler.mitSammler(sammler,
+                () -> FormUtilsClient.render(zustand.form(), kontext));
         }
         finally
         {

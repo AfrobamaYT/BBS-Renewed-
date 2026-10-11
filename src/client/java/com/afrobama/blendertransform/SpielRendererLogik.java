@@ -149,7 +149,15 @@ public final class SpielRendererLogik
     {
         mchorse.bbs_mod.cubic.render.RigOverlayPass.flush();
         TrackerClientClip.endLevelRendering();
+
+        if (BBSModClient.getVideoRecorder().isRecording() && BBSRendering.canRender)
+        {
+            BBSModClient.getMinecraftSoundCapture().captureFrame();
+            BBSModClient.getVideoRecorder().recordFrame();
+        }
+
         BBSRendering.onWorldRenderEnd();
+        mchorse.bbs_mod.client.ExportFrameCallbacks.completeFrame();
         Stapelwache.abschnitt("level:ende");
     }
 

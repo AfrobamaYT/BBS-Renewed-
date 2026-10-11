@@ -512,14 +512,14 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		{
 			UIFilmPanel fp = filmPanel();
 			boolean leer = this.schiene == 4
-				? fp == null || fp.cameraEditor.getClip() == null
+				? this.clipHost().getChildren(mchorse.bbs_mod.ui.film.clips.UIClip.class).stream().noneMatch(UIElement::isVisible)
 				: fp == null || fp.replayEditor == null || fp.replayEditor.keyframeEditor == null
 					|| fp.replayEditor.keyframeEditor.editor == null;
 
 			if (leer)
 			{
 				NanoStifte.text(vg, NanoDesign.SANS, 11F * k, schieneB + 6F * k, oben + 23F * k,
-					NanoDesign.TXT_OFF, this.schiene == 4 ? "No camera clip selected" : "No keyframe selected", null);
+					NanoDesign.TXT_OFF, this.schiene == 4 ? "No clip selected" : "No keyframe selected", null);
 			}
 
 			return;

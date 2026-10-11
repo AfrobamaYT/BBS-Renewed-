@@ -19,6 +19,42 @@ public final class ZeitleisteZweig
 	{
 	}
 
+	/** Three-click loop input; tick zero is a valid start, not an unset marker. */
+	public static final class LoopInput
+	{
+		private mchorse.bbs_mod.film.Film film;
+		private boolean pending;
+
+		public void klick(UIFilmPanel panel, int cursor)
+		{
+			if (this.film != panel.getData())
+			{
+				this.film = panel.getData();
+				this.pending = false;
+			}
+
+			UIClips clips = panel.cameraEditor.clips;
+
+			if (clips.loopMin != clips.loopMax && clips.loopMax != 0)
+			{
+				clips.loopMin = 0;
+				clips.loopMax = 0;
+				this.pending = false;
+			}
+			else if ((this.pending || clips.loopMin != 0) && clips.loopMax == 0 && cursor > clips.loopMin)
+			{
+				clips.setLoopMax();
+				this.pending = false;
+			}
+			else
+			{
+				clips.setLoopMin();
+				clips.loopMax = 0;
+				this.pending = true;
+			}
+		}
+	}
+
 	/** Koerper zum Modus zeigen: 0/1 = Replay-Dope-Sheet, 2 = Kamera-Clips. */
 	public static void anwenden(UIFilmPanel panel, int modus)
 	{
@@ -66,6 +102,7 @@ public final class ZeitleisteZweig
 			&& panel.replayEditor.replayProperties.propsNano instanceof UIPropertiesNano props)
 		{
 			panel.cameraEditor.target(props.clipHost());
+			panel.actionEditor.target(props.clipHost());
 		}
 
 		/* Das Dock lebt unabhaengig vom Zweig — die Kategorie-Schiene regelt, was zu

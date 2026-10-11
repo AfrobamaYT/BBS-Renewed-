@@ -31,6 +31,7 @@ public class UIWerkzeugleisteNano extends UIElement
 		this.preview = preview;
 		this.flaeche = new NanoFlaeche(this::zeichnen);
 		this.flaeche.relative(this).x(0).y(0).w(1F).h(1F);
+		this.flaeche.beimRechtsklick((id, punkt) -> this.openNativeContext(id));
 		this.add(this.flaeche);
 	}
 
@@ -62,7 +63,7 @@ public class UIWerkzeugleisteNano extends UIElement
 	 * das Feld staende nach dem Swap auf 0 — der Hotswap-Waechter lehnt es zu Recht ab. */
 	private static int trennung()
 	{
-		return 4;
+		return 6;
 	}
 
 	/** Abstand der schwebenden Leiste zur Viewport-Kante — muss zu UIFilmPreview passen.
@@ -78,6 +79,8 @@ public class UIWerkzeugleisteNano extends UIElement
 		return new Knopf[] {
 			new Knopf("control", "Control", 0xCFCFCF, p -> p.control),
 			new Knopf("fly", "Fly mode", 0xCFCFCF, p -> p.flight),
+			new Knopf("teleport", "Teleport to camera", 0xCFCFCF, p -> p.teleport),
+			new Knopf("persp", "Perspective", 0xCFCFCF, p -> p.perspective),
 			new Knopf("onion", "Onion skin", 0xCFCFCF, p -> p.onionSkin),
 			new Knopf("path", "Motion path", 0xCFCFCF, p -> p.motionPath),
 			new Knopf("rec", "Record replay", 0xE58F89, p -> p.recordReplay),
@@ -110,6 +113,24 @@ public class UIWerkzeugleisteNano extends UIElement
 
 		return Math.max(1, (knoepfe + passt - 1) / passt);
 	}
+
+	private void openNativeContext(String id)
+	{
+		for (Knopf button : knoepfe())
+		{
+			if (button.titel.equals(id))
+			{
+				UIIcon target = button.ziel(this.preview);
+				mchorse.bbs_mod.ui.framework.elements.context.UIContextMenu menu = target.createContextMenu(this.getContext());
+				if (menu != null && !menu.isEmpty())
+				{
+					this.getContext().setContextMenu(menu);
+				}
+				return;
+			}
+		}
+	}
+
 
 	@Override
 	public void afterResizeApplied()

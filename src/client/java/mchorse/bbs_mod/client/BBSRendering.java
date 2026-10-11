@@ -72,48 +72,19 @@ public class BBSRendering
     public static final Matrix4f camera = new Matrix4f();
 
     /**
-     * Die Projektion, mit der die Welt in DIESEM Bild wirklich gezeichnet wird.
-     *
-     * <p>⛔ WARUM DAS FELD EXISTIERT (2026-08-03, Umriss-Versatz): sie ist NICHT dieselbe wie
-     * {@code cameraRenderState.projectionMatrix}. Gemessen in einem Bild:</p>
-     * <pre>
-     *   gezeichnet     m00=0,9985  m11=0,2450     <- der Parameter von LevelRenderer#render
-     *   kamerazustand  m00=0,7505  m11=1,4281     <- Fenster-Seitenverhaeltnis 1920x1009
-     *   gleich=false
-     * </pre>
-     *
-     * <p>{@code UIFilmPanel#lastProjection} las den Kamerazustand, weil 26.2 die aktive
-     * Projektion nur noch als GPU-Puffer herausgibt und der Kamerazustand als „derselbe Wert,
-     * nur lesbar" galt. Diese Annahme war falsch. Der Auswahlpuffer aktiviert lastProjection
-     * und rendert die Figuren damit in einer anderen Projektion als das Bild darunter — in der
-     * Bildmitte deckungsgleich, nach aussen zunehmend daneben. Genau das Muster, das gemessen
-     * wurde: im Stillstand mit mittiger Figur 1-2 px, bei ausgelenkter Kamera ~50 px.</p>
-     *
-     * <p>Gestempelt am HEAD von {@code LevelRenderer#render} (WorldRendererMixin), eine Zeile
-     * neben {@link #camera} — dort liegt der Parameter als Zahlen vor, und es ist derselbe
-     * Augenblick, aus dem auch die Ansichtsdrehung stammt.</p>
-     *
-     * <p>⛔ LAZY, NICHT IM FELDINITIALISIERER: nach einem Hotswap laufen statische
-     * Initialisierer nicht, das Feld bliebe {@code null} und der erste Zugriff wuerde in JEDEM
-     * Bild werfen. Derselbe Grund wie bei {@code UIFilmControllerStencilThrottleLogik
-     * #tickSpeicher()}; der Hotswap-Waechter blockt einen Tausch mit neuem statischem Feld
-     * genau deswegen.</p>
+     * Active world projection from CameraRenderState, copied at LevelRenderer.render HEAD.
+     * The render method's Matrix4fc parameter contains view rotation, not projection.
+     * Lazily initialized so existing instances remain usable after a body hotswap.
      */
     private static Matrix4f zeichenProjektion;
 
-    /** Siehe {@link #zeichenProjektion}. {@code null}, solange in diesem Lauf nie gestempelt. */
+    /** Active projection from the latest world pass, or null before the first stamp. */
     public static Matrix4f zeichenProjektion()
     {
         return zeichenProjektion;
     }
 
-    /**
-     * Am HEAD des Weltdurchgangs gerufen; legt das Feld beim ersten Mal an.
-     *
-     * <p>⛔ Der Parameter ist NICHT die Weltprojektion, sondern konstant eine Ortho-/Blit-
-     * Matrix (m00=-1/m11=1; gemessen 2026-08-04, 109 Logpoint-Treffer — die Kamera fuehrt
-     * daneben 0.8027/1.4281). Folgenlos, solange {@link #zeichenProjektion()} keinen
-     * Aufrufer hat — wer den Stempel nutzen will, repariert ihn vorher: falsch UND egal. */
+    /** Copy the native world projection, initializing its storage on the first pass. */
     public static void zeichenProjektionStempeln(org.joml.Matrix4fc projektion)
     {
         if (projektion == null)
@@ -153,8 +124,6 @@ public class BBSRendering
      * kennt (siehe reassignFramebuffer: Normalzustand ist null, nicht "das alte Ziel"). */
     private static Texture texture;
     private static mchorse.bbs_mod.graphics.Framebuffer /* NECESSARY */ exportFramebuffer;
-
-    private static Runnable pendingExportResolutionAction;
 
     public static int getMotionBlur()
     {
@@ -647,43 +616,12 @@ public class BBSRendering
         abschliessen();
     }
 
-    /**
-     * Nur die Vorschau-Textur fuellen, ohne den Framebuffer abzuhaengen.
-     *
-     * <p>⛔ WOFUER (2026-08-02, #19): im Editor haengt das Fuellen am TAIL von
-     * {@code Gui.extractRenderState} — gemessen per Stapelabzug. In 26.2 werden dort erst
-     * ALLE UI-Elemente eingesammelt und danach gezeichnet: der Blit des Vorschaufeldes ist
-     * also schon eingereiht, wenn die Textur gefuellt wird. Das Feld zeigt deshalb immer
-     * das Bild des VORIGEN Durchgangs (gemessen: beim Blit stand die Fuellung auf 132,
-     * waehrend sie bei 133 war), und der aktuelle Replay-Umriss darueber sitzt bei
-     * Kamerabewegung daneben.
-     *
-     * <p>Das Fuellen darf deshalb vorziehen, das ABHAENGEN nicht: InGameHudMixin sagt
-     * "dort muss der framebuffer bis zum TAIL gebunden bleiben, sonst landet das HUD im
-     * haupt-framebuffer statt im viewport". Genau diese Trennung macht diese Methode.
-     */
+    /** Copies the world target into the preview/export texture without changing its owner.
+     * GUI extraction may reuse the previous frame; exports refresh at world completion. */
     public static void fuellen()
     {
-        /* ⛔ OHNE DIESEN TEST STIRBT DER VIDEO-EXPORT MIT EINEM NULLZEIGER.
-         *
-         * Belegt durch crash-2026-07-31_15.03: BBSRendering.leseFboFuer dereferenziert sein
-         * Argument in der ersten Zeile, und der Aufruf unten reicht das statische Feld
-         * `framebuffer` durch. Ist der Puffer noch nicht angelegt -- oder nach einem
-         * Groessenwechsel gerade abgeraeumt -- reisst es genau den Vorgang ab, bei dem am
-         * meisten Arbeit verloren geht.
-         *
-         * ⚠️ Der Test gehoert HIERHER und nicht in leseFboFuer: dort waere er
-         * Symptombehandlung, die einen halb aufgebauten Blit trotzdem weiterlaufen liesse.
-         *
-         * ⛔ ZWEITE NULL, 2026-08-04 nachgezogen. Der Test oben deckte nur ein null-ZIEL ab.
-         * Der Absturzbericht nennt aber eine ANDERE Null: die Meldung lautet
-         * `NPE: RenderTarget.getColorTexture()`, also war das Ziel da und seine Farbtextur
-         * nicht. leseFboFuer dereferenziert sie in der ersten Zeile
-         * (`((GlTexture) ziel.getColorTexture()).glId()`), und genau dort riss der
-         * Video-Export ab (docs/ABSTURZ-HISTORIE.md, G8, 31.07. 15:03).
-         *
-         * Ein halb angelegtes Ziel ist derselbe Fall wie gar keins: ohne Farbtextur gibt es
-         * nichts zu lesen, also wird der Durchgang uebersprungen statt geraten. */
+        /* Resizing or reload may temporarily release the target or its color attachment.
+         * Both must exist before attempting the framebuffer readback. */
         if (framebuffer == null || framebuffer.getColorTexture() == null)
         {
             return;
@@ -836,18 +774,11 @@ public class BBSRendering
         renderRecordingOverlay();
 
         toggleFramebuffer(false);
-
-        if (pendingExportResolutionAction != null)
-        {
-            Runnable action = pendingExportResolutionAction;
-            pendingExportResolutionAction = null;
-            Minecraft.getInstance().execute(action);
-        }
     }
 
     public static void scheduleAfterNextExportFrame(Runnable action)
     {
-        pendingExportResolutionAction = action;
+        ExportFrameCallbacks.schedule(action);
     }
 
     /**

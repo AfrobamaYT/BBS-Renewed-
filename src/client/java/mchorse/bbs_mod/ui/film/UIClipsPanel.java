@@ -221,6 +221,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
             if (this.panel.clip == clip)
             {
                 this.panel.fillData();
+                this.showDockPanel();
 
                 if (this.target != null && this.target.getParent() instanceof UIPropertiesNano props)
                 {
@@ -277,6 +278,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
             }
             this.panel.fillData();
             this.panel.setVisible(this.propertiesVisible);
+            this.showDockPanel();
             this.panel.restoreScroll();
 
             /* Kamera-Kategorie nach vorn, sonst bleibt der frische Clip unsichtbar. */
@@ -299,6 +301,18 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
         this.resize();
 
         this.filmPanel.pickClip(clip, this);
+    }
+
+    /** Camera and action editors share the dock; only the newly selected panel is visible. */
+    private void showDockPanel()
+    {
+        if (this.target != null && this.target.getParent() instanceof UIPropertiesNano)
+        {
+            for (UIClip child : this.target.getChildren(UIClip.class))
+            {
+                child.setVisible(child == this.panel);
+            }
+        }
     }
 
     /** Re-applies edit panel position (e.g. after layout lock toggle). */

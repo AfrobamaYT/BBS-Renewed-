@@ -290,7 +290,8 @@ public class FilmEditorController extends BaseFilmController
      */
     public void renderStencilEntity(FilmControllerContext context, IEntity entity)
     {
-        BaseFilmController.renderEntity(context.gizmoOnly(this.hidesBody(entity)));
+        mchorse.bbs_mod.forms.FormSammler.mitEigenemSammler(
+            () -> BaseFilmController.renderEntity(context.gizmoOnly(this.hidesBody(entity))));
     }
 
     /**
