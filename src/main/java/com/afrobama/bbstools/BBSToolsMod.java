@@ -38,7 +38,8 @@ public final class BBSToolsMod implements ModInitializer
 
         registriereActionClips();
 
-
+        /* Custom-payload registration + server handler for
+         *  BuilderActionPacket. Must register codec before any world loads. */
         com.afrobama.bbstools.network.BBSToolsNetworkInit.init();
 
         /* AUTONOMIE 2026-07-27: damage-hitbox (keyframed schaden-AABB fuer kampf-animationen).

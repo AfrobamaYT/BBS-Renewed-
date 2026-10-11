@@ -1,3 +1,27 @@
+// Coded by Afrobama/Claude — central diagnostic helper for the
+// log-first development style mandated by user feedback. Every new
+// feature MUST instrument its lifecycle + state transitions + write
+// verification using this class.
+//
+// Usage:
+//   BBSDiag.feature("replay-fastpath").event("draw")
+//          .field("n", n).field("ok", drew).emit();
+//
+//   BBSDiag.feature("sprint-fov").throttled1Hz().event("write")
+//          .field("base", base).field("smoothed", smoothed)
+//          .field("verify", cir.getReturnValue()).emit();
+//
+//   BBSDiag.feature("crowd-iris-wrap").sticky("probe-failure")
+//          .field("class", classname).field("err", t.toString()).emit();
+//
+// Throttling modes:
+//   .throttled1Hz()        — at most 1 emit/sec per (feature,event) pair
+//   .throttledEveryNth(60) — every 60th call, useful for per-frame logs
+//   .sticky(key)           — emit once per session per key, useful for
+//                            failure modes that would otherwise spam
+//
+// Log format: "[BBSDIAG/<feature>] event=<event> field1=val1 field2=val2"
+// Greppable with: grep -E "\[BBSDIAG/feature-name\]" latest.log
 package com.afrobama.bbstools.diag;
 
 import org.slf4j.Logger;

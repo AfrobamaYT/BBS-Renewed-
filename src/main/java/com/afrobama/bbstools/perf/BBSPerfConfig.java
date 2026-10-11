@@ -165,7 +165,9 @@ public final class BBSPerfConfig
 
     public static volatile boolean CROWD_IRIS_FAST_PATH = false;
 
-
+    /** Crowd frustum culling. DEFAULT OFF per user: everything must stay
+     *  fully visible regardless of camera angle (mirrors the no-distance-cull
+     *  rule for BBS replays). No LODs ever (user rule). */
     public static volatile boolean ENABLE_CROWD_FRUSTUM_CULL = false;
 
     /** afrobama 2026-05-31 — pool the per-frame instance ByteBuffers (gbuffer + shadow) instead of

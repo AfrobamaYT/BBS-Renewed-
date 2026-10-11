@@ -49,7 +49,7 @@ public class Replay extends ValueGroup
     /* MERGE 2026-07-27: mob-capture aus dem CML-upstream (RecorderMobCapture). */
     public final ValueBoolean vanillaMobPlayback = new ValueBoolean("vanilla_mob_playback", false);
     public transient boolean vanillaMobPlaybackSerialized = false;
-
+    /* ⛔ MERGE 2026-07-27: replay-gruppen aus dem CML-fork. */
     public final ValueString group = new ValueString("group", "");
     public final ValueBoolean isGroup = new ValueBoolean("is_group", false);
     public final ValueString uuid = new ValueString("uuid", "");

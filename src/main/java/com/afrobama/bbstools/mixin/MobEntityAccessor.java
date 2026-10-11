@@ -5,7 +5,11 @@ import net.minecraft.world.entity.ai.goal.GoalSelector;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-
+/**
+ * Exposes {@code MobEntity#goalSelector} and {@code MobEntity#targetSelector}
+ * (protected in vanilla 1.21.1) so AI goals can be cleared on bake/play
+ * without needing an access widener.
+ */
 @Mixin(Mob.class)
 public interface MobEntityAccessor
 {

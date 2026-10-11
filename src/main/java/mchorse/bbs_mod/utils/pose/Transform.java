@@ -19,7 +19,9 @@ public class Transform implements IMapSerializable
     public static final Transform DEFAULT = new Transform();
 
     public final Vector3f translate = new Vector3f();
-
+    /** Dreh-/skalier-mittelpunkt.
+     *
+     *  MERGE 2026-07-27: aus dem CML-fork. */
     public final Vector3f pivot = new Vector3f();
     public final Vector3f scale = new Vector3f(DEFAULT_SCALE);
 

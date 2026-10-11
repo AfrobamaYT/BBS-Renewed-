@@ -38,4 +38,6 @@ accessWidener v2 official
 #     .startedBuilders / .lastSharedType   Sofortmodus, den es bediente, existiert nicht mehr.
 # ============================================================================
 
+# Die Knochen-Hierarchie von Vanilla-Modellen fuer den Modell-Export. In 26.2 weiterhin
+# `private final`.
 accessible field net/minecraft/client/model/geom/ModelPart children Ljava/util/Map;

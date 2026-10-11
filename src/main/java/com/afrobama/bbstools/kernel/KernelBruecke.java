@@ -381,7 +381,22 @@ public final class KernelBruecke
         return gemerkt == GEFUNDEN_NICHTS ? null : gemerkt;
     }
 
-
+    /**
+     * Wie {@link #rufe}, aber für handler mit {@code cancellable = true}.
+     *
+     * <p>Der handler bleibt ein einzeiler:</p>
+     * <pre>
+     *   &#64;Inject(method = "tick", at = &#64;At("HEAD"), cancellable = true)
+     *   private void bbs$skip(CallbackInfo ci)
+     *   {
+     *       if (KernelBruecke.rufeUndAbbrechen("BeispielLogik", "sollUeberspringen", this)) ci.cancel();
+     *   }
+     * </pre>
+     *
+     * <p>Bei einem fehler ODER ohne agent wird {@code false} geliefert — also NICHT
+     * abgebrochen. Das ist die sichere richtung: der ursprüngliche Minecraft/BBS-rumpf läuft
+     * weiter, statt dass ein feature still ausfällt, weil die brücke nicht durchkam.</p>
+     */
     public static boolean rufeUndAbbrechen(String klasse, String methode, Object... argumente)
     {
         Object ergebnis = rufe(klasse, methode, argumente);
