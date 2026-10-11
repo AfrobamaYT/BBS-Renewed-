@@ -50,6 +50,7 @@ public class BBSToolsAddon
         WorldSnapshotClipFactory.tryReflectiveRegister();
         mchorse.bbs_mod.ui.film.clips.UIClip.register(com.afrobama.bbstools.clips.WorldSnapshotClip.class,
             com.afrobama.bbstools.client.clip.UIWorldSnapshotClip::new);
+        com.afrobama.bbstools.client.clip.LegacyActionClips.register();
     }
 
     /**
