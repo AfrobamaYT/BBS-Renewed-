@@ -192,11 +192,11 @@ public class UIAudioRecorder extends UIOverlayPanel implements IUITreeEventListe
 
     private void stopPlayback()
     {
-        if (this.playing && this.filmPanel.isRunning())
+        if (this.playing && this.filmPanel.getData() == this.film && this.filmPanel.isRunning())
         {
             this.filmPanel.togglePlayback();
         }
-        if (this.playing || this.deadline != 0L)
+        if ((this.playing || this.deadline != 0L) && this.filmPanel.getData() == this.film)
         {
             this.filmPanel.setCursor(this.originCursor);
         }
@@ -279,10 +279,10 @@ public class UIAudioRecorder extends UIOverlayPanel implements IUITreeEventListe
 
         boolean busy = this.playing || this.finishing || this.deadline != 0L;
 
-        this.microphone.setEnabled(!busy);
-        this.rate.setEnabled(!busy);
-        this.countdown.setEnabled(!busy);
-        this.name.setEnabled(!busy);
+        this.microphone.setEnabled(!this.closed && !busy);
+        this.rate.setEnabled(!this.closed && !busy);
+        this.countdown.setEnabled(!this.closed && !busy);
+        this.name.setEnabled(!this.closed && !busy);
         this.record.setEnabled(!this.closed && !this.finishing && (busy || this.recorder.isReady()));
         this.record.label = IKey.raw(this.playing ? "Stop & save" : this.deadline != 0L ? "Cancel count-in" : "Record");
         this.discard.setEnabled(busy && !this.finishing);

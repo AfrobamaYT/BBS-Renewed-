@@ -79,7 +79,7 @@ public class WaveReader extends BinaryReader
                         /* Discarding extra data */
                         if (chunk.size > 16)
                         {
-                            stream.skip(chunk.size - 16);
+                            stream.skipNBytes(chunk.size - 16);
                         }
                     }
                     else if (chunk.id.equals("data"))
@@ -149,12 +149,12 @@ public class WaveReader extends BinaryReader
                     }
                     else
                     {
-                        this.skip(stream, chunk.size);
+                        stream.skipNBytes(chunk.size);
                     }
 
                     if ((chunk.size & 1) != 0)
                     {
-                        this.skip(stream, 1);
+                        stream.skipNBytes(1L);
                     }
 
                     remaining -= 8L + paddedSize;
