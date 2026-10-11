@@ -834,7 +834,7 @@ java {
 }
 
 jar {
-	from("LICENSE") {
+	from(["LICENSE.md", "COPYING"]) {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
 }
