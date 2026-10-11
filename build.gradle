@@ -101,7 +101,7 @@ loom {
 			 * debugger, es startet normal durch. */
 			if (project.hasProperty("debug"))
 			{
-				vmArgs "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${devPorts.jdwp}"
+				vmArgs "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=127.0.0.1:${devPorts.jdwp}"
 			}
 
 
