@@ -1,4 +1,4 @@
-# BBS — Minecraft 26.2 fork
+# BBS Renewed — Minecraft 26.2
 
 A fork of the BBS animation mod for Minecraft (Fabric), ported to **26.2** and extended with
 tools that bring animation work in Minecraft closer to what Blender and traditional sequencers
@@ -23,6 +23,21 @@ point.
 **The editor runs smoothly.** From 3 to 43 frames per second.
 
 The full list is in the [changelog](CHANGELOG.md).
+
+## Installation
+
+1. Minecraft **26.2** with the **Fabric Loader** ([fabricmc.net/use](https://fabricmc.net/use/)).
+   The official launcher brings the required Java 25.
+2. Put **[Fabric API](https://modrinth.com/mod/fabric-api)** for 26.2 and the BBS Renewed jar
+   into the `mods` folder.
+3. For video export, set up [ffmpeg](#ffmpeg).
+
+Before every release the jar is started the way players get it, on Windows and Linux
+([workflow](.github/workflows/produktionstest.yml)): world, BBS dashboard, screenshot.
+Also tested together, with world, film editor, playback and scrubbing and without a crash or
+mixin conflict: Sodium 0.9.2, Iris 1.11.4 with a shader pack, Sodium Extra, Reese's Sodium
+Options, Lithium, FerriteCore, ImmediatelyFast, Entity Culling, Entity Texture Features,
+Entity Model Features, Not Enough Animations, 3D Skin Layers, Continuity and Mod Menu.
 
 ## Honesty about the state
 

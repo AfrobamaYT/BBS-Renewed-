@@ -4,11 +4,6 @@ Dieses Repository enthält Teile unter **verschiedenen** Lizenzen. Diese Datei s
 Teil unter welcher steht. Der Kurzschluss „alles im Repo ist GPL" wäre **falsch** — siehe
 besonders den Abschnitt zu den Assets.
 
-> ⛔ **Vor einer Veröffentlichung oder Weitergabe:**
-> [`docs/VOR-VEROEFFENTLICHUNG.md`](docs/VOR-VEROEFFENTLICHUNG.md) abarbeiten. Dort stehen
-> drei Sperrpunkte, die diese Datei nicht auflöst — einer davon lässt sich nur von GitHub
-> selbst erledigen und braucht deshalb Vorlauf.
-
 ---
 
 ## 1 · Komponentenlizenzen und Lizenz des Gesamtpakets
@@ -146,6 +141,6 @@ fällt `NvtxBridge` still auf No-Op zurück — es bricht nichts.
 
 ## 6 · Stand
 
-Diese Datei beschreibt den Stand vom **2026-08-24**. Das Repository ist privat; die Fragen
-der Weitergabe stellen sich erst bei einer Veröffentlichung. Dies ist keine
+Diese Datei beschreibt den Stand vom **2026-08-24**. Seit 2026-10-11 ist das Repository
+öffentlich; offene Punkte zur Weitergabe stehen im [Changelog](CHANGELOG.md). Dies ist keine
 Rechtsberatung, sondern die Dokumentation der Herkunft durch die Entwicklung.

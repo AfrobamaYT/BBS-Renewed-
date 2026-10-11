@@ -166,22 +166,13 @@ Offen ausgewiesen, nicht verschwiegen:
 - Ein stiller Rückfall in `getDopeSheetY` meldet bei eingeklappten Spuren die oberste Zeile.
   Alle vier Aufrufer wurden geprüft: sichtbar trifft es niemanden. Fix nach dem Release.
 
-### ⛔ Vor einer Veröffentlichung
+### Offene Punkte zur Rechtslage
 
-Dieses Repository ist privat. Vor einem Umschalten auf öffentlich sind drei Punkte
-abzuarbeiten, die Rechte Dritter berühren — sie stehen in
-[`docs/VOR-VEROEFFENTLICHUNG.md`](docs/VOR-VEROEFFENTLICHUNG.md):
-
-1. Die alte Historie liegt noch auf GitHubs Servern. Der Schnitt vom 2026-08-24 ist lokal
-   vollständig, aber ein force-push schreibt nur Referenzen um — die alten Objekte sind mit
-   bekanntem Hash weiter abrufbar. GitHub entfernt auf Anfrage nur *sensible* Daten; der
-   verlässliche Weg ist ein frisches Repository für die Veröffentlichung.
-2. Zwei Modelldateien nennen einen dritten Autor im Dateinamen; eine Weitergabeerlaubnis
+1. Zwei Modelldateien nennen einen dritten Autor im Dateinamen; eine Weitergabeerlaubnis
    ist nicht belegt.
-3. **Der IK-Löser ist noch nicht abgetrennt.** Angestrebt ist MIT für den Mod und GPL nur
-   für den aus Blender übersetzten Löser — solange beides in einem JAR steckt, gilt für das
-   Ganze GPL.
-4. 111 geerbte Assets des BBS mod würden mitverteilt.
+2. **Der IK-Löser ist nicht abgetrennt.** Er ist aus Blender übersetzt; solange er mit dem
+   Mod in einem JAR steckt, gilt für das Ganze GPL-2.0-or-later (siehe [LICENSE.md](LICENSE.md)).
+3. Das Paket enthält 111 geerbte Assets des BBS mod.
 
 ### Bewusst nicht gebaut
 
