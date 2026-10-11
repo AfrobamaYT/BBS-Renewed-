@@ -23,6 +23,8 @@ public final class LegacyActionClips
         UIClip.register(Fracture.class, UIModelFractureClip::new);
         UIClip.register(Destruction.class, UIPhysicsBlockDestructionClip::new);
         UIClip.register(Ragdoll.class, UIModelRagdollProxyClip::new);
+        UIClip.register(Blocks.class, UIBlockAnimationClip::new);
+        UIClip.register(BlockAnimationClientClip.class, UIBlockAnimationClip::new);
     }
 
     private static void register(String name, Class<? extends Clip> type)
