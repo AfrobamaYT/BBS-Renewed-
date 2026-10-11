@@ -1,3 +1,24 @@
+// Coded by Afrobama/Claude — quick-win one-press hotkeys.
+// Coded by Afrobama/Claude — Tier 4c F7 shader hot-reload keybind.
+//
+// Bundles four small QoL bindings into one file so we don't churn four
+// separate handler classes:
+//
+//   F4 — toggle cinematic perf profile (mirrors /bbstools cinematic on|off
+//        by flipping the same four BBSPerfConfig knobs the slash command
+//        toggles, using BBSPerfConfig.ENABLE_LOD to detect current state)
+//        are present, otherwise logs a hint)
+//   F2 — dev-only A/B toggle (no renderer behind it in 26.2)
+//   F7 — Tier 4c: trigger Iris shaderpack hot-reload via ShaderHotReload
+//        (reflectively calls Iris.reload() so shader edits land without
+//        a game restart)
+//
+// Pattern mirrors RecordFromCursorHandler: a single ClientTickEvents.
+// END_CLIENT_TICK consumer polls each KeyBinding's wasPressed() so the
+// press fires once per off->on transition. KeyBindings are registered
+// via Fabric KeyBindingHelper into the existing "category.bbstools"
+// category so they show up in vanilla MC's Controls screen and can be
+// rebound there.
 package com.afrobama.bbstools.client.qol;
 
 import com.afrobama.bbstools.BBSToolsMod;
