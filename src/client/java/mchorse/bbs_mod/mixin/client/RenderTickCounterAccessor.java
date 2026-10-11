@@ -9,4 +9,10 @@ public interface RenderTickCounterAccessor
 {
     @Accessor("deltaTickResidual")
     public float bbs$getTickDelta();
+
+    @Accessor("deltaTickResidual")
+    public void bbs$setTickDelta(float value);
+
+    @Accessor("deltaTicks")
+    public void bbs$setDeltaTicks(float value);
 }

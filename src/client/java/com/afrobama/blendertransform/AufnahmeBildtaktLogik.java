@@ -90,7 +90,7 @@ public final class AufnahmeBildtaktLogik
             letzteBildzeit = jetztMs;
         }
 
-        takte = 20F / (float) BBSRendering.getVideoFrameRate();
+        takte = rekorder.getCounter() == 0 ? 0F : 20F / (float) BBSRendering.getVideoFrameRate();
         rest += takte;
 
         int ganze = (int) rest;

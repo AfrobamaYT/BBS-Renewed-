@@ -215,6 +215,13 @@ public class VideoRecorder
             }
 
             this.channel = Channels.newChannel(os);
+
+            if (Minecraft.getInstance().getDeltaTracker() instanceof mchorse.bbs_mod.mixin.client.RenderTickCounterAccessor timer)
+            {
+                timer.bbs$setTickDelta(0F);
+                timer.bbs$setDeltaTicks(0F);
+            }
+
             this.recording = true;
 
             UIUtils.playClick(2F);
@@ -249,6 +256,37 @@ public class VideoRecorder
 
         if (this.pbos != null)
         {
+            if (this.counter > 0)
+            {
+                GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, this.pbos[1 - this.pboIndex]);
+                ByteBuffer pending = GL30.glMapBuffer(GL30.GL_PIXEL_PACK_BUFFER, GL30.GL_READ_ONLY);
+
+                try
+                {
+                    if (pending == null)
+                    {
+                        throw new IOException("Cannot read the final recorded frame");
+                    }
+
+                    while (pending.hasRemaining())
+                    {
+                        this.channel.write(pending);
+                    }
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+                finally
+                {
+                    if (pending != null)
+                    {
+                        GL30.glUnmapBuffer(GL30.GL_PIXEL_PACK_BUFFER);
+                    }
+                    GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, 0);
+                }
+            }
+
             for (int pbo : this.pbos)
             {
                 GL30.glDeleteBuffers(pbo);

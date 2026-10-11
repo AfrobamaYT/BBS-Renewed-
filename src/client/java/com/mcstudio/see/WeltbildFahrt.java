@@ -51,6 +51,12 @@ public final class WeltbildFahrt
 	 */
 	public static String fahren(String basis, int start, int frames, String wunschFilm, int fps)
 	{
+		return fahren(basis, start, frames, wunschFilm, fps, false);
+	}
+
+	/** Composite exports use video settings; diagnostic captures retain preview size. */
+	public static String fahren(String basis, int start, int frames, String wunschFilm, int fps, boolean export)
+	{
 		if (fps <= 0)
 		{
 			return "{\"error\":\"fps muss > 0 sein (bekommen: " + fps + ")\"}";
@@ -92,6 +98,16 @@ public final class WeltbildFahrt
 
 		try
 		{
+			if (export)
+			{
+				RenderThread.submit(() ->
+				{
+					UIFilmPanel.applyExportSizeToBBS();
+
+					return "";
+				});
+			}
+
 			for (int i = 0; i < frames; i++)
 			{
 				final int index = start + i;

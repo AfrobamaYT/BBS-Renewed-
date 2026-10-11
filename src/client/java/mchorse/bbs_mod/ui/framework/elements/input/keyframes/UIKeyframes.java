@@ -27,8 +27,6 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.IUIKeyframeGraph;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.KeyframeType;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.UIKeyframeDopeSheet;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.UIKeyframeGraph;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.UIVector3KeyframeGraph;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIDraggable;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
@@ -648,28 +646,13 @@ public class UIKeyframes extends UIElement
 
     public void editSheet(UIKeyframeSheet sheet)
     {
-        if (sheet == null)
-        {
-            this.currentGraph = this.dopeSheet;
-        }
-        else
-        {
-            this.dopeSheet.clearSelection();
-            this.dopeSheet.pickSelected();
+        this.currentGraph = KeyframeState.createGraph(this, sheet);
+        this.resize();
 
-            if (sheet.channel.getFactory() instanceof Vector3fKeyframeFactory)
-            {
-                this.currentGraph = new UIVector3KeyframeGraph(this, sheet);
-            }
-            else
-            {
-                this.currentGraph = new UIKeyframeGraph(this, sheet);
-            }
-
+        if (sheet != null)
+        {
             this.resetView();
         }
-
-        this.resize();
     }
 
     /* Caching keyframes */
@@ -1451,8 +1434,7 @@ public class UIKeyframes extends UIElement
 
     public void applyState(KeyframeState state)
     {
-        this.xAxis.view(state.extra.getDouble("x_min"), state.extra.getDouble("x_max"));
-        this.currentGraph.restoreState(state.extra);
+        state.restoreGraph(this);
 
         List<UIKeyframeSheet> properties = this.currentGraph.getSheets();
 

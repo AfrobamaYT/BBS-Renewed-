@@ -82,7 +82,8 @@ public final class ModelIKDebug
          * are discarded before the visible main pass, which calls us again. */
         if (mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang
             || (mchorse.bbs_mod.client.BBSRendering.isIrisShadersEnabled()
-                && net.irisshaders.iris.api.v0.IrisApi.getInstance().isRenderingShadowPass()))
+                && net.irisshaders.iris.api.v0.IrisApi.getInstance().isRenderingShadowPass())
+            || mchorse.bbs_mod.film.VideoExportSession.laeuftExport())
         {
             return;
         }

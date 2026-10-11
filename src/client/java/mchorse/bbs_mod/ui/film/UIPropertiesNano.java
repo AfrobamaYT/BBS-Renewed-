@@ -374,7 +374,8 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			: replay.getName() + "|" + tick + "|" + this.schiene
 				+ "|" + this.auf(0) + this.auf(1) + this.auf(2) + this.auf(3) + this.auf(4))
 			+ (this.angeheftet != null ? "|pin" : "")
-			+ this.transformStand(replay, tick);
+			+ this.transformStand(replay, tick)
+			+ "|" + (panel == null || panel.getData() == null ? "" : panel.getData().getId());
 
 		if (!jetzt.equals(this.stand))
 		{

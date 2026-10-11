@@ -995,7 +995,8 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         UIReplaysEditor.ReplayCategory category = this.panel.replayEditor.getCategory();
 
-        if (category == UIReplaysEditor.ReplayCategory.MODEL)
+        if (this.panel.replayEditor.keyframeEditor.insertSelectedPose(this.getTick(), replay.properties)
+            || category == UIReplaysEditor.ReplayCategory.MODEL)
         {
             return;
         }
@@ -1006,7 +1007,6 @@ public class UIFilmController extends UIElement implements GizmoViewport
             return;
         }
 
-        /* PLAYER */
         if (Window.isCtrlPressed())
         {
             this.toggleMousePointer(false);
