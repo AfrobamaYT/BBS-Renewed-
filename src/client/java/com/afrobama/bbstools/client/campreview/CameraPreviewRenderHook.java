@@ -71,6 +71,7 @@ public final class CameraPreviewRenderHook
      *  per-preview camera mutation overhead. */
     public static void onWorldRenderLast(LevelRenderContext ctx)
     {
+        if (mchorse.bbs_mod.client.Erweiterungen.vorschauRendert()) return;
         if (CameraPreviewRegistry.list().isEmpty()) return;
         if (RENDERING_PREVIEW) return;
         if (CameraPreviewPerf.shouldSkipFrame()) return;
@@ -115,6 +116,7 @@ public final class CameraPreviewRenderHook
         {
             for (CameraPreview p : CameraPreviewRegistry.list())
             {
+                if (mchorse.bbs_mod.client.Erweiterungen.vorschauGehoert(p.id)) continue;
                 if (!p.enabled) continue;
                 /* Don't pay the cost for previews the user can't see —
                  *  window minimized/off-screen, dashboard closed, etc. */

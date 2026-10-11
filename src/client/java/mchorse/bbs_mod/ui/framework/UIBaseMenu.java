@@ -80,7 +80,11 @@ public abstract class UIBaseMenu
         popka.keys().register(Keys.TRANSFORMATIONS_TOGGLE_AXES, () -> renderAxes = !renderAxes);
         /* P8a: die Befehls-Palette erntet den lebenden UI-Baum — in jedem Menue verfuegbar. */
         popka.keys().register(Keys.BEFEHLS_PALETTE, () -> mchorse.bbs_mod.ui.utils.befehle.UIBefehlsPalette.oeffnen(this.context));
-
+        /* P8e: Skriptkonsole -- nur, wenn ein Begleit-Mod sie anbietet. */
+        if (mchorse.bbs_mod.client.Erweiterungen.konsole != null)
+        {
+            popka.keys().register(Keys.SKRIPT_KONSOLE, () -> mchorse.bbs_mod.client.Erweiterungen.konsole.accept(this.context));
+        }
         popka.keys().register(Keys.UI_SCALE_INC, () -> changeUIScale(0.25F));
         popka.keys().register(Keys.UI_SCALE_DEC, () -> changeUIScale(-0.25F));
         this.root.add(popka);

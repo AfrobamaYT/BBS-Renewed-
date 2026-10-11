@@ -88,6 +88,8 @@ public class UICameraPreviewWindow extends UIElement
                 /* Close button. */
                 if (context.mouseX >= this.closeBtnX() && context.mouseX < this.closeBtnX() + BUTTON_W)
                 {
+                    if (mchorse.bbs_mod.client.Erweiterungen.vorschauGehoert(this.preview.id))
+                        mchorse.bbs_mod.client.Erweiterungen.vorschau.schliessen();
                     else
                     {
                         CameraPreviewRegistry.remove(this.preview.id);

@@ -24,6 +24,9 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 	private boolean ziehenVerdrahtet;
 	private String stand = "";
 
+	/** Status des BBS-eigenen Exports, solange kein externer Render-Weg eingehaengt ist. */
+	private static volatile String nativStatus = "";
+
 	public static UIElement neu()
 	{
 		return new UIRenderReiterNano();
@@ -44,6 +47,7 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 		String jetzt = BBSSettings.renderEngine.get() + "|" + BBSSettings.videoWidth.get()
 			+ "x" + BBSSettings.videoHeight.get() + "|" + BBSSettings.videoFrameRate.get()
 			+ "|" + BBSSettings.videoMotionBlur.get() + "|"
+			+ status() + (laeuft() ? "!" : "");
 
 		if (!jetzt.equals(this.stand))
 		{
@@ -109,8 +113,10 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 
 		/* ── Engine als Segment ── */
 		y = this.gruppentitel(vg, rand, y, k, "Engine");
+		String[] engines = engines();
+
 		y = this.segment(vg, f, rand, y, b - rand * 2, k,
-			new String[] {"BBS", "Eevee", "Cycles"}, BBSSettings.renderEngine.get(),
+			engines, Math.min(BBSSettings.renderEngine.get(), engines.length - 1),
 			(wahl) -> BBSSettings.renderEngine.set(wahl));
 
 		/* ── Ausgabe ── */
@@ -133,7 +139,7 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 			blur == 0 ? "aus" : String.valueOf(blur), "feld:blur", blur / 6F, 0);
 
 		/* ── Startknöpfe unten ── */
-			|| mchorse.bbs_mod.film.VideoExportSession.laeuftExport();
+		boolean laeuft = laeuft();
 		float kh = 24F * k;
 		float ky = h - kh - rand;
 
@@ -141,6 +147,7 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 			laeuft ? "Rendering …" : "Render Animation", !laeuft, this::starten);
 
 		/* Status über den Knöpfen, einzeilig gekürzt. */
+		String status = status();
 
 		if (!status.isEmpty())
 		{
@@ -237,20 +244,24 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 			return;
 		}
 
+		mchorse.bbs_mod.client.Erweiterungen.Render extern = mchorse.bbs_mod.client.Erweiterungen.render;
+
+		if ((extern != null && extern.laeuft()) || panel.recorder.isExporting())
 		{
 			return;
 		}
 
-		int engine = BBSSettings.renderEngine.get();
+		int engine = Math.min(BBSSettings.renderEngine.get(), engines().length - 1);
 
 		if (engine == 0)
 		{
-
+			/* BBS-nativ laeuft ueber den bewiesenen Vorschau-Weg; ein externer Weg nur ab Engine 1. */
 			nativStarten(panel);
 
 			return;
 		}
 
+		extern.starten(panel, engine - 1);
 	}
 
 	private void nativStarten(UIFilmPanel panel)
@@ -262,6 +273,7 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 
 		if (!mchorse.bbs_mod.utils.FFMpegUtils.checkFFMPEG())
 		{
+			status("ffmpeg not found — see BBS settings");
 
 			return;
 		}
@@ -269,9 +281,59 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 		int dauer = panel.getData().camera.calculateDuration();
 
 		panel.recorder.setFinishedListener(cancelled ->
+			status(cancelled ? "Cancelled (BBS)" : "Done (BBS)"));
 		UIFilmPanel.applyExportSizeToBBS();
 		mchorse.bbs_mod.client.BBSRendering.scheduleAfterNextExportFrame(() ->
 			panel.recorder.startRecording(dauer, mchorse.bbs_mod.client.BBSRendering.getTexture().id,
 				mchorse.bbs_mod.client.BBSRendering.getVideoWidth(), mchorse.bbs_mod.client.BBSRendering.getVideoHeight()));
+		status("Exporting (BBS) ...");
+	}
+
+	/** "BBS" und dahinter die Engines eines eingehaengten externen Render-Wegs. */
+	private static String[] engines()
+	{
+		mchorse.bbs_mod.client.Erweiterungen.Render extern = mchorse.bbs_mod.client.Erweiterungen.render;
+
+		if (extern == null)
+		{
+			return new String[] {"BBS"};
+		}
+
+		String[] weitere = extern.engines();
+		String[] alle = new String[weitere.length + 1];
+
+		alle[0] = "BBS";
+		System.arraycopy(weitere, 0, alle, 1, weitere.length);
+
+		return alle;
+	}
+
+	private static boolean laeuft()
+	{
+		mchorse.bbs_mod.client.Erweiterungen.Render extern = mchorse.bbs_mod.client.Erweiterungen.render;
+
+		return (extern != null && extern.laeuft()) || mchorse.bbs_mod.film.VideoExportSession.laeuftExport();
+	}
+
+	/** Ein Status fuer beide Wege: mit externem Render-Weg dessen, sonst der eigene. */
+	private static String status()
+	{
+		mchorse.bbs_mod.client.Erweiterungen.Render extern = mchorse.bbs_mod.client.Erweiterungen.render;
+
+		return extern != null ? extern.status() : nativStatus;
+	}
+
+	private static void status(String status)
+	{
+		mchorse.bbs_mod.client.Erweiterungen.Render extern = mchorse.bbs_mod.client.Erweiterungen.render;
+
+		if (extern != null)
+		{
+			extern.status(status);
+		}
+		else
+		{
+			nativStatus = status;
+		}
 	}
 }

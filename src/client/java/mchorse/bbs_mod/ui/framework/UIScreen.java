@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.framework;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.client.Erweiterungen;
 import mchorse.bbs_mod.importers.IImportPathProvider;
 import mchorse.bbs_mod.importers.ImporterContext;
 import mchorse.bbs_mod.importers.Importers;
@@ -73,6 +74,7 @@ public class UIScreen extends Screen implements IFileDropListener
 
     public void update()
     {
+        Erweiterungen.eingabe(() ->
         {
             this.menu.update();
             return true;
@@ -173,26 +175,31 @@ public class UIScreen extends Screen implements IFileDropListener
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
+        return Erweiterungen.eingabe(() -> this.menu.mouseClicked((int) event.x(), (int) event.y(), event.button()));
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount)
     {
+        return Erweiterungen.eingabe(() -> this.menu.mouseScrolled((int) mouseX, (int) mouseY, horizontalAmount, verticalAmount));
     }
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event)
     {
+        return Erweiterungen.eingabe(() -> this.menu.mouseReleased((int) event.x(), (int) event.y(), event.button()));
     }
 
     @Override
     public boolean keyPressed(KeyEvent event)
     {
+        return Erweiterungen.eingabe(() -> this.menu.handleKey(event.key(), event.scancode(), BBSRendering.lastAction, event.modifiers()));
     }
 
     @Override
     public boolean keyReleased(KeyEvent event)
     {
+        return Erweiterungen.eingabe(() -> this.menu.handleKey(event.key(), event.scancode(), GLFW.GLFW_RELEASE, event.modifiers()));
     }
 
     @Override
@@ -200,6 +207,7 @@ public class UIScreen extends Screen implements IFileDropListener
     {
         /* 26.2 delivers a codepoint instead of a char; BBS' text input is char based, so
          * anything outside the BMP (surrogate pairs) is not representable here. */
+        Erweiterungen.eingabe(() ->
         {
             this.menu.handleTextInput((char) event.codepoint());
             return true;
@@ -233,6 +241,7 @@ public class UIScreen extends Screen implements IFileDropListener
          * (ein volatile-read). Nur waehrend eines programmatischen zuges liefern sie die
          * gesetzte position — ohne das koennte kein test etwas ZIEHEN, weil ziehende elemente
          * die maus pro frame hier neu lesen. Siehe VirtuelleMaus. */
+        Erweiterungen.eingabe(() ->
         {
             this.menu.renderMenu(this.context,
                 mchorse.bbs_mod.sonden.Sonden.eingabe.mausX(mouseX),

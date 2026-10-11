@@ -48,6 +48,7 @@ public class UIFilmUndoHandler extends UIFormUndoHandler
     public void reset()
     {
         super.reset();
+        this.undoManager.setGuard((undo, redo) -> mchorse.bbs_mod.client.Erweiterungen.undoPruefen(
             ((UIFilmPanel) this.uiElement).getData(), undo));
     }
 

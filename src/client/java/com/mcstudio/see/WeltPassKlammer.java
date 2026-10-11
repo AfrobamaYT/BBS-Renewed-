@@ -26,6 +26,7 @@ final class WeltPassKlammer
 	/** Vorbedingungsfehler (Besitz-Guard) oder null. Vom Aufrufer-Thread rufen, NIE Render-Thread. */
 	static String besitzGuard()
 	{
+		if (mchorse.bbs_mod.client.Erweiterungen.kameraExtern())
 		{
 			return "{\"error\":\"Blender faehrt die BBS-kamera (Drive BBS camera an) — erst freigeben, "
 				+ "sonst zeigt der sweep die Blender-pose statt der film-fahrt\"}";

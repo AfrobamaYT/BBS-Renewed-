@@ -180,6 +180,7 @@ public final class WeltbildFahrt
 	/** peekDashboard, NICHT getDashboard — letzteres baut als Nebenwirkung ein Dashboard. */
 	private static UIFilmPanel film()
 	{
+		UIDashboard dashboard = mchorse.bbs_mod.BBSModClient.getDashboardIfCreated();
 
 		if (dashboard == null)
 		{

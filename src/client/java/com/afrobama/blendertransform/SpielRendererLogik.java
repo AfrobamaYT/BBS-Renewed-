@@ -36,6 +36,8 @@ public final class SpielRendererLogik
      */
     public static RenderTarget filmpuffer()
     {
+        if (mchorse.bbs_mod.client.Erweiterungen.vorschauRendert())
+            return mchorse.bbs_mod.client.Erweiterungen.vorschau.ziel();
         return BBSRendering.canReplaceFramebuffer() && BBSRendering.getFramebuffer() != null
             ? BBSRendering.getFramebuffer()
             : null;
@@ -74,7 +76,9 @@ public final class SpielRendererLogik
      */
     public static boolean trefferneigung(PoseStack matrizen)
     {
+        if (mchorse.bbs_mod.client.Erweiterungen.vorschauRendert())
         {
+            matrizen.mulPose(Axis.ZP.rotationDegrees(mchorse.bbs_mod.client.Erweiterungen.vorschau.rollen()));
             return true;
         }
         CameraController regler = BBSModClient.getCameraController();
