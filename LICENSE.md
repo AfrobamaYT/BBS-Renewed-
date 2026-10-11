@@ -118,7 +118,7 @@ Damit nachvollziehbar bleibt, was woher stammt:
 | Constraint-Auswertung und Rig-Mechanik | `mchorse/bbs_mod/cubic/ik/Rig*.java` | Eigenentwicklung nach gemessener Blender-Constraint-Semantik aus `constraint.cc`, `armature.cc` | Im Gesamtpaket **GPL-2.0-or-later** |
 | Transform-Verhalten (Griff, Strähne, Achsenrasten, Präzision) | `ui/framework/elements/input/drag/`, `UITransformHandler` | Eigenentwicklung nach gemessenem Blender-Verhalten | Im Gesamtpaket **GPL-2.0-or-later** |
 | BBS-Kern, UI-Grundgerüst, Formen, Film, Export | `mchorse/bbs_mod/…` (der Rest) | McHorse, Wemppy | MIT, siehe oben |
-| Blender-Addon der Render-Brücke | `blender/addon/blender_bbs_bridge` | in diesem Fork geschrieben; läuft **in** Blender | GPL-2.0-or-later |
+| Werkzeuge, Perf, Nano-Schicht | `com/afrobama/…`, `com/mcstudio/…` | in diesem Fork geschrieben | GPL-2.0-or-later |
 
 ## 5 · Mitgelieferte Fremdbestandteile
 

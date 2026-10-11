@@ -100,9 +100,7 @@ nachgebaut.
 
 | Feature | Stand |
 |---|---|
-| Ein Render-Reiter in der Seitenleiste wählt die Engine — BBS, Blender Eevee oder Blender Cycles — und startet den Lauf mit einem Knopf. | fertig — E2E gemessen, Klick bis mp4 in 24 s für 30 Frames |
-| BBS rendert den ganzen Film über Blenders echte Engine, statt sie nachzubauen: Kamera, Darsteller und ein Weltausschnitt werden je Auftrag frisch nach Blender gebacken. | fertig — Ende-zu-Ende auf 26.2 bewiesen |
-| Das Blender-Addon richtet sich selbst ein: Bildrate, Importe und Asset-Pfad kommen aus BBS, nichts wird von Hand gepflegt. | fertig — beide Selbstheilungen gegengeprobt |
+| Ein Render-Reiter in der Seitenleiste startet BBS' eigenen Video-Export mit einem Knopf. | gebaut — im öffentlichen Build nicht Ende-zu-Ende gemessen |
 | Export mit Supersampling (Faktor 1–4, Lanczos-Verkleinerung). | fertig |
 | Audio-Export schreibt eine WAV je Clip, schon auf Clip-Länge geschnitten und nach Zeitleisten-Position benannt. | teilweise — gebaut und an Dateien belegt, Schalter steht per **Vorgabe aus** |
 | Der Video-Export läuft wieder, nachdem eine leere Ordner-Vorgabe ffmpeg auf Java 25 sterben ließ. | fertig |
@@ -153,7 +151,6 @@ Wer den neuen Look sehen will, muss ihn einschalten. Die `*Nano`-Panels selbst h
 |---|---|
 | Ein Darsteller zerbricht zu einem bestimmten Film-Tick in physikalische Bruchstücke — jeder Knochen wird ein eigener Körper. | ungeprüft |
 | Ein Ragdoll-Modus lässt einen Darsteller ab Befehl unter Schwerkraft zusammensacken. | ungeprüft |
-| Ein Massen-Modus rendert große Menschenmengen; Dorfbewohner können nach Keyframe-Muster hüpfen. | teilweise — Crowd-Modus warf pro Frame eine Ausnahme, das ist behoben; Rest ungeprüft |
 | Bauarbeiter-Darsteller setzen einen Bauplan Schritt für Schritt um. | ungeprüft — aus dem alten Fork übernommen |
 | Trefferflächen lassen sich per Befehl setzen und verursachen Schaden. | ungeprüft — aus dem alten Fork übernommen |
 | Ein Partikel-Effekt setzt seinen Minecraft-Klang selbst. | **offen** — Aufgabe #68, nicht gebaut |
@@ -191,7 +188,7 @@ Vier Stellen behaupteten etwas, das der Quelltext widerlegt. Sie sind hier korri
    `python tools/mixin-bruecke-gate.py` meldet live **6 offen, 122 von 128 auf der Brücke**.
    Die Aufgabe steht auf `pending`, ist aber zu 95 % erledigt.
 2. **`docs/AUFGABEN.md` ist seit 2026-08-12 nicht mehr fortgeschrieben.** Die gesamte
-   Arbeit vom 13. bis 23.08. — Blender-IK-Port, Rig-System, Render-Brücke, NanoVG-Umbau,
+   Arbeit vom 13. bis 23.08. — Blender-IK-Port, Rig-System, NanoVG-Umbau,
    Design-System — steht in **keiner** Aufgabe. Der Spiegel-Hook prüft nur die
    Übereinstimmung mit dem Aufgaben-Speicher, nicht die Vollständigkeit gegenüber dem Baum:
    Arbeit ohne Aufgabe fällt still durch.

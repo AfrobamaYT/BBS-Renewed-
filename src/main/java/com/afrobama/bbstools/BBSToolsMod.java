@@ -48,13 +48,14 @@ public final class BBSToolsMod implements ModInitializer
         com.afrobama.bbstools.hitbox.DamageHitbox.register();
         com.afrobama.bbstools.ragdoll.RagdollSwap.register();
 
-
+        /* /bbstools needs an explicit dispatcher pass-through. */
         net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback.EVENT.register(
             (dispatcher, registry, env) ->
             {
                 BBSToolsStatusCommand.register(dispatcher);
             });
 
+        LOG.info("BBSTools commands registered: /ragdolly");
     }
 
     /**

@@ -56,6 +56,7 @@ public final class BBSToolsStatusCommand
         src.sendSuccess(() -> Component.literal("§eBBSTools-Fabric §7v0.1.0 — companion mod for BBS"), false);
         src.sendSuccess(() -> Component.literal("§7BBS detected:        " + (bbs ? "§ayes" : "§cno")), false);
         src.sendSuccess(() -> Component.literal("§7PhysicsMod compat:   " + (physicsMod ? "§aactive (anti-poof + bridge)" : "§7not installed")), false);
+        src.sendSuccess(() -> Component.literal("§7Commands:           §f/ragdolly"), false);
         src.sendSuccess(() -> Component.literal("§7Keybinds:           §fShift+F9 §7editor · §f^ §7replay picker · §fCtrl+V §7paste-URL"), false);
         src.sendSuccess(() -> Component.literal("§7Run §f/bbstools perf §7for live counters."), false);
         return 1;
