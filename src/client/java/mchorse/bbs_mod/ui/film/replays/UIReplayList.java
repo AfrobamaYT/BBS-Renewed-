@@ -1925,7 +1925,7 @@ public class UIReplayList extends UIList<ReplayListEntry>
             }
         });
 
-        palette.updatable();
+        if (palette != null) palette.updatable(); /* null: es ist schon eine Palette offen */
     }
 
     public void addReplay()
