@@ -60,9 +60,6 @@
       "environment": "client"
     },
     {
-      "environment": "client"
-    },
-    {
       "config": "bbstools.physicsmod.mixins.json",
       "environment": "client"
     }

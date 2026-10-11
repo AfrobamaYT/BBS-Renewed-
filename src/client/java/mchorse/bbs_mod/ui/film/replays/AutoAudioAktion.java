@@ -53,7 +53,10 @@ public final class AutoAudioAktion
 
         AutoAudio.Bericht bericht = AutoAudio.anwenden(film, selected);
 
-
+        /* Reihenfolge wie bei jedem anderen programmatischen film-schreiber: erst den
+         * undo-eintrag abgeben, den die wert-benachrichtigungen gesammelt haben, dann
+         * speichern. Die kamera-zeitleiste
+         * liest film.camera pro frame neu, sie braucht keinen anstoss. */
         if (panel.getUndoHandler() != null)
         {
             panel.getUndoHandler().submitUndo();
