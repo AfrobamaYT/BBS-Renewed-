@@ -82,7 +82,6 @@ public final class ActiveCameraClipRegistry
         LOG.info("Active-camera-clip registry ready (Phase 11)");
     }
 
-    private static long lastDiagLog;
     private static int lastDiagState = -1;
 
     private static void tick()
@@ -182,10 +181,8 @@ public final class ActiveCameraClipRegistry
      *  something changes about what the registry sees. */
     private static void diagOnce(int state, String note)
     {
-        long now = System.currentTimeMillis();
-        if (state == lastDiagState && (now - lastDiagLog) < 5000) return;
+        if (state == lastDiagState) return;
         lastDiagState = state;
-        lastDiagLog = now;
         LOG.info("[diag] state={} {}", state, note);
     }
 
