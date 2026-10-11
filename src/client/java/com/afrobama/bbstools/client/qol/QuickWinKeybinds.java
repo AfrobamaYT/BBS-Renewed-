@@ -77,13 +77,17 @@ public final class QuickWinKeybinds
 
         /* Coded by Afrobama/Claude — UNBOUND default (was F2 which collides
          * with MC's vanilla screenshot key → 10s freeze on press). User can
-         * rebind in MC Controls if desired. */
-        veilCrowdToggle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.bbstools.veil_crowd_toggle",
-            InputConstants.Type.KEYSYM,
-            -1, /* GLFW_KEY_UNKNOWN — unbound default */
-            BBSKeyCategories.BBSTOOLS
-        ));
+         * rebind in MC Controls if desired. Only in development: the Veil crowd
+         * renderer is not part of the public build. */
+        if (DEV_ENV)
+        {
+            veilCrowdToggle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.bbstools.veil_crowd_toggle",
+                InputConstants.Type.KEYSYM,
+                -1, /* GLFW_KEY_UNKNOWN — unbound default */
+                BBSKeyCategories.BBSTOOLS
+            ));
+        }
 
         /* F8 — BBS-core + instancing GLSL live-reload + Iris pack reload. (F7 collides with the
          * record-from-cursor hotkey, which swallowed the press → shader reload never fired.) */
@@ -98,9 +102,8 @@ public final class QuickWinKeybinds
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick(client));
 
-        LOG.info("Quick-win keybinds registered: F4 cinematic toggle, "
-            + "F5 marker-at-cursor, F2 Veil-crowd toggle, "
-            + "F7 Iris shader hot-reload.");
+        LOG.info("Quick-win keybinds registered: F4 cinematic toggle, F8 shader reload"
+            + (DEV_ENV ? ", Veil-crowd toggle (unbound)." : "."));
     }
 
     private static void tick(Minecraft client)
