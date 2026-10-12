@@ -11,6 +11,13 @@ laufenden Programm nichts tut, taucht hier gar nicht auf.
 
 ---
 
+## [2.4.3] — hotfix, 2026-10-12
+
+- **Model blocks and actors are visible again.** Models placed with a model block, and actors
+  spawned in the world, were drawn and then immediately painted over, so only their shadow was
+  left. They now render normally. Models with armour slots (e.g. the player models) also no
+  longer throw a render error in model blocks.
+
 ## [2.4.2] — hotfix, 2026-10-12
 
 - **Creative tab icons fixed.** The eight chroma blocks showed the purple-black missing texture,

@@ -48,7 +48,7 @@ import java.util.List;
 public final class MorphAufschub
 {
     /** Pose-Schnappschuss + alles, was {@code FormRenderingContext.set} braucht. */
-    private record Auftrag(Form form, IEntity entity, Matrix4f pose, Matrix3f normale,
+    private record Auftrag(Form form, IEntity entity, FormRenderType typ, Matrix4f pose, Matrix3f normale,
         int licht, int ueberlagerung, float teilTick) {}
 
     private static final List<Auftrag> AUFTRAEGE = new ArrayList<>();
@@ -80,12 +80,21 @@ public final class MorphAufschub
     public static void einreichen(Form form, IEntity entity, PoseStack stapel,
         int licht, int ueberlagerung, float teilTick)
     {
+        einreichen(form, entity, FormRenderType.ENTITY, stapel, licht, ueberlagerung, teilTick);
+    }
+
+    /** Dasselbe fuer Modellbloecke und Actors: auch ihre Renderer laufen in Vanillas
+     * Sammelphase ({@code submitBlockEntities}/{@code submitEntities}) und waren deshalb
+     * unsichtbar (2026-10-12 gemessen, beide leer, nur der Schatten stand da). */
+    public static void einreichen(Form form, IEntity entity, FormRenderType typ, PoseStack stapel,
+        int licht, int ueberlagerung, float teilTick)
+    {
         if (AUFTRAEGE.size() >= MAX_AUFTRAEGE)
         {
             AUFTRAEGE.clear();
         }
 
-        AUFTRAEGE.add(new Auftrag(form, entity,
+        AUFTRAEGE.add(new Auftrag(form, entity, typ,
             new Matrix4f(stapel.last().pose()), new Matrix3f(stapel.last().normal()),
             licht, ueberlagerung, teilTick));
     }
@@ -114,7 +123,7 @@ public final class MorphAufschub
                  * was dort durchschluepft, soll laut scheitern statt still. */
                 FormSammler.mitSammler(wegwerf, () ->
                     FormUtilsClient.render(auftrag.form(), new FormRenderingContext()
-                        .set(FormRenderType.ENTITY, auftrag.entity(), stapel,
+                        .set(auftrag.typ(), auftrag.entity(), stapel,
                             auftrag.licht(), auftrag.ueberlagerung(), auftrag.teilTick())
                         .camera(Minecraft.getInstance().gameRenderer.mainCamera())));
             }

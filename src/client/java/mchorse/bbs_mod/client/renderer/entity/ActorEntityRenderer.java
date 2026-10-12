@@ -2,6 +2,7 @@ package mchorse.bbs_mod.client.renderer.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import mchorse.bbs_mod.client.renderer.MorphAufschub;
 import mchorse.bbs_mod.cubic.render.vanilla.ArmorRenderer;
 import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.forms.FormSammler;
@@ -159,6 +160,10 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity, ActorEntity
                 FormUtilsClient.render(zustand.form, new FormRenderingContext()
                     .set(FormRenderType.ENTITY, zustand.bbsEntity, matrices, zustand.lightCoords, zustand.ueberlagerung, zustand.teilTick)
                     .camera(Minecraft.getInstance().gameRenderer.mainCamera())));
+            /* Der Sofortzug oben wird vom Hauptpass uebermalt (Actor unsichtbar, nur der
+             * Schatten stand da, 2026-10-12) — den sichtbaren Zug liefert MorphAufschub nach. */
+            MorphAufschub.einreichen(zustand.form, zustand.bbsEntity, matrices,
+                zustand.lightCoords, zustand.ueberlagerung, zustand.teilTick);
         }
         finally
         {

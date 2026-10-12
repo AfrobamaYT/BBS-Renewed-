@@ -9,6 +9,7 @@ import mchorse.bbs_mod.client.renderer.entity.ActorEntityRenderer;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.model.View;
 import mchorse.bbs_mod.entity.ActorEntity;
+import mchorse.bbs_mod.forms.FormSammler;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -249,9 +250,16 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
              * nichts anderes durch). Der Bruch-Fortschritt liegt in 26.2 als
              * zustand.breakProgress separat vor und ist kein Ueberlagerungs-UV mehr.
              * Es geht also nichts verloren. */
-            FormUtilsClient.render(zustand.form, new FormRenderingContext()
-                .set(FormRenderType.MODEL_BLOCK, zustand.bbsEntity, matrices, zustand.lichtOben, OverlayTexture.NO_OVERLAY, zustand.teilTick)
-                .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
+            /* ⛔ Wie im ActorEntityRenderer: Vanillas Blockentity-Weg meldet keinen FormSammler
+             * an, ModelFormRenderer.renderArmor warf "Kein Sammler angemeldet" (2026-10-12
+             * gemessen, player/alex x187). Der Sofortzug des Modells wird hier ausserdem vom
+             * Hauptpass uebermalt — den sichtbaren Zug liefert MorphAufschub nach. */
+            FormSammler.mitSammler(vertexConsumers, () ->
+                FormUtilsClient.render(zustand.form, new FormRenderingContext()
+                    .set(FormRenderType.MODEL_BLOCK, zustand.bbsEntity, matrices, zustand.lichtOben, OverlayTexture.NO_OVERLAY, zustand.teilTick)
+                    .camera(Minecraft.getInstance().gameRenderer.mainCamera())));
+            MorphAufschub.einreichen(zustand.form, zustand.bbsEntity, FormRenderType.MODEL_BLOCK, matrices,
+                zustand.lichtOben, OverlayTexture.NO_OVERLAY, zustand.teilTick);
 
             if (zustand.achsen)
             {
