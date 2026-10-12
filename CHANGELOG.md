@@ -11,6 +11,11 @@ laufenden Programm nichts tut, taucht hier gar nicht auf.
 
 ---
 
+## [2.4.2] — hotfix, 2026-10-12
+
+- **Creative tab icons fixed.** The eight chroma blocks showed the purple-black missing texture,
+  and the gun had no icon. All BBS items in the creative tab now show their icons.
+
 ## [2.4.1] — hotfix, 2026-10-12
 
 - **Fixed a crash with "Pose stack not empty".** When a form failed to render, BBS reported

@@ -14,6 +14,7 @@
     "EntityRendererMixin",
     "GameRendererMixin",
     "GuiGraphicsExtractorAccessor",
+    "GuiItemAtlasMixin",
     "GuiRenderStateAccessor",
     "ChromaHimmelMixin",
     "ChromaNebelMixin",
