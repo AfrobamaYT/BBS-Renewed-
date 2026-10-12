@@ -73,6 +73,8 @@ public class FormUtilsClient
         String kennung = art + ":" + fehler.getClass().getName() + ":" + fehler.getMessage();
         String vorher = bbsGemeldet.put(art, kennung);
 
+        mchorse.bbs_mod.client.AbsturzHinweise.merken(form, fehler);
+
         if (kennung.equals(vorher))
         {
             return;
@@ -189,6 +191,7 @@ public class FormUtilsClient
 
         if (renderer != null)
         {
+            com.mojang.blaze3d.vertex.PoseStack.Pose oben = context.stack == null ? null : context.stack.last();
             currentForm.push(form);
 
             try
@@ -217,6 +220,10 @@ public class FormUtilsClient
                  * und eine ungebremste ausgabe das log unbrauchbar macht (gemessen: 50 treffer
                  * in wenigen sekunden). */
                 bbsMeldeRenderFehler(form, fehler);
+                /* Jetzt auch repariert (2026-10-12, Absturzbericht aus der Community): ein offener
+                 * push riss das ganze Spiel mit "Pose stack not empty". PoseStack haelt je Ebene
+                 * dasselbe Pose-Objekt, also bis zur Ebene vor dem Aufruf zurueckpoppen. */
+                while (oben != null && context.stack.last() != oben && !context.stack.isEmpty()) context.stack.popPose();
             }
             finally
             {

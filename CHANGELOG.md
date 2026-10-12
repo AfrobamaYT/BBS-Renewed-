@@ -11,6 +11,18 @@ laufenden Programm nichts tut, taucht hier gar nicht auf.
 
 ---
 
+## [2.4.1] — hotfix, 2026-10-12
+
+- **Fixed a crash with "Pose stack not empty".** When a form failed to render, BBS reported
+  the error but left Minecraft's pose stack open, and the next check ended the game. A form
+  that fails now just doesn't draw that frame.
+- **Crash reports name BBS render errors.** Every crash report now lists, under
+  *System Details*, the last render errors BBS caught ("BBS Renewed": which form, how often,
+  the exception and where it happened). When you report a crash, the crash report alone is
+  enough — no need to dig out `latest.log`.
+
+---
+
 ## [2.4] — unveröffentlicht, Ziel 2026-09-02
 
 Erster Stand des Forks auf **Minecraft 26.2** (Fabric). Basis sind `bbs-fs` (Wemppy4) und

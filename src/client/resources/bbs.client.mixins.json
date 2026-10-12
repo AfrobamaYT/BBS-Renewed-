@@ -37,6 +37,7 @@
     "RenderTickCounterMixin",
     "ResourceReloadLoggerMixin",
     "SimpleOptionMixin",
+    "SystemReportMixin",
     "SpecialModelRenderersAccessor",
     "WindowMixin",
     "WorldMixin",
