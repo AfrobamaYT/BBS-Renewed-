@@ -1,0 +1,1350 @@
+package mchorse.bbs_mod.ui.film.replays;
+
+import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.audio.SoundBuffer;
+import mchorse.bbs_mod.audio.Waveform;
+import mchorse.bbs_mod.camera.Camera;
+import mchorse.bbs_mod.camera.CameraUtils;
+import mchorse.bbs_mod.camera.clips.misc.AudioClip;
+import mchorse.bbs_mod.camera.utils.TimeUtils;
+import mchorse.bbs_mod.cubic.ModelInstance;
+import mchorse.bbs_mod.cubic.ik.ModelIKRuntime;
+import mchorse.bbs_mod.cubic.physics.ModelPhysicsConfig;
+import mchorse.bbs_mod.cubic.physics.ModelPhysicsIO;
+import mchorse.bbs_mod.data.DataStorageUtils;
+import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.film.Film;
+import mchorse.bbs_mod.film.replays.FormControlKeys;
+import mchorse.bbs_mod.film.replays.PerLimbService;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.film.replays.ReplayKeyframes;
+import mchorse.bbs_mod.forms.FormUtils;
+import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.forms.BodyPart;
+import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
+import mchorse.bbs_mod.graphics.window.Window;
+import mchorse.bbs_mod.l10n.L10n;
+import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.settings.values.base.BaseValueBasic;
+import mchorse.bbs_mod.ui.Keys;
+import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
+import mchorse.bbs_mod.ui.film.UIClipsPanel;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.film.replays.overlays.UIAnimationToPoseOverlayPanel;
+import mchorse.bbs_mod.ui.film.replays.overlays.UIKeyframeSheetFilterOverlayPanel;
+import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
+import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.UIKeyframeDopeSheet;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
+import mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable;
+import mchorse.bbs_mod.ui.utils.Area;
+import mchorse.bbs_mod.ui.utils.Scale;
+import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
+import mchorse.bbs_mod.ui.utils.icons.Icon;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.ui.utils.renderers.TimelineRulerRenderer;
+import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.Direction;
+import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.Pair;
+import mchorse.bbs_mod.utils.PlayerUtils;
+import mchorse.bbs_mod.utils.RayTracing;
+import mchorse.bbs_mod.utils.StringUtils;
+import mchorse.bbs_mod.utils.clips.Clip;
+import mchorse.bbs_mod.utils.clips.Clips;
+import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
+
+import java.util.function.Consumer;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+public class UIReplaysEditor extends UIElement
+{
+    private static String lastFilm = "";
+    private static int lastReplay;
+
+    public UIReplaysListPanel replaysList;
+    public UIReplayPropertiesPanel replayProperties;
+
+    private static final int CATEGORY_BAR_WIDTH = 20;
+
+    public UIElement iconBar;
+    public Map<ReplayCategory, UIIcon> tabButtons = new HashMap<>();
+    private ReplayCategory category = ReplayCategory.PLAYER;
+
+    /* Keyframes */
+    public UIKeyframeEditor keyframeEditor;
+
+    /* Action clips share the timeline area; the toggle below the categories switches to them. */
+    /* «All tracks», default AN: der Entwurf zeigt alle Gruppen in einer Liste; Kategorien bleiben Filter. */
+    private UIIcon allToggle;
+    private boolean allMode = true;
+
+    /* Clips */
+    UIFilmPanel filmPanel;
+    private Film film;
+    private Replay replay;
+    private boolean settingReplay;
+    Pair<Form, String> pendingPick;
+    private final CtrlGriff ctrlGriff = new CtrlGriff();
+    private boolean timelineVisible = true;
+    private boolean propertiesVisible = true;
+    private Set<String> keys = new LinkedHashSet<>();
+    private final Map<String, Set<String>> expandedPoseTabsByReplay = new HashMap<>();
+
+    public enum ReplayCategory
+    {
+        PLAYER(Icons.PLAYER, L10n.lang("bbs.ui.film.replays.category.player"), L10n.lang("bbs.ui.film.replays.category.player.tooltip")),
+        MODEL(Icons.BLOCK, L10n.lang("bbs.ui.film.replays.category.model"), L10n.lang("bbs.ui.film.replays.category.model.tooltip")),
+        POSE(Icons.POSE, L10n.lang("bbs.ui.film.replays.category.pose"), L10n.lang("bbs.ui.film.replays.category.pose.tooltip")),
+        PHYSICS(Icons.DROP, L10n.lang("bbs.ui.film.replays.category.physics"), L10n.lang("bbs.ui.film.replays.category.physics.tooltip"));
+
+        public final Icon icon;
+        public final IKey label;
+        public final IKey tooltip;
+
+        private ReplayCategory(Icon icon, IKey label, IKey tooltip)
+        {
+            this.icon = icon;
+            this.label = label;
+            this.tooltip = tooltip;
+        }
+    }
+
+    /* Kontextmenue-helfer (CML-fork); "_item"-halter (unsichtbare hand) ausgeblendet. */
+    public static void offerAdjacent(UIContext context, Form form, String bone, Consumer<String> consumer)
+    {
+        offerGroups(context, form, bone, consumer, true);
+    }
+
+    /** Wie offerAdjacent, aber die ganze eltern-kette statt der geschwister. */
+    public static void offerHierarchy(UIContext context, Form form, String bone, Consumer<String> consumer)
+    {
+        offerGroups(context, form, bone, consumer, false);
+    }
+
+    private static void offerGroups(UIContext context, Form form, String bone, Consumer<String> consumer, boolean adjacent)
+    {
+        if (bone.isEmpty() || !(form instanceof ModelForm modelForm))
+        {
+            return;
+        }
+
+        ModelInstance model = ModelFormRenderer.getModel(modelForm);
+
+        if (model == null)
+        {
+            return;
+        }
+
+        context.replaceContextMenu((menu) ->
+        {
+            for (String modelGroup : adjacent ? model.model.getAdjacentGroups(bone) : model.model.getHierarchyGroups(bone))
+            {
+                if (modelGroup.endsWith("_item"))
+                {
+                    continue;
+                }
+
+                menu.action(Icons.LIMB, IKey.constant(modelGroup), () -> consumer.accept(modelGroup));
+            }
+
+            menu.autoKeys();
+        });
+    }
+
+    public static Icon getIcon(String key)
+    {
+        String topLevel = StringUtils.fileName(key);
+
+        return SpurFarben.icon(topLevel) == null ? Icons.NONE : SpurFarben.icon(topLevel);
+    }
+
+    public static int getColor(String key)
+    {
+        String topLevel = StringUtils.fileName(key);
+
+        if (topLevel.startsWith("pose_overlay")) return SpurFarben.farbe("pose_overlay");
+        if (topLevel.startsWith("transform_overlay")) return SpurFarben.farbe("transform_overlay");
+        if (SpurFarben.hatFarbe(topLevel)) return SpurFarben.farbe(topLevel);
+
+        return Colors.BLUE;
+    }
+
+    /** The key a sheet is identified by in track filters (global and per-form). */
+    public static String getSheetFilterKey(UIKeyframeSheet sheet)
+    {
+        return sheet.isBoneTrack ? sheet.title.get() : StringUtils.fileName(sheet.id);
+    }
+
+    /** The form a sheet belongs to, whether it backs a form property or carries its owner directly (bones, materials, IK). */
+    public static Form getSheetForm(UIKeyframeSheet sheet)
+    {
+        if (sheet.form != null)
+        {
+            return sheet.form;
+        }
+
+        return sheet.property == null ? null : FormUtils.getForm(sheet.property);
+    }
+
+    /** Single home of the category rule: tabs only filter now, so collectors always gather and this decides where a sheet lands. */
+    public static ReplayCategory categoryOf(UIKeyframeSheet sheet)
+    {
+        String id = sheet.id;
+
+        if (FormControlKeys.isPhysicsControlChannel(id) || PerLimbService.isPhysicsTargetChannel(id) || FormControlKeys.isWindControlChannel(id))
+        {
+            return ReplayCategory.PHYSICS;
+        }
+
+        if (PerLimbService.isPoseBoneChannel(id))
+        {
+            return ReplayCategory.POSE;
+        }
+
+        if (PerLimbService.isMaterialTextureChannel(id))
+        {
+            return ReplayCategory.MODEL;
+        }
+
+        if (sheet.property == null && sheet.form == null)
+        {
+            return ReplayCategory.PLAYER;
+        }
+
+        return FormUtils.isPoseProperty(StringUtils.fileName(id)) ? ReplayCategory.POSE : ReplayCategory.MODEL;
+    }
+
+    public static void renderRuler(UIContext context, UIKeyframes keyframes, UIClipsPanel clipsPanel, Clips camera, int clipOffset)
+    {
+        Area area = keyframes.graphArea;
+
+        int rulerBottom = TimelineRulerRenderer.getRulerBottom(area);
+
+        if (rulerBottom <= area.y)
+        {
+            return;
+        }
+
+        context.batcher.clip(area.x, area.y, area.ex(), rulerBottom, context);
+
+        renderRulerAudio(context, keyframes, camera, clipOffset, area, rulerBottom);
+        renderRulerClipGradient(context, keyframes, clipsPanel, clipOffset, area, rulerBottom);
+
+        context.batcher.unclip(context);
+    }
+
+    private static boolean renderRulerAudio(UIContext context, UIKeyframes keyframes, Clips camera, int clipOffset, Area area, int rulerBottom)
+    {
+        if (!BBSSettings.audioWaveformVisibleInKeyframes.get())
+        {
+            return false;
+        }
+
+        Scale scale = keyframes.getXAxis();
+        boolean renderedOnce = false;
+        int y = area.y + 1;
+        int h = Math.max(1, rulerBottom - y - 1);
+
+        for (Clip clip : camera.get())
+        {
+            if (!(clip instanceof AudioClip audioClip))
+            {
+                continue;
+            }
+
+            Link link = audioClip.audio.get();
+
+            if (link == null)
+            {
+                continue;
+            }
+
+            SoundBuffer buffer = BBSModClient.getSounds().get(link, true);
+
+            if (buffer == null || buffer.getWaveform() == null)
+            {
+                continue;
+            }
+
+            Waveform wave = buffer.getWaveform();
+            int audioOffset = audioClip.offset.get();
+            float offset = audioClip.tick.get() - clipOffset;
+            int duration = Math.min((int) (wave.getDuration() * 20), clip.duration.get());
+            int x1 = (int) scale.to(offset);
+            int x2 = (int) scale.to(offset + duration);
+
+            if (x2 <= area.x || x1 >= area.ex())
+            {
+                continue;
+            }
+
+            wave.render(context.batcher, Colors.WHITE, x1, y, x2 - x1, h, TimeUtils.toSeconds(audioOffset), TimeUtils.toSeconds(audioOffset + duration));
+
+            renderedOnce = true;
+        }
+
+        return renderedOnce;
+    }
+
+    private static void renderRulerClipGradient(UIContext context, UIKeyframes keyframes, UIClipsPanel clipsPanel, int clipOffset, Area area, int rulerBottom)
+    {
+        Clip clip = clipsPanel.getClip();
+
+        if (clip == null || clip instanceof AudioClip || !BBSSettings.editorClipPreview.get())
+        {
+            return;
+        }
+
+        Scale scale = keyframes.getXAxis();
+        int x1 = (int) scale.to(clip.tick.get() - clipOffset);
+        int x2 = (int) scale.to(clip.tick.get() + clip.duration.get() - clipOffset);
+
+        if (x2 <= area.x || x1 >= area.ex())
+        {
+            return;
+        }
+
+        int color = clipsPanel.clips.getFactory().getData(clip).color;
+        int left = Math.max(area.x, x1);
+        int right = Math.min(area.ex(), x2);
+        int top = area.y + 1;
+        int bottom = Math.max(top + 1, rulerBottom - 1);
+
+        context.batcher.gradientVBox(left, top, right, bottom, Colors.setA(color, 0.03F), Colors.setA(color, 0.78F));
+        context.batcher.box(left, Math.max(top, bottom - 2), right, bottom, Colors.setA(color, 0.92F));
+    }
+
+    public UIReplaysEditor(UIFilmPanel filmPanel)
+    {
+        this.filmPanel = filmPanel;
+
+
+        this.replayProperties = new UIReplayPropertiesPanel(filmPanel);
+        this.replaysList = new UIReplaysListPanel(filmPanel, (l) -> this.setReplay(l.isEmpty() ? null : l.get(0), false, OrbitReaction.SWITCH), this.replayProperties.getFormConsumer());
+        this.replayProperties.attachReplayList(this.replaysList.replays);
+
+        this.iconBar = new UIElement();
+        this.iconBar.relative(this).x(0).y(0).w(CATEGORY_BAR_WIDTH).h(1F).column(0).stretch();
+
+        this.iconBar.add(new UIRenderable((context) ->
+        {
+            Area area = this.iconBar.area;
+
+            context.batcher.box(area.x, area.y, area.ex(), area.ey(), BBSSettings.chromeSurface());
+
+            /* Highlight the active category on the left edge. */
+            UIIcon activeIcon = this.allMode ? this.allToggle : this.tabButtons.get(this.category);
+
+            if (activeIcon != null && activeIcon.getParent() != null)
+            {
+                UIDashboardPanels.renderHighlight(context.batcher, activeIcon.area, Direction.LEFT);
+            }
+        }));
+
+        for (ReplayCategory category : ReplayCategory.values())
+        {
+            UIIcon button = new UIIcon(category.icon, b -> this.setCategory(category));
+
+            button.tooltip(category.tooltip, Direction.RIGHT);
+            this.iconBar.add(button);
+            this.tabButtons.put(category, button);
+        }
+
+        /* «All tracks» toggle, pinned to the bottom of the category bar. */
+        this.allToggle = new UIIcon(Icons.LIST, b -> this.setAllTracks());
+        this.allToggle.tooltip(UIKeys.FILM_REPLAY_ALL_TRACKS, Direction.RIGHT);
+
+        this.layoutBottomToggles();
+
+        /* Kein setCategory() hier: das schaltete allMode (alle Gruppen, Entwurf) gleich wieder aus. */
+        this.keys().register(Keys.REPLAYS_TAB_1, () -> this.setCategoryByPosition(0))
+            .category(UIKeys.FILM_REPLAY_TITLE);
+        this.keys().register(Keys.REPLAYS_TAB_2, () -> this.setCategoryByPosition(1))
+            .category(UIKeys.FILM_REPLAY_TITLE);
+        this.keys().register(Keys.REPLAYS_TAB_3, () -> this.setCategoryByPosition(2))
+            .category(UIKeys.FILM_REPLAY_TITLE);
+        this.keys().register(Keys.REPLAYS_TAB_4, () -> this.setCategoryByPosition(3))
+            .category(UIKeys.FILM_REPLAY_TITLE);
+        this.keys().register(Keys.REPLAYS_TAB_5, () -> this.setCategoryByPosition(4))
+            .category(UIKeys.FILM_REPLAY_TITLE);
+
+        this.add(this.iconBar, this.allToggle);
+
+        /* ⛔ Die vertikale Icon-Spalte bleibt GELADEN, wird aber nicht mehr gezeichnet: die
+         * Filter sitzen jetzt im Kopf der Zeitleiste (Blenders Ort dafuer). Nicht geloescht,
+         * weil an den Knoepfen die Tooltips und die Tastenkuerzel REPLAYS_TAB_1..4 haengen —
+         * und weil `setCategory`/`setAllTracks` weiterhin ueber sie
+         * laufen. Sichtbar hat sie den Kanalnamen 20 px Breite weggenommen. */
+        this.iconBar.setVisible(false);
+        this.allToggle.setVisible(false);
+        this.markContainer();
+    }
+
+    /**
+     * Welcher Kanal-Filter ist aktiv? Kennung fuer die Kopfzeile der neuen Zeitleiste.
+     *
+     * <p>⛔ Die Filter sassen in einer vertikalen Icon-Spalte links — BBS-Handschrift.
+     * Blender setzt sie in den Kopf neben den Anzeigemodus. Verschoben wird nur die
+     * DARSTELLUNG: Auswahl, Tastenkuerzel und Spurenlogik bleiben, wo sie sind, und
+     * werden ueber diese beiden Methoden angesteuert statt nachgebaut.</p>
+     */
+    public String aktiverFilter()
+    {
+        if (this.allMode)
+        {
+            return "all";
+        }
+
+        return this.category == null ? "player" : this.category.name().toLowerCase();
+    }
+
+    /** Filter aus der Kopfzeile setzen — ruft dieselben Wege wie die alten Knoepfe. */
+    public void filterWaehlen(String id)
+    {
+        if ("actions".equals(id))
+        {
+            mchorse.bbs_mod.ui.film.ZeitleisteZweig.aktionenModus(this.filmPanel);
+
+            return;
+        }
+
+        if ("all".equals(id))
+        {
+            this.setAllTracks();
+
+            return;
+        }
+
+        for (ReplayCategory c : ReplayCategory.values())
+        {
+            if (c.name().toLowerCase().equals(id))
+            {
+                this.setCategory(c);
+
+                return;
+            }
+        }
+    }
+
+    private void setCategory(ReplayCategory c)
+    {
+        this.allMode = false;
+        this.category = c;
+        this.updateChannelsList();
+    }
+
+    /** Show every category's tracks at once, bypassing the category filter. */
+    private void setAllTracks()
+    {
+        /* ⛔ TOGGLE, nicht Einbahnstrasse. Vorher stand hier `allMode = true` — ein zweiter
+         * Klick tat nichts (gemessen ueber einen Feld-Logpoint: `allMode true -> true`).
+         * In der alten Icon-Spalte fiel das kaum auf, weil man ueber eine Kategorie
+         * zurueckkehrte; als Knopf in der Kopfzeile ist ein Filter, der sich nicht
+         * ausschalten laesst, falsch — Blender-Filter sind Toggles. Beim Ausschalten
+         * greift wieder die zuletzt gewaehlte Kategorie. */
+        this.allMode = !this.allMode;
+        this.updateChannelsList();
+    }
+
+    /** Kategorie nach SICHTBARER Tab-Position (IK/Physics-Tabs sind optional). */
+    private void setCategoryByPosition(int index)
+    {
+        List<ReplayCategory> present = new ArrayList<>();
+
+        for (ReplayCategory category : ReplayCategory.values())
+        {
+            UIIcon button = this.tabButtons.get(category);
+
+            if (button != null && button.getParent() != null)
+            {
+                present.add(category);
+            }
+        }
+
+        present.sort(Comparator.comparingInt((c) -> this.tabButtons.get(c).area.y));
+
+        if (index >= 0 && index < present.size())
+        {
+            this.setCategory(present.get(index));
+        }
+    }
+
+    public ReplayCategory getCategory()
+    {
+        return this.category;
+    }
+
+    public void pickPlayerCategory()
+    {
+        if (this.category != ReplayCategory.PLAYER)
+        {
+            this.setCategory(ReplayCategory.PLAYER);
+        }
+    }
+
+    public void setFilm(Film film)
+    {
+        this.savePoseTabState(this.replay);
+        this.expandedPoseTabsByReplay.clear();
+        this.film = film;
+        this.filmPanel.getController().orbit.reset();
+
+        if (film != null)
+        {
+            List<Replay> replays = film.replays.getList();
+            int index = film.getId().equals(lastFilm) ? lastReplay : 0;
+
+            if (!CollectionUtils.inRange(replays, index))
+            {
+                index = 0;
+            }
+
+            this.replaysList.replays.refreshReplayList();
+            this.setReplay(replays.isEmpty() ? null : replays.get(index), true, OrbitReaction.SWITCH);
+        }
+    }
+
+    public Replay getReplay()
+    {
+        return this.replay;
+    }
+
+    public void setReplay(Replay replay)
+    {
+        this.setReplay(replay, true, OrbitReaction.SWITCH);
+    }
+
+    public void setReplay(Replay replay, boolean select, OrbitReaction orbit)
+    {
+        /* Re-entry-Guard: scrollToReplay feuert setReplay erneut; orbit gehoert dem aeussersten (sonst teleportiert undo). */
+        if (this.settingReplay)
+        {
+            return;
+        }
+
+        this.settingReplay = true;
+
+        try
+        {
+            this.savePoseTabState(this.replay);
+
+            this.replay = replay;
+
+            if (orbit == OrbitReaction.RESET)
+            {
+                this.filmPanel.getController().orbit.reset();
+            }
+            else if (orbit == OrbitReaction.SWITCH && replay != null && BBSSettings.editorOrbitTeleportOnSwitch.get())
+            {
+                this.filmPanel.getController().orbit.teleportPivotToReplay();
+            }
+
+            this.replayProperties.setReplay(replay);
+            this.filmPanel.actionEditor.setClips(replay == null ? null : replay.actions);
+            this.updateChannelsList();
+
+            if (select && replay != null)
+            {
+                this.replaysList.replays.scrollToReplay(replay);
+            }
+        }
+        finally
+        {
+            this.settingReplay = false;
+        }
+    }
+
+    public void moveReplay(double x, double y, double z)
+    {
+        if (this.replay != null)
+        {
+            int cursor = this.filmPanel.getCursor();
+
+            this.replay.keyframes.x.insert(cursor, x);
+            this.replay.keyframes.y.insert(cursor, y);
+            this.replay.keyframes.z.insert(cursor, z);
+        }
+    }
+
+    public void updateChannelsList()
+    {
+        UIKeyframes lastEditor = this.keyframeEditor != null ? this.keyframeEditor.view : null;
+
+        if (this.keyframeEditor != null)
+        {
+            this.keyframeEditor.release();
+            this.keyframeEditor = null;
+        }
+
+        if (this.replay == null)
+        {
+            return;
+        }
+
+        this.updatePhysicsTab();
+
+        List<UIKeyframeSheet> sheets = new ArrayList<>();
+        Map<UIKeyframeSheet, List<UIKeyframeSheet>> poseTabs = new HashMap<>();
+        Map<UIKeyframeSheet, Integer> poseTabDepths = new HashMap<>();
+
+        this.collectCuratedSheets(sheets);
+        this.collectFormPropertySheets(sheets, poseTabs, poseTabDepths);
+        this.collectPhysicsSheets(sheets);
+
+        this.keys.clear();
+
+        for (UIKeyframeSheet sheet : sheets)
+        {
+            this.keys.add(getSheetFilterKey(sheet));
+        }
+
+        Set<String> disabled = BBSSettings.disabledSheets.get();
+
+        sheets.removeIf((v) ->
+        {
+            if (!this.allMode && categoryOf(v) != this.category)
+            {
+                return true;
+            }
+
+            String filterKey = getSheetFilterKey(v);
+
+            for (String s : disabled)
+            {
+                if (filterKey.equals(s) || v.id.equals(s) || v.id.endsWith("/" + s))
+                {
+                    return true;
+                }
+            }
+
+            Form owner = getSheetForm(v);
+
+            if (owner != null)
+            {
+                Set<String> ownerDisabled = owner.disabledTracks.get();
+
+                return ownerDisabled.contains(Form.DISABLED_ALL) || ownerDisabled.contains(filterKey);
+            }
+
+            return false;
+        });
+
+        /* Tabs only filter the gathered sheets, so drop pose-tab entries whose pose sheet the active tab filtered out. */
+        Set<UIKeyframeSheet> kept = new LinkedHashSet<>(sheets);
+        poseTabs.keySet().retainAll(kept);
+        poseTabDepths.keySet().retainAll(kept);
+
+        Form lastForm = null;
+
+        for (UIKeyframeSheet sheet : sheets)
+        {
+            Form form = sheet.property == null ? null : FormUtils.getForm(sheet.property);
+
+            if (!Objects.equals(lastForm, form))
+            {
+                sheet.separator = true;
+            }
+
+            lastForm = form;
+        }
+
+        if (!sheets.isEmpty())
+        {
+            this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.filmPanel.cameraEditor, consumer).absolute())
+                .target(mchorse.bbs_mod.ui.film.ZeitleisteZweig.keyframeHost(this.filmPanel))
+                .editPanelTopOffset(this.filmPanel::getEditPanelTopOffsetPx);
+            this.keyframeEditor.relative(this).x(CATEGORY_BAR_WIDTH).y(0).w(1F, -CATEGORY_BAR_WIDTH).h(1F);
+            this.keyframeEditor.setUndoId("replay_keyframe_editor");
+
+            this.layoutBottomToggles();
+
+            /* Reset */
+            if (lastEditor != null)
+            {
+                this.keyframeEditor.view.copyViewport(lastEditor);
+            }
+
+            /* Kamera-Clips als Balken unter den Spuren (4.54); Klicks nur, wenn kein Keyframe sie nahm. */
+            this.keyframeEditor.view.spuren = new KameraSpuren(this.keyframeEditor.view, this.filmPanel.cameraEditor).dock(this.keyframeEditor, this);
+
+            this.keyframeEditor.view.rulerRenderer((context) -> mchorse.bbs_mod.ui.film.ZeitleisteZweig.linealDekor(context, this.keyframeEditor.view, this.filmPanel.cameraEditor, this.film));
+            this.keyframeEditor.view.duration(() -> this.film.camera.calculateDuration());
+            this.keyframeEditor.view.context(menu ->
+            {
+                if (this.replay.form.get() instanceof ModelForm modelForm)
+                {
+                    int mouseY = this.getContext().mouseY;
+                    UIKeyframeSheet sheet = this.keyframeEditor.view.getGraph().getSheet(mouseY);
+
+                    if (sheet != null && sheet.channel.getFactory() == KeyframeFactories.POSE && sheet.id.equals("pose"))
+                    {
+                        menu.action(Icons.POSE, UIKeys.FILM_REPLAY_CONTEXT_ANIMATION_TO_KEYFRAMES, () ->
+                        {
+                            ModelInstance model = ModelFormRenderer.getModel(modelForm);
+
+                            if (model != null)
+                            {
+                                UIOverlay.addOverlay(
+                                    this.getContext(),
+                                    new UIAnimationToPoseOverlayPanel(
+                                        (animationKey, onlyKeyframes, length, step) ->
+                                        {
+                                            int current = this.filmPanel.getCursor();
+                                            IEntity entity = this.filmPanel.getController().getCurrentEntity();
+
+                                            UIReplaysEditorUtils.animationToPoseKeyframes(this.keyframeEditor, sheet, modelForm, entity, current, animationKey, onlyKeyframes, length, step);
+                                        },
+                                    modelForm, sheet), 200, 197
+                                );
+                            }
+                        });
+                    }
+
+                    boolean isPoseTrack = sheet != null
+                        && sheet.channel.getFactory() == KeyframeFactories.POSE
+                        && (sheet.id.equals("pose")
+                        || sheet.id.endsWith(FormUtils.PATH_SEPARATOR + "pose"))
+                        && !sheet.id.contains("pose_overlay");
+
+                    Form sheetForm = sheet != null && sheet.property != null ? FormUtils.getForm(sheet.property) : null;
+                    boolean limbTracksOn = sheetForm instanceof ModelForm m && m.boneTracks.get();
+
+                    if (isPoseTrack && sheet.selection.hasAny() && limbTracksOn)
+                    {
+                        ModelForm poseModelForm = sheetForm instanceof ModelForm m ? m : modelForm;
+                        menu.action(Icons.LIMB, UIKeys.FILM_REPLAY_CONTEXT_POSES_TO_LIMBS, () ->
+                        {
+                            UIReplaysEditorUtils.posesToLimbTracks(this.replay, sheet, poseModelForm);
+
+                            sheet.selection.removeSelected();
+                            this.updateChannelsList();
+                        });
+                    }
+
+                    List<String> controllers = ModelIKRuntime.getControllers(ModelFormRenderer.getModel(modelForm));
+                    if (!controllers.isEmpty())
+                    {
+                        menu.action(Icons.CLOSE, UIKeys.FILM_REPLAY_CONTEXT_CLEAR_IK, () ->
+                        {
+                            UIReplaysEditorUtils.clearIKTracks(this.replay, modelForm);
+                            this.updateChannelsList();
+                        });
+                    }
+                }
+
+                if (this.keyframeEditor.view.getGraph() instanceof UIKeyframeDopeSheet)
+                {
+                    menu.action(Icons.FILTER, UIKeys.FILM_REPLAY_FILTER_SHEETS, () ->
+                    {
+                        Set<String> disabledSet = BBSSettings.disabledSheets.get();
+                        Map<String, Integer> keyToColor = new HashMap<>();
+                        for (UIKeyframeSheet sheet : this.keyframeEditor.view.getGraph().getSheets())
+                        {
+                            keyToColor.put(getSheetFilterKey(sheet), sheet.color);
+                        }
+                        UIKeyframeSheetFilterOverlayPanel panel = new UIKeyframeSheetFilterOverlayPanel(
+                                disabledSet,
+                                this.keys,
+                                keyToColor
+                        );
+
+                        UIOverlay.addOverlay(this.getContext(), panel, 240, 0.9F);
+
+                        panel.onClose(e ->
+                        {
+                            BBSSettings.disabledSheets.set(disabledSet);
+                            this.updateChannelsList();
+                        });
+                    });
+                }
+            });
+
+            SpurGruppen.einfuegen(this.keyframeEditor.view, sheets);
+
+            Set<String> expandedPoseIds = this.expandedPoseTabsByReplay.getOrDefault(
+                this.replay == null ? "" : this.replay.getId(),
+                Collections.emptySet()
+            );
+            this.keyframeEditor.view.getDopeSheet().configurePoseTabs(poseTabs, poseTabDepths, expandedPoseIds);
+
+            this.add(this.keyframeEditor);
+            /* Bar over the track names column; camera listener LAST, see KameraSpurTasten. */
+            this.bringBarToFront();
+            KameraSpurTasten.anhaengen(this, this.filmPanel);
+            this.updateTimelineModeVisibility();
+        }
+
+        this.resize();
+
+        if (this.keyframeEditor != null && lastEditor == null)
+        {
+            this.keyframeEditor.view.resetView();
+        }
+    }
+
+    private void collectCuratedSheets(List<UIKeyframeSheet> sheets)
+    {
+        for (String key : ReplayKeyframes.CURATED_CHANNELS)
+        {
+            BaseValue value = this.replay.keyframes.get(key);
+            KeyframeChannel channel = (KeyframeChannel) value;
+
+            sheets.add(new UIKeyframeSheet(getColor(key), false, channel, null).icon(SpurFarben.icon(key)));
+        }
+    }
+
+    private void collectFormPropertySheets(List<UIKeyframeSheet> sheets, Map<UIKeyframeSheet, List<UIKeyframeSheet>> poseTabs, Map<UIKeyframeSheet, Integer> poseTabDepths)
+    {
+        Form lastForm = null;
+        List<UIKeyframeSheet> formSheets = new ArrayList<>();
+
+        for (String key : FormUtils.collectPropertyPaths(this.replay.form.get()))
+        {
+            KeyframeChannel property = this.replay.properties.getOrCreate(this.replay.form.get(), key);
+
+            if (property != null)
+            {
+                BaseValueBasic formProperty = FormUtils.getProperty(this.replay.form.get(), key);
+                Form form = formProperty.getParent() instanceof Form ? (Form) formProperty.getParent() : null;
+
+                if (form != lastForm)
+                {
+                    if (lastForm != null)
+                    {
+                        this.flushForm(sheets, formSheets, lastForm, poseTabs, poseTabDepths);
+                    }
+
+                    lastForm = form;
+                }
+
+                UIKeyframeSheet sheet = new UIKeyframeSheet(getColor(key), false, property, formProperty);
+
+                formSheets.add(sheet.icon(getIcon(key)));
+            }
+        }
+
+        if (lastForm != null)
+        {
+            this.flushForm(sheets, formSheets, lastForm, poseTabs, poseTabDepths);
+        }
+    }
+
+
+
+    /** Physics tracks live in their own category; like IK they are not form properties, so collect them by walking the form tree. */
+    private void collectPhysicsSheets(List<UIKeyframeSheet> sheets)
+    {
+        this.collectPhysicsSheets(sheets, this.replay.form.get());
+    }
+
+    private void collectPhysicsSheets(List<UIKeyframeSheet> sheets, Form form)
+    {
+        if (form == null)
+        {
+            return;
+        }
+
+        if (form instanceof ModelForm modelForm)
+        {
+            UIReplaysEditorUtils.addPhysicsControlSheet(modelForm, this.replay.properties, sheets);
+            UIReplaysEditorUtils.addWindControlSheet(modelForm, this.replay.properties, sheets);
+            UIReplaysEditorUtils.addPhysicsTargetSheets(modelForm, this.replay.properties, sheets);
+        }
+
+        for (BodyPart part : form.parts.getAllTyped())
+        {
+            this.collectPhysicsSheets(sheets, part.getForm());
+        }
+    }
+
+
+
+    /** Show the Physics tab only when the record actually has physics chains; bounce an active Physics category back to Model when it does not. */
+    private void updatePhysicsTab()
+    {
+        UIIcon button = this.tabButtons.get(ReplayCategory.PHYSICS);
+
+        if (button == null)
+        {
+            return;
+        }
+
+        boolean hasPhysics = this.formHasPhysics(this.replay.form.get());
+        boolean present = button.getParent() != null;
+
+        if (hasPhysics && !present)
+        {
+            this.iconBar.add(button);
+            this.iconBar.resize();
+        }
+        else if (!hasPhysics && present)
+        {
+            button.removeFromParent();
+            this.iconBar.resize();
+        }
+
+        if (!hasPhysics && this.category == ReplayCategory.PHYSICS)
+        {
+            this.category = ReplayCategory.MODEL;
+        }
+    }
+
+    private boolean formHasPhysics(Form form)
+    {
+        if (form == null)
+        {
+            return false;
+        }
+
+        if (form instanceof ModelForm modelForm && modelForm.physics.get() instanceof MapType map)
+        {
+            ModelPhysicsConfig config = ModelPhysicsIO.fromData(map);
+
+            if (config != null && config.bones() != null && !config.bones().isEmpty())
+            {
+                return true;
+            }
+        }
+
+        for (BodyPart part : form.parts.getAllTyped())
+        {
+            if (this.formHasPhysics(part.getForm()))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void flushForm(List<UIKeyframeSheet> sheets, List<UIKeyframeSheet> formSheets, Form form, Map<UIKeyframeSheet, List<UIKeyframeSheet>> poseTabs, Map<UIKeyframeSheet, Integer> poseTabDepths)
+    {
+        String path = FormUtils.getPath(form);
+        String poseId = path.isEmpty() ? "pose" : path + FormUtils.PATH_SEPARATOR + "pose";
+        UIKeyframeSheet poseSheet = null;
+
+        for (UIKeyframeSheet sheet : formSheets)
+        {
+            if (poseId.equals(sheet.id) && sheet.channel.getFactory() == KeyframeFactories.POSE)
+            {
+                poseSheet = sheet;
+                break;
+            }
+        }
+
+        List<UIKeyframeSheet> orderedFormSheets = new ArrayList<>(formSheets);
+        formSheets.clear();
+
+        if (form instanceof ModelForm modelForm)
+        {
+            List<UIKeyframeSheet> materialSheets = new ArrayList<>();
+            UIReplaysEditorUtils.addMaterialTextureSheets(modelForm, this.replay.properties, materialSheets);
+            orderedFormSheets.addAll(materialSheets);
+
+            List<UIKeyframeSheet> boneSheets = new ArrayList<>();
+            Map<String, Integer> depthBySheetId = new HashMap<>();
+            UIReplaysEditorUtils.addBoneTrackSheets(modelForm, this.replay.properties, boneSheets, depthBySheetId);
+
+            for (UIKeyframeSheet boneSheet : boneSheets)
+            {
+                Integer depth = depthBySheetId.get(boneSheet.id);
+                poseTabDepths.put(boneSheet, depth == null ? 0 : depth);
+            }
+
+            if (poseSheet != null && !boneSheets.isEmpty())
+            {
+                poseTabs.put(poseSheet, boneSheets);
+
+                int poseIndex = orderedFormSheets.indexOf(poseSheet);
+
+                if (poseIndex >= 0)
+                {
+                    orderedFormSheets.addAll(poseIndex + 1, boneSheets);
+                }
+                else
+                {
+                    orderedFormSheets.addAll(boneSheets);
+                }
+            }
+            else
+            {
+                orderedFormSheets.addAll(boneSheets);
+            }
+        }
+
+        sheets.addAll(orderedFormSheets);
+    }
+
+    private void savePoseTabState(Replay replay)
+    {
+        if (replay == null || this.keyframeEditor == null)
+        {
+            return;
+        }
+
+        this.expandedPoseTabsByReplay.put(replay.getId(), this.keyframeEditor.view.getDopeSheet().getExpandedPoseTabIds());
+    }
+
+    /** Position des Parameter-Panels wiederherstellen (z.B. nach Layout-Lock). */
+    public void refreshEditPanelOffset()
+    {
+        if (this.keyframeEditor != null)
+        {
+            this.keyframeEditor.refreshEditPanelOffset();
+        }
+
+        if (this.replaysList != null)
+        {
+            this.replaysList.refreshEditPanelOffset();
+        }
+
+        if (this.replayProperties != null)
+        {
+            this.replayProperties.refreshEditPanelOffset();
+        }
+    }
+
+    public void setTimelineVisible(boolean visible)
+    {
+        this.timelineVisible = visible;
+        this.updateTimelineModeVisibility();
+    }
+
+    public void setPropertiesVisible(boolean visible)
+    {
+        this.propertiesVisible = visible;
+        this.updateTimelineModeVisibility();
+    }
+
+    /** The action clips are a timeline mode of their own (ZeitleisteZweig.aktionenModus). */
+    private void updateTimelineModeVisibility()
+    {
+        if (this.keyframeEditor != null)
+        {
+            this.keyframeEditor.setTimelineVisible(this.timelineVisible);
+            this.keyframeEditor.setPropertiesVisible(this.propertiesVisible);
+        }
+    }
+
+    /** Keep the category bar above the timelines. */
+    private void bringBarToFront()
+    {
+        if (this.iconBar.getParent() != null)
+        {
+            this.iconBar.removeFromParent();
+        }
+
+        if (this.allToggle.getParent() != null)
+        {
+            this.allToggle.removeFromParent();
+        }
+
+        this.add(this.iconBar, this.allToggle);
+    }
+
+    /** Toggles an die Spurnamen-Spalte pinnen (iconBar schrumpft auf ihre Icons — Anker per Labelbreite). */
+    private void layoutBottomToggles()
+    {
+        this.allToggle.relative(this).x(0).y(1F, -20).wh(CATEGORY_BAR_WIDTH, 20);
+    }
+
+    public void pickForm(Form form, String bone)
+    {
+        this.pickFormBone(form, bone, false);
+    }
+
+    /** Viewport-Bone-Pick mit Shift/Ctrl-Gesten; auch der Gizmo-Kugel-Pick laeuft hierdurch. */
+    public void pickFormWithOffers(UIContext context, Form form, String bone)
+    {
+        UIReplaysEditorUtils.pickFormWithOffers(context, new Pair<>(form, bone), this::pickFormBone);
+    }
+
+    /** Bone-Pick = Pose-Edit: erst in POSE springen, sonst tut der Klick STILL nichts. */
+    private void pickFormBone(Form form, String bone, boolean insert)
+    {
+        if (form instanceof ModelForm && bone != null && !bone.isEmpty())
+        {
+            if (!this.allMode && this.category != ReplayCategory.POSE)
+            {
+                this.setCategory(ReplayCategory.POSE);
+            }
+        }
+
+        UIReplaysEditorUtils.pickForm(this.keyframeEditor, this.filmPanel, form, bone, insert);
+
+        /* Bone-Pick MUSS in einer Pose-Factory enden (fremde transform-Factory editierte die FORM). */
+        if (!insert && this.keyframeEditor != null && bone != null && !bone.isEmpty()
+            && !(this.keyframeEditor.editor instanceof mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory))
+        {
+            UIReplaysEditorUtils.pickForm(this.keyframeEditor, this.filmPanel, form, bone, true);
+        }
+    }
+
+    public boolean clickViewport(UIContext context, Area area)
+    {
+        /* Auf das Replay zufahren ist der Keybind FILM_CONTROLLER_ZOOM_TO_REPLAY (Vorgabe Maus 4). */
+        if (this.filmPanel.isFlying() && area.isInside(context))
+        {
+            if (context.mouseButton == 0 && this.filmPanel.getController().orbit.enabled)
+            {
+                this.filmPanel.getController().orbit.start(context);
+
+                return true;
+            }
+            if (context.mouseButton == 2)
+            {
+                this.filmPanel.dashboard.orbit.start(2, context.mouseX, context.mouseY);
+
+                return true;
+            }
+        }
+
+        if (this.filmPanel.isFlying())
+        {
+            return false;
+        }
+
+        if (area.isInside(context) && context.mouseButton == 2 && this.filmPanel.getController().orbit.enabled)
+        {
+            this.filmPanel.getController().orbit.start(context);
+
+            return true;
+        }
+
+        StencilFormFramebuffer stencil = this.filmPanel.getController().getStencil();
+        if (area.isInside(context) && mchorse.bbs_mod.cubic.render.RigFremd.klick(this.filmPanel, context, area, stencil.hasPicked())) return true;
+        /* Orbit: Links-Drag rotiert auch ueber Formen — Auswahl erst beim Release (Klick waehlt, Drag orbitet). */
+        if (area.isInside(context) && context.mouseButton == 0 && this.filmPanel.getController().orbit.enabled)
+        {
+            this.pendingPick = stencil.hasPicked() ? stencil.getPicked() : null;
+
+            /* Blender-Kanon: Drag AUF einem Control greift es (CtrlGriff), sonst Kamera. */
+            if (this.filmPanel.getController().istCtrlGriff())
+            {
+                this.ctrlGriff.merken(context);
+            }
+            else
+            {
+                this.filmPanel.getController().orbit.start(context);
+            }
+
+            return true;
+        }
+
+        if (stencil.hasPicked())
+        {
+            Pair<Form, String> pair = stencil.getPicked();
+
+            if (pair != null && (context.mouseButton < 2 || (context.mouseButton == 2 && Window.isCtrlPressed())))
+            {
+                /* ⛔ Kein Panelwechsel bei einer Viewport-Auswahl — siehe CtrlGriff.release. */
+                if (UIReplaysEditorUtils.pickFormWithOffers(context, pair, this::pickFormBone))
+                {
+                    return true;
+                }
+            }
+        }
+        else if (context.mouseButton == 1 && this.isVisible())
+        {
+            Level world = Minecraft.getInstance().level;
+            Camera camera = this.filmPanel.getCamera();
+
+            Vector3f rayOffset = new Vector3f();
+            Vector3f rayDirection = CameraUtils.getMouseRay(camera.projection, camera.view, context.mouseX, context.mouseY, area.x, area.y, area.w, area.h, rayOffset);
+
+            BlockHitResult blockHitResult = RayTracing.rayTrace(
+                world,
+                RayTracing.fromVector3d(new Vector3d(camera.position).add(rayOffset.x, rayOffset.y, rayOffset.z)),
+                RayTracing.fromVector3f(rayDirection),
+                256F
+            );
+
+            if (blockHitResult.getType() != HitResult.Type.MISS)
+            {
+                Vector3d vec = new Vector3d(blockHitResult.getLocation().x, blockHitResult.getLocation().y, blockHitResult.getLocation().z);
+
+                if (Window.isShiftPressed())
+                {
+                    vec = new Vector3d(Math.floor(vec.x) + 0.5D, Math.round(vec.y), Math.floor(vec.z) + 0.5D);
+                }
+
+                final Vector3d finalVec = vec;
+
+                context.replaceContextMenu(menu ->
+                {
+                    float pitch = 0F;
+                    float yaw = MathUtils.toDeg(camera.rotation.y);
+
+                    menu.action(Icons.ADD, UIKeys.FILM_REPLAY_CONTEXT_ADD, () -> this.replaysList.replays.addReplay(finalVec, pitch, yaw));
+                    menu.action(Icons.POINTER, UIKeys.FILM_REPLAY_CONTEXT_MOVE_HERE, () -> this.moveReplay(finalVec.x, finalVec.y, finalVec.z));
+                });
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Je Bild vom Controller gerufen — siehe {@link CtrlGriff}. */
+    public void foerdereCtrlDrag(UIContext context)
+    {
+        this.ctrlGriff.foerdere(this, context);
+    }
+
+    public void releaseViewport(UIContext context, boolean dragged)
+    {
+        Pair<Form, String> pending = this.pendingPick;
+
+        this.pendingPick = null;
+
+        if (this.ctrlGriff.release(this, context, pending))
+        {
+            return;
+        }
+
+        if (pending == null || dragged || context.mouseButton != 0)
+        {
+            return;
+        }
+
+        /* ⛔ Kein Panelwechsel bei einer Viewport-Auswahl — siehe CtrlGriff.release. */
+        UIReplaysEditorUtils.pickFormWithOffers(context, pending, this::pickFormBone);
+    }
+
+    public void close()
+    {
+        if (this.film != null)
+        {
+            lastFilm = this.film.getId();
+            Replay r = this.getReplay();
+
+            lastReplay = r == null ? 0 : this.film.replays.getList().indexOf(r);
+        }
+    }
+
+    public void teleport()
+    {
+        if (this.filmPanel.getData() == null)
+        {
+            return;
+        }
+
+        Replay replay = this.getReplay();
+
+        if (replay != null)
+        {
+            int tick = this.filmPanel.getCursor();
+            double x = replay.keyframes.x.interpolate(tick);
+            double y = replay.keyframes.y.interpolate(tick);
+            double z = replay.keyframes.z.interpolate(tick);
+            float yaw = replay.keyframes.yaw.interpolate(tick).floatValue();
+            float headYaw = replay.keyframes.headYaw.interpolate(tick).floatValue();
+            float bodyYaw = replay.keyframes.bodyYaw.interpolate(tick).floatValue();
+            float pitch = replay.keyframes.pitch.interpolate(tick).floatValue();
+            LocalPlayer player = Minecraft.getInstance().player;
+
+            PlayerUtils.teleport(x, y, z, headYaw, pitch);
+            player.setYRot(yaw);
+            player.setYHeadRot(headYaw);
+            player.setYBodyRot(bodyYaw);
+            player.setXRot(pitch);
+        }
+    }
+
+    @Override
+    public void render(UIContext context)
+    {
+        /* ⛔ Die Icon-Spalte bleibt UNSICHTBAR — die Filter sitzen im Kopf der Zeitleiste.
+         * Hier stand `setVisible(this.timelineVisible && notEditing)` und hat den
+         * Konstruktor-Aufruf bei JEDEM Bild wieder ueberschrieben: im Quelltext ausgeblendet,
+         * auf dem Schirm weiter da. Geladen bleibt sie, weil an ihren Knoepfen die Tooltips
+         * und die Tastenkuerzel REPLAYS_TAB_1..4 haengen. */
+        this.iconBar.setVisible(false);
+        this.allToggle.setVisible(false);
+
+        FilmGizmoDrag.configureFilmHotkeyDrag(this.filmPanel, context);
+
+        super.render(context);
+    }
+
+    @Override
+    public void resize()
+    {
+        super.resize();
+
+        this.layoutBottomToggles();
+    }
+
+    @Override
+    public void applyUndoData(MapType data)
+    {
+        super.applyUndoData(data);
+
+        List<Integer> selection = DataStorageUtils.intListFromData(data.getList("selection"));
+        List<Integer> currentIndices = this.replaysList.replays.getCurrentIndices();
+
+        this.setReplay(CollectionUtils.getSafe(this.film.replays.getList(), data.getInt("replay")), true, OrbitReaction.KEEP);
+
+        currentIndices.clear();
+        currentIndices.addAll(selection);
+        this.replaysList.replays.update();
+    }
+
+    @Override
+    public void collectUndoData(MapType data)
+    {
+        super.collectUndoData(data);
+
+        /* collectAllUndoData trifft den Editor auch VOR dem ersten Film-Laden (NPE 08-13). */
+        if (this.film == null)
+        {
+            return;
+        }
+
+        int index = this.film.replays.getList().indexOf(this.getReplay());
+
+        data.putInt("replay", index);
+        data.put("selection", DataStorageUtils.intListToData(this.replaysList.replays.getCurrentIndices()));
+    }
+
+    /** Orbit-Reaktion, wenn das gewaehlte Replay gesetzt wird. */
+    public enum OrbitReaction
+    {
+        /** Reset the orbit camera to its default position. */
+        RESET,
+        /** Treat it as a user switching replays — teleport the pivot onto the replay if the setting allows. */
+        SWITCH,
+        /** Leave the orbit camera untouched (used when restoring selection during undo/redo). */
+        KEEP
+    }
+}

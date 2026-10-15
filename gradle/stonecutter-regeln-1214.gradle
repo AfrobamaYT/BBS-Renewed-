@@ -1,0 +1,430 @@
+/* Stonecutter-Regeln fuer die Versionen vor 1.21.11 (1.21.4 und aelter). Eigene Datei, weil
+ * stonecutter-regeln.gradle ueber der Groessengrenze liegt; Mechanik und Fallen dort und in
+ * docs/MEHRVERSION.md (Rueckmuster NIE, erste Regel gewinnt, kein $ in Ersetzungen). */
+
+def NIE = "(?!)"
+
+stonecutter.parameters {
+	/* Vor 1.21.11 heisst Mojangs Identifier noch ResourceLocation. */
+	def vor12111 = eval(current.version, "<1.21.11")
+
+	/* Vor 1.21.5 fehlt Mojangs GPU-API; die Schicht src/compat/vor1215 stellt sie bereit. */
+	def vor1215 = eval(current.version, "<1.21.5")
+
+	/* Vor 1.21.2: Gegenstands-/Block-IDs, Schaden, Spawn-Gruende, Registerzugriff (Referenz: 9ac9b79d5). */
+	def vor1212 = eval(current.version, "<1.21.2")
+
+	/* Vor 1.20.5: keine typisierten Nutzlasten, keine ResourceLocation-Fabriken, keine Data Components. */
+	def vor1205 = eval(current.version, "<1.20.5")
+
+	/* Vor 1.20.2: kein ClientInformation/CommonListenerCookie, alte Block-/Projektil-API. */
+	def vor1202 = eval(current.version, "<1.20.2")
+
+	/* Vor 26.1 (1.21.11 und aelter). */
+	def vor261 = eval(current.version, "<26.1")
+
+	replacements {
+		regex(vor261) {
+			/* 1.21.11 kennt blitAndBlendToTexture nur mit der Farbsicht. */
+			replace("\\bframebuffer\\.blitAndBlendToTexture\\(haupt\\.getColorTextureView\\(\\), haupt\\.getDepthTextureView\\(\\)\\)", "framebuffer.blitAndBlendToTexture(haupt.getColorTextureView())", NIE, "framebuffer.blitAndBlendToTexture(haupt.getColorTextureView())")
+		}
+
+		/* 1.20.1. Wo eine vor1205-Regel denselben Text trifft, beginnen diese frueher. */
+		[["\\bimport net\\.minecraft\\.server\\.level\\.ClientInformation;", "import net.minecraft.network.protocol.game.ServerboundClientInformationPacket;"],
+		 ["\\bupdateOptions\\(ClientInformation (\\w+)\\)", "updateOptions(ServerboundClientInformationPacket \$1)"],
+		 [", ClientInformation\\.createDefault\\(\\)\\)", ")"],
+		 ["\\bClientInformation (\\w+) = ClientInformation\\.createDefault\\(\\);", "Object \$1 = null;"],
+		 ["\\bnew ServerPlayer\\(server, world, profile, options\\)", "new ServerPlayer(server, world, profile)"],
+		 ["\\bimport net\\.minecraft\\.server\\.network\\.CommonListenerCookie;", "import net.minecraft.server.network.ServerGamePacketListenerImpl;"],
+		 [", CommonListenerCookie\\.createInitial\\(player\\.getGameProfile\\(\\), false\\)\\)", ")"],
+		 ["\\bParticleTypes\\.DUST_PLUME\\b", "ParticleTypes.POOF"],
+		 ["\\.noTerrainParticles\\(\\)", ".noParticlesOnBreak()"],
+		 ["(getHitResultOnMoveVector\\([^,]+, [^,]+), ClipContext\\.Block\\.COLLIDER\\)", "\$1)"],
+		 ["\\.is\\(EntityTypeTags\\.DEFLECTS_PROJECTILES\\)", ".is(net.minecraft.world.entity.EntityType.ENDERMAN.builtInRegistryHolder().key())"],
+		 ["\\.tryCollapseToString\\(\\)", ".getString()"],
+		 ["(\\s)getCloneItemStack\\(LevelReader world, BlockPos pos, BlockState state, boolean includeData\\)", "\$1getCloneItemStack(net.minecraft.world.level.BlockGetter world, BlockPos pos, BlockState state)"],
+		 ["(ClipContext\\.Fluid\\.\\w+,\\s*)CollisionContext\\.empty\\(\\)", "\$1null"],
+		 /* Client 1.20.1. */
+		 ["\\bimport net\\.minecraft\\.util\\.ProblemReporter;", "import net.minecraft.nbt.CompoundTag;"],
+		 ["\\bimport com\\.mojang\\.blaze3d\\.audio\\.ListenerTransform;", "import net.minecraft.client.Camera;"],
+		 ["\\bListenerTransform transform = soundManager\\.getListenerTransform\\(\\);(\\s+)Vec3 position = transform\\.position\\(\\);(\\s+)Vec3 right = transform\\.right\\(\\);", "Camera bbsKamera = net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera();\$1Vec3 position = bbsKamera.getPosition();\$2Vec3 right = new Vec3(-bbsKamera.getLeftVector().x(), -bbsKamera.getLeftVector().y(), -bbsKamera.getLeftVector().z());"],
+		 ["\\bonPlaySound\\(SoundInstance instance, WeighedSoundEvents soundSet, float range\\)", "onPlaySound(SoundInstance instance, WeighedSoundEvents soundSet)"],
+		 ["\\bthis\\.capture\\(instance, range\\)", "this.capture(instance, Math.max(instance.getVolume(), 1F) * instance.getSound().getAttenuationDistance())"],
+		 ["\\bBlocks\\.SHORT_GRASS\\b", "Blocks.GRASS"],
+		 ["\\bbones\\.isEmpty\\(\\)", "(bones.size() == 0)"],
+		 ["\\.getCurrentSmoothedTickTime\\(\\)", ".getAverageTickTime()"],
+		 ["\\bNbtIo\\.readCompressed\\((\\w+), NbtAccounter\\.unlimitedHeap\\(\\)\\)", "NbtIo.readCompressed(\$1.toFile())"],
+		 /* Screen 1.20.1: Scrollen ohne horizontale Achse, renderBackground nur mit GuiGraphics. */
+		 ["\\bpublic boolean mouseScrolled\\(double (\\w+), double (\\w+), double \\w+, double (\\w+)\\)", "public boolean mouseScrolled(double \$1, double \$2, double \$3)"],
+		 ["\\(int\\) mouseY, horizontalAmount, verticalAmount\\)", "(int) mouseY, 0D, verticalAmount)"],
+		 ["\\bpublic void extractBackground\\(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta\\)", "public void renderBackground(GuiGraphics context)"],
+		 ["\\bMinecraft\\.getInstance\\(\\)\\.isGameLoadFinished\\(\\)", "(Minecraft.getInstance().getOverlay() == null)"],
+		 ["\\b(\\w+)\\.getDebugOverlay\\(\\)\\.showDebugScreen\\(\\)", "\$1.options.renderDebug"]].each { regel ->
+			regex(vor1202) {
+				replace(regel[0], regel[1], NIE, regel[1])
+			}
+		}
+
+		/* Netzwerk vor 1.20.5: Nutzlast statt CustomPacketPayload (gibt es dort mit anderer Form),
+		 * Fabric-Aufrufe ueber NetzServer/NetzClient auf die alte Kanal-API (src/compat/vor1205). */
+		[["\\bimport net\\.minecraft\\.network\\.protocol\\.common\\.custom\\.CustomPacketPayload;", "import mchorse.bbs_mod.compat.netz.Nutzlast;"],
+		 ["\\bCustomPacketPayload\\b", "Nutzlast"],
+		 ["\\bServerPlayNetworking\\.registerGlobalReceiver\\(", "mchorse.bbs_mod.compat.netz.NetzServer.empfangen("],
+		 ["\\bServerPlayNetworking\\.send\\(", "mchorse.bbs_mod.compat.netz.NetzServer.senden("],
+		 ["\\bpacketSender\\.sendPacket\\(", "mchorse.bbs_mod.compat.netz.NetzServer.senden(packetSender, "],
+		 ["\\bClientPlayNetworking\\.registerGlobalReceiver\\(", "mchorse.bbs_mod.compat.netz.NetzClient.empfangen("],
+		 ["\\bClientPlayNetworking\\.send\\(", "mchorse.bbs_mod.compat.netz.NetzClient.senden("],
+		 /* Beginnt ein Zeichen frueher als die Identifier-Umbenennung (gleicher Beginn: die spaeter
+		  * registrierte gewinnt). */
+		 /* Vertex-Bau vor 1.21: alte BufferBuilder-/Tesselator-API ueber BauerAlt (src/compat/vor1205). */
+		 ["\\bnew BufferBuilder\\(", "mchorse.bbs_mod.compat.vertex.BauerAlt.neu("],
+		 ["\\bTesselator\\.getInstance\\(\\)\\.begin\\(", "mchorse.bbs_mod.compat.vertex.BauerAlt.tesselator("],
+		 ["\\bBufferUploader\\.drawWithShader\\(", "mchorse.bbs_mod.compat.vertex.BauerAlt.zeichnen("],
+		 /* Eigene VertexConsumer: alte abstrakte Methoden ueber NeuerVertexVerbraucher. */
+		 ["\\b(class \\w+) implements VertexConsumer\\b(?!,)", "\$1 extends mchorse.bbs_mod.compat.vertex.NeuerVertexVerbraucher"],
+		 /* Modelview-Stapel ist vor 1.20.5 ein PoseStack (MatrixStapelAlt traegt die Matrix4fStack-Aufrufe). */
+		 ["\\bMatrix4fStack (\\w+) = RenderSystem\\.getModelViewStack\\(\\)", "com.mojang.blaze3d.vertex.PoseStack \$1 = RenderSystem.getModelViewStack()"],
+		 /* Zeit vor 1.21: Teilbild als float statt DeltaTracker. Beginnen vor den Umbenennungen. */
+		 ["\\b(GravityGunHud|BBSPerfHudRenderer|DebugOverlayHud)::onHudRender\\)", "(g, t) -> \$1.onHudRender(g, net.minecraft.client.DeltaTracker.Timer.SPIEL))"],
+		 ["\\btickDelta\\.getGameTimeDeltaPartialTick\\(false\\)", "tickDelta"],
+		 ["\\bBBSRenewedHud::render\\)", "(g, t) -> BBSRenewedHud.render(g, net.minecraft.client.DeltaTracker.Timer.SPIEL))"],
+		 ["\\bClientPlayNetworking\\.canSend\\((\\w+)\\.ID\\)", "ClientPlayNetworking.canSend(\$1.ID.id())"],
+		 /* Zeitgeber vor 1.21: net.minecraft.client.Timer (partialTick, tickDelta, advanceTime). */
+		 ["@Mixin\\(DeltaTracker\\.Timer\\.class\\)", "@Mixin(net.minecraft.client.Timer.class)"],
+		 ["@Accessor\\(\"deltaTickResidual\"\\)", "@Accessor(\"partialTick\")"],
+		 ["\\bdeltaTickResidual\\b", "partialTick"],
+		 ["\\bdeltaTicks\\b", "tickDelta"],
+		 ["\"advanceGameTime\"", "\"advanceTime\""],
+		 /* Trefferbox: vor 1.20.5 heisst die ueberschreibbare Methode getDimensions(Pose). */
+		 ["\\bmethod = \"getDefaultDimensions\"", "method = \"getDimensions\""],
+		 ["(bbstools\\\$renderClipViewportsBeforeMain\\()DeltaTracker tickCounter, ", "\$1"],
+		 ["(\"GameRendererPreviewPrePassLogik\", \"render\", )tickCounter\\)", "\$1net.minecraft.client.DeltaTracker.Timer.SPIEL)"],
+		 ["\\b(\\w+)\\.gui\\.hud\\.extractRenderState\\((\\w+), \\1\\.getDeltaTracker\\(\\)\\)", "\$1.gui.render(\$2, \$1.getFrameTime())"],
+		 ["\\b(\\w+)\\.gameRenderer\\.renderLevel\\(\\1\\.getDeltaTracker\\(\\)\\)", "\$1.gameRenderer.renderLevel(\$1.getFrameTime(), net.minecraft.Util.getNanos(), new com.mojang.blaze3d.vertex.PoseStack())"],
+		 /* Gegenstaende und Modelle vor 1.20.5. */
+		 ["\\bItemStack\\.isSameItemSameComponents\\(", "ItemStack.isSameItemSameTags("],
+		 ["(, )TypedEntityData\\.of\\([^,]+, (\\w+)\\.saveCustomOnly\\([^()]*\\(\\)\\)\\)", "\$1CustomData.of(\$2.saveWithId())"],
+		 ["(, )RenderTypes\\.LINES\\.format\\(\\)", "\$1com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR_NORMAL"],
+		 ["\\.compile\\((\\w+), (\\w+), ([\\w.]+), ([\\w.]+), -1\\)", ".compile(\$1, \$2, \$3, \$4, 1F, 1F, 1F, 1F)"],
+		 /* Sodium 0.5: Schreiber verlangen eine VertexFormatDescription. */
+		 ["(writer\\.push\\(\\w+, \\w+, \\w+, )(DefaultVertexFormat\\.\\w+)\\)", "\$1net.caffeinemc.mods.sodium.api.vertex.format.VertexFormatRegistry.instance().get(\$2))"],
+		 /* Sodium 0.5 / Iris 1.7: alte Paketnamen. Iris 1.7 kennt setIsMainBound nicht (Iris 1.8+). */
+		 ["\\bnet\\.caffeinemc\\.mods\\.sodium\\.client\\.", "me.jellysquid.mods.sodium.client."],
+		 ["\\bnet\\.irisshaders\\.iris\\.pbr\\.texture\\.PBRType\\b", "net.irisshaders.iris.texture.pbr.PBRType"],
+		 ["\\bnet\\.irisshaders\\.iris\\.pbr\\.loader\\.", "net.irisshaders.iris.texture.pbr.loader."],
+		 ["\\bnet\\.irisshaders\\.iris\\.pbr\\.TextureTracker\\b", "net.irisshaders.iris.texture.TextureTracker"],
+		 ["\\bpipeline\\.setIsMainBound\\(bound\\);", "java.util.Objects.requireNonNull(pipeline);"],
+		 ["\\bmatrices\\.last\\(\\)\\.copy\\(\\)", "mchorse.bbs_mod.compat.alt.AltApi.kopie(matrices.last())"],
+		 /* Java 17 (1.20.x beim Spieler): Java-20/21-Methoden ueber Java17, kein SequencedMap,
+		  * instanceof wieder als echte Typpruefung (vorher durch die Umbenennung unbedingt). */
+		 ["\\bMath\\.clamp\\(", "mchorse.bbs_mod.compat.main.Java17.clamp("],
+		 ["\\bFloat\\.float16ToFloat\\(", "mchorse.bbs_mod.compat.main.Java17.float16ToFloat("],
+		 ["\\bFloat\\.floatToFloat16\\(", "mchorse.bbs_mod.compat.main.Java17.floatToFloat16("],
+		 ["\\bimport java\\.util\\.SequencedMap;", "import java.util.Map;"],
+		 ["(instanceof )FrontendCommandEncoder\\b", "\$1com.mojang.blaze3d.opengl.GlCommandEncoder"],
+		 /* DataFixerUpper vor 1.20.5: Fehler heissen DataResult.PartialResult. */
+		 ["\\bDataResult\\.Error::message\\b", "DataResult.PartialResult::message"],
+		 /* Partikel vor 1.20.5: Lesen ueber das Partikel-Register, ENTITY_EFFECT ohne Farbe. */
+		 ["\\bParticleArgument\\.readParticle\\((\\w+), (\\w+)\\.registryAccess\\(\\)\\)", "ParticleArgument.readParticle(\$1, \$2.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.PARTICLE_TYPE))"],
+		 ["\\bColorParticleOption\\.create\\(ParticleTypes\\.ENTITY_EFFECT, ARGB\\.colorFromFloat\\([^()]*\\)\\)", "ParticleTypes.ENTITY_EFFECT"],
+		 ["\\bimport net\\.minecraft\\.core\\.particles\\.ColorParticleOption;", "import net.minecraft.core.particles.ParticleTypes;"],
+		 /* Welt zeichnen vor 1.21: Teilbild, Zeit, eigener PoseStack. */
+		 ["\\bgameRenderer\\.renderLevel\\(tickCounter\\)", "gameRenderer.renderLevel(tickCounter.getGameTimeDeltaPartialTick(false), net.minecraft.Util.getNanos(), new com.mojang.blaze3d.vertex.PoseStack())"],
+		 ["\\bmvStack,(\\s+null,\\s+null\\))", "mvStack.last().pose(),\$1"],
+		 /* Server und Mobs vor 1.20.5 (Companion). */
+		 ["\\.getServerDirectory\\(\\)", ".getServerDirectory().toPath()"],
+		 ["(\\w)\\.snapTo\\(new Vec3\\(([^()]*)\\), ", "\$1.moveTo(\$2, "],
+		 ["(,\\s+)EntitySpawnReason\\.COMMAND, null\\)", "\$1MobSpawnType.COMMAND, null, null)"],
+		 /* Schein-Verbindung: 1.20.4 prueft die Richtung in Connection#setListener (Spieler-Aktionen). */
+		 ["\\bpublic void setPacketListener\\(PacketListener packetListener\\)", "public void setListener(PacketListener packetListener)"],
+		 /* Block-Entitaeten vor 1.20.5: kein Registerzugriff beim Speichern/Laden, load statt loadAdditional. */
+		 ["\\.saveWithId\\([\\w.]+(?:\\(\\))?\\)", ".saveWithId()"],
+		 ["\\bgetUpdateTag\\(HolderLookup\\.Provider \\w+\\)", "getUpdateTag()"],
+		 ["\\bsaveAdditional\\(CompoundTag (\\w+), HolderLookup\\.Provider \\w+\\)", "saveAdditional(CompoundTag \$1)"],
+		 ["\\bsuper\\.saveAdditional\\((\\w+), \\w+\\)", "super.saveAdditional(\$1)"],
+		 ["\\bpublic void loadAdditional\\(CompoundTag (\\w+), HolderLookup\\.Provider \\w+\\)", "public void load(CompoundTag \$1)"],
+		 ["\\bsuper\\.loadAdditional\\((\\w+), \\w+\\)", "super.load(\$1)"],
+		 ["\\bBlockEntity\\.loadStatic\\(([^,]+), ([^,]+), ([^,]+), [^,()]+(?:\\(\\))?\\)", "BlockEntity.loadStatic(\$1, \$2, \$3)"],
+		 /* Entitaeten, Schaden, Bloecke vor 1.20.5. */
+		 ["\\bdefineSynchedData\\(net\\.minecraft\\.network\\.syncher\\.SynchedEntityData\\.Builder builder\\)", "defineSynchedData()"],
+		 ["\\.getAttribute\\(Attributes\\.STEP_HEIGHT\\)\\.setBaseValue\\(", ".setMaxUpStep("],
+		 ["\\.getUseDuration\\(\\w+\\)", ".getUseDuration()"],
+		 ["\\bvanilla\\.fixed\\(\\)", "vanilla.fixed"],
+		 ["\\bquelle\\.isDirect\\(\\)", "(!quelle.isIndirect())"],
+		 ["\\bEntityTypeTags\\.DEFLECTS_PROJECTILES\\b", "EntityTypeTags.DEFLECTS_ARROWS"],
+		 ["\\.igniteForSeconds\\(", ".setSecondsOnFire("],
+		 ["\\bowner\\.push\\((\\w+)\\)", "owner.push(\$1.x, \$1.y, \$1.z)"],
+		 ["\\bCommonListenerCookie\\.createInitial\\(([^,()]+(?:\\(\\))?), (?:true|false)\\)", "CommonListenerCookie.createInitial(\$1)"],
+		 ["\\.useWithoutItem\\(([^,]+), ([^,]+), ([^,)]+)\\)", ".use(\$1, \$2, net.minecraft.world.InteractionHand.MAIN_HAND, \$3)"],
+		 ["\\bpublic InteractionResult useWithoutItem\\(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult (\\w+)\\)", "public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult \$1)"]].each { regel ->
+			regex(vor1205) {
+				replace(regel[0], regel[1], NIE, regel[1])
+			}
+		}
+
+		[["(\\S)\\s*(?:\\.useBlockDescriptionPrefix\\(\\))?\\.setId\\((?:block|item)Key\\((?:[^()]|\\([^()]*\\))*\\)\\)", "\$1"],
+		 ["\\bbuilder\\.build\\(ResourceKey\\.create\\(Registries\\.ENTITY_TYPE, (\\w+)\\)\\)", "builder.build(\$1.toString())"],
+		 ["\\bBlockStateParser\\.parseForBlock\\(\\s*BuiltInRegistries\\.BLOCK,", "BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK.asLookup(),"],
+		 ["\\bpublic InteractionResult use\\(Level world, Player user, InteractionHand hand\\)", "public net.minecraft.world.InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand)\n    {\n        return new net.minecraft.world.InteractionResultHolder<>(this.bbsBenutzen(world, user, hand), user.getItemInHand(hand));\n    }\n\n    public InteractionResult bbsBenutzen(Level world, Player user, InteractionHand hand)"],
+		 ["\\bthis\\.applyEffectsFromBlocks\\(\\)", "this.checkInsideBlocks()"],
+		 ["\\.hurtServer\\([^,]+, ", ".hurt("],
+		 ["\\bgetCloneItemStack\\(LevelReader world, BlockPos pos, BlockState state, boolean includeData\\)", "getCloneItemStack(LevelReader world, BlockPos pos, BlockState state)"],
+		 ["\\bsuper\\.getCloneItemStack\\(world, pos, state, includeData\\)", "super.getCloneItemStack(world, pos, state)"],
+		 ["\\bpublic boolean propagatesSkylightDown\\(BlockState state\\)", "public boolean propagatesSkylightDown(BlockState state, net.minecraft.world.level.BlockGetter world, BlockPos pos)"],
+		 ["\\.kill\\(\\(ServerLevel\\) \\w+\\.level\\(\\)\\)", ".kill()"],
+		 ["\\.create\\(((?:[^(),]|\\([^()]*\\))+), new (?:net\\.minecraft\\.world\\.entity\\.)?EntitySpawnRequest\\([^()]*\\)\\)", ".create(\$1)"],
+		 ["(\\n)import net\\.minecraft\\.world\\.entity\\.EntitySpawnRequest;", "\$1import net.minecraft.world.entity.MobSpawnType;"],
+		 ["\\.create\\(((?:[\\w.]|\\(\\))+), EntitySpawnReason\\.\\w+\\)", ".create(\$1)"],
+		 ["\\bEntitySpawnReason\\.(\\w+)", "MobSpawnType.\$1"],
+		 ["\\bimport net\\.minecraft\\.world\\.entity\\.EntitySpawnReason;", "import net.minecraft.world.entity.MobSpawnType;"],
+		 ["\\.teleportTo\\(([^,]+), ([^,]+), ([^,]+), ([^,]+), java\\.util\\.Set\\.of\\(\\), ([^,]+), ([^,]+), false\\)", ".teleportTo(\$1, \$2, \$3, \$4, \$5, \$6)"],
+		 ["\\b(BuiltInRegistries\\.\\w+)\\.getValue\\(", "\$1.get("],
+		 ["\\blimbAnimator\\.update\\(([^,]+), ([^,]+), [^,()]+\\)", "limbAnimator.update(\$1, \$2)"],
+		 ["@Override\\s*public CommandSource commandSource\\(\\)\\s*\\{\\s*return SILENT_SOURCE;\\s*\\}", "@Override\n    public boolean shouldInformAdmins()\n    {\n        return false;\n    }\n\n    @Override\n    public boolean acceptsSuccess()\n    {\n        return false;\n    }"],
+		 ["\\bisInvulnerableTo\\(ServerLevel level, DamageSource damageSource\\)", "isInvulnerableTo(DamageSource damageSource)"],
+		 ["\\bonApplyDamage\\(net\\.minecraft\\.server\\.level\\.ServerLevel welt, ", "onApplyDamage("],
+		 /* FramerateLimitTracker erst ab 1.21.2; davor steht das Limit direkt in den Optionen. */
+		 ["\\.getFramerateLimitTracker\\(\\)\\.getFramerateLimit\\(\\)", ".options.framerateLimit().get()"],
+		 /* AbstractTexture#load(ResourceManager) ist vor 1.21.2 noch abstrakt. */
+		 ["(new AbstractTexture\\(\\)\\s*\\{)(\\s*\\};)", "\$1\n                @Override\n                public void load(net.minecraft.server.packs.resources.ResourceManager manager) {}\$2"],
+		 /* Zeit, Ziele, Projektion: 1.21.1 hat getTimer, TextureTarget mit clearError, nur die Sortierung. */
+		 ["\\.getDeltaTracker\\(\\)", ".getTimer()"],
+		 /* Beginnt frueher (Komma) als die vor261-Regel: bei gleichem Trefferbeginn gewann dort vor261, gemessen. */
+		 ["(,\\s*)(?:com\\.mojang\\.renderpearl\\.api\\.)?GpuFormat\\.RGBA8_UNORM, (?:com\\.mojang\\.renderpearl\\.api\\.)?GpuFormat\\.D32_FLOAT\\)", "\$1true, net.minecraft.client.Minecraft.ON_OSX)"],
+		 ["\\bRenderSystem\\.getProjectionType\\(\\)", "com.mojang.blaze3d.ProjectionType.von(RenderSystem.getVertexSorting())"],
+		 ["\\bRenderSystem\\.setProjectionMatrix\\((\\w+), art\\)", "RenderSystem.setProjectionMatrix(\$1, art.vertexSorting())"],
+		 ["\\b(\\w+)\\.getMinY\\(\\)", "\$1.getMinBuildHeight()"],
+		 ["\\bpublic int getMinY\\(\\)", "public int getMinBuildHeight()"],
+		 ["\\b(\\w+)\\.getMaxY\\(\\)", "\$1.getMaxBuildHeight()"],
+		 ["\\.kill\\(serverLevel\\)", ".kill()"],
+		 ["\\bton\\.location\\(\\)", "ton.getLocation()"],
+		 ["(EntitySchattenInvoker\\.bbs\\\$schatten\\(matrices, sammler\\.puffer\\(\\), )zustand,", "\$1entity,"],
+		 /* Weitere 1.21.2-Umbrueche: Partikel, Pixel (1.21.1 nur ABGR), Flaechen, Licht, Sichtfeld, Dispatcher. */
+		 ["\\.addParticle\\(([^,]+), true, false, ", ".addParticle(\$1, true, "],
+		 ["\\bframe\\.setPixel\\(x, y, strip\\.getPixel\\(x, y\\)\\)", "frame.setPixelRGBA(x, y, strip.getPixelRGBA(x, y))"],
+		 ["\\bimg\\.setPixel\\(x, y, packed\\)", "img.setPixelRGBA(x, y, net.minecraft.util.ARGB.toABGR(packed))"],
+		 ["\\bBlock\\.shouldRenderFace\\(state, (\\w+)\\.getBlockState\\((\\w+)\\), direction\\)", "Block.shouldRenderFace(state, \$1, pos, direction, \$2)"],
+		 ["\\bstate\\.getLightDampening\\(\\)", "state.getLightBlock(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, pos)"],
+		 ["\\.getFieldOfViewModifier\\(true, [^;]+?\\)\\)?;", ".getFieldOfViewModifier();"],
+		 ["\\bdispatcher\\.render\\(this\\.entity, 0D, 0D, 0D, teilTick, ", "dispatcher.render(this.entity, 0D, 0D, 0D, 0F, teilTick, "],
+		 ["\\bEntityRenderer<\\? super (\\w+), \\?>", "EntityRenderer<? super \$1>"],
+		 ["\\bint himmel = client\\.level\\.getSkyColor\\(wo, 1F\\);", "net.minecraft.world.phys.Vec3 himmelV = client.level.getSkyColor(wo, 1F); int himmel = net.minecraft.util.ARGB.colorFromFloat(1F, (float) himmelV.x, (float) himmelV.y, (float) himmelV.z);"],
+		 /* Gegenstands-Sonderzeichner vor 1.21.4: Fabrics BuiltinItemRendererRegistry wie bis 1.21.1. */
+		 ["\\bSpecialModelRenderersAccessor\\.bbs\\\$getIdMapper\\(\\)\\.put\\(\\s*Identifier\\.fromNamespaceAndPath\\(BBSMod\\.MOD_ID, \"model_block\"\\),\\s*ModelBlockSpecialRenderer\\.Unbaked\\.MAP_CODEC\\s*\\);", "net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.MODEL_BLOCK_ITEM, (stack, mode, pose, puffer, licht, overlay) ->\n        {\n            Item item = get(stack);\n\n            if (item != null) submit(item, mode, pose, new mchorse.bbs_mod.compat.gpu.SofortSammler(puffer), licht, overlay);\n        });"],
+		 ["\\bSpecialModelRenderersAccessor\\.bbs\\\$getIdMapper\\(\\)\\.put\\(\\s*Identifier\\.fromNamespaceAndPath\\(BBSMod\\.MOD_ID, \"gun\"\\),\\s*GunSpecialRenderer\\.Unbaked\\.MAP_CODEC\\s*\\);", "net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.GUN_ITEM, (stack, mode, pose, puffer, licht, overlay) ->\n        {\n            Item item = get(stack);\n\n            if (item != null) submit(item, mode, pose, new mchorse.bbs_mod.compat.gpu.SofortSammler(puffer), licht, overlay);\n        });"],
+		 ["\\bimport mchorse\\.bbs_mod\\.mixin\\.client\\.SpecialModelRenderersAccessor;", "import mchorse.bbs_mod.BBSMod;"],
+		 /* Gegenstandsform vor 1.21.4: ItemRenderer.renderStatic statt Gegenstands-Render-Zustand. */
+		 ["\\bItemStackRenderState zustand = new ItemStackRenderState\\(\\);\\s*mc\\.getItemModelResolver\\(\\)\\.updateForTopItem\\(zustand, ([^,]+), ([^,]+), (?:false, )?mc\\.level, null, 0\\);\\s*zustand\\.submit\\(stapel, consumers\\.sammler\\(\\), licht, overlay, 0\\);", "mc.getItemRenderer().renderStatic(\$1, \$2, licht, overlay, stapel, mchorse.bbs_mod.compat.gpu.SofortSammler.puffer(consumers.sammler()), mc.level, 0);"],
+		 ["\\bimport net\\.minecraft\\.client\\.renderer\\.item\\.ItemStackRenderState;", "import net.minecraft.client.renderer.entity.ItemRenderer;"],
+		 /* Model.root() gibt es vor 1.21.2 nur an hierarchischen Modellen (ModellWurzel, vor1212). */
+		 ["\\bModelPart root = model\\.root\\(\\);", "ModelPart root = mchorse.bbs_mod.compat.alt.ModellWurzel.von(model); if (root == null) return;"],
+		 /* Blender-Export vor 1.21.2: Textur und Pose direkt aus der Entitaet (kein Render-Zustand). */
+		 ["\\breturn model\\.root\\(\\);", "return mchorse.bbs_mod.compat.alt.ModellWurzel.von(model);"],
+		 ["\\bObject state = livingRenderer\\.createRenderState\\(living, 1\\.0F\\);\\s*if \\(!\\(state instanceof LivingEntityRenderState livingState\\)\\)\\s*\\{\\s*return null;\\s*\\}\\s*return livingRenderer\\.getTextureLocation\\(livingState\\);", "return livingRenderer.getTextureLocation(living);"],
+		 ["\\bObject state = livingRenderer\\.createRenderState\\(entity, 1\\.0F\\);\\s*if \\(!\\(state instanceof LivingEntityRenderState livingState\\)\\)\\s*\\{\\s*return;\\s*\\}\\s*model\\.setupAnim\\(livingState\\);", "net.minecraft.client.renderer.entity.state.LivingEntityRenderState livingState = (net.minecraft.client.renderer.entity.state.LivingEntityRenderState) mchorse.bbs_mod.compat.alt.Zustaende.fuer(entity, 1.0F, 15728880);\n\n        model.prepareMobModel(entity, livingState.walkAnimationPos, livingState.walkAnimationSpeed, 1.0F);\n        model.setupAnim(entity, livingState.walkAnimationPos, livingState.walkAnimationSpeed, livingState.ageInTicks, livingState.yRot, livingState.xRot);"],
+		 /* Textur-Animationen vor 1.21.2: AnimationMetadataSection ist kein Record. */
+		 ["\\bAnimationMetadataSection\\.TYPE\\b", "AnimationMetadataSection.SERIALIZER"],
+		 ["\\banim\\.defaultFrameTime\\(\\)", "anim.getDefaultFrameTime()"],
+		 ["\\banim\\.interpolatedFrames\\(\\)", "anim.isInterpolatedFrames()"],
+		 /* Eingabe vor 1.21.2: Tasten als Felder von client.player.Input, kein Input-Record. */
+		 ["\\bInput tasten = playerEntity\\.input\\.keyPresses;\\s*playerEntity\\.input\\.keyPresses = new Input\\([^;]*?, sneaking, [^;]*?\\);", "playerEntity.input.shiftKeyDown = sneaking;"],
+		 ["\\binput\\.keyPresses = new Input\\(vor, zurueck, links, rechts,\\s*([^;]+?),\\s*([^;]+?),\\s*input\\.keyPresses\\.sprint\\(\\)\\);", "input.up = vor; input.down = zurueck; input.left = links; input.right = rechts; input.jumping = \$1; input.shiftKeyDown = \$2;"],
+		 ["\\bimport net\\.minecraft\\.world\\.entity\\.player\\.Input;", "import net.minecraft.client.player.Input;"],
+		 ["\\bimport net\\.minecraft\\.client\\.player\\.ClientInput;", "import net.minecraft.client.player.Input;"],
+		 ["\\bextends ClientInput\\b", "extends Input"],
+		 /* Entity-Renderer mit Zustand gibt es erst ab 1.21.2: Bruecke ZustandsRenderer (vor1212). */
+		 ["\\bextends EntityRenderer<(\\w+), ([\\w.]+)>", "extends mchorse.bbs_mod.compat.alt.ZustandsRenderer<\$1, \$2>"]].each { regel ->
+			regex(vor1212) {
+				replace(regel[0], regel[1], NIE, regel[1])
+			}
+		}
+
+		[["(?:com\\.mojang\\.blaze3d\\.systems\\.)?\\bRenderSystem\\s*\\.getDevice\\(\\)", "mchorse.bbs_mod.compat.Geraet.get()"],
+		 ["(?:com\\.mojang\\.blaze3d\\.buffers\\.)?\\bGpuBuffer\\.USAGE_", "mchorse.bbs_mod.compat.gpu.PufferNutzung.USAGE_"],
+		 /* Vorgabe-Uniforms und Sampler von 1.21.6+ (src/compat/vor1215 Vorgaben). */
+		 ["(?:com\\.mojang\\.blaze3d\\.systems\\.)?\\bRenderSystem\\.getSamplerCache\\(\\)", "mchorse.bbs_mod.compat.gpu.Vorgaben.samplerCache()"],
+		 ["(?:com\\.mojang\\.blaze3d\\.systems\\.)?\\bRenderSystem\\.getDynamicUniforms\\(\\)", "mchorse.bbs_mod.compat.gpu.Vorgaben.dynamicUniforms()"],
+		 ["(?:com\\.mojang\\.blaze3d\\.systems\\.)?\\bRenderSystem\\.bindDefaultUniforms\\(", "mchorse.bbs_mod.compat.gpu.Vorgaben.bindDefaultUniforms("],
+		 ["(?:com\\.mojang\\.blaze3d\\.systems\\.)?\\bRenderSystem\\.getProjectionMatrixBuffer\\(\\)", "mchorse.bbs_mod.compat.gpu.Vorgaben.projektion()"],
+		 ["(?:com\\.mojang\\.blaze3d\\.systems\\.)?\\bRenderSystem\\.getShaderFog\\(\\)", "mchorse.bbs_mod.compat.gpu.Vorgaben.nebel()"],
+		 ["(?:com\\.mojang\\.blaze3d\\.systems\\.)?\\bRenderSystem\\.getShaderLights\\(\\)", "mchorse.bbs_mod.compat.gpu.Vorgaben.licht()"],
+		 ["(?:com\\.mojang\\.blaze3d\\.systems\\.)?\\bRenderSystem\\.setShaderLights\\(", "mchorse.bbs_mod.compat.gpu.Vorgaben.setzeLicht("],
+		 ["(?:com\\.mojang\\.blaze3d\\.systems\\.)?\\bRenderSystem\\.getGlobalSettingsUniform\\(\\)", "mchorse.bbs_mod.compat.gpu.Vorgaben.globalsPuffer()"],
+		 ["\\bRenderSystem\\.enableScissorForRenderTypeDraws\\(", "RenderSystem.enableScissor("],
+		 ["\\bRenderSystem\\.disableScissorForRenderTypeDraws\\(", "RenderSystem.disableScissor("],
+		 ["(?:com\\.mojang\\.blaze3d\\.platform\\.)?\\bLighting\\.UBO_SIZE\\b", "mchorse.bbs_mod.compat.gpu.Beleuchtung.UBO_SIZE"],
+		 ["\\bnet\\.minecraft\\.client\\.renderer\\.rendertype\\.RenderTypes\\.", "net.minecraft.client.renderer.RenderType."],
+		 /* TextureTarget hat vor 1.21.5 keinen Namen. */
+		 ["\\bnew ((?:com\\.mojang\\.blaze3d\\.pipeline\\.)?)TextureTarget\\(\\s*\"[^\"]*\",\\s*", "new \$1TextureTarget("],
+		 /* Lighting.Entry (verschachtelt in einer vorhandenen Klasse) -> Beleuchtung der Schicht. */
+		 ["(?:com\\.mojang\\.blaze3d\\.platform\\.)?\\bLighting\\.Entry\\b", "mchorse.bbs_mod.compat.gpu.Beleuchtung.Entry"],
+		 /* RenderType liegt vor 1.21.9 im Paket renderer, die Fabrikmethoden an RenderType selbst. */
+		 ["\\bnet\\.minecraft\\.client\\.renderer\\.rendertype\\.RenderTypes;", "net.minecraft.client.renderer.RenderType;"],
+		 ["\\bnet\\.minecraft\\.client\\.renderer\\.rendertype\\.RenderType\\b", "net.minecraft.client.renderer.RenderType"],
+		 ["\\bRenderTypes\\.", "RenderType."],
+		 /* GUI vor 1.21.6: Bild-im-Bild-Register und GUI-Abgabe der Schicht. */
+		 ["(?:net\\.fabricmc\\.fabric\\.api\\.client\\.rendering\\.v1\\.)?\\bPictureInPictureRendererRegistry\\.register\\(", "mchorse.bbs_mod.compat.gpu.BildImBildRegister.register("],
+		 ['\\(\\((?:mchorse\\.bbs_mod\\.mixin\\.client\\.)?GuiGraphicsExtractorAccessor\\) \\(Object\\) (.+?)\\)\\s*\\.bbs\\$getGuiRenderState\\(\\)', "net.minecraft.client.gui.render.state.GuiRenderState.von(\$1)"],
+		 ["\\bimport mchorse\\.bbs_mod\\.mixin\\.client\\.GuiGraphicsExtractorAccessor;", "import net.minecraft.client.gui.render.state.GuiRenderState;"],
+		 ["\\.setScreenAndShow\\(", ".setScreen("],
+		 /* GuiGraphics.pose() ist vor 1.21.6 ein PoseStack: 2D-Sicht der Schicht (Pose2D). */
+		 ["\\b(getContext\\(\\)|drawContext|this\\.context|draw|zeichner)\\.pose\\(\\)", "\$1.bbsPose()"],
+		 /* Fabrics Render-Zustandsdaten gibt es erst ab 1.21.9: Gegenstueck der Schicht. */
+		 ["\\bimport net\\.fabricmc\\.fabric\\.api\\.client\\.rendering\\.v1\\.FabricRenderState;", "import mchorse.bbs_mod.compat.gpu.ZustandsSchluessel;"],
+		 ["(?:net\\.fabricmc\\.fabric\\.api\\.client\\.rendering\\.v1\\.)?\\bRenderStateDataKey\\b", "mchorse.bbs_mod.compat.gpu.ZustandsSchluessel"],
+		 ["\\(\\((?:net\\.fabricmc\\.fabric\\.api\\.client\\.rendering\\.v1\\.)?FabricRenderState\\) (\\w+)\\)\\.(setData|getData)\\(", "mchorse.bbs_mod.compat.gpu.ZustandsSchluessel.\$2(\$1, "],
+		 /* Tastenkategorien vor 1.21.9 (vor der Identifier-Regel, sonst verliert sie die Ueberlappung): Uebersetzungsschluessel statt KeyMapping.Category. */
+		 ["\\bKeyMapping\\.Category\\.register\\(Identifier\\.fromNamespaceAndPath\\(\"(\\w+)\", \"(\\w+)\"\\)\\)", "\"category.\$1.\$2\""],
+		 ["\\bKeyMapping\\.Category\\b", "String"],
+		 /* Fabric-HUD vor 1.21.6: HudRenderCallback statt HudElementRegistry (gleiche Lambda-Form). */
+		 ["\\bHudElementRegistry\\.addLast\\(\\s*Identifier\\.fromNamespaceAndPath\\([^()]*\\),\\s*", "HudRenderCallback.EVENT.register("],
+		 ["\\bimport net\\.fabricmc\\.fabric\\.api\\.client\\.rendering\\.v1\\.hud\\.HudElementRegistry;", "import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;"],
+		 /* KeyMapping.matches nimmt vor 1.21.9 Taste und Scancode statt KeyEvent. */
+		 ["\\.matches\\(new KeyEvent\\(([^,()]+(?:\\(\\))?), ([^,()]+(?:\\(\\))?), 0\\)\\)", ".matches(\$1, \$2)"],
+		 /* updateForTopItem fragt vor 1.21.5 nach der linken Hand. */
+		 ["\\.updateForTopItem\\((\\w+), ([^,]+), ([^,]+), ", ".updateForTopItem(\$1, \$2, \$3, false, "],
+		 /* UVPair packt erst ab 1.21.5 (BakedQuadAlt). */
+		 ["\\bUVPair\\.unpack(U|V)\\(", "mchorse.bbs_mod.compat.BakedQuadAlt.unpack\$1("],
+		 /* GuiGraphics vor 1.21.6: zeichnet sofort in den Pufferquell, ohne GuiRenderState. */
+		 ["\\bnew GuiGraphicsExtractor\\((\\w+),\\s*\\(\\(mchorse\\.bbs_mod\\.mixin\\.client\\.GuiRenderStateAccessor\\) \\1\\.gui\\)\\.bbs\\\$getGuiRenderState\\(\\),\\s*[^;]+?\\);", "new net.minecraft.client.gui.GuiGraphics(\$1, \$1.renderBuffers().bufferSource());"],
+		 ["\\(\\(mchorse\\.bbs_mod\\.mixin\\.client\\.GuiRenderStateAccessor\\) \\w+\\.gui\\)\\.bbs\\\$getGuiRenderState\\(\\)", "null"],
+		 ["\\bsuper\\(minecraft, state, 0, 0\\);", "super(minecraft, minecraft.renderBuffers().bufferSource());"],
+		 /* Spieler-Renderer vor 1.21.9: PlayerRenderer/PlayerRenderState, Hand ueber MultiBufferSource. */
+		 ["\\bAvatarRenderer\\b", "PlayerRenderer"],
+		 ["\\bAvatarRenderState\\b", "PlayerRenderState"],
+		 ["(onRender(?:Right|Left)ArmBegin\\(PoseStack matrices, )SubmitNodeCollector sammler,", "\$1net.minecraft.client.renderer.MultiBufferSource puffer,"],
+		 ["\"arm\", matrices, sammler, ", "\"arm\", matrices, new mchorse.bbs_mod.compat.gpu.SofortSammler(puffer), "],
+		 /* Sonderzeichner vor 1.21.5: Unbaked ohne Typparameter, gebacken aus dem EntityModelSet. */
+		 ["\\bSpecialModelRenderer\\.Unbaked<[\\w.]+>", "SpecialModelRenderer.Unbaked"],
+		 ["\\bbake\\(SpecialModelRenderer\\.BakingContext kontext\\)", "bake(net.minecraft.client.model.geom.EntityModelSet kontext)"],
+		 /* END_MAIN ist vor 1.21.9 WorldRenderEvents.LAST, dessen Methode onLast heisst. */
+		 ["\\bpublic void endMain\\(", "public void onLast("],
+		 /* Ruestungszier vor 1.21.5: Atlas am ModelManager, Kennung wie 1.21.4s Renderer (TrimAlt). */
+		 ["\\bctx\\.getAtlas\\(net\\.minecraft\\.data\\.AtlasIds\\.ARMOR_TRIMS\\)", "ctx.getModelManager().getAtlas(net.minecraft.client.renderer.Sheets.ARMOR_TRIMS_SHEET)"],
+		 ["\\btrim\\.layerAssetId\\(layerType\\.trimAssetPrefix\\(\\), asset\\)", "mchorse.bbs_mod.compat.TrimAlt.textur(trim, layerType, asset)"],
+		 ["(\\w+)\\.root\\(\\)\\.getAllParts\\(\\)\\)", "\$1.root().getAllParts().toList())"],
+		 /* Eigene Abgabespeicher vor 1.21.9 zeichnen sich selbst (SubmitNodeStorage der Schicht). */
+		 ["\\bMinecraft\\.getInstance\\(\\)\\.gameRenderer\\.featureRenderDispatcher\\(\\)\\.renderAllFeatures\\((\\w+)\\);", "\$1.zeichnen();"],
+		 ["\\bimport net\\.minecraft\\.client\\.renderer\\.feature\\.FeatureRenderDispatcher;", "import net.minecraft.client.renderer.SubmitNodeStorage;"],
+		 /* LivingEntityRenderer.submit heisst vor 1.21.9 render(Zustand, Pose, Puffer, Licht). */
+		 ["\"submit\\(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;\\)V\"", "\"render(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V\""],
+		 ["\\(LivingEntityRenderState zustand, PoseStack matrices, SubmitNodeCollector sammler, CameraRenderState kamera, CallbackInfo ci\\)", "(LivingEntityRenderState zustand, PoseStack matrices, net.minecraft.client.renderer.MultiBufferSource puffer, int licht, CallbackInfo ci)"],
+		 /* Window.guiScale/setGuiScale sind vor 1.21.9 double (WindowMixin). */
+		 ["\\bprivate int guiScale;", "private double guiScale;"],
+		 ["\\bprivate int (bbs\\\$overrideScaleFactor)\\(int scaleFactor\\)", "private double \$1(double scaleFactor)"],
+		 ["\\bskalierung\\(\\s*scaleFactor,", "skalierung((int) scaleFactor,"],
+		 ["\\(original, this\\.guiScale\\)", "(original, (int) this.guiScale)"],
+		 /* LevelChunk.setBlockState nimmt vor 1.21.5 boolean (verschoben) statt Flags. */
+		 ["(\"setBlockState\\(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)I\\)", "\$1Z)"],
+		 ["\\(BlockPos pos, BlockState state, int flags, CallbackInfoReturnable<BlockState> info", "(BlockPos pos, BlockState state, boolean flags, CallbackInfoReturnable<BlockState> info"],
+		 /* Grafik-Lebensende vor 1.21.5: vor dem ersten Window.close in Minecraft.close. */
+		 ["target = \"Lcom/mojang/blaze3d/systems/RenderSystem;shutdownRenderer\\(\\)V\"", "target = \"Lcom/mojang/blaze3d/platform/Window;close()V\", ordinal = 0"],
+		 /* NBT-Getter vor 1.21.5 ohne Optional/Vorgabe (Schematic-Leser der Companion-Mod). */
+		 ["(\\w+)\\.getIntOr\\(([^,()]+), ([^()]+?)\\)", "(\$1.contains(\$2) ? \$1.getInt(\$2) : \$3)"],
+		 ["(\\w+)\\.getShortOr\\(([^,()]+), (\\(short\\) \\d+)\\)", "(\$1.contains(\$2) ? \$1.getShort(\$2) : \$3)"],
+		 ["(\\w+)\\.getCompound\\((\"[^\"]*\")\\)\\.orElse\\((\\w+)\\)", "(\$1.contains(\$2, 10) ? \$1.getCompound(\$2) : \$3)"],
+		 ["(\\w+)\\.getCompound\\((\"[^\"]*\")\\)\\.isPresent\\(\\)", "\$1.contains(\$2, 10)"],
+		 ["(\\w+)\\.get(Int|Byte)Array\\((\"[^\"]*\")\\)\\.orElse\\(new \\w+\\[0\\]\\)", "\$1.get\$2Array(\$3)"],
+		 ["\\bpaletteTag\\.keySet\\(\\)", "paletteTag.getAllKeys()"],
+		 ["\\.nameAndId\\(\\)\\.name\\(\\)", ".getGameProfile().getName()"],
+		 ["\\bnew net\\.minecraft\\.network\\.chat\\.ClickEvent\\.OpenUrl\\(java\\.net\\.URI\\.create\\((\\w+)\\)\\)", "new net.minecraft.network.chat.ClickEvent(net.minecraft.network.chat.ClickEvent.Action.OPEN_URL, \$1)"],
+		 /* Companion-Werkzeuge vor 1.21.5: synchrones Bildschirmfoto, Grafikmodus, Geraet. */
+		 ["\\bScreenshot\\.takeScreenshot\\(", "mchorse.bbs_mod.compat.BildschirmfotoAlt.takeScreenshot("],
+		 ["\\bRenderSystem\\.executePendingTasks\\(\\);", "{}"],
+		 ["\\.graphicsPreset\\(\\)", ".graphicsMode()"],
+		 ["\\bRenderSystem\\.tryGetDevice\\(\\)", "mchorse.bbs_mod.compat.Geraet.get()"],
+		 ["net\\.minecraft\\.client\\.Minecraft\\.getInstance\\(\\)\\s*\\.getFramerateLimitTracker\\(\\)\\.getThrottleReason\\(\\)", "\"keine Angabe vor 1.21.5\""],
+		 /* Mausereignis vor 1.21.9: mouseClicked(x, y, Taste), MouseHandler.onPress(Fenster, Taste, Aktion, Mods). */
+		 ["\\bpublic boolean mouseClicked\\(MouseButtonEvent ereignis, boolean doppelklick\\)(\\s*\\{)\\s*double mouseX = ereignis\\.x\\(\\);\\s*double mouseY = ereignis\\.y\\(\\);\\s*int button = ereignis\\.button\\(\\);", "public boolean mouseClicked(double mouseX, double mouseY, int button)\$1"],
+		 ["\\bsuper\\.mouseClicked\\(ereignis, doppelklick\\)", "super.mouseClicked(mouseX, mouseY, button)"],
+		 ["\\bimport net\\.minecraft\\.client\\.input\\.MouseButtonEvent;", "import net.minecraft.client.gui.screens.Screen;"],
+		 ["\\.setComponentTooltipForNextFrame\\(", ".renderComponentTooltip("],
+		 ["\\.getDeclaredMethod\\(\"onButton\", long\\.class, net\\.minecraft\\.client\\.input\\.MouseButtonInfo\\.class, int\\.class\\)", ".getDeclaredMethod(\"onPress\", long.class, int.class, int.class, int.class)"],
+		 ["\\bnet\\.minecraft\\.client\\.input\\.MouseButtonInfo info = new net\\.minecraft\\.client\\.input\\.MouseButtonInfo\\((\\w+), 0\\);", "int info = \$1;"],
+		 ["\\.invoke\\(mc\\.mouseHandler, fenster, info, (\\d)\\)", ".invoke(mc.mouseHandler, fenster, info, \$1, 0)"],
+		 /* Befehlsquellen pruefen vor 1.21.11 hasPermission(Stufe) (Spieler: hasPermissions, allgemeine Regel unten). */
+		 ["\\bs -> s\\.permissions\\(\\)\\.hasPermission\\((?:net\\.minecraft\\.server\\.permissions\\.)?Permissions\\.COMMANDS_GAMEMASTER\\)", "s -> s.hasPermission(2)"],
+		 /* ValueInput/ValueOutput erst ab 1.21.6: Entitaeten lesen und schreiben CompoundTag. */
+		 ["TagValueOutput (\\w+) = TagValueOutput\\.createWithContext\\(ProblemReporter\\.DISCARDING, [^;]+\\);\\s+([\\w.]+)\\.saveWithoutId\\(\\1\\);\\s+CompoundTag (\\w+) = \\1\\.buildResult\\(\\);", "CompoundTag \$3 = \$2.saveWithoutId(new CompoundTag());"],
+		 ["\\.load\\(TagValueInput\\.create\\(ProblemReporter\\.DISCARDING, [^,]+, (\\w+)\\)\\)", ".load(\$1)"],
+		 ["\\bimport net\\.minecraft\\.world\\.level\\.storage\\.TagValue(?:Input|Output);", "import net.minecraft.nbt.CompoundTag;"],
+		 /* GUI-Matrix vor 1.21.6 ist ein PoseStack. */
+		 ["\\bcontext\\.pose\\(\\)\\.pushMatrix\\(\\);", "context.pose().pushPose();"],
+		 ["\\bcontext\\.pose\\(\\)\\.popMatrix\\(\\);", "context.pose().popPose();"],
+		 ["\\bcontext\\.pose\\(\\)\\.scale\\(rest, rest\\);", "context.pose().scale(rest, rest, 1F);"],
+		 ["\\bframebuffer\\.blitAndBlendToTexture\\(haupt\\.getColorTextureView\\(\\), haupt\\.getDepthTextureView\\(\\)\\)", "mchorse.bbs_mod.compat.alt.AltApi.mischen(framebuffer, haupt)"],
+		 /* Datenversion vor 1.21.6: getDataVersion().getVersion(). */
+		 ["\\bSharedConstants\\.getCurrentVersion\\(\\)\\.dataVersion\\(\\)\\.version\\(\\)", "SharedConstants.getCurrentVersion().getDataVersion().getVersion()"],
+		 /* Client-Gametest 4.x (1.21.4): Weltkontext haengt direkt am Singleplayer-Context. */
+		 ["\\bwelt\\.getConnection\\(\\)\\.waitForChunksRender\\(\\)", "welt.getClientWorld().waitForChunksRender()"]].each { regel ->
+			regex(vor1215) {
+				replace(regel[0], regel[1], NIE, regel[1])
+			}
+		}
+
+		["IdentifierException": "ResourceLocationException", "Identifier": "ResourceLocation"].each { neu, alt ->
+			regex(vor12111) {
+				replace("\\b" + neu + "\\b", alt, NIE, neu)
+			}
+		}
+
+		/* Vor 1.20.5 keine ResourceLocation-Fabriken. Nach der Identifier-Umbenennung registriert:
+		 * bei gleichem Trefferbeginn gewinnt die spaeter registrierte Regel. */
+		regex(vor1205) {
+			replace("\\bIdentifier\\.(?:fromNamespaceAndPath|parse|withDefaultNamespace)\\(", "new ResourceLocation(", NIE, "new ResourceLocation(")
+			replace("\\bIdentifier::parse\\b", "ResourceLocation::new", NIE, "ResourceLocation::new")
+		}
+
+		/* Rechte: vor 1.21.11 eine Stufe (int) statt PermissionSet; GAMEMASTER = 2, OWNER = 4, ALL = 0.
+		 * Die spezielle Ueberschreibung zuerst, die erste passende Regel gewinnt. */
+		[["public PermissionSet permissions\\(\\)", "public int getPermissionLevel()"],
+		 ["\\bimport net\\.minecraft\\.server\\.permissions\\.\\w+;", "import net.minecraft.server.MinecraftServer;"],
+		 ["\\bLevelBasedPermissionSet\\.OWNER\\b", "4"],
+		 ["\\bLevelBasedPermissionSet\\.ALL\\b", "0"],
+		 ["\\bLevelBasedPermissionSet\\.GAMEMASTER\\b", "2"],
+		 ["\\bLevelBasedPermissionSet\\.MODERATOR\\b", "1"],
+		 ["\\bPermissionSet\\b", "int"],
+		 ["\\.permissions\\(\\)\\.hasPermission\\((?:net\\.minecraft\\.server\\.permissions\\.)?Permissions\\.COMMANDS_GAMEMASTER\\)", ".hasPermissions(2)"],
+		 ["\\bCommands\\.hasPermission\\((Commands\\.LEVEL_\\w+)\\)", "source -> source.hasPermission(\$1)"],
+		 ["\\.getPlainTextName\\(\\)", ".getName().getString()"],
+		 ["\\bnet\\.minecraft\\.world\\.entity\\.animal\\.equine\\.", "net.minecraft.world.entity.animal.horse."],
+		 ["\\bnet\\.minecraft\\.world\\.entity\\.npc\\.villager\\.", "net.minecraft.world.entity.npc."],
+		 /* Umgebungsattribute erst ab 1.21.11: Sonnenwinkel in Grad aus getTimeOfDay (Anteil 0..1). */
+		 ["\\b(\\w+)\\.environmentAttributes\\(\\)\\.getDimensionValue\\(EnvironmentAttributes\\.SUN_ANGLE\\)", "Float.valueOf(\$1.getTimeOfDay(1F) * 360F)"],
+		 ["\\bimport net\\.minecraft\\.world\\.attribute\\.EnvironmentAttributes;", "import net.minecraft.client.multiplayer.ClientLevel;"],
+		 ["\\bimport net\\.minecraft\\.world\\.item\\.component\\.SwingAnimation;", "import net.minecraft.world.InteractionHand;"],
+		 /* Spielregeln vor 1.21.11: GameRules in world.level, Werte ueber getRule(...).set. */
+		 ["\\bnet\\.minecraft\\.world\\.level\\.gamerules\\.GameRules\\b", "net.minecraft.world.level.GameRules"],
+		 ["(\\w+)\\.set\\(GameRules\\.ADVANCE_TIME, ", "\$1.getRule(GameRules.RULE_DAYLIGHT).set("],
+		 ["(\\w+)\\.set\\(GameRules\\.ADVANCE_WEATHER, ", "\$1.getRule(GameRules.RULE_WEATHER_CYCLE).set("],
+		 ["\\bnet\\.minecraft\\.world\\.entity\\.monster\\.zombie\\.", "net.minecraft.world.entity.monster."],
+		 /* 1.21.5 hat umbenannt: snapTo/moveTo, Inventar-Slot hinter Methoden, NBT-Getter mit Vorgabe. */
+		 ["\\.snapTo\\(", ".moveTo("],
+		 ["\\b(inventory|getInventory\\(\\))\\.getSelectedSlot\\(\\)", "\$1.selected"],
+		 /* authlib vor 1.21.9: GameProfile ist kein Record, Version mit getName(). */
+		 ["\\b(getGameProfile|getProfile)\\(\\)\\.name\\(\\)", "\$1().getName()"],
+		 ["\\b(getGameProfile|getProfile)\\(\\)\\.id\\(\\)", "\$1().getId()"],
+		 ["\\bgetCurrentVersion\\(\\)\\.name\\(\\)", "getCurrentVersion().getName()"],
+		 ["\\bMinecraft\\.getInstance\\(\\)\\.has(Alt|Control|Shift)Down\\(\\)", "net.minecraft.client.gui.screens.Screen.has\$1Down()"],
+		 ["\\bTagParser\\.parseCompoundAsArgument\\(", "mchorse.bbs_mod.compat.NbtAlt.parseCompoundAsArgument("],
+		 ["\\bnew DynamicTexture\\(\\w+::toString, ", "new DynamicTexture("],
+		 ["\\.setPermissions\\(", ".setPermissionLevel("],
+		 ["\\bServerLevel (\\w+) = (\\w+)\\.level\\(\\);", "ServerLevel \$1 = \$2.serverLevel();"],
+		 ["getInventory\\(\\)\\.setSelectedSlot\\((.+)\\);", "getInventory().selected = \$1;"],
+		 ["\\.getCompoundOrEmpty\\(", ".getCompound("],
+		 /* ResourceKey.identifier() hiess location(). */
+		 ["\\.identifier\\(\\)", ".location()"],
+		 ["\\bimport net\\.minecraft\\.world\\.item\\.component\\.TypedEntityData;", "import net.minecraft.world.item.component.CustomData;"],
+		 /* Blockdaten am Gegenstand: vor 1.21.9 CustomData mit "id" im Tag statt TypedEntityData. */
+		 ["(?:\\bnet\\.minecraft\\.world\\.item\\.component\\.)?\\bTypedEntityData<(?:net\\.minecraft\\.world\\.level\\.block\\.entity\\.)?BlockEntityType<\\?>>", "net.minecraft.world.item.component.CustomData"],
+		 ["\\bTypedEntityData\\.of\\((\\w+)\\.getType\\(\\), \\1\\.saveCustomOnly\\(([^()]*\\(\\))\\)\\)", "CustomData.of(\$1.saveWithId(\$2))"],
+		 ["\\.copyTagWithoutId\\(\\)", ".copyTag()"],
+		 ["\\bTypedEntityData\\.of\\(BBSMod\\.MODEL_BLOCK_ENTITY, (\\w+)\\)", "CustomData.of(\$1)"],
+		 /* ServerPlayer.level() liefert erst ab 1.21.6 eine ServerLevel. */
+		 ["((?:\\.play|sendPlayFilm)\\(player, )player\\.level\\(\\)", "\$1player.serverLevel()"]].each { regel ->
+			regex(vor12111) {
+				replace(regel[0], regel[1], NIE, regel[1])
+			}
+		}
+	}
+}

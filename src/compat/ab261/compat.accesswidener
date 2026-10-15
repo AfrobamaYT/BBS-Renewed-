@@ -1,0 +1,2 @@
+accessible method com/mojang/blaze3d/systems/CommandEncoder backend ()Lcom/mojang/blaze3d/systems/CommandEncoderBackend;
+accessible method com/mojang/blaze3d/systems/CommandEncoder isInRenderPass ()Z

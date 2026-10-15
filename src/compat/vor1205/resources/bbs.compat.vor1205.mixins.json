@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "mchorse.bbs_mod.compat.vertex.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "BufferBuilderVertexMixin",
+    "MinecraftZeitMixin",
+    "PoseStackMatrixMixin",
+    "VertexConsumerNeuMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
