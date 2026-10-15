@@ -1,0 +1,31 @@
+/* Stufen der Nachruestung (src/compat), von oben nach unten. Eine hoehere Stufe ersetzt
+ * gleichnamige Java-Dateien der tieferen, ihre weglassen.txt streicht Dateien der tieferen.
+ * vor1202 (vor 1.20.2) liegt ueber vor1205 (vor 1.20.5), das ueber vor1212 (vor 1.21.2), das ueber vor1215 (vor 1.21.5), das
+ * ueber vor261 (vor 26.1) liegt. */
+ext.compatStufen = { boolean vor261, boolean vor1215, boolean vor1212, boolean vor1205 = false, boolean vor1202 = false ->
+	vor1202 ? ["vor1202", "vor1205", "vor1212", "vor1215", "vor261"]
+		: vor1205 ? ["vor1205", "vor1212", "vor1215", "vor261"]
+		: vor1212 ? ["vor1212", "vor1215", "vor261"] : vor1215 ? ["vor1215", "vor261"] : [vor261 ? "vor261" : "ab261"]
+}
+
+/* Die Stufen, deren Ressourcen, Access Widener und injizierte Interfaces gelten: bis
+ * einschliesslich vor1215, dessen Dateien vollstaendig sind (vor261 darunter zaehlt dann nicht). */
+ext.compatVoll = { List<String> stufen ->
+	stufen.contains("vor1215") ? stufen.subList(0, stufen.indexOf("vor1215") + 1) : stufen.subList(0, 1)
+}
+
+/* Injizierte Interfaces dieser Stufen, je Zielklasse vereinigt. Eine hoehere Stufe nimmt eine
+ * Zielklasse mit ["-"] wieder heraus (vor 1.21.2 ist GpuBuffer ein eigener Shim, kein Minecraft). */
+ext.compatInjiziert = { List<String> stufen ->
+	def zusammen = [:]
+	compatVoll(stufen).reverse().each { name ->
+		def datei = rootProject.file("src/compat/" + name + "/injected_interfaces.json")
+		if (datei.exists()) {
+			new groovy.json.JsonSlurper().parse(datei).each { ziel, liste ->
+				if (liste == ["-"]) zusammen.remove(ziel)
+				else zusammen[ziel] = ((zusammen[ziel] ?: []) + liste).unique()
+			}
+		}
+	}
+	zusammen
+}

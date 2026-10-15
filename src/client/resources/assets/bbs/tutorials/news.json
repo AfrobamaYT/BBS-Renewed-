@@ -1,0 +1,13 @@
+{
+  "version": "26.3",
+  "items": [
+    {"title": "Help inside BBS", "text": "McHorse's guide plays right here, chapter by chapter. Shift+F1 opens the chapter for the editor you're in, or the short clip of the feature under the mouse. Show me points at where each feature lives now.", "clip": "help_inside_bbs"},
+    {"title": "Recording guide", "text": "Mark where and when each actor starts; the markers count the seconds down while you record.", "clip": "recording_guide"},
+    {"title": "Voice-over", "text": "Record your voice straight onto the film's timeline, also while a replay is recording.", "clip": "voice_over"},
+    {"title": "DaVinci Resolve tab", "text": "Resolve inside BBS with both timelines in step. Projects with your own timelines are never written to.", "clip": "resolve_tab"},
+    {"title": "Texture Studio", "text": "Paint a model's texture in Photopea with a live 3D preview beside it (needs the Rinku mod).", "clip": "texture_studio"},
+    {"title": "Held model block", "text": "Animate the model block in your first-person hand as its own Held replay.", "clip": "held_model_block"},
+    {"title": "Film tiles", "text": "Move the mouse across a film tile to scrub through the film.", "clip": "film_tile_scrubbing"},
+    {"title": "Smooth UI scale", "text": "The UI scale slider changes the size smoothly instead of in steps.", "clip": "smooth_ui_scale"}
+  ]
+}

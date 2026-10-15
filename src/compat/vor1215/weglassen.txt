@@ -1,0 +1,20 @@
+# vor261-Dateien, die vor 1.21.5 nicht kompiliert werden (Ziele gibt es dort nicht oder
+# der Shim in vor1215 erledigt es selbst). Gleichnamige Dateien in vor1215 ersetzen ohnehin.
+mchorse/bbs_mod/compat/mixin/RenderPipelineAltMixin.java
+mchorse/bbs_mod/compat/mixin/RenderPipelineGuiTopologieMixin.java
+mchorse/bbs_mod/compat/mixin/RenderPassAltMixin.java
+mchorse/bbs_mod/compat/mixin/GlRenderPassAltMixin.java
+mchorse/bbs_mod/compat/mixin/CommandEncoderAltMixin.java
+mchorse/bbs_mod/compat/mixin/GlCommandEncoderAltMixin.java
+mchorse/bbs_mod/compat/mixin/GpuDeviceAltMixin.java
+mchorse/bbs_mod/compat/mixin/GpuTextureAltMixin.java
+mchorse/bbs_mod/compat/mixin/GlBufferAltMixin.java
+mchorse/bbs_mod/compat/mixin/GlTextureViewAltMixin.java
+mchorse/bbs_mod/compat/GlBufferAlt.java
+mchorse/bbs_mod/compat/GlTextureViewAlt.java
+mchorse/bbs_mod/compat/mixin/DynamicUniformsAltMixin.java
+mchorse/bbs_mod/compat/mixin/CameraRenderStateAltMixin.java
+# GUI-Gegenstandsatlas gibt es erst ab 1.21.6; 1.21.4 zeichnet Gegenstaende direkt.
+mchorse/bbs_mod/mixin/client/GuiItemAtlasMixin.java
+# Gui haelt erst ab 1.21.6 einen GuiRenderState (Regeln in stonecutter-regeln-1214 ersetzen die Aufrufe).
+mchorse/bbs_mod/mixin/client/GuiRenderStateAccessor.java

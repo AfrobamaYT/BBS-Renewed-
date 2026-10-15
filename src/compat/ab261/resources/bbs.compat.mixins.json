@@ -1,0 +1,15 @@
+{
+    "required": true,
+    "package": "mchorse.bbs_mod.compat.mixin",
+    "compatibilityLevel": "JAVA_17",
+    "client": [
+        "PoseStackRotationsMixin",
+        "RenderPassTexturesMixin",
+        "RenderPipelineListsMixin",
+        "RenderPassDescriptorBuilderMixin",
+        "VulkanErstAb263Mixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

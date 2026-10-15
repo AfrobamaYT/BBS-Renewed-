@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- Served by BBS itself (HilfeKanal): YouTube refuses an embed without a referrer (Error 153,
+     measured 2026-10-14 in Rinku); a page with an https origin in reverse-DNS form sends one that
+     names the app, as YouTube's Required Minimum Functionality asks. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<style>html, body { margin: 0; height: 100%; overflow: hidden; background: #000; } #p { width: 100%; height: 100%; }</style>
+</head>
+<body>
+<div id="p"></div>
+<script>
+var q = new URLSearchParams(location.search), player = null, waiting = null, apiReady = false, start = q.get('wait') !== '1';
+
+/* Back to BBS: time, length, state, video. Nothing of ours is ever drawn over the player. */
+function bbsMelde(text) { if (window.bbsHilfeQuery) window.bbsHilfeQuery({request: text, onSuccess: function () {}, onFailure: function () {}}); }
+
+function bbsStand()
+{
+    if (!player || !player.getCurrentTime) return;
+
+    var data = player.getVideoData ? player.getVideoData() : null;
+
+    bbsMelde('z:' + player.getCurrentTime() + ':' + (player.getDuration() || 0) + ':' + player.getPlayerState() + ':' + (data ? data.video_id : ''));
+}
+
+/* With wait=1 (the one-time note before the guide) the player is only made on bbsStart(): until
+   then there is no YouTube player at all, the note stands instead of it. */
+function onYouTubeIframeAPIReady() { apiReady = true; if (start) bbsMake(); }
+function bbsStart() { start = true; if (apiReady && !player) bbsMake(); }
+
+function bbsMake()
+{
+    player = new YT.Player('p', {
+        videoId: q.get('v'),
+        host: 'https://www.youtube-nocookie.com',
+        playerVars: {start: +q.get('t') || 0, autoplay: 1, rel: 0, playsinline: 1, mute: q.get('mute') === '1' ? 1 : 0},
+        events: {
+            onReady: function () { if (waiting) { bbsSeek(waiting[0], waiting[1]); waiting = null; } bbsStand(); },
+            onStateChange: bbsStand,
+            onError: function (e) { bbsMelde('f:' + e.data); }
+        }
+    });
+    setInterval(bbsStand, 500);
+}
+
+/* A chapter: the same video only seeks, another one loads. */
+function bbsSeek(video, seconds)
+{
+    if (!player || !player.seekTo) { waiting = [video, seconds]; return; }
+
+    var data = player.getVideoData ? player.getVideoData() : null;
+
+    if (data && data.video_id === video) { player.seekTo(seconds, true); player.playVideo(); }
+    else { player.loadVideoById({videoId: video, startSeconds: seconds}); }
+}
+
+function bbsPlay() { if (player && player.playVideo) player.playVideo(); }
+function bbsPause() { if (player && player.pauseVideo) player.pauseVideo(); }
+function bbsRate(r) { if (player && player.setPlaybackRate) player.setPlaybackRate(r); }
+</script>
+<script src="https://www.youtube.com/iframe_api" onerror="bbsMelde('f:offline')"></script>
+</body>
+</html>
