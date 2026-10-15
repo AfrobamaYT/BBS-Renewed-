@@ -1,0 +1,4 @@
+# Eigene GL-Schicht vor 1.21.5 (src/compat/vor1215): noch keine Freigaben noetig.
+# Zier-Texturkennung wie 1.21.4s Ruestungsrenderer (TrimAlt)
+accessible class net/minecraft/client/renderer/entity/layers/EquipmentLayerRenderer$TrimSpriteKey
+accessible method net/minecraft/client/renderer/entity/layers/EquipmentLayerRenderer$TrimSpriteKey <init> (Lnet/minecraft/world/item/equipment/trim/ArmorTrim;Lnet/minecraft/client/resources/model/EquipmentClientInfo$LayerType;Lnet/minecraft/resources/ResourceKey;)V

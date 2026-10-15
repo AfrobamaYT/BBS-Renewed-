@@ -1,0 +1,49 @@
+/* Stonecutter-Regeln fuer Fabrics Welt-Render-API (aus stonecutter-regeln.gradle ausgelagert).
+ * 26.x: LevelRenderEvents/LevelRenderContext. Bis 1.21.11: WorldRenderContext (fabric-rendering-v1
+ * 16.x). Vor 1.21.9 (fabric-rendering-v1 10.x): anderer Kontext (matrixStack, consumers, kein
+ * Weltzustand, keine Abgabe-Warteschlange) und andere Phasen; die Schicht src/compat/vor1215
+ * liefert Weltzustand (GameRendererAlt) und Abgabe (SofortSammler). Rueckmuster: NIE. */
+
+def NIE = "(?!)"
+
+stonecutter.parameters {
+	def vor261 = eval(current.version, "<26.1")
+	def vor1219 = eval(current.version, "<1.21.9")
+
+	replacements {
+		/* Kontext-Methoden. */
+		def kontext = "\\b(context|ctx|worldRenderContext|renderContext|kontext)"
+		def methoden = vor1219
+			? [["poseStack", "\$1.matrixStack()"], ["submitNodeCollector", "new mchorse.bbs_mod.compat.gpu.SofortSammler(\$1.consumers())"],
+			   ["levelState", "\$1.gameRenderer().getLevelRenderState()"], ["levelRenderer", "\$1.worldRenderer()"]]
+			: [["poseStack", "\$1.matrices()"], ["submitNodeCollector", "\$1.commandQueue()"], ["levelState", "\$1.worldState()"],
+			   ["levelRenderer", "\$1.worldRenderer()"], ["sectionsToRender", "\$1.sectionState()"]]
+		methoden.each { paar ->
+			regex(vor261) {
+				replace(kontext + "\\." + paar[0] + "\\(\\)", paar[1], NIE, paar[0])
+			}
+		}
+
+		/* Ereignisse: Ticks heissen WORLD, die Welt-Render-Phasen anders (vor 1.21.9 noch einmal). */
+		def ereignisse = [["END_LEVEL_TICK", "END_WORLD_TICK"], ["START_LEVEL_TICK", "START_WORLD_TICK"],
+			["COLLECT_SUBMITS", "AFTER_ENTITIES"], ["CollectSubmits", "AfterEntities"],
+			["BEFORE_GIZMOS", "BEFORE_DEBUG_RENDER"], ["BeforeGizmos", "DebugRender"]]
+		ereignisse += vor1219
+			? [["AFTER_SOLID_FEATURES", "AFTER_ENTITIES"], ["AfterSolidFeatures", "AfterEntities"],
+			   ["AFTER_TRANSLUCENT_TERRAIN", "AFTER_TRANSLUCENT"], ["AfterTranslucentTerrain", "AfterTranslucent"],
+			   ["END_EXTRACTION", "AFTER_SETUP"], ["EndExtraction", "AfterSetup"],
+			   ["END_MAIN", "LAST"], ["EndMain", "Last"], ["START_MAIN", "START"], ["StartMain", "Start"]]
+			: [["AFTER_SOLID_FEATURES", "BEFORE_TRANSLUCENT"], ["AfterSolidFeatures", "BeforeTranslucent"],
+			   ["AFTER_TRANSLUCENT_TERRAIN", "END_MAIN"], ["AfterTranslucentTerrain", "EndMain"]]
+		ereignisse.each { paar ->
+			regex(vor261) {
+				replace("\\." + paar[0] + "\\b", "." + paar[1], NIE, "." + paar[0])
+			}
+		}
+
+		regex(vor261) {
+			replace("(?:net\\.fabricmc\\.fabric\\.api\\.client\\.rendering\\.v1\\.level\\.)?\\bLevelExtractionEvents\\b",
+				"net.fabricmc.fabric.api.client.rendering.v1." + (vor1219 ? "" : "world.") + "WorldRenderEvents", NIE, "LevelExtractionEvents")
+		}
+	}
+}

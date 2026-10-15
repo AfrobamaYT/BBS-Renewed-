@@ -1,0 +1,87 @@
+// Coded by Afrobama/Claude — Army System: hide-until-ready progressive reveal.
+//
+// THE idea (user request 2026-05-23): with smart/army caching ON, a replay
+// whose bone cache is NOT yet complete is not rendered at all. So you can drop
+// a 10k-replay crowd into a scene and pay ~0 render cost while the
+// BackgroundBaker fills caches AFK; each replay (or whole identical group, since
+// duplicates share one baked frame-map) POPS IN the instant its cache is full,
+// until the entire army is baked and visible. No FPS cliff during placement.
+//
+// This gates the NORMAL render path (BaseFilmController.renderEntity, per
+// replay) — works in the editor and during playback when the render-loop bypass
+// is off. The bypass path has its own readiness skip (it cancels render()
+// wholesale, so this HEAD inject never fires there).
+//
+// Only active when ENABLE_ARMY_BAKE is also on, so the default experience
+// (army bake off) is completely untouched. Actors and non-model forms are never
+// hidden (they aren't bakeable). Cancelling render is side-effect-free here:
+// the bake is driven independently by BackgroundBaker on the client tick.
+package com.afrobama.bbstools.client.mixin.bbs;
+
+import com.afrobama.bbstools.client.bbs.fastpath.AnimationBakeCache;
+import com.afrobama.bbstools.client.bbs.fastpath.ReplayBakeUtil;
+import com.afrobama.bbstools.perf.BBSPerfConfig;
+
+import mchorse.bbs_mod.film.BaseFilmController;
+import mchorse.bbs_mod.film.Film;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+@Mixin(value = BaseFilmController.class, remap = false)
+public abstract class BaseFilmControllerHideUntilReadyMixin
+{
+    @Shadow @Final public Film film;
+
+    @Inject(method = "renderEntity(Lnet/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext;Lmchorse/bbs_mod/film/replays/Replay;Lmchorse/bbs_mod/forms/entities/IEntity;)V",
+        at = @At("HEAD"), cancellable = true, remap = false)
+    private void bbstools$hideUntilReady(WorldRenderContext context, Replay replay, IEntity entity, CallbackInfo ci)
+    {
+        if (!BBSPerfConfig.ENABLE_ARMY_BAKE) return;
+        if (!BBSPerfConfig.ENABLE_BAKE_HIDE_UNTIL_READY) return;
+        if (replay == null || entity == null) return;
+        if (replay.actor.get()) return; /* actors are never baked → always visible */
+
+        /* NEVER hide the currently-SELECTED replay. It renders LIVE via the
+         * render-loop-bypass carve-out (which calls this very renderEntity), and
+         * editing it INVALIDATES its bake (unbind → cache bar red) → firstUncached
+         * Tick>=0 → this gate would cancel the carve-out → the replay vanished for
+         * 1-2s while editing (until re-baked). It doesn't need a bake to be drawn;
+         * skip the gate. Match by entity ref (carve-out's key) or uuid (stable). */
+        if (BBSPerfConfig.ENABLE_EDIT_LIVE)
+        {
+            if (entity == BBSPerfConfig.currentEntityRef) return;
+            String cur = BBSPerfConfig.currentReplayUuid;
+            if (cur != null)
+            {
+                try { if (cur.equals(replay.uuid.get())) return; } catch (Throwable ig) {}
+            }
+        }
+
+        Form form = entity.getForm();
+        if (!(form instanceof ModelForm)) return; /* only bakeable model forms are gated */
+
+        int camDur;
+        try { camDur = this.film.camera.calculateDuration(); }
+        catch (Throwable t) { camDur = 0; }
+
+        int expected = ReplayBakeUtil.expectedTicks(replay, camDur);
+        if (AnimationBakeCache.firstUncachedTick(entity, expected) >= 0)
+        {
+            /* Cache incomplete → keep this replay invisible until it's baked. */
+            BBSPerfConfig.hiddenUntilReady++;
+            ci.cancel();
+        }
+    }
+
+}

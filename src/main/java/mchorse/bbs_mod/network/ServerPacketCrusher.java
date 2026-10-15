@@ -1,0 +1,16 @@
+package mchorse.bbs_mod.network;
+
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+
+public class ServerPacketCrusher extends PacketCrusher
+{
+    @Override
+    protected void sendBuffer(Player entity, ResourceLocation identifier, FriendlyByteBuf buf)
+    {
+        mchorse.bbs_mod.compat.netz.NetzServer.senden((ServerPlayer) entity, ServerNetwork.BufPayload.from(buf, ServerNetwork.idFor(identifier)));
+    }
+}
