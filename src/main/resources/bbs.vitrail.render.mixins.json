@@ -1,0 +1,10 @@
+{
+  "required": true,
+  "package": "mchorse.bbs_mod.mixin.client.vitrail",
+  "compatibilityLevel": "JAVA_25",
+  "plugin": "mchorse.bbs_mod.mixin.client.vitrail.BbsVitrailMixinPlugin",
+  "client": ["BbsEntityDrawMixin",
+    "BbsModelVaoCaptureMixin", "BbsActorCollectionMixin", "BbsActorFrameCloseMixin",
+    "BbsEmissionStorageMixin", "BbsShadowGeometryMixin"],
+  "injectors": {"defaultRequire": 1}
+}

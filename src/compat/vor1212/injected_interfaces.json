@@ -1,0 +1,8 @@
+{
+    "com/mojang/blaze3d/buffers/GpuBuffer": [
+        "-"
+    ],
+    "net/minecraft/client/renderer/item/ItemStackRenderState": [
+        "-"
+    ]
+}

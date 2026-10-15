@@ -1,0 +1,920 @@
+/* Ersetzungsregeln fuer alle Versionsknoten — eingebunden von stonecutter.gradle (Mod) und
+ * dev/stonecutter.gradle (Companion), damit beide Baeume dieselbe Uebersetzung bekommen. */
+
+/* JSON durchlaeuft die Ersetzungen auch (fabric.mod.json, siehe "eingespritzt" unten);
+ * Kommentar-Bloecke gibt es in JSON nicht, nur die Ersetzungen greifen. */
+stonecutter.handlers {
+	inherit("java", "json", "vsh", "fsh", "glsl")
+}
+
+/* 26.3 hat GLFW durch SDL3 ersetzt: Tasten sind dort SDL-Scancodes, davor GLFW-Keycodes.
+ * Der eingecheckte Code schreibt SDLScancode.SDL_SCANCODE_*; vor 26.3 wird daraus beim
+ * Umschalten GLFW.GLFW_KEY_* — gleiche Taste, Wert der jeweiligen Version.
+ * Die Tabelle ist nicht geraten: sie folgt den Werten von Mojangs InputConstants.KEY_* in
+ * 26.3 (= SDL) und 26.2 (= GLFW); nur die sieben Tasten, die InputConstants nicht fuehrt,
+ * stehen nach der GLFW-Doku drin (KP_MINUS, KP_PERIOD, KP_DIVIDE, APPLICATION,
+ * INTERNATIONAL1/2, UNKNOWN). Code, der mit SDL-WERTEN rechnet (Bereiche, Altbestand-
+ * Umrechnung), braucht trotzdem einen eigenen `//? if`-Block. */
+def sdlZuGlfw = [
+	'0': '0', '1': '1', '2': '2', '3': '3', '4': '4', '5': '5',
+	'6': '6', '7': '7', '8': '8', '9': '9', 'A': 'A', 'APOSTROPHE': 'APOSTROPHE',
+	'APPLICATION': 'MENU', 'B': 'B', 'BACKSLASH': 'BACKSLASH', 'BACKSPACE': 'BACKSPACE', 'C': 'C', 'CAPSLOCK': 'CAPS_LOCK',
+	'COMMA': 'COMMA', 'D': 'D', 'DELETE': 'DELETE', 'DOWN': 'DOWN', 'E': 'E', 'END': 'END',
+	'EQUALS': 'EQUAL', 'ESCAPE': 'ESCAPE', 'F': 'F', 'F1': 'F1', 'F10': 'F10', 'F11': 'F11',
+	'F12': 'F12', 'F13': 'F13', 'F14': 'F14', 'F15': 'F15', 'F16': 'F16', 'F17': 'F17',
+	'F18': 'F18', 'F19': 'F19', 'F2': 'F2', 'F20': 'F20', 'F21': 'F21', 'F22': 'F22',
+	'F23': 'F23', 'F24': 'F24', 'F3': 'F3', 'F4': 'F4', 'F5': 'F5', 'F6': 'F6',
+	'F7': 'F7', 'F8': 'F8', 'F9': 'F9', 'G': 'G', 'GRAVE': 'GRAVE_ACCENT', 'H': 'H',
+	'HOME': 'HOME', 'I': 'I', 'INSERT': 'INSERT', 'INTERNATIONAL1': 'WORLD_1', 'INTERNATIONAL2': 'WORLD_2', 'J': 'J',
+	'K': 'K', 'KP_0': 'KP_0', 'KP_1': 'KP_1', 'KP_2': 'KP_2', 'KP_3': 'KP_3', 'KP_4': 'KP_4',
+	'KP_5': 'KP_5', 'KP_6': 'KP_6', 'KP_7': 'KP_7', 'KP_8': 'KP_8', 'KP_9': 'KP_9',
+	'KP_DIVIDE': 'KP_DIVIDE', 'KP_ENTER': 'KP_ENTER', 'KP_EQUALS': 'KP_EQUAL', 'KP_MINUS': 'KP_SUBTRACT', 'KP_MULTIPLY': 'KP_MULTIPLY', 'KP_PERIOD': 'KP_DECIMAL',
+	'KP_PLUS': 'KP_ADD', 'L': 'L', 'LALT': 'LEFT_ALT', 'LCTRL': 'LEFT_CONTROL', 'LEFT': 'LEFT', 'LEFTBRACKET': 'LEFT_BRACKET',
+	'LGUI': 'LEFT_SUPER', 'LSHIFT': 'LEFT_SHIFT', 'M': 'M', 'MINUS': 'MINUS', 'N': 'N', 'NUMLOCKCLEAR': 'NUM_LOCK',
+	'O': 'O', 'P': 'P', 'PAGEDOWN': 'PAGE_DOWN', 'PAGEUP': 'PAGE_UP', 'PAUSE': 'PAUSE', 'PERIOD': 'PERIOD',
+	'PRINTSCREEN': 'PRINT_SCREEN', 'Q': 'Q', 'R': 'R', 'RALT': 'RIGHT_ALT', 'RCTRL': 'RIGHT_CONTROL', 'RETURN': 'ENTER',
+	'RGUI': 'RIGHT_SUPER', 'RIGHT': 'RIGHT', 'RIGHTBRACKET': 'RIGHT_BRACKET', 'RSHIFT': 'RIGHT_SHIFT', 'S': 'S', 'SCROLLLOCK': 'SCROLL_LOCK',
+	'SEMICOLON': 'SEMICOLON', 'SLASH': 'SLASH', 'SPACE': 'SPACE', 'T': 'T', 'TAB': 'TAB', 'U': 'U',
+	'UNKNOWN': 'UNKNOWN', 'UP': 'UP', 'V': 'V', 'W': 'W', 'X': 'X', 'Y': 'Y',
+	'Z': 'Z'
+]
+
+/* 26.3 hat Mojangs Render-API aus com.mojang.blaze3d in die eigene Bibliothek
+ * com.mojang.renderpearl verschoben. 108 Klassen sind dabei nur UMGEZOGEN (gleicher Name, in
+ * 26.2 eindeutig vorhanden) — die stehen hier, abgeglichen aus den Klassenlisten beider
+ * Minecraft-Jars. Was sich in der FORM geaendert hat, braucht einen `//? if`-Block. */
+def renderpearlZuBlaze3d = [
+	'net.minecraft.client.renderer.DynamicGpuData': 'net.minecraft.client.renderer.DynamicUniforms',
+	'com.mojang.renderpearl.api.GpuFormat': 'com.mojang.blaze3d.GpuFormat',
+	'com.mojang.renderpearl.api.buffers.GpuBuffer': 'com.mojang.blaze3d.buffers.GpuBuffer',
+	'com.mojang.renderpearl.api.buffers.GpuBufferSlice': 'com.mojang.blaze3d.buffers.GpuBufferSlice',
+	'com.mojang.renderpearl.api.buffers.TransientMemory': 'com.mojang.blaze3d.systems.TransientMemory',
+	'com.mojang.renderpearl.api.commands.CommandEncoder': 'com.mojang.blaze3d.systems.CommandEncoder',
+	'com.mojang.renderpearl.api.commands.GpuFence': 'com.mojang.blaze3d.buffers.GpuFence',
+	'com.mojang.renderpearl.api.commands.GpuQuery': 'com.mojang.blaze3d.systems.GpuQuery',
+	'com.mojang.renderpearl.api.commands.GpuQueryPool': 'com.mojang.blaze3d.systems.GpuQueryPool',
+	'com.mojang.renderpearl.api.commands.RenderPass': 'com.mojang.blaze3d.systems.RenderPass',
+	'com.mojang.renderpearl.api.commands.RenderPassDescriptor': 'com.mojang.blaze3d.systems.RenderPassDescriptor',
+	'com.mojang.renderpearl.api.device.BackendCreationException': 'com.mojang.blaze3d.systems.BackendCreationException',
+	'com.mojang.renderpearl.api.device.DeviceFeatures': 'com.mojang.blaze3d.systems.DeviceFeatures',
+	'com.mojang.renderpearl.api.device.DeviceInfo': 'com.mojang.blaze3d.systems.DeviceInfo',
+	'com.mojang.renderpearl.api.device.DeviceLimits': 'com.mojang.blaze3d.systems.DeviceLimits',
+	'com.mojang.renderpearl.api.device.DeviceType': 'com.mojang.blaze3d.systems.DeviceType',
+	'com.mojang.renderpearl.api.device.GpuBackend': 'com.mojang.blaze3d.systems.GpuBackend',
+	'com.mojang.renderpearl.api.device.GpuDebugOptions': 'com.mojang.blaze3d.shaders.GpuDebugOptions',
+	'com.mojang.renderpearl.api.device.GpuDevice': 'com.mojang.blaze3d.systems.GpuDevice',
+	'com.mojang.renderpearl.api.device.GpuDeviceLossException': 'com.mojang.blaze3d.GpuDeviceLossException',
+	'com.mojang.renderpearl.api.device.GpuOutOfMemoryException': 'com.mojang.blaze3d.GpuOutOfMemoryException',
+	'com.mojang.renderpearl.api.device.GpuSurface': 'com.mojang.blaze3d.systems.GpuSurface',
+	'com.mojang.renderpearl.api.device.HintsAndWorkarounds': 'com.mojang.blaze3d.systems.HintsAndWorkarounds',
+	'com.mojang.renderpearl.api.device.SurfaceException': 'com.mojang.blaze3d.systems.SurfaceException',
+	'com.mojang.renderpearl.api.pipeline.BindGroupLayout': 'com.mojang.blaze3d.pipeline.BindGroupLayout',
+	'com.mojang.renderpearl.api.pipeline.BlendEquation': 'com.mojang.blaze3d.pipeline.BlendEquation',
+	'com.mojang.renderpearl.api.pipeline.BlendFactor': 'com.mojang.blaze3d.platform.BlendFactor',
+	'com.mojang.renderpearl.api.pipeline.BlendFunction': 'com.mojang.blaze3d.pipeline.BlendFunction',
+	'com.mojang.renderpearl.api.pipeline.BlendOp': 'com.mojang.blaze3d.platform.BlendOp',
+	'com.mojang.renderpearl.api.pipeline.ColorTargetState': 'com.mojang.blaze3d.pipeline.ColorTargetState',
+	'com.mojang.renderpearl.api.pipeline.CompareOp': 'com.mojang.blaze3d.platform.CompareOp',
+	'com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline': 'com.mojang.blaze3d.pipeline.CompiledRenderPipeline',
+	'com.mojang.renderpearl.api.pipeline.DepthStencilState': 'com.mojang.blaze3d.pipeline.DepthStencilState',
+	'com.mojang.renderpearl.api.pipeline.IndexType': 'com.mojang.blaze3d.IndexType',
+	'com.mojang.renderpearl.api.pipeline.PolygonMode': 'com.mojang.blaze3d.platform.PolygonMode',
+	'com.mojang.renderpearl.api.pipeline.PrimitiveTopology': 'com.mojang.blaze3d.PrimitiveTopology',
+	'com.mojang.renderpearl.api.pipeline.RenderPipeline': 'com.mojang.blaze3d.pipeline.RenderPipeline',
+	'com.mojang.renderpearl.api.pipeline.ShaderSource': 'com.mojang.blaze3d.shaders.ShaderSource',
+	'com.mojang.renderpearl.api.pipeline.ShaderType': 'com.mojang.blaze3d.shaders.ShaderType',
+	'com.mojang.renderpearl.api.pipeline.UniformType': 'com.mojang.blaze3d.shaders.UniformType',
+	'com.mojang.renderpearl.api.textures.AddressMode': 'com.mojang.blaze3d.textures.AddressMode',
+	'com.mojang.renderpearl.api.textures.FilterMode': 'com.mojang.blaze3d.textures.FilterMode',
+	'com.mojang.renderpearl.api.textures.GpuSampler': 'com.mojang.blaze3d.textures.GpuSampler',
+	'com.mojang.renderpearl.api.textures.GpuTexture': 'com.mojang.blaze3d.textures.GpuTexture',
+	'com.mojang.renderpearl.api.textures.GpuTextureView': 'com.mojang.blaze3d.textures.GpuTextureView',
+	'com.mojang.renderpearl.api.vertex.VertexFormat': 'com.mojang.blaze3d.vertex.VertexFormat',
+	'com.mojang.renderpearl.api.vertex.VertexFormatElement': 'com.mojang.blaze3d.vertex.VertexFormatElement',
+	'com.mojang.renderpearl.backend.api.CommandEncoderBackend': 'com.mojang.blaze3d.systems.CommandEncoderBackend',
+	'com.mojang.renderpearl.backend.api.GpuDeviceBackend': 'com.mojang.blaze3d.systems.GpuDeviceBackend',
+	'com.mojang.renderpearl.backend.api.GpuSurfaceBackend': 'com.mojang.blaze3d.systems.GpuSurfaceBackend',
+	'com.mojang.renderpearl.backend.api.RenderPassBackend': 'com.mojang.blaze3d.systems.RenderPassBackend',
+	'com.mojang.renderpearl.backend.opengl.BufferStorage': 'com.mojang.blaze3d.opengl.BufferStorage',
+	'com.mojang.renderpearl.backend.opengl.DirectStateAccess': 'com.mojang.blaze3d.opengl.DirectStateAccess',
+	'com.mojang.renderpearl.backend.opengl.FrameBufferAttachment': 'com.mojang.blaze3d.opengl.FrameBufferAttachment',
+	'com.mojang.renderpearl.backend.opengl.FrameBufferCache': 'com.mojang.blaze3d.opengl.FrameBufferCache',
+	'com.mojang.renderpearl.backend.opengl.GlBackend': 'com.mojang.blaze3d.opengl.GlBackend',
+	'com.mojang.renderpearl.backend.opengl.GlBuffer': 'com.mojang.blaze3d.opengl.GlBuffer',
+	'com.mojang.renderpearl.backend.opengl.GlCommandEncoder': 'com.mojang.blaze3d.opengl.GlCommandEncoder',
+	'com.mojang.renderpearl.backend.opengl.GlConst': 'com.mojang.blaze3d.opengl.GlConst',
+	'com.mojang.renderpearl.backend.opengl.GlDebug': 'com.mojang.blaze3d.opengl.GlDebug',
+	'com.mojang.renderpearl.backend.opengl.GlDebugLabel': 'com.mojang.blaze3d.opengl.GlDebugLabel',
+	'com.mojang.renderpearl.backend.opengl.GlDevice': 'com.mojang.blaze3d.opengl.GlDevice',
+	'com.mojang.renderpearl.backend.opengl.GlFence': 'com.mojang.blaze3d.opengl.GlFence',
+	'com.mojang.renderpearl.backend.opengl.GlHeuristics': 'com.mojang.blaze3d.opengl.GlHeuristics',
+	'com.mojang.renderpearl.backend.opengl.GlProgram': 'com.mojang.blaze3d.opengl.GlProgram',
+	'com.mojang.renderpearl.backend.opengl.GlQueryPool': 'com.mojang.blaze3d.opengl.GlQueryPool',
+	'com.mojang.renderpearl.backend.opengl.GlRenderPass': 'com.mojang.blaze3d.opengl.GlRenderPass',
+	'com.mojang.renderpearl.backend.opengl.GlRenderPipeline': 'com.mojang.blaze3d.opengl.GlRenderPipeline',
+	'com.mojang.renderpearl.backend.opengl.GlSampler': 'com.mojang.blaze3d.opengl.GlSampler',
+	'com.mojang.renderpearl.backend.opengl.GlShaderModule': 'com.mojang.blaze3d.opengl.GlShaderModule',
+	'com.mojang.renderpearl.backend.opengl.GlStateManager': 'com.mojang.blaze3d.opengl.GlStateManager',
+	'com.mojang.renderpearl.backend.opengl.GlSurface': 'com.mojang.blaze3d.opengl.GlSurface',
+	'com.mojang.renderpearl.backend.opengl.GlTexture': 'com.mojang.blaze3d.opengl.GlTexture',
+	'com.mojang.renderpearl.backend.opengl.GlTextureView': 'com.mojang.blaze3d.opengl.GlTextureView',
+	'com.mojang.renderpearl.backend.opengl.GlTransientMemory': 'com.mojang.blaze3d.opengl.GlTransientMemory',
+	'com.mojang.renderpearl.backend.opengl.GlUtil': 'com.mojang.blaze3d.opengl.GlUtil',
+	'com.mojang.renderpearl.backend.opengl.Uniform': 'com.mojang.blaze3d.opengl.Uniform',
+	'com.mojang.renderpearl.backend.util.TransientBlockAllocator': 'com.mojang.blaze3d.util.TransientBlockAllocator',
+	'com.mojang.renderpearl.backend.vulkan.Destroyable': 'com.mojang.blaze3d.vulkan.Destroyable',
+	'com.mojang.renderpearl.backend.vulkan.DestructionQueue': 'com.mojang.blaze3d.vulkan.DestructionQueue',
+	'com.mojang.renderpearl.backend.vulkan.VulkanBackend': 'com.mojang.blaze3d.vulkan.VulkanBackend',
+	'com.mojang.renderpearl.backend.vulkan.VulkanCommandEncoder': 'com.mojang.blaze3d.vulkan.VulkanCommandEncoder',
+	'com.mojang.renderpearl.backend.vulkan.VulkanCommandPool': 'com.mojang.blaze3d.vulkan.VulkanCommandPool',
+	'com.mojang.renderpearl.backend.vulkan.VulkanConst': 'com.mojang.blaze3d.vulkan.VulkanConst',
+	'com.mojang.renderpearl.backend.vulkan.VulkanDebug': 'com.mojang.blaze3d.vulkan.VulkanDebug',
+	'com.mojang.renderpearl.backend.vulkan.VulkanDevice': 'com.mojang.blaze3d.vulkan.VulkanDevice',
+	'com.mojang.renderpearl.backend.vulkan.VulkanGpuBuffer': 'com.mojang.blaze3d.vulkan.VulkanGpuBuffer',
+	'com.mojang.renderpearl.backend.vulkan.VulkanGpuSampler': 'com.mojang.blaze3d.vulkan.VulkanGpuSampler',
+	'com.mojang.renderpearl.backend.vulkan.VulkanGpuSurface': 'com.mojang.blaze3d.vulkan.VulkanGpuSurface',
+	'com.mojang.renderpearl.backend.vulkan.VulkanGpuTexture': 'com.mojang.blaze3d.vulkan.VulkanGpuTexture',
+	'com.mojang.renderpearl.backend.vulkan.VulkanGpuTextureView': 'com.mojang.blaze3d.vulkan.VulkanGpuTextureView',
+	'com.mojang.renderpearl.backend.vulkan.VulkanInstance': 'com.mojang.blaze3d.vulkan.VulkanInstance',
+	'com.mojang.renderpearl.backend.vulkan.VulkanPhysicalDevice': 'com.mojang.blaze3d.vulkan.VulkanPhysicalDevice',
+	'com.mojang.renderpearl.backend.vulkan.VulkanQueryPool': 'com.mojang.blaze3d.vulkan.VulkanQueryPool',
+	'com.mojang.renderpearl.backend.vulkan.VulkanQueue': 'com.mojang.blaze3d.vulkan.VulkanQueue',
+	'com.mojang.renderpearl.backend.vulkan.VulkanRenderPass': 'com.mojang.blaze3d.vulkan.VulkanRenderPass',
+	'com.mojang.renderpearl.backend.vulkan.VulkanRenderPipeline': 'com.mojang.blaze3d.vulkan.VulkanRenderPipeline',
+	'com.mojang.renderpearl.backend.vulkan.VulkanTransientMemory': 'com.mojang.blaze3d.vulkan.VulkanTransientMemory',
+	'com.mojang.renderpearl.backend.vulkan.VulkanUtils': 'com.mojang.blaze3d.vulkan.VulkanUtils',
+	'com.mojang.renderpearl.backend.vulkan.checkpoints.AbstractCheckpointStorage': 'com.mojang.blaze3d.vulkan.checkpoints.AbstractCheckpointStorage',
+	'com.mojang.renderpearl.backend.vulkan.checkpoints.AmdCheckpointExtension': 'com.mojang.blaze3d.vulkan.checkpoints.AmdCheckpointExtension',
+	'com.mojang.renderpearl.backend.vulkan.checkpoints.CheckpointExtension': 'com.mojang.blaze3d.vulkan.checkpoints.CheckpointExtension',
+	'com.mojang.renderpearl.backend.vulkan.checkpoints.NoopCheckpointExtension': 'com.mojang.blaze3d.vulkan.checkpoints.NoopCheckpointExtension',
+	'com.mojang.renderpearl.backend.vulkan.checkpoints.NvidiaCheckpointExtension': 'com.mojang.blaze3d.vulkan.checkpoints.NvidiaCheckpointExtension',
+	'com.mojang.renderpearl.backend.vulkan.init.VulkanFeature': 'com.mojang.blaze3d.vulkan.init.VulkanFeature',
+	'com.mojang.renderpearl.backend.vulkan.init.VulkanPNextStruct': 'com.mojang.blaze3d.vulkan.init.VulkanPNextStruct',
+	'com.mojang.renderpearl.frontend.TracyGpuProfiler': 'com.mojang.blaze3d.systems.TracyGpuProfiler',
+	'com.mojang.renderpearl.frontend.shaders.GlslCompiler': 'com.mojang.blaze3d.vulkan.glsl.GlslCompiler',
+	'com.mojang.renderpearl.util.ShaderCompileException': 'com.mojang.blaze3d.vulkan.glsl.ShaderCompileException',
+]
+
+/* 1.21.11 -> 26.1: die Klassen-Umbenennungen der Fabric-API stammen aus Fabrics eigener
+ * Migrationskarte (fabric-docs public/assets/develop/porting/fabric-api-26-1-migration-map.xml),
+ * die einfachen Namen nur dort, wo unser Code sie nutzt. Die verschobenen Mojang-Klassen sind
+ * aus den Klassenlisten der Jars 26.2 und 1.21.11 abgeglichen (gleicher Name, eindeutig).
+ * Angewandt NACH renderpearl->blaze3d: Stonecutter ersetzt der Reihe nach. */
+def fabricApiVor261 = [
+	'net.fabricmc.fabric.api.biome.v1.BiomeModificationContext.MobSpawnSettingsContext': 'net.fabricmc.fabric.api.biome.v1.BiomeModificationContext.SpawnSettingsContext',
+	'net.fabricmc.fabric.api.client.command.v2.ClientCommands': 'net.fabricmc.fabric.api.client.command.v2.ClientCommandManager',
+	'net.fabricmc.fabric.api.client.datagen.v1.builder.SoundTypeBuilder.RegistrationBuilder': 'net.fabricmc.fabric.api.client.datagen.v1.builder.SoundTypeBuilder.EntryBuilder',
+	'net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.EndLevelTick': 'net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.EndWorldTick',
+	'net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.StartLevelTick': 'net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.StartWorldTick',
+	'net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents.AfterClientLevelChange': 'net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents.AfterClientWorldChange',
+	'net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents': 'net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents',
+	'net.fabricmc.fabric.api.client.creativetab.v1.FabricCreativeModeInventoryScreen': 'net.fabricmc.fabric.api.client.itemgroup.v1.FabricCreativeInventoryScreen',
+	'net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper': 'net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper',
+	'net.fabricmc.fabric.api.client.model.loading.v1.FabricModelManager': 'net.fabricmc.fabric.api.client.model.loading.v1.FabricBakedModelManager',
+	'net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperUnbakedRootBlockStateModel': 'net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperUnbakedGroupedBlockStateModel',
+	'net.fabricmc.fabric.api.client.networking.v1.ServerboundConfigurationChannelEvents.Register': 'net.fabricmc.fabric.api.client.networking.v1.C2SConfigurationChannelEvents.Register',
+	'net.fabricmc.fabric.api.client.networking.v1.ServerboundConfigurationChannelEvents.Unregister': 'net.fabricmc.fabric.api.client.networking.v1.C2SConfigurationChannelEvents.Unregister',
+	'net.fabricmc.fabric.api.client.networking.v1.ServerboundConfigurationChannelEvents': 'net.fabricmc.fabric.api.client.networking.v1.C2SConfigurationChannelEvents',
+	'net.fabricmc.fabric.api.client.networking.v1.ServerboundPlayChannelEvents.Register': 'net.fabricmc.fabric.api.client.networking.v1.C2SPlayChannelEvents.Register',
+	'net.fabricmc.fabric.api.client.networking.v1.ServerboundPlayChannelEvents.Unregister': 'net.fabricmc.fabric.api.client.networking.v1.C2SPlayChannelEvents.Unregister',
+	'net.fabricmc.fabric.api.client.networking.v1.ServerboundPlayChannelEvents': 'net.fabricmc.fabric.api.client.networking.v1.C2SPlayChannelEvents',
+	'net.fabricmc.fabric.api.client.particle.v1.FabricSpriteSet': 'net.fabricmc.fabric.api.client.particle.v1.FabricSpriteProvider',
+	'net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry.PendingParticleProvider': 'net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry.PendingParticleFactory',
+	'net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry': 'net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry',
+	'net.fabricmc.fabric.api.client.particle.v1.ParticleRenderEvents.AllowTerrainParticleTint': 'net.fabricmc.fabric.api.client.particle.v1.ParticleRenderEvents.AllowBlockDustTint',
+	'net.fabricmc.fabric.api.client.particle.v1.ParticleGroupRegistry': 'net.fabricmc.fabric.api.client.particle.v1.ParticleRendererRegistry',
+	'net.fabricmc.fabric.api.client.rendering.v1.SpriteSourceRegistry': 'net.fabricmc.fabric.api.client.rendering.v1.AtlasSourceRegistry',
+	'net.fabricmc.fabric.api.client.rendering.v1.ChunkSectionLayerMap': 'net.fabricmc.fabric.api.client.rendering.v1.BlockRenderLayerMap',
+	'net.fabricmc.fabric.api.client.rendering.v1.RenderItemDecorationsCallback': 'net.fabricmc.fabric.api.client.rendering.v1.DrawItemStackOverlayCallback',
+	'net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry.TexturedArmorModelSetProvider': 'net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry.TexturedEquipmentModelDataProvider',
+	'net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry.TexturedLayerDefinitionProvider': 'net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry.TexturedModelDataProvider',
+	'net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry': 'net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry',
+	'net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback.RegistrationHelper': 'net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback.RegistrationHelper',
+	'net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback': 'net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback',
+	'net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry.Context': 'net.fabricmc.fabric.api.client.rendering.v1.SpecialGuiElementRegistry.Context',
+	'net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry.Factory': 'net.fabricmc.fabric.api.client.rendering.v1.SpecialGuiElementRegistry.Factory',
+	'net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry': 'net.fabricmc.fabric.api.client.rendering.v1.SpecialGuiElementRegistry',
+	'net.fabricmc.fabric.api.client.rendering.v1.ClientTooltipComponentCallback': 'net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.AbstractLevelRenderContext': 'net.fabricmc.fabric.api.client.rendering.v1.world.AbstractWorldRenderContext',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldExtractionContext',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.AfterBlockOutlineExtraction': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.AfterBlockOutlineExtraction',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.AfterEntities': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.AfterEntities',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.BeforeBlockOutline': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.BeforeBlockOutline',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.BeforeEntities': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.BeforeEntities',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.BeforeTranslucent': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.BeforeTranslucent',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.DebugRender': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.DebugRender',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.EndExtraction': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.EndExtraction',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.EndMain': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.EndMain',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.StartMain': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.StartMain',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents',
+	'net.fabricmc.fabric.api.client.rendering.v1.level.LevelTerrainRenderContext': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldTerrainRenderContext',
+	'net.fabricmc.fabric.api.command.v2.FabricEntitySelectorParser': 'net.fabricmc.fabric.api.command.v2.FabricEntitySelectorReader',
+	'net.fabricmc.fabric.api.datagen.v1.FabricPackOutput': 'net.fabricmc.fabric.api.datagen.v1.FabricDataOutput',
+	'net.fabricmc.fabric.api.datagen.v1.loot.FabricBlockLootSubProvider': 'net.fabricmc.fabric.api.datagen.v1.loot.FabricBlockLootTableGenerator',
+	'net.fabricmc.fabric.api.datagen.v1.loot.FabricEntityLootSubProvider': 'net.fabricmc.fabric.api.datagen.v1.loot.FabricEntityLootTableGenerator',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootSubProvider': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootTableProvider',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricEntityLootSubProvider': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricEntityLootTableProvider',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricLootTableSubProvider': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricLootTableProvider',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagAppender': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricProvidedTagBuilder',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider.AliasGroupBuilder': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider.AliasGroupBuilder',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider.BlockEntityTypeTagsProvider': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider.BlockEntityTypeTagProvider',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider.BlockTagsProvider': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider.BlockTagProvider',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider.EntityTypeTagsProvider': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider.EntityTypeTagProvider',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider.FabricIntrinsicHolderTagsProvider': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider.FabricValueLookupTagProvider',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider.FluidTagsProvider': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider.FluidTagProvider',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider.ItemTagsProvider': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider.ItemTagProvider',
+	'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider': 'net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider',
+	'net.fabricmc.fabric.api.datagen.v1.provider.SimpleFabricLootTableSubProvider': 'net.fabricmc.fabric.api.datagen.v1.provider.SimpleFabricLootTableProvider',
+	'net.fabricmc.fabric.api.datagen.v1.recipe.FabricRecipeOutput': 'net.fabricmc.fabric.api.datagen.v1.recipe.FabricRecipeExporter',
+	'net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AfterEntityChange': 'net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents.AfterEntityChange',
+	'net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents.AfterPlayerChange': 'net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents.AfterPlayerChange',
+	'net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents': 'net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents',
+	'net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents.FullChunkStatusChange': 'net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents.LevelTypeChange',
+	'net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.EndLevelTick': 'net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.EndWorldTick',
+	'net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.StartLevelTick': 'net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.StartWorldTick',
+	'net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents.Load': 'net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents.Load',
+	'net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents.Unload': 'net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents.Unload',
+	'net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents': 'net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents',
+	'net.fabricmc.fabric.api.gamerule.v1.FabricGameRuleTypeVisitor': 'net.fabricmc.fabric.api.gamerule.v1.FabricGameRuleVisitor',
+	'net.fabricmc.fabric.api.item.v1.ItemComponentTooltipProviderRegistry': 'net.fabricmc.fabric.api.item.v1.ComponentTooltipAppenderRegistry',
+	'net.fabricmc.fabric.api.item.v1.FabricItem.Properties': 'net.fabricmc.fabric.api.item.v1.FabricItem.Settings',
+	'net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab': 'net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup',
+	'net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTabOutput.1': 'net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroupEntries.1',
+	'net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTabOutput': 'net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroupEntries',
+	'net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents.ModifyOutput': 'net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents.ModifyEntries',
+	'net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents.ModifyOutputAll': 'net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents.ModifyEntriesAll',
+	'net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents': 'net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents',
+	'net.fabricmc.fabric.api.networking.v1.FabricServerConfigurationPacketListenerImpl': 'net.fabricmc.fabric.api.networking.v1.FabricServerConfigurationNetworkHandler',
+	'net.fabricmc.fabric.api.networking.v1.FriendlyByteBufs': 'net.fabricmc.fabric.api.networking.v1.PacketByteBufs',
+	'net.fabricmc.fabric.api.networking.v1.ClientboundConfigurationChannelEvents.Register': 'net.fabricmc.fabric.api.networking.v1.S2CConfigurationChannelEvents.Register',
+	'net.fabricmc.fabric.api.networking.v1.ClientboundConfigurationChannelEvents.Unregister': 'net.fabricmc.fabric.api.networking.v1.S2CConfigurationChannelEvents.Unregister',
+	'net.fabricmc.fabric.api.networking.v1.ClientboundConfigurationChannelEvents': 'net.fabricmc.fabric.api.networking.v1.S2CConfigurationChannelEvents',
+	'net.fabricmc.fabric.api.networking.v1.ClientboundPlayChannelEvents.Register': 'net.fabricmc.fabric.api.networking.v1.S2CPlayChannelEvents.Register',
+	'net.fabricmc.fabric.api.networking.v1.ClientboundPlayChannelEvents.Unregister': 'net.fabricmc.fabric.api.networking.v1.S2CPlayChannelEvents.Unregister',
+	'net.fabricmc.fabric.api.networking.v1.ClientboundPlayChannelEvents': 'net.fabricmc.fabric.api.networking.v1.S2CPlayChannelEvents',
+	'net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityDataRegistry': 'net.fabricmc.fabric.api.object.builder.v1.entity.FabricTrackedDataRegistry',
+	'net.fabricmc.fabric.api.object.builder.v1.world.poi.PoiHelper': 'net.fabricmc.fabric.api.object.builder.v1.world.poi.PointOfInterestHelper',
+	'net.fabricmc.fabric.api.particle.v1.FabricBlockParticleOption': 'net.fabricmc.fabric.api.particle.v1.FabricBlockStateParticleEffect',
+	'net.fabricmc.fabric.api.recipe.v1.FabricRecipeAccess': 'net.fabricmc.fabric.api.recipe.v1.FabricRecipeManager',
+	'net.fabricmc.fabric.api.recipe.v1.FabricRecipeManager': 'net.fabricmc.fabric.api.recipe.v1.FabricServerRecipeManager',
+	'net.fabricmc.fabric.api.registry.CompostableRegistry': 'net.fabricmc.fabric.api.registry.CompostingChanceRegistry',
+	'net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder.BuildCallback': 'net.fabricmc.fabric.api.registry.FabricBrewingRecipeRegistryBuilder.BuildCallback',
+	'net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder': 'net.fabricmc.fabric.api.registry.FabricBrewingRecipeRegistryBuilder',
+	'net.fabricmc.fabric.api.registry.FuelValueEvents.BuildCallback': 'net.fabricmc.fabric.api.registry.FuelRegistryEvents.BuildCallback',
+	'net.fabricmc.fabric.api.registry.FuelValueEvents.Context': 'net.fabricmc.fabric.api.registry.FuelRegistryEvents.Context',
+	'net.fabricmc.fabric.api.registry.FuelValueEvents.ExclusionsCallback': 'net.fabricmc.fabric.api.registry.FuelRegistryEvents.ExclusionsCallback',
+	'net.fabricmc.fabric.api.registry.FuelValueEvents': 'net.fabricmc.fabric.api.registry.FuelRegistryEvents',
+	'net.fabricmc.fabric.api.registry.LandPathTypeRegistry.DynamicPathTypeProvider': 'net.fabricmc.fabric.api.registry.LandPathNodeTypesRegistry.DynamicPathNodeTypeProvider',
+	'net.fabricmc.fabric.api.registry.LandPathTypeRegistry.PathTypeProvider': 'net.fabricmc.fabric.api.registry.LandPathNodeTypesRegistry.PathNodeTypeProvider',
+	'net.fabricmc.fabric.api.registry.LandPathTypeRegistry.StaticPathTypeProvider': 'net.fabricmc.fabric.api.registry.LandPathNodeTypesRegistry.StaticPathNodeTypeProvider',
+	'net.fabricmc.fabric.api.registry.LandPathTypeRegistry': 'net.fabricmc.fabric.api.registry.LandPathNodeTypesRegistry',
+	'net.fabricmc.fabric.api.registry.VibrationFrequencyRegistry': 'net.fabricmc.fabric.api.registry.SculkSensorFrequencyRegistry',
+	'net.fabricmc.fabric.api.renderer.v1.model.FabricBlockModelShaper': 'net.fabricmc.fabric.api.renderer.v1.model.FabricBlockModels',
+	'net.fabricmc.fabric.api.renderer.v1.model.MeshQuadCollection': 'net.fabricmc.fabric.api.renderer.v1.model.MeshBakedGeometry',
+	'net.fabricmc.fabric.api.renderer.v1.model.ModelStateHelper.1': 'net.fabricmc.fabric.api.renderer.v1.model.ModelBakeSettingsHelper.1',
+	'net.fabricmc.fabric.api.renderer.v1.model.ModelStateHelper.2': 'net.fabricmc.fabric.api.renderer.v1.model.ModelBakeSettingsHelper.2',
+	'net.fabricmc.fabric.api.renderer.v1.model.ModelStateHelper.3': 'net.fabricmc.fabric.api.renderer.v1.model.ModelBakeSettingsHelper.3',
+	'net.fabricmc.fabric.api.renderer.v1.model.ModelStateHelper.4': 'net.fabricmc.fabric.api.renderer.v1.model.ModelBakeSettingsHelper.4',
+	'net.fabricmc.fabric.api.renderer.v1.model.ModelStateHelper': 'net.fabricmc.fabric.api.renderer.v1.model.ModelBakeSettingsHelper',
+	'net.fabricmc.fabric.api.renderer.v1.render.BlockMultiBufferSource': 'net.fabricmc.fabric.api.renderer.v1.render.BlockVertexConsumerProvider',
+	'net.fabricmc.fabric.api.renderer.v1.render.FabricModelBlockRenderer': 'net.fabricmc.fabric.api.renderer.v1.render.FabricBlockModelRenderer',
+	'net.fabricmc.fabric.api.renderer.v1.render.FabricBlockRenderDispatcher': 'net.fabricmc.fabric.api.renderer.v1.render.FabricBlockRenderManager',
+	'net.fabricmc.fabric.api.renderer.v1.render.FabricOrderedSubmitNodeCollector': 'net.fabricmc.fabric.api.renderer.v1.render.FabricRenderCommandQueue',
+	'net.fabricmc.fabric.api.renderer.v1.render.ChunkSectionLayerHelper.1': 'net.fabricmc.fabric.api.renderer.v1.render.RenderLayerHelper.1',
+	'net.fabricmc.fabric.api.renderer.v1.render.ChunkSectionLayerHelper': 'net.fabricmc.fabric.api.renderer.v1.render.RenderLayerHelper',
+	'net.fabricmc.fabric.api.renderer.v1.sprite.FabricSpriteGetter': 'net.fabricmc.fabric.api.renderer.v1.sprite.FabricErrorCollectingSpriteGetter',
+	'net.fabricmc.fabric.api.renderer.v1.sprite.FabricPreparations': 'net.fabricmc.fabric.api.renderer.v1.sprite.FabricSpriteAtlasTexture',
+	'net.fabricmc.fabric.api.renderer.v1.sprite.FabricTextureAtlas': 'net.fabricmc.fabric.api.renderer.v1.sprite.FabricStitchResult',
+	'net.fabricmc.fabric.api.resource.v1.reloader.SimpleReloadListener': 'net.fabricmc.fabric.api.resource.v1.reloader.SimpleResourceReloader',
+	'net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider': 'net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory',
+	'net.fabricmc.fabric.api.menu.v1.ExtendedMenuType.ExtendedFactory': 'net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType.ExtendedFactory',
+	'net.fabricmc.fabric.api.menu.v1.ExtendedMenuType': 'net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType',
+	'net.fabricmc.fabric.api.menu.v1.FabricMenuProvider': 'net.fabricmc.fabric.api.screenhandler.v1.FabricScreenHandlerFactory',
+	'net.fabricmc.fabric.api.serialization.v1.value.FabricValueInput': 'net.fabricmc.fabric.api.serialization.v1.view.FabricReadView',
+	'net.fabricmc.fabric.api.serialization.v1.value.FabricValueOutput': 'net.fabricmc.fabric.api.serialization.v1.view.FabricWriteView',
+	'net.fabricmc.fabric.api.transfer.v1.item.ContainerStorage': 'net.fabricmc.fabric.api.transfer.v1.item.InventoryStorage',
+]
+
+def fabricApiNamenVor261 = [
+	'ClientCommands': 'ClientCommandManager',
+	'KeyMappingHelper': 'KeyBindingHelper',
+	'PictureInPictureRendererRegistry': 'SpecialGuiElementRegistry',
+	'LevelRenderContext': 'WorldRenderContext',
+	'LevelRenderEvents.EndMain': 'WorldRenderEvents.EndMain',
+	'LevelRenderEvents': 'WorldRenderEvents',
+	'FabricCreativeModeTab': 'FabricItemGroup',
+]
+
+def mojangVerschobenVor261 = [
+	'net.minecraft.advancements.predicates.CollectionContentsPredicate': 'net.minecraft.advancements.criterion.CollectionContentsPredicate',
+	'net.minecraft.advancements.predicates.CollectionCountsPredicate': 'net.minecraft.advancements.criterion.CollectionCountsPredicate',
+	'net.minecraft.advancements.predicates.CollectionPredicate': 'net.minecraft.advancements.criterion.CollectionPredicate',
+	'net.minecraft.advancements.predicates.ContextAwarePredicate': 'net.minecraft.advancements.criterion.ContextAwarePredicate',
+	'net.minecraft.advancements.predicates.DamageSourcePredicate': 'net.minecraft.advancements.criterion.DamageSourcePredicate',
+	'net.minecraft.advancements.predicates.DataComponentMatchers': 'net.minecraft.advancements.criterion.DataComponentMatchers',
+	'net.minecraft.advancements.predicates.DistancePredicate': 'net.minecraft.advancements.criterion.DistancePredicate',
+	'net.minecraft.advancements.predicates.EnchantmentPredicate': 'net.minecraft.advancements.criterion.EnchantmentPredicate',
+	'net.minecraft.advancements.predicates.FluidPredicate': 'net.minecraft.advancements.criterion.FluidPredicate',
+	'net.minecraft.advancements.predicates.GameTypePredicate': 'net.minecraft.advancements.criterion.GameTypePredicate',
+	'net.minecraft.advancements.predicates.InputPredicate': 'net.minecraft.advancements.criterion.InputPredicate',
+	'net.minecraft.advancements.predicates.ItemPredicate': 'net.minecraft.advancements.criterion.ItemPredicate',
+	'net.minecraft.advancements.predicates.LightPredicate': 'net.minecraft.advancements.criterion.LightPredicate',
+	'net.minecraft.advancements.predicates.LocationPredicate': 'net.minecraft.advancements.criterion.LocationPredicate',
+	'net.minecraft.advancements.predicates.MinMaxBounds': 'net.minecraft.advancements.criterion.MinMaxBounds',
+	'net.minecraft.advancements.predicates.MobEffectsPredicate': 'net.minecraft.advancements.criterion.MobEffectsPredicate',
+	'net.minecraft.advancements.predicates.NbtPredicate': 'net.minecraft.advancements.criterion.NbtPredicate',
+	'net.minecraft.advancements.predicates.SingleComponentItemPredicate': 'net.minecraft.advancements.criterion.SingleComponentItemPredicate',
+	'net.minecraft.advancements.predicates.SlotsPredicate': 'net.minecraft.advancements.criterion.SlotsPredicate',
+	'net.minecraft.advancements.predicates.StatePropertiesPredicate': 'net.minecraft.advancements.criterion.StatePropertiesPredicate',
+	'net.minecraft.advancements.predicates.TagPredicate': 'net.minecraft.advancements.criterion.TagPredicate',
+	'net.minecraft.advancements.predicates.entity.EntityEquipmentPredicate': 'net.minecraft.advancements.criterion.EntityEquipmentPredicate',
+	'net.minecraft.advancements.predicates.entity.EntityFlagsPredicate': 'net.minecraft.advancements.criterion.EntityFlagsPredicate',
+	'net.minecraft.advancements.predicates.entity.EntityPredicate': 'net.minecraft.advancements.criterion.EntityPredicate',
+	'net.minecraft.advancements.predicates.entity.EntitySubPredicate': 'net.minecraft.advancements.criterion.EntitySubPredicate',
+	'net.minecraft.advancements.predicates.entity.EntitySubPredicates': 'net.minecraft.advancements.criterion.EntitySubPredicates',
+	'net.minecraft.advancements.predicates.entity.EntityTypePredicate': 'net.minecraft.advancements.criterion.EntityTypePredicate',
+	'net.minecraft.advancements.predicates.entity.FishingHookPredicate': 'net.minecraft.advancements.criterion.FishingHookPredicate',
+	'net.minecraft.advancements.predicates.entity.LightningBoltPredicate': 'net.minecraft.advancements.criterion.LightningBoltPredicate',
+	'net.minecraft.advancements.predicates.entity.MovementPredicate': 'net.minecraft.advancements.criterion.MovementPredicate',
+	'net.minecraft.advancements.predicates.entity.PlayerPredicate': 'net.minecraft.advancements.criterion.PlayerPredicate',
+	'net.minecraft.advancements.predicates.entity.RaiderPredicate': 'net.minecraft.advancements.criterion.RaiderPredicate',
+	'net.minecraft.advancements.predicates.entity.SheepPredicate': 'net.minecraft.advancements.criterion.SheepPredicate',
+	'net.minecraft.advancements.triggers.AnyBlockInteractionTrigger': 'net.minecraft.advancements.criterion.AnyBlockInteractionTrigger',
+	'net.minecraft.advancements.triggers.BeeNestDestroyedTrigger': 'net.minecraft.advancements.criterion.BeeNestDestroyedTrigger',
+	'net.minecraft.advancements.triggers.BredAnimalsTrigger': 'net.minecraft.advancements.criterion.BredAnimalsTrigger',
+	'net.minecraft.advancements.triggers.BrewedPotionTrigger': 'net.minecraft.advancements.criterion.BrewedPotionTrigger',
+	'net.minecraft.advancements.triggers.ChangeDimensionTrigger': 'net.minecraft.advancements.criterion.ChangeDimensionTrigger',
+	'net.minecraft.advancements.triggers.ChanneledLightningTrigger': 'net.minecraft.advancements.criterion.ChanneledLightningTrigger',
+	'net.minecraft.advancements.triggers.ConstructBeaconTrigger': 'net.minecraft.advancements.criterion.ConstructBeaconTrigger',
+	'net.minecraft.advancements.triggers.ConsumeItemTrigger': 'net.minecraft.advancements.criterion.ConsumeItemTrigger',
+	'net.minecraft.advancements.triggers.CriteriaTriggers': 'net.minecraft.advancements.CriteriaTriggers',
+	'net.minecraft.advancements.triggers.Criterion': 'net.minecraft.advancements.Criterion',
+	'net.minecraft.advancements.triggers.CriterionTrigger': 'net.minecraft.advancements.CriterionTrigger',
+	'net.minecraft.advancements.triggers.CuredZombieVillagerTrigger': 'net.minecraft.advancements.criterion.CuredZombieVillagerTrigger',
+	'net.minecraft.advancements.triggers.DefaultBlockInteractionTrigger': 'net.minecraft.advancements.criterion.DefaultBlockInteractionTrigger',
+	'net.minecraft.advancements.triggers.DistanceTrigger': 'net.minecraft.advancements.criterion.DistanceTrigger',
+	'net.minecraft.advancements.triggers.EffectsChangedTrigger': 'net.minecraft.advancements.criterion.EffectsChangedTrigger',
+	'net.minecraft.advancements.triggers.EnchantedItemTrigger': 'net.minecraft.advancements.criterion.EnchantedItemTrigger',
+	'net.minecraft.advancements.triggers.EnterBlockTrigger': 'net.minecraft.advancements.criterion.EnterBlockTrigger',
+	'net.minecraft.advancements.triggers.EntityHurtPlayerTrigger': 'net.minecraft.advancements.criterion.EntityHurtPlayerTrigger',
+	'net.minecraft.advancements.triggers.FallAfterExplosionTrigger': 'net.minecraft.advancements.criterion.FallAfterExplosionTrigger',
+	'net.minecraft.advancements.triggers.FilledBucketTrigger': 'net.minecraft.advancements.criterion.FilledBucketTrigger',
+	'net.minecraft.advancements.triggers.FishingRodHookedTrigger': 'net.minecraft.advancements.criterion.FishingRodHookedTrigger',
+	'net.minecraft.advancements.triggers.ImpossibleTrigger': 'net.minecraft.advancements.criterion.ImpossibleTrigger',
+	'net.minecraft.advancements.triggers.InventoryChangeTrigger': 'net.minecraft.advancements.criterion.InventoryChangeTrigger',
+	'net.minecraft.advancements.triggers.ItemDurabilityTrigger': 'net.minecraft.advancements.criterion.ItemDurabilityTrigger',
+	'net.minecraft.advancements.triggers.ItemUsedOnLocationTrigger': 'net.minecraft.advancements.criterion.ItemUsedOnLocationTrigger',
+	'net.minecraft.advancements.triggers.KilledByArrowTrigger': 'net.minecraft.advancements.criterion.KilledByArrowTrigger',
+	'net.minecraft.advancements.triggers.KilledTrigger': 'net.minecraft.advancements.criterion.KilledTrigger',
+	'net.minecraft.advancements.triggers.LevitationTrigger': 'net.minecraft.advancements.criterion.LevitationTrigger',
+	'net.minecraft.advancements.triggers.LightningStrikeTrigger': 'net.minecraft.advancements.criterion.LightningStrikeTrigger',
+	'net.minecraft.advancements.triggers.LootTableTrigger': 'net.minecraft.advancements.criterion.LootTableTrigger',
+	'net.minecraft.advancements.triggers.PickedUpItemTrigger': 'net.minecraft.advancements.criterion.PickedUpItemTrigger',
+	'net.minecraft.advancements.triggers.PlayerHurtEntityTrigger': 'net.minecraft.advancements.criterion.PlayerHurtEntityTrigger',
+	'net.minecraft.advancements.triggers.PlayerInteractTrigger': 'net.minecraft.advancements.criterion.PlayerInteractTrigger',
+	'net.minecraft.advancements.triggers.PlayerTrigger': 'net.minecraft.advancements.criterion.PlayerTrigger',
+	'net.minecraft.advancements.triggers.RecipeCraftedTrigger': 'net.minecraft.advancements.criterion.RecipeCraftedTrigger',
+	'net.minecraft.advancements.triggers.RecipeUnlockedTrigger': 'net.minecraft.advancements.criterion.RecipeUnlockedTrigger',
+	'net.minecraft.advancements.triggers.ShotCrossbowTrigger': 'net.minecraft.advancements.criterion.ShotCrossbowTrigger',
+	'net.minecraft.advancements.triggers.SimpleCriterionTrigger': 'net.minecraft.advancements.criterion.SimpleCriterionTrigger',
+	'net.minecraft.advancements.triggers.SlideDownBlockTrigger': 'net.minecraft.advancements.criterion.SlideDownBlockTrigger',
+	'net.minecraft.advancements.triggers.SpearMobsTrigger': 'net.minecraft.advancements.criterion.SpearMobsTrigger',
+	'net.minecraft.advancements.triggers.StartRidingTrigger': 'net.minecraft.advancements.criterion.StartRidingTrigger',
+	'net.minecraft.advancements.triggers.SummonedEntityTrigger': 'net.minecraft.advancements.criterion.SummonedEntityTrigger',
+	'net.minecraft.advancements.triggers.TameAnimalTrigger': 'net.minecraft.advancements.criterion.TameAnimalTrigger',
+	'net.minecraft.advancements.triggers.TargetBlockTrigger': 'net.minecraft.advancements.criterion.TargetBlockTrigger',
+	'net.minecraft.advancements.triggers.TradeTrigger': 'net.minecraft.advancements.criterion.TradeTrigger',
+	'net.minecraft.advancements.triggers.UsedEnderEyeTrigger': 'net.minecraft.advancements.criterion.UsedEnderEyeTrigger',
+	'net.minecraft.advancements.triggers.UsedTotemTrigger': 'net.minecraft.advancements.criterion.UsedTotemTrigger',
+	'net.minecraft.advancements.triggers.UsingItemTrigger': 'net.minecraft.advancements.criterion.UsingItemTrigger',
+	'net.minecraft.client.multiplayer.chat.GuiMessage': 'net.minecraft.client.GuiMessage',
+	'net.minecraft.client.multiplayer.chat.GuiMessageTag': 'net.minecraft.client.GuiMessageTag',
+	'net.minecraft.client.renderer.block.BlockAndTintGetter': 'net.minecraft.world.level.BlockAndTintGetter',
+	'net.minecraft.client.renderer.block.dispatch.BlockModelRotation': 'net.minecraft.client.resources.model.BlockModelRotation',
+	'net.minecraft.client.renderer.block.dispatch.BlockStateModel': 'net.minecraft.client.renderer.block.model.BlockStateModel',
+	'net.minecraft.client.renderer.block.dispatch.ModelState': 'net.minecraft.client.resources.model.ModelState',
+	'net.minecraft.client.renderer.block.dispatch.SingleVariant': 'net.minecraft.client.renderer.block.model.SingleVariant',
+	'net.minecraft.client.renderer.block.dispatch.VariantMutator': 'net.minecraft.client.renderer.block.model.VariantMutator',
+	'net.minecraft.client.renderer.block.dispatch.VariantSelector': 'net.minecraft.client.renderer.block.model.VariantSelector',
+	'net.minecraft.client.renderer.block.dispatch.WeightedVariants': 'net.minecraft.client.resources.model.WeightedVariants',
+	'net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition': 'net.minecraft.client.renderer.block.model.multipart.CombinedCondition',
+	'net.minecraft.client.renderer.block.dispatch.multipart.Condition': 'net.minecraft.client.renderer.block.model.multipart.Condition',
+	'net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition': 'net.minecraft.client.renderer.block.model.multipart.KeyValueCondition',
+	'net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel': 'net.minecraft.client.renderer.block.model.multipart.MultiPartModel',
+	'net.minecraft.client.renderer.block.dispatch.multipart.Selector': 'net.minecraft.client.renderer.block.model.multipart.Selector',
+	'net.minecraft.client.renderer.state.gui.BlitRenderState': 'net.minecraft.client.gui.render.state.BlitRenderState',
+	'net.minecraft.client.renderer.state.gui.ColoredRectangleRenderState': 'net.minecraft.client.gui.render.state.ColoredRectangleRenderState',
+	'net.minecraft.client.renderer.state.gui.GlyphRenderState': 'net.minecraft.client.gui.render.state.GlyphRenderState',
+	'net.minecraft.client.renderer.state.gui.GuiElementRenderState': 'net.minecraft.client.gui.render.state.GuiElementRenderState',
+	'net.minecraft.client.renderer.state.gui.GuiItemRenderState': 'net.minecraft.client.gui.render.state.GuiItemRenderState',
+	'net.minecraft.client.renderer.state.gui.GuiRenderState': 'net.minecraft.client.gui.render.state.GuiRenderState',
+	'net.minecraft.client.renderer.state.gui.GuiTextRenderState': 'net.minecraft.client.gui.render.state.GuiTextRenderState',
+	'net.minecraft.client.renderer.state.gui.ScreenArea': 'net.minecraft.client.gui.render.state.ScreenArea',
+	'net.minecraft.client.renderer.state.gui.TiledBlitRenderState': 'net.minecraft.client.gui.render.state.TiledBlitRenderState',
+	'net.minecraft.client.renderer.state.gui.pip.GuiBannerResultRenderState': 'net.minecraft.client.gui.render.state.pip.GuiBannerResultRenderState',
+	'net.minecraft.client.renderer.state.gui.pip.GuiBookModelRenderState': 'net.minecraft.client.gui.render.state.pip.GuiBookModelRenderState',
+	'net.minecraft.client.renderer.state.gui.pip.GuiEntityRenderState': 'net.minecraft.client.gui.render.state.pip.GuiEntityRenderState',
+	'net.minecraft.client.renderer.state.gui.pip.GuiProfilerChartRenderState': 'net.minecraft.client.gui.render.state.pip.GuiProfilerChartRenderState',
+	'net.minecraft.client.renderer.state.gui.pip.GuiSkinRenderState': 'net.minecraft.client.gui.render.state.pip.GuiSkinRenderState',
+	'net.minecraft.client.renderer.state.gui.pip.OversizedItemRenderState': 'net.minecraft.client.gui.render.state.pip.OversizedItemRenderState',
+	'net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState': 'net.minecraft.client.gui.render.state.pip.PictureInPictureRenderState',
+	'net.minecraft.client.renderer.state.level.BlockBreakingRenderState': 'net.minecraft.client.renderer.state.BlockBreakingRenderState',
+	'net.minecraft.client.renderer.state.level.BlockOutlineRenderState': 'net.minecraft.client.renderer.state.BlockOutlineRenderState',
+	'net.minecraft.client.renderer.state.level.CameraRenderState': 'net.minecraft.client.renderer.state.CameraRenderState',
+	'net.minecraft.client.renderer.state.level.LevelRenderState': 'net.minecraft.client.renderer.state.LevelRenderState',
+	'net.minecraft.client.renderer.state.level.ParticleGroupRenderState': 'net.minecraft.client.renderer.state.ParticleGroupRenderState',
+	'net.minecraft.client.renderer.state.level.ParticlesRenderState': 'net.minecraft.client.renderer.state.ParticlesRenderState',
+	'net.minecraft.client.renderer.state.level.QuadParticleRenderState': 'net.minecraft.client.renderer.state.QuadParticleRenderState',
+	'net.minecraft.client.renderer.state.level.SkyRenderState': 'net.minecraft.client.renderer.state.SkyRenderState',
+	'net.minecraft.client.renderer.state.level.WeatherRenderState': 'net.minecraft.client.renderer.state.WeatherRenderState',
+	'net.minecraft.client.renderer.state.level.WorldBorderRenderState': 'net.minecraft.client.renderer.state.WorldBorderRenderState',
+	'net.minecraft.client.resources.model.SimpleModelWrapper': 'net.minecraft.client.renderer.block.model.SimpleModelWrapper',
+	'net.minecraft.client.resources.model.cuboid.FaceBakery': 'net.minecraft.client.renderer.block.model.FaceBakery',
+	'net.minecraft.client.resources.model.cuboid.ItemModelGenerator': 'net.minecraft.client.renderer.block.model.ItemModelGenerator',
+	'net.minecraft.client.resources.model.cuboid.ItemTransform': 'net.minecraft.client.renderer.block.model.ItemTransform',
+	'net.minecraft.client.resources.model.cuboid.ItemTransforms': 'net.minecraft.client.renderer.block.model.ItemTransforms',
+	'net.minecraft.client.resources.model.geometry.BakedQuad': 'net.minecraft.client.renderer.block.model.BakedQuad',
+	'net.minecraft.client.resources.model.geometry.QuadCollection': 'net.minecraft.client.resources.model.QuadCollection',
+	'net.minecraft.client.resources.model.geometry.UnbakedGeometry': 'net.minecraft.client.resources.model.UnbakedGeometry',
+	'net.minecraft.client.resources.model.sprite.AtlasManager': 'net.minecraft.client.resources.model.AtlasManager',
+	'net.minecraft.client.resources.model.sprite.Material': 'net.minecraft.client.resources.model.Material',
+	'net.minecraft.client.resources.model.sprite.SpriteGetter': 'net.minecraft.client.resources.model.SpriteGetter',
+	'net.minecraft.client.resources.model.sprite.TextureSlots': 'net.minecraft.client.renderer.block.model.TextureSlots',
+	'net.minecraft.util.DummyFileAttributes': 'net.minecraft.server.packs.linkfs.DummyFileAttributes',
+	'net.minecraft.world.entity.Bucketable': 'net.minecraft.world.entity.animal.Bucketable',
+	'net.minecraft.world.entity.monster.cubemob.MagmaCube': 'net.minecraft.world.entity.monster.MagmaCube',
+	'net.minecraft.world.entity.monster.cubemob.Slime': 'net.minecraft.world.entity.monster.Slime',
+	'net.minecraft.world.item.trading.VillagerTrades': 'net.minecraft.world.entity.npc.villager.VillagerTrades',
+]
+
+/* Vor 26.1: 26.2-Grafiktypen, die es dort nicht gibt, kommen aus der eigenen Schicht
+ * src/compat/vor261 (gleiche Namen und Mitglieder wie 26.2, Nutzerentscheid 2026-10-12). */
+def ersatzVor261 = [
+	'com.mojang.blaze3d.GpuFormat': 'mchorse.bbs_mod.compat.alt.GpuFormat',
+	'com.mojang.blaze3d.platform.CompareOp': 'mchorse.bbs_mod.compat.alt.CompareOp',
+	'com.mojang.blaze3d.pipeline.ColorTargetState': 'mchorse.bbs_mod.compat.alt.ColorTargetState',
+	'com.mojang.blaze3d.pipeline.DepthStencilState': 'mchorse.bbs_mod.compat.alt.DepthStencilState',
+	'com.mojang.blaze3d.pipeline.BindGroupLayout': 'mchorse.bbs_mod.compat.alt.BindGroupLayout',
+	'net.minecraft.client.renderer.BindGroupLayouts': 'mchorse.bbs_mod.compat.alt.BindGroupLayouts',
+	'net.minecraft.util.LightCoordsUtil': 'mchorse.bbs_mod.compat.alt.LightCoordsUtil',
+	'com.mojang.blaze3d.systems.RenderPassDescriptor': 'mchorse.bbs_mod.compat.alt.RenderPassDescriptor',
+	'com.mojang.blaze3d.systems.RenderPass.RenderArea': 'mchorse.bbs_mod.compat.alt.RenderArea',
+	'com.mojang.blaze3d.systems.DeviceInfo': 'mchorse.bbs_mod.compat.alt.DeviceInfo',
+	'com.mojang.blaze3d.systems.DeviceLimits': 'mchorse.bbs_mod.compat.alt.DeviceLimits',
+	'com.mojang.blaze3d.systems.GpuQueryPool': 'mchorse.bbs_mod.compat.alt.GpuQueryPool',
+	'net.minecraft.client.renderer.block.FluidModel': 'mchorse.bbs_mod.compat.alt.FluidModel',
+	'net.minecraft.client.renderer.block.FluidRenderer': 'mchorse.bbs_mod.compat.alt.FluidRenderer',
+	'net.minecraft.client.renderer.block.FluidStateModelSet': 'mchorse.bbs_mod.compat.alt.FluidStateModelSet',
+	'net.minecraft.client.renderer.block.BlockStateModelSet': 'mchorse.bbs_mod.compat.alt.BlockStateModelSet',
+	'net.minecraft.client.color.block.BlockTintSource': 'mchorse.bbs_mod.compat.alt.BlockTintSource',
+	'net.minecraft.client.renderer.ProjectionMatrixBuffer': 'net.minecraft.client.renderer.PerspectiveProjectionMatrixBuffer',
+]
+
+/* SDL-Systemzeiger zu GLFW-Standardzeigern, so wie der 26.2-Stand sie benutzt hat. */
+def sdlZeigerZuGlfw = [
+	'DEFAULT': 'ARROW', 'POINTER': 'HAND', 'TEXT': 'IBEAM', 'CROSSHAIR': 'CROSSHAIR',
+	'EW_RESIZE': 'HRESIZE', 'NS_RESIZE': 'VRESIZE', 'MOVE': 'RESIZE_ALL'
+]
+
+/* Rueckmuster der Regeln vor 26.1: Stonecutter wendet fuer Knoten, auf die eine Regel NICHT
+ * zutrifft, ihre Rueckrichtung an (gemessen 2026-10-12: ".gui" -> ".gui.hud" verdarb 26.2).
+ * Der Quelltext steht immer im 26.3-Stand, also darf die Rueckrichtung nie treffen. */
+apply from: rootProject.file("gradle/compat-stufen.gradle")
+def NIE = "(?!)"
+
+stonecutter.parameters {
+	def vorSdl = eval(current.version, "<26.3")
+	/* Bis 1.21.11: obfuskiertes Minecraft (Mojang-Mappings) und die aeltere Fabric-API. */
+	def vor261 = eval(current.version, "<26.1")
+
+	replacements {
+		/* Jede SDL-Klasse, die vor 26.3 in GLFW aufgeht, bekommt beim Import eine Marke, damit
+		 * der Rueckweg eindeutig bleibt; doppelte GLFW-Importe sind in Java erlaubt. */
+		["SDLScancode", "SDLMouse"].each { klasse ->
+			regex(vorSdl) {
+				replace("\\bimport org\\.lwjgl\\.sdl\\." + klasse + ";", "import org.lwjgl.glfw.GLFW; /* " + klasse + " */",
+					"\\bimport org\\.lwjgl\\.glfw\\.GLFW; /\\* " + klasse + " \\*/", "import org.lwjgl.sdl." + klasse + ";")
+			}
+		}
+
+		sdlZeigerZuGlfw.each { sdl, glfw ->
+			regex(vorSdl) {
+				replace("\\bSDLMouse\\.SDL_SYSTEM_CURSOR_" + sdl + "\\b", "GLFW.GLFW_" + glfw + "_CURSOR",
+					"\\bGLFW\\.GLFW_" + glfw + "_CURSOR\\b", "SDLMouse.SDL_SYSTEM_CURSOR_" + sdl)
+			}
+		}
+
+		/* Adressen im Browser oeffnen: Blaze3D.openUri gibt es erst ab 26.3 (SDL), davor Util.getPlatform(). */
+		regex(vorSdl) {
+			replace("\\bBlaze3D\\.openUri\\(", (eval(current.version, "<1.21.11") ? "net.minecraft.Util" : "net.minecraft.util.Util") + ".getPlatform().openUri(", NIE, "Blaze3D.openUri(")
+		}
+
+		/* 26.3 fragt die Taste ohne Fenster ab (SDL kennt nur eines), davor mit. */
+		regex(vorSdl) {
+			replace("\\bInputConstants\\.isKeyDown\\(", "InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow()" + (eval(current.version, "<1.21.9") ? ".getWindow(), " : ", "),
+				"\\bInputConstants\\.isKeyDown\\(net\\.minecraft\\.client\\.Minecraft\\.getInstance\\(\\)\\.getWindow\\(\\)(?:\\.getWindow\\(\\))?, ", "InputConstants.isKeyDown(")
+		}
+
+		/* Nachruestung (src/compat): Loom liest injizierte Interfaces nur aus der fabric.mod.json
+		 * des Hauptquellsatzes, darum kommen sie vor 26.3 dort hinein. */
+		def eingespritzt = '"custom": {"loom:injected_interfaces": ' +
+			groovy.json.JsonOutput.toJson(compatInjiziert(compatStufen(vor261, eval(current.version, "<1.21.5"), eval(current.version, "<1.21.2"), eval(current.version, "<1.20.5"), eval(current.version, "<1.20.2"))))
+				/* Innere Klassen (RenderPipeline$Builder): "$" darf weder in eine Stonecutter-Ersetzung
+				 * noch durch processResources' Template-Expansion; JSON liest \u0024 als "$". */
+				.replace('$', '\\u0024') +
+			'},\n  "accessWidener": "bbs.accesswidener",'
+		/* Der Companion (dev) kompiliert gegen dieselben eingespritzten Interfaces; die Klassen liegen
+		 * im Mod-Jar auf seinem Klassenpfad, zur Laufzeit wirken die Mixins des Mods. */
+		def eingespritztDev = '"id": "bbsdev",\n  "custom": {"loom:injected_interfaces": ' +
+			groovy.json.JsonOutput.toJson(compatInjiziert(compatStufen(true, eval(current.version, "<1.21.5"), eval(current.version, "<1.21.2"), eval(current.version, "<1.20.5"), eval(current.version, "<1.20.2"))))
+				.replace('$', '\\u0024') + '},'
+		regex(vor261) {
+			replace(java.util.regex.Pattern.quote('"id": "bbsdev",'), eingespritztDev, NIE, '"id": "bbsdev",')
+		}
+		regex(vorSdl) {
+			replace(java.util.regex.Pattern.quote('"accessWidener": "bbs.accesswidener",'), eingespritzt,
+				java.util.regex.Pattern.quote(eingespritzt), '"accessWidener": "bbs.accesswidener",')
+		}
+
+		/* KeyEvent: das zweite Feld heisst in 26.3 keycode(), davor scancode(). */
+		regex(vorSdl) {
+			replace("\\.keycode\\(\\)", ".scancode()", "\\.scancode\\(\\)", ".keycode()")
+		}
+
+		/* 26.3 hat zwischen API und Backend eine Frontend-Schicht eingezogen; vor 26.3 IST
+		 * CommandEncoder bzw. RenderPass diese Schicht (backend()/isInRenderPass() gibt
+		 * src/compat/compat.accesswidener frei, siehe build.gradle). Rueckweg mehrdeutig — vcsVersion bleibt darum 26.3. */
+		["FrontendCommandEncoder": "com.mojang.blaze3d.systems.CommandEncoder",
+		 "FrontendRenderPass": "com.mojang.blaze3d.systems.RenderPass"].each { neu, alt ->
+			regex(vorSdl) {
+				replace("\\bcom\\.mojang\\.renderpearl\\.frontend\\." + neu + "\\b", alt,
+					"\\b" + java.util.regex.Pattern.quote(alt) + "\\b(?=\\s*/\\*frontend\\*/)", "com.mojang.renderpearl.frontend." + neu)
+			}
+			regex(vorSdl) {
+				replace("\\b" + neu + "\\b", alt.tokenize(".").last(),
+					"\\b" + alt.tokenize(".").last() + "(?=\\s*/\\*frontend\\*/)", neu)
+			}
+		}
+
+		/* Texturen sind in 26.3 Uniforms vom Typ COMBINED_IMAGE_SAMPLER, davor Sampler. */
+		regex(vorSdl) {
+			replace("\\.withUniform\\((\"[^\"]*\"), UniformType\\.COMBINED_IMAGE_SAMPLER\\)", ".withSampler(\$1)",
+				"\\.withSampler\\((\"[^\"]*\")\\)", ".withUniform(\$1, UniformType.COMBINED_IMAGE_SAMPLER)")
+		}
+
+		/* Statische 26.3-Aufrufe, die es davor nicht gibt, laufen ueber src/compat. */
+		regex(vorSdl) {
+			replace("\\bRenderSystem\\.getCompiledPipeline\\(", "mchorse.bbs_mod.compat.Pipelines.compiled(",
+				"\\bmchorse\\.bbs_mod\\.compat\\.Pipelines\\.compiled\\(", "RenderSystem.getCompiledPipeline(")
+		}
+
+		/* Listen statt Arrays (src/compat/RenderPipelineLists) und der Descriptor als eigener
+		 * Builder (src/compat/RenderPassDescriptorBuilder). */
+		["getColorTargetStates": "bbsColorTargetStates", "getVertexFormatBindings": "bbsVertexFormatBindings"].each { neu, alt ->
+			regex(vorSdl) {
+				replace("\\." + neu + "\\(\\)", "." + alt + "()", "\\." + alt + "\\(\\)", "." + neu + "()")
+			}
+		}
+		regex(vorSdl) {
+			replace("\\bRenderPassDescriptor\\.builder\\(", "RenderPassDescriptor.create(", "\\bRenderPassDescriptor\\.create\\(", "RenderPassDescriptor.builder(")
+		}
+		regex(vorSdl) {
+			replace("\\bRenderPassDescriptor\\.Builder\\b", "RenderPassDescriptor/*Builder*/", "\\bRenderPassDescriptor/\\*Builder\\*/", "RenderPassDescriptor.Builder")
+		}
+
+		/* TextureTarget: 26.3 nimmt das Tiefenformat, davor einen Schalter fuer Tiefe. */
+		regex(vor261) {
+			replace("(?:\\bcom\\.mojang\\.renderpearl\\.api\\.)?GpuFormat\\.RGBA8_UNORM, (?:com\\.mojang\\.renderpearl\\.api\\.)?GpuFormat\\.D32_FLOAT\\)",
+				"true)", NIE, "com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM, com.mojang.renderpearl.api.GpuFormat.D32_FLOAT)")
+		}
+		regex(vorSdl && !vor261) {
+			replace("(?:\\bcom\\.mojang\\.renderpearl\\.api\\.)?GpuFormat\\.RGBA8_UNORM, (?:com\\.mojang\\.renderpearl\\.api\\.)?GpuFormat\\.D32_FLOAT\\)",
+				"true, com.mojang.blaze3d.GpuFormat.RGBA8_UNORM)", NIE, "com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM, com.mojang.renderpearl.api.GpuFormat.D32_FLOAT)")
+		}
+		regex(vorSdl) {
+			replace("\\.hasDepth\\(\\)", ".useDepth", "\\.useDepth\\b", ".hasDepth()")
+		}
+
+		/* Kopien einer RenderPipeline: 26.3 reicht die Shader als Satz und Push-Constants
+		 * weiter, davor Vertex- und Fragment-Shader einzeln und keine Push-Constants.
+		 * Rueckweg ungenau (Zeilenumbrueche) — vcsVersion bleibt 26.3. */
+		regex(vorSdl) {
+			replace("\\b(\\w+)\\.getShaders\\(\\)", "\$1.getVertexShader(), \$1.getFragmentShader()",
+				"\\b(\\w+)\\.getVertexShader\\(\\), \\1\\.getFragmentShader\\(\\)", "\$1.getShaders()")
+		}
+		regex(vorSdl) {
+			replace("\\b\\w+\\.pushConstantSize\\(\\),\\s*(\\w+)\\.getSortKey\\(\\)", "\$1.getSortKey()",
+				"\\b(\\w+)\\.getPrimitiveTopology\\(\\), (\\w+)\\.getSortKey\\(\\)", "\$1.getPrimitiveTopology(), \$1.pushConstantSize(), \$2.getSortKey()")
+		}
+		regex(vorSdl) {
+			replace("\\bRenderSystem\\.isWireframeAvailable\\(", "mchorse.bbs_mod.compat.Pipelines.isWireframeAvailable(",
+				"\\bmchorse\\.bbs_mod\\.compat\\.Pipelines\\.isWireframeAvailable\\(", "RenderSystem.isWireframeAvailable(")
+		}
+
+		/* GLSL: 26.3 kompiliert Shader fuer Vulkan (#include, separate_shader_objects, feste
+		 * Positionen). 26.2 nimmt #moj_import und bindet Attribute/Varyings ueber den NAMEN —
+		 * feste Positionen wuerden die Bindung still ueberschreiben; die Nummer bleibt als
+		 * Kommentar stehen, damit der Rueckweg exakt ist. */
+		regex(vorSdl) {
+			replace("(?m)^#include <", "#moj_import <", "(?m)^#moj_import <", "#include <")
+		}
+		regex(vorSdl) {
+			replace("#extension GL_ARB_separate_shader_objects : require", "/* separate_shader_objects: erst ab 26.3 */",
+				java.util.regex.Pattern.quote("/* separate_shader_objects: erst ab 26.3 */"), "#extension GL_ARB_separate_shader_objects : require")
+		}
+		regex(vorSdl) {
+			replace("layout\\(location = (\\d+)\\) (in|out|flat)\\b", "/*location \$1*/ \$2",
+				"/\\*location (\\d+)\\*/ (in|out|flat)\\b", "layout(location = \$1) \$2")
+		}
+
+		/* Fabric-API vor 26.1: die Payload-Register hiessen anders (Methoden, nicht in der
+		 * Fabric-Migrationskarte; Namen aus BBS-FS 1.21.11 nachgeprueft). */
+		regex(vor261) {
+			replace("\\bPayloadTypeRegistry\\.serverboundPlay\\(\\)", "PayloadTypeRegistry.playC2S()",
+				NIE, "PayloadTypeRegistry.serverboundPlay()")
+		}
+		regex(vor261) {
+			replace("\\bPayloadTypeRegistry\\.clientboundPlay\\(\\)", "PayloadTypeRegistry.playS2C()",
+				NIE, "PayloadTypeRegistry.clientboundPlay()")
+		}
+		/* Die Entity-Konstanten liegen vor 26.1 in EntityType selbst (es gibt kein EntityTypes). */
+		regex(vor261) {
+			replace("\\bimport net\\.minecraft\\.world\\.entity\\.EntityTypes;", "import net.minecraft.world.entity.EntityType; /* EntityTypes */",
+				NIE, "import net.minecraft.world.entity.EntityTypes;")
+		}
+		regex(vor261) {
+			replace("\\bEntityTypes\\.", "EntityType/*s*/.", NIE, "EntityTypes.")
+		}
+
+		regex(vorSdl) {
+			replace("\\bInputConstants\\.Type\\.KEYBOARD\\b", "InputConstants.Type.KEYSYM",
+				"\\bInputConstants\\.Type\\.KEYSYM\\b", "InputConstants.Type.KEYBOARD")
+		}
+
+		/* Stonecutter wendet ueberlappende Regeln nicht nacheinander an: hat die renderpearl-Regel
+		 * eine Stelle ersetzt, greift keine spaetere 1.21.11-Regel mehr dort. Vor 26.1 fuehren die
+		 * renderpearl-Namen darum direkt zum Endziel (verschobene Klasse oder eigene Schicht). */
+		def vor261Ziel = [:] + mojangVerschobenVor261 + ersatzVor261
+		/* PrimitiveTopology/IndexType sind vor 26.2 innere Klassen von VertexFormat: im Import
+		 * wird daraus VertexFormat, im Code der volle innere Name. */
+		def vor261Inner = ['com.mojang.blaze3d.PrimitiveTopology': 'Mode', 'com.mojang.blaze3d.IndexType': 'IndexType']
+		/* RenderPass.RenderArea voll qualifiziert: vor 26.1 ist RenderArea ein eigener Typ der Schicht. */
+		regex(vor261) {
+			replace("\\bcom\\.mojang\\.renderpearl\\.api\\.commands\\.RenderPass\\.RenderArea\\b", "mchorse.bbs_mod.compat.alt.RenderArea", NIE, "com.mojang.renderpearl.api.commands.RenderPass.RenderArea")
+		}
+		renderpearlZuBlaze3d.each { neu, alt ->
+			def direkt = vor261Ziel[alt]
+			def inner = vor261Inner[alt]
+			/* Rueckmuster NIE: fuer Knoten vor 26.1 trifft die Bedingung nicht zu, dort liefe sonst die
+			 * Rueckrichtung und machte aus blaze3d-Namen in Versionsbloecken wieder renderpearl. */
+			regex(vorSdl && !vor261) {
+				replace("\\b" + neu.replace(".", "\\.") + "\\b", alt, NIE, neu)
+			}
+			if (direkt == null && inner == null) {
+				/* Vor 26.1 dieselbe Umbenennung, aber RenderPass.RenderArea gehoert der Schicht. */
+				regex(vor261) {
+					replace("\\b" + neu.replace(".", "\\.") + "\\b(?!\\.RenderArea\\b)", alt, NIE, neu)
+				}
+			}
+			if (inner != null) {
+				regex(vor261) {
+					replace("\\bimport " + neu.replace(".", "\\.") + ";", "import com.mojang.blaze3d.vertex.VertexFormat;", NIE, "import " + neu + ";")
+				}
+				regex(vor261) {
+					replace("(?<!import )\\b" + neu.replace(".", "\\.") + "\\b", "com.mojang.blaze3d.vertex.VertexFormat." + inner, NIE, neu)
+				}
+			}
+			if (direkt != null) {
+				regex(vor261) {
+					replace("\\b" + neu.replace(".", "\\.") + "\\b", direkt,
+						NIE, neu)
+				}
+			}
+		}
+
+		/* Dieselben Klassen in Schraegstrich-Form: Mixin-Deskriptoren in Strings. Keine Wortgrenze
+		 * vor dem L — in "ILcom/mojang/..." steht ein Typbuchstabe direkt davor. */
+		renderpearlZuBlaze3d.each { neu, alt ->
+			def n = neu.replace(".", "/")
+			def a = alt.replace(".", "/")
+			regex(vorSdl) {
+				replace("L" + n + '(?=[;\\$])', "L" + a, "L" + a + '(?=[;\\$])', "L" + n)
+			}
+		}
+
+		sdlZuGlfw.each { sdl, glfw ->
+			regex(vorSdl) {
+				replace("\\bSDLScancode\\.SDL_SCANCODE_" + sdl + "\\b", "GLFW.GLFW_KEY_" + glfw,
+					"\\bGLFW\\.GLFW_KEY_" + glfw + "\\b", "SDLScancode.SDL_SCANCODE_" + sdl)
+			}
+		}
+		/* 1.21.11: Fabric-API-Klassen (voll und einfach) und verschobene Mojang-Klassen. Laengste
+		 * Schluessel zuerst, damit innere Klassen (Events.ModifyOutput) vor der aeusseren greifen. */
+		/* Dieselben verschobenen Mojang-Klassen in Schraegstrich-Form (Mixin-Ziele in Strings). */
+		mojangVerschobenVor261.each { neu, alt ->
+			def n = neu.replace(".", "/")
+			def a = alt.replace(".", "/")
+			regex(vor261) {
+				replace("L" + n + '(?=[;\\$])', "L" + a, NIE, "L" + n)
+			}
+		}
+		[fabricApiVor261, mojangVerschobenVor261, fabricApiNamenVor261].each { tabelle ->
+			tabelle.sort { -it.key.length() }.each { neu, alt ->
+				regex(vor261) {
+					replace("\\b" + java.util.regex.Pattern.quote(neu) + "\\b(?!\\.Baked\\b)", eval(current.version, "<1.21.9") ? alt.replace(".rendering.v1.world.", ".rendering.v1.").replace("WorldRenderEvents.EndMain", "WorldRenderEvents.Last") : alt,
+						NIE, neu)
+				}
+			}
+		}
+		/* 1.21.11: 26.2-Grafiktypen aus src/compat/vor261 (Tabelle ersatzVor261). */
+		ersatzVor261.each { neu, alt ->
+			regex(vor261) {
+				replace("\\b" + java.util.regex.Pattern.quote(neu) + "\\b", alt,
+					NIE, neu)
+			}
+		}
+		regex(vor261) {
+			replace("(?<![.\\w])RenderPass\\.RenderArea\\b", "mchorse.bbs_mod.compat.alt.RenderArea",
+				NIE, "RenderPass.RenderArea")
+		}
+		/* PrimitiveTopology und IndexType waren vor 26.2 VertexFormat.Mode und VertexFormat.IndexType
+		 * (gleiche Konstanten, nachgeprueft an beiden Jars). */
+		regex(vor261) {
+			replace("\\bimport com\\.mojang\\.blaze3d\\.PrimitiveTopology;", "import com.mojang.blaze3d.vertex.VertexFormat; /* Topologie */",
+				NIE, "import com.mojang.blaze3d.PrimitiveTopology;")
+		}
+		regex(vor261) {
+			replace("\\bimport com\\.mojang\\.blaze3d\\.IndexType;", "import com.mojang.blaze3d.vertex.VertexFormat; /* Indextyp */",
+				NIE, "import com.mojang.blaze3d.IndexType;")
+		}
+		regex(vor261) {
+			replace("(?<![.\\w])(?:com\\.mojang\\.blaze3d\\.)?PrimitiveTopology\\b", "VertexFormat.Mode",
+				NIE, "PrimitiveTopology")
+		}
+		regex(vor261) {
+			replace("(?<![.\\w])(?:com\\.mojang\\.blaze3d\\.)?IndexType\\b", "VertexFormat.IndexType",
+				NIE, "IndexType")
+		}
+		regex(vor261) {
+			replace("(?:com\\.mojang\\.blaze3d\\.systems\\.)?RenderSystem\\.getModelViewMatrixCopy\\(\\)", "new org.joml.Matrix4f(RenderSystem.getModelViewMatrix())",
+				NIE, "RenderSystem.getModelViewMatrixCopy()")
+		}
+		regex(vor261) {
+			replace("\\bDefaultVertexFormat\\.ENTITY\\b", "DefaultVertexFormat.NEW_ENTITY",
+				NIE, "DefaultVertexFormat.ENTITY")
+		}
+		/* GpuTexture.getFormat() liefert vor 26.1 Mojangs TextureFormat; das 26.2-GpuFormat
+		 * kommt aus der Schicht. Nur an GpuTexture-Empfaengern (BBS' eigene Texture hat auch
+		 * getFormat(), mit isColor/isDepth) — ein falscher Treffer scheitert laut beim Kompilieren. */
+		regex(vor261) {
+			replace("(?<=\\b(?:texture|source|image|previous|t)|texture\\(\\)|getColorTexture\\(\\)|gpu\\(\\))\\.getFormat\\(\\)(?!\\.is)", ".bbsGpuFormat()",
+				NIE, ".getFormat()")
+		}
+		/* Mixin-Deskriptoren (Strings) erreicht die Typ-Umbenennung nicht: vor 26.1 nimmt
+		 * GlDevice.createTexture Mojangs TextureFormat (auch die Schicht in src/compat/vor1215).
+		 * Ohne das brach die Test-Companion beim ersten Texturanlegen ab (1.20.1, 2026-10-14). */
+		regex(vor261) {
+			replace("ILcom/mojang/renderpearl/api/GpuFormat;IIII\\)", "ILcom/mojang/blaze3d/textures/TextureFormat;IIII)",
+				NIE, "ILcom/mojang/renderpearl/api/GpuFormat;IIII)")
+		}
+		/* VertexFormat.builder(stepRate) mit addAttribute(name, GpuFormat) gibt es erst ab 26.2. */
+		regex(vor261) {
+			replace("\\bVertexFormat\\.builder\\((?=[^)])", "mchorse.bbs_mod.compat.alt.VertexFormats.builder(",
+				NIE, "VertexFormat.builder(")
+		}
+		/* GUI: 26.1 nannte GuiGraphics in GuiGraphicsExtractor um (Methodennamen ueber
+		 * src/compat/vor261 GuiGraphicsAlt); 26.2 legte den Hud in Gui.hud ab, davor ist es Gui. */
+		regex(vor261) {
+			replace("\\bGuiGraphicsExtractor\\b", "GuiGraphics", NIE, "GuiGraphicsExtractor")
+		}
+		regex(vor261) {
+			replace("\\.gui\\.hud\\b(?!\\.extractRenderState\\()", ".gui", NIE, ".gui.hud")
+		}
+		regex(vor261) {
+			replace("\\.registerKeyMapping\\(", ".registerKeyBinding(", NIE, ".registerKeyMapping(")
+		}
+		regex(vor261) {
+			replace("(?:net\\.minecraft\\.client\\.renderer\\.)?\\bRenderPipelines\\.ENTITY_TRANSLUCENT_CULL\\b", "mchorse.bbs_mod.compat.alt.RenderPipelinesAlt.ENTITY_TRANSLUCENT_CULL",
+				NIE, "RenderPipelines.ENTITY_TRANSLUCENT_CULL")
+		}
+		/* Blockmodell-Teile: 26.2 BlockStateModelPart ist vor 26.1 BlockModelPart (getQuads(Direction)
+		 * gleich, am Jar geprueft); MaterialInfo liefert BakedQuadAlt. */
+		regex(vor261) {
+			replace("(?:net\\.minecraft\\.client\\.renderer\\.block\\.dispatch\\.)?\\bBlockStateModelPart\\b", "net.minecraft.client.renderer.block.model.BlockModelPart", NIE, "BlockStateModelPart")
+		}
+		regex(vor261) {
+			replace("(?:net\\.minecraft\\.client\\.resources\\.model\\.geometry\\.)?\\bBakedQuad\\.MaterialInfo\\b", "mchorse.bbs_mod.compat.alt.MaterialInfo", NIE, "BakedQuad.MaterialInfo")
+		}
+		/* Iris vor 26.1 fuehrt die Zusatzattribute als Elemente; ihre Namen im ENTITY-Format (aus
+		 * dem Bytecode von IrisVertexFormats 1.10.7+1.21.11 gelesen). */
+		[["ENTITY_ID_ATTRIBUTE", "iris_Entity"], ["MID_TEXTURE_ATTRIBUTE", "mc_midTexCoord"], ["TANGENT_ATTRIBUTE", "at_tangent"]].each { paar ->
+			regex(vor261) {
+				replace("(?:net\\.irisshaders\\.iris\\.vertices\\.)?\\bIrisVertexFormats\\." + paar[0] + "\\b", "\"" + paar[1] + "\"", NIE, "IrisVertexFormats." + paar[0])
+			}
+		}
+		regex(vor261) {
+			replace("\\bVertexFormat\\.Builder\\b", "mchorse.bbs_mod.compat.alt.VertexFormats.Builder", NIE, "VertexFormat.Builder")
+		}
+		/* Kameramatrizen und -winkel: 26.2 legt sie im CameraRenderState ab, davor fuellt sie
+		 * src/compat/vor261 (LevelRendererAltMixin) und gibt sie ueber Methoden heraus. */
+		[["projectionMatrix", "bbsProjectionMatrix()"], ["viewRotationMatrix", "bbsViewRotationMatrix()"]].each { paar ->
+			regex(vor261) {
+				replace("(?<=\\b(?:cameraRenderState|kamera))\\." + paar[0] + "\\b", "." + paar[1], NIE, "." + paar[0])
+			}
+		}
+		[["xRot", "bbsXRot()"], ["yRot", "bbsYRot()"]].each { paar ->
+			regex(vor261) {
+				replace("(?<=\\b(?:cameraRenderState|kamera|camera|altCam))\\." + paar[0] + "\\b(?!\\s*\\()", "." + paar[1], NIE, "." + paar[0])
+			}
+		}
+		/* Screen-Zeichnen: 26.1 nannte render/renderBackground in extractRenderState/extractBackground
+		 * um (nur die GUI-Signaturen; Entity-Renderer heissen in beiden extractRenderState). */
+		regex(vor261) {
+			replace("\\bextractRenderState(?=\\(GuiGraphicsExtractor \\w)", "render", NIE, "extractRenderState")
+		}
+		regex(vor261) {
+			replace("\\bextractBackground(?=\\(GuiGraphicsExtractor \\w)", "renderBackground", NIE, "extractBackground")
+		}
+		regex(vor261) {
+			replace("\\bsuper\\.extractRenderState(?=\\(\\w+, mouseX, mouseY, delta\\))", "super.render", NIE, "super.extractRenderState")
+		}
+		regex(vor261) {
+			replace("\\.resizeGui\\(\\)", ".resizeDisplay()", NIE, ".resizeGui()")
+		}
+		/* Bild-im-Bild-Zeichner: 26.2-Form (ohne Puffer, mit Sammler) ueber src/compat/vor261 BildImBild. */
+		regex(vor261) {
+			replace("\\bextends PictureInPictureRenderer<", "extends mchorse.bbs_mod.compat.alt.BildImBild<", NIE, "extends PictureInPictureRenderer<")
+		}
+		regex(vor261) {
+			replace("\\.gameRenderState\\(\\)\\.levelRenderState\\b", ".getLevelRenderState()", NIE, ".gameRenderState().levelRenderState")
+		}
+		regex(vor261) {
+			replace("(?<![.\\w])ProjectionMatrixBuffer\\b", "PerspectiveProjectionMatrixBuffer", NIE, "ProjectionMatrixBuffer")
+		}
+		regex(vor261) {
+			replace("\\bnew (?:net\\.minecraft\\.world\\.entity\\.)?EntitySpawnRequest\\(", "mchorse.bbs_mod.compat.alt.EntitySpawnRequest.grund(", NIE, "new EntitySpawnRequest(")
+		}
+		regex(vor261) {
+			replace("\\bimport net\\.minecraft\\.world\\.entity\\.EntitySpawnRequest;", "import net.minecraft.world.entity.EntitySpawnReason;", NIE, "import net.minecraft.world.entity.EntitySpawnRequest;")
+		}
+		/* SpecialModelRenderer.Unbaked ist vor 26.1 nicht generisch. */
+		regex(vor261) {
+			replace("\\bSpecialModelRenderer\\.Unbaked<[\\w.?]+>", "SpecialModelRenderer.Unbaked", NIE, "SpecialModelRenderer.Unbaked")
+		}
+		regex(vor261) {
+			replace("(?:com\\.mojang\\.blaze3d\\.buffers\\.)?\\bGpuBufferSlice\\.MappedView\\b", "mchorse.bbs_mod.compat.alt.MappedView", NIE, "GpuBufferSlice.MappedView")
+		}
+		/* 26.2 loescht die Tiefe umgekehrt auf 0; die Schicht spiegelt Loeschwerte (CommandEncoderAlt). */
+		regex(vor261) {
+			replace("(?:com\\.mojang\\.blaze3d\\.systems\\.)?\\bRenderSystem\\.DEFAULT_DEPTH_CLEAR_VALUE\\b", "0.0D", NIE, "RenderSystem.DEFAULT_DEPTH_CLEAR_VALUE")
+		}
+		regex(vor261) {
+			replace("\\.entityTags\\(\\)", ".getTags()", NIE, ".entityTags()")
+		}
+		regex(vor261) {
+			replace("\\.addGuiElement\\(", ".submitGuiElement(", NIE, ".addGuiElement(")
+		}
+		regex(vor261) {
+			replace("\\.addPicturesInPictureState\\(", ".submitPicturesInPictureState(", NIE, ".addPicturesInPictureState(")
+		}
+		regex(vor261) {
+			replace("(?:net\\.minecraft\\.client\\.resources\\.model\\.sprite\\.)?\\bMaterial\\.Baked\\b", "mchorse.bbs_mod.compat.alt.MaterialBaked", NIE, "Material.Baked")
+		}
+		regex(vor261) {
+			replace("\\.getLightDampening\\(\\)", ".getLightBlock()", NIE, ".getLightDampening()")
+		}
+		regex(vor261) {
+			replace("\\.gui(?:\\.hud)?\\.extractRenderState\\(", ".gui.render(", NIE, ".gui.extractRenderState(")
+		}
+		/* Abschnittsgeometrie neu bauen: vor 26.1 LevelRenderer.allChanged() (ohne Parameter). */
+		regex(vor261) {
+			replace("\\.invalidateCompiledGeometry\\([^;]*\\);", ".allChanged();", NIE, ".invalidateCompiledGeometry();")
+		}
+		/* Farbige Blocksaetze: 26.x Blocks.WOOL.white(), davor Blocks.WHITE_WOOL usw. */
+		def farben = ["white", "orange", "magenta", "lightBlue", "yellow", "lime", "pink", "gray", "lightGray",
+			"cyan", "purple", "blue", "brown", "green", "red", "black"]
+		[["WOOL", "WOOL"], ["DYED_TERRACOTTA", "TERRACOTTA"], ["CONCRETE", "CONCRETE"]].each { satz ->
+			farben.each { farbe ->
+				def gross = farbe.replaceAll(/([A-Z])/, '_$1').toUpperCase()
+				regex(vor261) {
+					replace("\\bBlocks\\." + satz[0] + "\\." + farbe + "\\(\\)", "Blocks." + gross + "_" + satz[1], NIE, "Blocks." + satz[0] + "." + farbe + "()")
+				}
+			}
+		}
+		regex(vor261) {
+			replace("\\.getDefaultClockTime\\(\\)", ".getDayTime()", NIE, ".getDefaultClockTime()")
+		}
+		/* Minecraft.renderFrame(boolean) heisst vor 26.1 runTick(boolean). */
+		regex(vor261) {
+			replace("method = \"renderFrame\"", "method = \"runTick\"", NIE, "method = \"renderFrame\"")
+		}
+		/* Grafik-Abbau: vor 26.1 schliesst Minecraft.close das Geraet direkt (kein shutdownRenderer). */
+		regex(vor261) {
+			replace("Lcom/mojang/blaze3d/systems/RenderSystem;shutdownRenderer\\(\\)V", "Lcom/mojang/blaze3d/systems/GpuDevice;close()V", NIE, "Lcom/mojang/blaze3d/systems/RenderSystem;shutdownRenderer()V")
+		}
+		regex(vor261) {
+			replace("\\(\\(mchorse\\.bbs_mod\\.mixin\\.client\\.GuiRenderStateAccessor\\) mc\\.gui\\)", "((mchorse.bbs_mod.mixin.client.GuiRenderStateAccessor) mc.gameRenderer)", NIE, "((mchorse.bbs_mod.mixin.client.GuiRenderStateAccessor) mc.gui)")
+		}
+	}
+}
