@@ -1,0 +1,124 @@
+# gradle
+#
+# ⛔ FUEHRENDER SCHRAEGSTRICH IST PFLICHT (2026-08-07 teuer gelernt). Ohne ihn greift ein
+# muster in JEDER tiefe. `build/` hat darum das paket
+#     src/client/java/com/afrobama/bbstools/client/crowd/build/
+# Dasselbe fuer das Companion-Modul: `/build/` ist an der Wurzel verankert und greift
+# darum NICHT fuer dev/build/. Ohne diese Zeile landet die gebaute Companion-Jar im Repo.
+/dev/build/
+# verschluckt — 5 dateien, ~58 KB, 1.400 zeilen echter quelltext vom 30./31. juli. Sie
+# standen nie in `git status`, waren nie committet, und der umzug auf linux hat sie
+# darum uebersehen: der build brach mit "Package ... ist nicht vorhanden" ab, obwohl
+# BBSToolsModClient.java sie committet aufruft.
+# Diese vier namen sind ganz normale paketnamen. Anker gemessen: kein anderes
+# verzeichnis im baum ist betroffen, `build/classes` bleibt ueber `/build/` erfasst.
+
+/.gradle/
+/build/
+/out/
+/classes/
+
+# ⛔ FREMD-JARS GEHOEREN NICHT IN DIE HISTORIE (2026-08-07). physics-mod-pro ist 133,5 MB
+# und lag als einziger blob ueber GitHubs harter 100-MB-grenze — damit war das repo
+# ueberhaupt nicht push-bar, also gab es KEINE kopie ausserhalb dieses rechners. Gemessen
+# war er eine unveraenderte fremdabhaengigkeit: fuenf byte-gleiche kopien (md5 b47515bd…,
+# eine davon ein CurseForge-download), im jar nur net/diebuddies, physx/*, de/fabmax und
+# null eigene pakete, seit dem einzigen commit 5bea1f97e nie geaendert.
+# Mit git-filter-repo aus der historie geworfen: 364 -> 225 MB. Die datei liegt weiter
+# unter libs/, der build findet sie.
+#
+# ⛔ NUR DIESE EINE DATEI, kein `/libs/*.jar`. Die drei anderen jars dort (accelerated-
+# rendering 576K, veil 3,2M, worldedit 6,0M) SIND versioniert und sollen es bleiben. Ein
+# muster, das etwas anderes behauptet als der baum tut, driftet und wird dann falsch
+# gelesen. Kommt ein neues jar ueber ~50 MB dazu: hier namentlich eintragen.
+/libs/physics-mod-pro-v172j-fabric-1.21.1.jar
+# 2026-08-10 dazu: v186 fuer mc 26.2, geholt mit tools/patreon-holen.mjs. Gleiche
+# Groessenordnung (~130 MB) und damit ueber GitHubs 100-MB-Grenze — sie wuerde den Push
+# nicht nur aufblaehen, sondern ABLEHNEN. Namentlich, nach der Regel vier Zeilen weiter oben.
+/libs/physics-mod-pro-v186-fabric-mc-26.2.jar
+
+# ⛔ NVIDIA-DLL RAUS AUS DER VERSIONIERUNG (2026-08-24, Nutzerentscheid). Anderer Grund
+# als bei physics-mod-pro: nicht die Groesse (48 KB), sondern die WEITERGABE. Die
+# NVTX-*API* ist offen (Apache-2.0 im nvtx3-Header, BSD-artig bei v1) — diese Datei ist
+# aber die VORKOMPILIERTE Bibliothek aus dem CUDA Toolkit bzw. Nsight, und dafuer gelten
+# NVIDIAs Redistributionsbedingungen, nicht die Header-Lizenz. Bei der Lizenz-Aufnahme
+# war sie die einzige versionierte Binaerdatei, deren Weitergabe fraglich blieb.
+# Sie bleibt unter libs/ liegen: NvtxBridge probiert erst die Systemnamen und faellt,
+# wenn nichts laedt, still auf No-Op zurueck — es bricht also nichts, auch ohne sie.
+/libs/nvToolsExt64_1.dll
+
+# eclipse
+
+*.launch
+
+# idea
+
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# vscode
+
+.settings/
+.vscode/
+bin/
+.classpath
+.project
+
+# macos
+
+*.DS_Store
+
+# fabric
+
+run/
+run_2/
+# Weitere parallele instanzen fuer agentenarbeit (dev-neustart.ps1 -Nummer 3 und hoeher).
+# Ohne diese zeile schleppt jeder commit die kopierte welt mit -- beim ersten mal 1326
+# dateien und 487k zeilen, die der vertikalschnitt-guard zu recht blockte.
+run_[0-9]*/
+run_server/
+
+# java
+
+hs_err_*.log
+replay_*.log
+*.hprof
+*.jfr
+
+ik_test/*
+.claude/settings.local.json
+
+# 2026-07-27: build-ausgaben und py-artefakte gehoeren nicht ins repo
+__pycache__/
+/0
+OrthoCamera-1.20.1
+
+# migrateMappings-ausgabe: generiert, gehoert nicht in die historie
+remappedSrc/
+remappedSrc-client/
+
+# Arbeits-Logs der Werkzeuge — sie standen als untracked im `git status` und haben mich am
+# 2026-08-02 zu einer Nachpruefung gezwungen ("ist das eine fremde Aenderung?"). Ein
+# Statuslauf, der nur echte Aenderungen zeigt, ist die halbe Miete beim Aufraeumen.
+bau.log
+boot.log
+swap.log
+welle.log
+.claude/worktrees/
+
+# Ergebnisdateien von tools/profil.py — Messwerte, kein Quelltext.
+/profil-*.txt
+/profil-*.html
+
+# Wegwerf-Mixins, die pruefe-mixin-ziele.py / alle-pruefsaetze.py zur Laufzeit anlegen.
+# Sie landeten in 86f473d8f versehentlich im Baum, weil ein Pruefsatzlauf parallel lief.
+ZZPruefsatz*.java
+
+# Stonecutter: Bauausgaben je Versionsknoten
+/versions/*/build/
+/versions/*/.gradle/
+
+/dev/versions/*/build/
+/dev/versions/*/run/

@@ -1,0 +1,495 @@
+// Coded by Afrobama/Claude — Veil instanced-batch redirect for BBS replays.
+//
+// Hooks BaseFilmController.render(WorldRenderContext) at HEAD. When the
+// runtime flag BBSPerfConfig.ENABLE_VEIL_BATCH is on AND every replay in
+// the current frame passes the conservative-fallback gate (BOBJ-backed
+// model, bone count <= VEIL_BATCH_MAX_BONES, no active stencil map,
+// no equipment / group / relative anchoring / actor binding),
+// the vanilla per-replay loop is cancelled and the work is rerouted
+// through VeilReplayBatchRenderer.{begin, submit, flush}.
+//
+// If ANY replay fails the gate, we DO NOT cancel — BBS runs its normal
+// loop and the batch path stays silent for that frame. This is the
+// "all-or-nothing" rule from the task spec.
+//
+// Reads the controller through BaseFilmControllerAccessor and the
+// replays' BOBJ data through ModelInstanceAccessor / BOBJModelAccessor /
+// BOBJArmatureAccessor (siblings in this package) so we never touch
+// raw BBS field names from inside this mixin.
+//
+// Registered as "bbs.BaseFilmControllerVeilMixin" in
+// bbstools.client.mixins.json.
+package com.afrobama.bbstools.client.mixin.bbs;
+
+import com.afrobama.bbstools.client.bbs.fastpath.VeilBatching;
+import com.afrobama.bbstools.client.bbs.veil.VeilCubicBatchRenderer;
+import com.afrobama.bbstools.client.bbs.veil.VeilReplayBatchRenderer;
+import com.afrobama.bbstools.client.bbs.veil.VeilReplayBatchRenderer.BatchEntry;
+import com.afrobama.bbstools.perf.BBSPerfConfig;
+
+import io.netty.util.collection.IntObjectMap;
+
+import mchorse.bbs_mod.bobj.BOBJArmature;
+import mchorse.bbs_mod.cubic.IModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
+import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
+import mchorse.bbs_mod.film.BaseFilmController;
+import mchorse.bbs_mod.film.FilmControllerContext;
+import mchorse.bbs_mod.film.BaseFilmController.UpdateMode;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
+
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+
+import org.joml.Matrix4f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Mixin(value = BaseFilmController.class, remap = false)
+public abstract class BaseFilmControllerVeilMixin
+{
+    private static final Logger BBSTOOLS$LOG = LoggerFactory.getLogger("bbstools/veil-batch");
+
+    /* Throttle the "fell back because of replay X" log so a 200-replay
+     * film doesn't drown the console. One log per minute across reasons. */
+    private static long bbstools$lastFallbackLogMs = 0L;
+
+    @Inject(
+        method = "render(Lnet/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext;)V",
+        at = @At("HEAD"),
+        cancellable = true,
+        remap = false)
+    private void bbstools$redirectThroughVeilBatch(WorldRenderContext context, CallbackInfo ci)
+    {
+        if (!BBSPerfConfig.ENABLE_VEIL_BATCH) return;
+
+        BaseFilmController self = (BaseFilmController) (Object) this;
+        BaseFilmControllerAccessor selfA = (BaseFilmControllerAccessor) (Object) this;
+
+        if (self.film == null) return;
+        IntObjectMap<IEntity> entities = selfA.bbstools$getEntities();
+        if (entities == null || entities.isEmpty()) return;
+
+        /* If any non-render UI path has pre-set a stencil map on the
+         * shared FilmControllerContext singleton, don't batch — picking
+         * needs the per-replay stencil ID. */
+        if (FilmControllerContext.instance.map != null)
+        {
+            bbstools$throttledLog("stencil map active");
+            BBSPerfConfig.veilBatchFramesFallback++;
+            return;
+        }
+
+        /* PASS 1 — PER-REPLAY classification: walk every entity and
+         * sort each one into either the batch path or the vanilla
+         * fallback list. Even ONE equipped / actor / grouped replay
+         * used to disqualify the whole frame; now each replay decides
+         * independently. */
+        List<VeilBatching.BatchedReplay> batched = new ArrayList<>(entities.size());
+        List<VeilBatching.NonBatched>  fallback = new ArrayList<>();
+        /* Tier 1c: cubic-form replays (non-BOBJ models) detected during
+         * classification get rerouted into the Veil cubic batcher instead
+         * of the per-replay vanilla fallback. They never enter `fallback`
+         * if the cubic path accepts them. */
+        int cubicSubmitsThisFrame = 0;
+        int maxBones = BBSPerfConfig.VEIL_BATCH_MAX_BONES;
+        List<Replay> replays = self.film.replays.getList();
+        /* iter 75: per-reason counts for diagnostic log. User reported
+         * 200 replays NOT batching but the previous log only said
+         * "nothing batchable" without breakdown. Now we emit which
+         * reasons fired and how many. */
+        HashMap<String, Integer> bbstools$reasonCounts = new HashMap<>();
+
+        for (Map.Entry<Integer, IEntity> entry : entities.entrySet())
+        {
+            int i = entry.getKey();
+            IEntity entity = entry.getValue();
+            if (entity == null) continue;
+            if (i < 0 || i >= replays.size()) continue;
+            Replay replay = replays.get(i);
+            if (replay == null) continue;
+
+            /* Match BBS's pause / exception filter before deciding. */
+            if (!selfA.bbstools$callCanUpdate(i, replay, entity, UpdateMode.RENDER)) continue;
+
+            /* Reasons to NOT batch this individual replay → falls back
+             * to BBS's renderEntity (still rendered, just not batched). */
+            String reason = bbstools$batchabilityIssue(replay, entity, maxBones);
+            if (reason != null)
+            {
+                bbstools$reasonCounts.merge(reason, 1, Integer::sum);
+                /* Tier 1c: replay was rejected by the skinned-BOBJ gate
+                 * because its model is Cubic-format. Try the Veil cubic
+                 * batcher instead. If it accepts the submission, the
+                 * replay is OWNED by the cubic flush this frame and we
+                 * MUST NOT also add it to the vanilla fallback list
+                 * (would render twice). If the cubic path is disabled
+                 * or refuses (null model, etc.), fall through to vanilla. */
+                if (BBSPerfConfig.ENABLE_VEIL_CUBIC_BATCH
+                    && ("non-BOBJ".equals(reason) || "crowd-mode-non-BOBJ".equals(reason)))
+                {
+                    if (bbstools$submitCubic(entity, context.tickCounter().getTickDelta(false), context))
+                    {
+                        cubicSubmitsThisFrame++;
+                        BBSPerfConfig.veilCubicSubmitted++;
+                        continue;
+                    }
+                    /* Cubic path didn't accept — fall through to vanilla. */
+                    BBSPerfConfig.veilCubicFallback++;
+                }
+                fallback.add(new VeilBatching.NonBatched(i, replay, entity));
+                continue;
+            }
+
+            /* Batchable — resolve the BOBJ-side data we'll feed the
+             * batch renderer. We already validated these references
+             * exist inside bbstools$batchabilityIssue. */
+            Form form = entity.getForm();
+            ModelInstance instance = ModelFormRenderer.getModel((ModelForm) form);
+            BOBJModel bobj = (BOBJModel) ((ModelInstanceAccessor)(Object) instance).bbstools$getModel();
+            BOBJArmature armature = ((BOBJModelAccessor)(Object) bobj).bbstools$getArmature();
+            batched.add(new VeilBatching.BatchedReplay(i, entity, replay, instance, bobj, armature));
+        }
+
+        if (batched.isEmpty() && cubicSubmitsThisFrame == 0)
+        {
+            /* No replay was batchable (skinned OR cubic) — let BBS run
+             * unmodified. The mixin returns without ci.cancel(), so the
+             * original loop proceeds normally.
+             *
+             * iter 75: emit per-reason breakdown so user can see WHICH
+             * gate is rejecting their replays (actor / non-BOBJ /
+             * equipped / group / etc.). */
+            if (!fallback.isEmpty())
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append("nothing batchable (").append(fallback.size()).append(" total): ");
+                boolean first = true;
+                for (Map.Entry<String, Integer> e : bbstools$reasonCounts.entrySet())
+                {
+                    if (!first) sb.append(", ");
+                    sb.append(e.getKey()).append("=").append(e.getValue());
+                    first = false;
+                }
+                bbstools$throttledLog(sb.toString());
+            }
+            return;
+        }
+        /* iter 75: also log partial fallbacks (some batched, some not). */
+        if (!bbstools$reasonCounts.isEmpty())
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("partial batch (").append(batched.size()).append(" batched, ")
+              .append(fallback.size()).append(" fallback): ");
+            boolean first = true;
+            for (Map.Entry<String, Integer> e : bbstools$reasonCounts.entrySet())
+            {
+                if (!first) sb.append(", ");
+                sb.append(e.getKey()).append("=").append(e.getValue());
+                first = false;
+            }
+            bbstools$throttledLog(sb.toString());
+        }
+
+        /* PASS 2 — every replay is batchable. Submit + flush. */
+        VeilReplayBatchRenderer batcher = VeilReplayBatchRenderer.INSTANCE;
+        batcher.begin();
+
+        float transition = context.tickCounter().getTickDelta(false);
+        Matrix4f viewMatrix = context.positionMatrix();
+        if (viewMatrix == null) viewMatrix = new Matrix4f();
+        Matrix4f projMatrix = context.projectionMatrix();
+        if (projMatrix == null) projMatrix = new Matrix4f();
+
+        for (VeilBatching.BatchedReplay br : batched)
+        {
+            /* Refresh skinning matrices for this replay's current pose.
+             * BBS normally does this inside ModelInstance.render →
+             * BOBJModelVAO. The batched path bypasses that so we have
+             * to call it ourselves; otherwise the matrices array we
+             * hand to the renderer would lag one animation step. */
+            try { br.armature().setupMatrices(); }
+            catch (Throwable th)
+            {
+                bbstools$throttledLog("setupMatrices threw: " + th);
+                com.afrobama.bbstools.client.debug.master.jvm.CatchBlockTracker
+                    .reportSilent("BaseFilmControllerVeilMixin.setupMatrices", th);
+            }
+
+            BOBJArmatureAccessor armA = (BOBJArmatureAccessor) (Object) br.armature();
+            ModelInstanceAccessor instA = (ModelInstanceAccessor) (Object) br.instance();
+
+            /* Copy bone matrices defensively — the armature buffer is
+             * mutated each frame and the batch renderer uploads
+             * asynchronously. */
+            Matrix4f[] srcBones = armA.bbstools$getMatrices();
+            Matrix4f[] bones = new Matrix4f[srcBones.length];
+            for (int b = 0; b < srcBones.length; b++)
+            {
+                bones[b] = srcBones[b] == null ? new Matrix4f() : new Matrix4f(srcBones[b]);
+            }
+
+            /* Model-space transform: world position interpolated by
+             * partial-tick. Group + relative paths were filtered out
+             * in pass 1, so a simple translate is correct. */
+            Matrix4f modelTransform = new Matrix4f().identity();
+            double t = (double) transition;
+            double x = bbstools$lerp(br.entity().getPrevX(), br.entity().getX(), t);
+            double y = bbstools$lerp(br.entity().getPrevY(), br.entity().getY(), t);
+            double z = bbstools$lerp(br.entity().getPrevZ(), br.entity().getZ(), t);
+            modelTransform.translate((float) x, (float) y, (float) z);
+            modelTransform.scale(br.instance().scale.x, br.instance().scale.y, br.instance().scale.z);
+
+            int light = 0x00F000F0;             // emissive — Iris shader will recompute
+            int overlay = 0x000A0000;           // no hurt flash for batched bulk
+            int color = br.instance().color;
+
+            BatchEntry be = new BatchEntry(modelTransform, bones, light, overlay, color);
+            batcher.submit(br.bobj(), instA.bbstools$getTexture(), be);
+            BBSPerfConfig.veilBatchReplaysSubmitted++;
+        }
+
+        boolean flushOk = false;
+        /* Tier 3h: snapshot the (replays, groups) counts BEFORE flush so
+         * we observe the actual submission topology even if flush throws.
+         * VeilGroupAuditor logs an alarm if ratio < 5.0 with replays > 50
+         * (means dedup is broken — replays not sharing model/texture). */
+        int replaysThisFrame = batcher.submittedReplayCount();
+        int groupsThisFrame = batcher.submittedGroupCount();
+        com.afrobama.bbstools.perf.VeilGroupAuditor.INSTANCE.snapshot(replaysThisFrame, groupsThisFrame);
+
+        try
+        {
+            batcher.flush(viewMatrix, projMatrix);
+            flushOk = true;
+            BBSPerfConfig.veilBatchFramesBatched++;
+        }
+        catch (Throwable th)
+        {
+            BBSTOOLS$LOG.warn("Veil batch flush threw — falling back to BBS render loop for batched replays too", th);
+            BBSPerfConfig.veilBatchFramesFallback++;
+        }
+
+        /* Tier 1c: cubic batch flush. Submissions happened during the
+         * classification loop. If anything landed in the cubic batcher
+         * this frame, dispatch its groups now. Errors are logged inside
+         * VeilCubicBatchRenderer.flush — we don't re-fallback those to
+         * vanilla here because submitting + flushing already runs that
+         * code path's own try/catch. */
+        if (cubicSubmitsThisFrame > 0)
+        {
+            try
+            {
+                VeilCubicBatchRenderer.INSTANCE.flush(viewMatrix, projMatrix);
+                BBSPerfConfig.veilCubicFlushes++;
+            }
+            catch (Throwable th)
+            {
+                BBSTOOLS$LOG.warn("Veil cubic batch flush threw — cubic replays this frame may not render", th);
+                BBSPerfConfig.veilCubicFallback++;
+            }
+        }
+
+        /* PASS 3 — vanilla render for any non-batchable replays
+         * (equipped, actor, grouped, etc.). We've taken responsibility
+         * for the WHOLE loop now, so we have to run these manually
+         * before cancelling. */
+        for (VeilBatching.NonBatched nb : fallback)
+        {
+            try
+            {
+                selfA.bbstools$callRenderEntity(context, nb.replay(), nb.entity());
+            }
+            catch (Throwable th)
+            {
+                bbstools$throttledLog("renderEntity fallback threw for replay " + nb.index() + ": " + th);
+                com.afrobama.bbstools.client.debug.master.jvm.CatchBlockTracker
+                    .reportSilent("BaseFilmControllerVeilMixin.renderEntity.fallback", th);
+            }
+        }
+
+        /* If the batch path failed but we already ran the fallback
+         * subset, ALSO run the batched subset via the vanilla path so
+         * nothing is missing visually. */
+        if (!flushOk)
+        {
+            for (VeilBatching.BatchedReplay br : batched)
+            {
+                try
+                {
+                    selfA.bbstools$callRenderEntity(context, br.replay(), br.entity());
+                }
+                catch (Throwable th)
+                {
+                    bbstools$throttledLog("renderEntity rescue threw for replay " + br.index() + ": " + th);
+                    com.afrobama.bbstools.client.debug.master.jvm.CatchBlockTracker
+                        .reportSilent("BaseFilmControllerVeilMixin.renderEntity.rescue", th);
+                }
+            }
+        }
+
+        ci.cancel();
+    }
+
+    /** Returns null if the replay is batchable, otherwise a short
+     *  diagnostic reason string. Pure inspection — no side effects. */
+    private static String bbstools$batchabilityIssue(Replay replay, IEntity entity, int maxBones)
+    {
+        /* iter 81+ (2026-05-17): crowdMode replays are forced into the
+         * batch path, bypassing actor/group/relative/equipped/non-BOBJ
+         * checks. Trade-off: if the underlying mesh isn't BOBJ-format,
+         * the batch will still reject below (non-BOBJ). VeilCubicBatch
+         * (planned) will close that gap. Until then, crowdMode on a
+         * Cubic mesh still falls back to vanilla render. */
+        if (com.afrobama.bbstools.client.util.CrowdModeRegistry.isCrowdMode(replay))
+        {
+            Form crowdForm = entity.getForm();
+            if (!(crowdForm instanceof ModelForm modelForm)) return "crowd-mode-non-ModelForm";
+            ModelInstance crowdInstance = ModelFormRenderer.getModel(modelForm);
+            if (crowdInstance == null) return "crowd-mode-model-not-loaded";
+            IModel crowdModel = ((ModelInstanceAccessor)(Object) crowdInstance).bbstools$getModel();
+            if (!(crowdModel instanceof BOBJModel crowdBobj)) return "crowd-mode-non-BOBJ";
+            BOBJArmature crowdArm = ((BOBJModelAccessor)(Object) crowdBobj).bbstools$getArmature();
+            if (crowdArm == null) return "crowd-mode-null-armature";
+            Matrix4f[] crowdBones = ((BOBJArmatureAccessor)(Object) crowdArm).bbstools$getMatrices();
+            if (crowdBones == null) return "crowd-mode-armature-uninit";
+            if (crowdBones.length > maxBones) return "crowd-mode-bones>" + maxBones;
+            return null;
+        }
+        if (Boolean.TRUE.equals(replay.actor.get())) return "actor";
+        if (!((String) replay.group.get()).isEmpty()) return "grouped";
+        if (Boolean.TRUE.equals(replay.relative.get())) return "relative";
+        Form form = entity.getForm();
+        if (!(form instanceof ModelForm modelForm)) return "non-ModelForm";
+        ModelInstance instance = ModelFormRenderer.getModel(modelForm);
+        if (instance == null) return "model-not-loaded";
+        if (!BBSPerfConfig.VEIL_BATCH_ALLOW_EQUIPPED
+            && (!instance.itemsMain.isEmpty() || !instance.itemsOff.isEmpty()
+                || !instance.armorSlots.isEmpty())) return "equipped";
+        IModel iModel = ((ModelInstanceAccessor)(Object) instance).bbstools$getModel();
+        if (!(iModel instanceof BOBJModel bobj)) return "non-BOBJ";
+        BOBJArmature armature = ((BOBJModelAccessor)(Object) bobj).bbstools$getArmature();
+        if (armature == null) return "null-armature";
+        Matrix4f[] bones = ((BOBJArmatureAccessor)(Object) armature).bbstools$getMatrices();
+        if (bones == null) return "armature-uninit";
+        if (bones.length > maxBones) return "bones>" + maxBones;
+        return null;
+    }
+
+    /* --- Helpers ---------------------------------------------------- */
+
+    /** Tier 1c: route a Cubic-form replay (rejected by the BOBJ skinned
+     *  gate as "non-BOBJ") into the Veil cubic batcher. Returns true if
+     *  the submission was accepted — caller MUST NOT also queue this
+     *  replay for the vanilla fallback render or it draws twice.
+     *
+     *  This is the actual Cubic detection branch the task spec calls for.
+     *  We do NOT require the cubic mesh to expose a vertex buffer yet —
+     *  VeilCubicBatch.build() returns un-built (no-op draw) when the
+     *  accessor hasn't shipped, and VeilCubicBatchRenderer.flush() will
+     *  cleanly skip those groups. The submit accumulates correctly. */
+    /* r3.2-diag: one-shot session flag to confirm pipeline reach. */
+    private static volatile boolean BBSTOOLS$DIAG_SUBMIT_ENTERED;
+
+    private static boolean bbstools$submitCubic(IEntity entity, float transition, WorldRenderContext context)
+    {
+        if (!BBSTOOLS$DIAG_SUBMIT_ENTERED)
+        {
+            BBSTOOLS$DIAG_SUBMIT_ENTERED = true;
+            BBSTOOLS$LOG.info("[diag/submitCubic] FIRST ENTRY — veil-cubic-flag={} ctxNull={}",
+                com.afrobama.bbstools.perf.BBSPerfConfig.ENABLE_VEIL_CUBIC_BATCH,
+                context == null);
+        }
+        try
+        {
+            Form form = entity.getForm();
+            if (!(form instanceof ModelForm modelForm)) return false;
+            ModelInstance instance = ModelFormRenderer.getModel(modelForm);
+            if (instance == null) return false;
+            ModelInstanceAccessor instA = (ModelInstanceAccessor) (Object) instance;
+            Object cubicModel = instA.bbstools$getModel();
+            if (cubicModel == null) return false;
+            Object texture = instA.bbstools$getTexture();
+
+            /* r3.4 2026-05-19 — Coded by Afrobama/Claude.
+             *  CAMERA-RELATIVE per-instance transform. MC renders the
+             *  world camera-relative: camera position is implicit
+             *  origin, every world coord goes (worldXYZ - cameraXYZ)
+             *  before it reaches the vertex shader (Iris's viewMat is
+             *  effectively identity wrt camera). Previous r39 code used
+             *  raw entity world coords → mesh ended up at world XYZ
+             *  while the rendered scene was at the camera origin →
+             *  RenderDoc Mesh Viewer VS Out empty (mesh thousands of
+             *  units off-screen, only visible as a tiny blue dot when
+             *  the camera was rotated 90° in RDC's mesh preview).
+             *  Subtract camera world position to match MC convention. */
+            Matrix4f modelTransform = new Matrix4f().identity();
+            double t = (double) transition;
+            double x = bbstools$lerp(entity.getPrevX(), entity.getX(), t);
+            double y = bbstools$lerp(entity.getPrevY(), entity.getY(), t);
+            double z = bbstools$lerp(entity.getPrevZ(), entity.getZ(), t);
+            net.minecraft.client.render.Camera cam = context.camera();
+            net.minecraft.util.math.Vec3d camPos = (cam == null)
+                ? net.minecraft.util.math.Vec3d.ZERO : cam.getPos();
+            modelTransform.translate(
+                (float) (x - camPos.x),
+                (float) (y - camPos.y),
+                (float) (z - camPos.z));
+            modelTransform.scale(instance.scale.x, instance.scale.y, instance.scale.z);
+
+            int light = 0x00F000F0;          /* emissive — Iris recomputes */
+            int color = instance.color;
+
+            /* r39 VeilCubic IS PERMANENTLY BROKEN — triggers GPU TDR.
+             *  Keep the submit() call here as a no-op so existing wiring
+             *  compiles, but the renderer itself stays OFF in master-
+             *  debug UNSAFE_KEEP_OFF. The day we accept VeilCubic is
+             *  unsalvageable, delete this branch entirely. */
+            return VeilCubicBatchRenderer.INSTANCE.submit(
+                cubicModel, texture, modelTransform, entity, light, color);
+        }
+        catch (Throwable th)
+        {
+            BBSTOOLS$LOG.warn("bbstools$submitCubic threw — caller will fall back to vanilla", th);
+            return false;
+        }
+    }
+
+    /** Per-replay bail-out: bumps the fallback counter and emits a
+     *  throttled log line. Caller MUST follow with {@code return;} so
+     *  vanilla BBS handles the frame. */
+    private void bbstools$fallback(String reason)
+    {
+        BBSPerfConfig.veilBatchFramesFallback++;
+        bbstools$throttledLog("fallback: " + reason);
+    }
+
+    private void bbstools$throttledLog(String reason)
+    {
+        long now = System.currentTimeMillis();
+        if (now - bbstools$lastFallbackLogMs > 60_000L)
+        {
+            bbstools$lastFallbackLogMs = now;
+            BBSTOOLS$LOG.info("Veil batch path skipped — {}", reason);
+        }
+    }
+
+    private static double bbstools$lerp(double a, double b, double t)
+    {
+        return a + (b - a) * t;
+    }
+
+
+}

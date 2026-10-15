@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>BBS Texture Studio</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1e1e1e; overflow: hidden; }
+  iframe { border: 0; width: 100%; height: 100%; display: block; }
+</style>
+</head>
+<body>
+<iframe id="editor" allow="clipboard-read; clipboard-write"></iframe>
+<script>
+/* Gastseite des Texture Studios. BBS laedt sie ueber Rinkus mod://-Schema und spricht
+ * mit ihr ueber window.cefQuery (JS -> Java) und executeJavaScript (Java -> JS).
+ *
+ * Photopea laeuft eingebettet und wird ueber seine Live-Messaging-Schnittstelle gesteuert
+ * (https://www.photopea.com/api/live): ein String ist ein Skript, ein ArrayBuffer eine Datei,
+ * jede Antwort endet mit "done". Ein Aenderungs-Ereignis gibt es nicht -- deshalb fragt
+ * die Seite das Bild in festen Abstaenden ab und meldet es nur, wenn es sich geaendert hat. */
+var PHOTOPEA = "https://www.photopea.com";
+var editor = document.getElementById("editor");
+var bereit = false;      /* Photopea hat sein erstes "done" geschickt */
+var beschaeftigt = false; /* eine Anfrage laeuft, die naechste wartet */
+var wartend = null;      /* Bild, das kam, bevor Photopea bereit war */
+var letztes = "";        /* zuletzt gemeldetes Bild (Base64), gegen Doppelmeldungen */
+
+function melden(text) {
+  if (window.cefQuery) window.cefQuery({ request: text, onSuccess: function () {}, onFailure: function () {} });
+}
+
+function base64(puffer) {
+  var bytes = new Uint8Array(puffer), teile = [];
+  for (var i = 0; i < bytes.length; i += 0x8000) teile.push(String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)));
+  return btoa(teile.join(""));
+}
+
+function puffer(b64) {
+  var s = atob(b64), bytes = new Uint8Array(s.length);
+  for (var i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+  return bytes.buffer;
+}
+
+/* Von Java gerufen: eine PNG (Base64) als neues Dokument in Photopea oeffnen. */
+function bbsLade(b64) {
+  if (!bereit) { wartend = b64; return; }
+  beschaeftigt = true;
+  letztes = "";
+  editor.contentWindow.postMessage(puffer(b64), "*");
+}
+
+window.addEventListener("message", function (e) {
+  if (e.source !== editor.contentWindow) return;
+  if (e.data === "done") {
+    beschaeftigt = false;
+    if (!bereit) {
+      bereit = true;
+      melden("bereit");
+      if (wartend) { var b = wartend; wartend = null; bbsLade(b); }
+    }
+    return;
+  }
+  if (e.data instanceof ArrayBuffer) {
+    var b64 = base64(e.data);
+    if (b64 !== letztes) { letztes = b64; melden("bild:" + b64); }
+  }
+});
+
+/* Viermal je Sekunde das aktive Dokument als PNG holen, solange nichts anderes laeuft. */
+setInterval(function () {
+  if (!bereit || beschaeftigt) return;
+  beschaeftigt = true;
+  editor.contentWindow.postMessage("if (app.documents.length > 0) app.activeDocument.saveToOE('png');", "*");
+}, 250);
+
+/* Ein (leerer) Konfigurations-Hash startet Photopea im API-Modus statt auf der Startseite. */
+editor.src = PHOTOPEA + "#" + encodeURIComponent(JSON.stringify({}));
+melden("geladen");
+</script>
+</body>
+</html>

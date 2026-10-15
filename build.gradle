@@ -1,0 +1,1347 @@
+plugins {
+	/* AUTONOMIE 2026-07-27: von 1.15 angehoben — die veil-lib ist mit loom 1.16+
+	 * gebaut, 1.15.5 kann deren mod-metadaten nicht remappen. Braucht gradle 9.6.1. */
+	id 'dev.kikugie.loom-back-compat'
+	id 'maven-publish'
+}
+
+version = project.mod_version + "-" + minecraft_version
+group = project.maven_group
+
+// Explicit device selection also chooses the matching development shader mods.
+def zugriff = getRootProject().file("src/main/resources/bbs.accesswidener")
+
+/* Die Nachruestung (src/compat) hat zwei Stufen: "ab261" bildet 26.3 auf 26.1/26.2 nach,
+ * "vor261" die 26.2-API auf den rein-OpenGL-Versionen bis 1.21.11 (eigene GL-Schicht,
+ * Nutzerentscheid 2026-10-12). src/compat/client gilt fuer beide. */
+def compatStufe = stonecutter.eval(stonecutter.current.version, "<26.1") ? "vor261" : "ab261"
+/* Vor 1.21.5 fehlt Mojangs GPU-API ganz: "vor1215" liegt UEBER vor261, stellt die fehlenden
+ * Klassen unter ihren 1.21.11-Namen bereit und ersetzt gleichnamige vor261-Dateien; was dort
+ * nur auf 1.21.5+-Klassen zielt, nennt vor1215/weglassen.txt. Ressourcen, Access Widener und
+ * injizierte Interfaces kommen dann ganz aus vor1215. */
+def vor1215 = stonecutter.eval(stonecutter.current.version, "<1.21.5")
+/* Vor 1.21.2 (keine Render-Zustaende, kein GpuBuffer von 1.21.4): "vor1212" liegt ueber vor1215. */
+def vor1212 = stonecutter.eval(stonecutter.current.version, "<1.21.2")
+/* Vor 1.20.5 (keine Data Components, alte Netzwerk-Nutzlasten): "vor1205" liegt ueber vor1212. */
+def vor1205 = stonecutter.eval(stonecutter.current.version, "<1.20.5")
+/* Vor 1.20.2 (1.20.1): andere Ruestungs-/Audio-API; "vor1202" liegt ueber vor1205. */
+def vor1202 = stonecutter.eval(stonecutter.current.version, "<1.20.2")
+apply from: rootProject.file("gradle/compat-stufen.gradle")
+def stufen = compatStufen(compatStufe == "vor261", vor1215, vor1212, vor1205, vor1202)
+def compatOrdner = getRootProject().file("src/compat/" + stufen[0])
+def compatJava = stufen.collect { getRootProject().file("src/compat/" + it + "/java") }
+/* Je Stufe die Pfade, die hoehere Stufen ersetzen (gleiche Datei) oder streichen (weglassen.txt). */
+def weglassenVon = { String name -> def d = getRootProject().file("src/compat/" + name + "/weglassen.txt"); d.exists() ? d.readLines().collect { it.trim() }.findAll { it && !it.startsWith("#") } : [] }
+def vor261Weg = stufen.size() > 1 ? stufen.subList(0, stufen.size() - 1).collectMany { weglassenVon(it) } : []
+
+if (stonecutter.eval(stonecutter.current.version, "<26.3")) {
+	def zusammen = file("build/bbs.accesswidener")
+	def text = zugriff.text.trim()
+
+	/* Bis 1.21.11 ist Minecraft obfuskiert: der Access Widener spricht dort die gemappten
+	 * (Mojang-)Namen, Loom erwartet dafuer den Namensraum "named". */
+	if (stonecutter.eval(stonecutter.current.version, "<26.1")) {
+		text = text.replaceFirst(/(?m)^accessWidener v2 official$/, "accessWidener v2 named")
+	}
+
+	/* Die Freigaben der Nachruestung je Stufe (ab261: Frontend-Schicht von 26.2).
+	 * "zugriff:<text>" in einer weglassen.txt streicht Zeilen tieferer Stufen, die <text>
+	 * enthalten (Ziel fehlt in dieser Version). Trifft ein Eintrag nichts, bricht der Bau ab. */
+	def zugriffWeg = stufen.collectMany { weglassenVon(it) }.findAll { it.startsWith("zugriff:") }.collect { it.substring(8).trim() }
+	def zugriffGetroffen = [] as Set
+	compatVoll(stufen).each { name ->
+		def compatZugriff = getRootProject().file("src/compat/" + name + "/compat.accesswidener")
+		if (compatZugriff.exists()) {
+			def zeilen = compatZugriff.readLines().findAll { zeile ->
+				def weg = zugriffWeg.find { zeile.contains(it) }
+				if (weg != null) zugriffGetroffen << weg
+				weg == null
+			}
+			text += "\n\n# Nachruestung vor 26.3 (" + name + "/compat.accesswidener)\n" + zeilen.join("\n")
+		}
+	}
+	if (zugriffGetroffen.size() != zugriffWeg.size()) {
+		throw new GradleException("weglassen.txt: zugriff-Eintraege ohne Treffer: " + (zugriffWeg - zugriffGetroffen))
+	}
+
+	zusammen.parentFile.mkdirs()
+	zusammen.text = text + "\n"
+	zugriff = zusammen
+}
+
+def bbsGraphics = project.findProperty("bbs.graphics")?.toString()
+if (bbsGraphics != null && !(bbsGraphics in ["opengl", "vulkan"])) {
+	throw new GradleException("bbs.graphics must be opengl or vulkan")
+}
+
+base {
+	archivesName = project.archives_base_name
+}
+
+repositories {
+	// Add repositories to retrieve artifacts from in here.
+	// You should only use this when depending on other mods because
+	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
+	// for more information about repositories.
+	/* lwjgl-freetype (vor 1.20.5 mitgeliefert): Mojangs Bibliotheks-Repo hat das Modul, aber nicht
+	 * alle Natives (linux-arm64 fehlt) -- Gradle sucht dann nur dort. Darum aus Maven Central. */
+	/* Bei 1.20.1 hebt Loom LWJGL selbst an (LWJGL3UpgradeLibraryProcessor, eigenes exklusives
+	 * Repo fuer org.lwjgl) -- ein zweiter exklusiver Filter liesse kein Repo uebrig. */
+	if (vor1205 && !vor1202) {
+		exclusiveContent {
+			forRepository { mavenCentral() }
+			filter { includeModule "org.lwjgl", "lwjgl-freetype" }
+		}
+	}
+	exclusiveContent {
+		forRepository {
+			maven {
+				name = "Modrinth"
+				url = "https://api.modrinth.com/maven"
+			}
+		}
+		filter {
+			includeGroup "maven.modrinth"
+		}
+	}
+
+	maven {
+		name = "Gegy"
+		url = "https://maven.gegy.dev/"
+	}
+
+	/* AUTONOMIE 2026-07-27: MCEF (chromium-embedded) fuer BBSWebBridge. */
+	maven {
+		name = "CinemaMod"
+		url = "https://mcef-download.cinemamod.com/repositories/releases"
+	}
+}
+
+loom {
+    splitEnvironmentSourceSets()
+
+	mods {
+		"bbs" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+
+	/* 2026-07-31 WIEDER AN. Er war stillgelegt mit der Begruendung, 26.x habe das FORMAT
+	 * ersetzt (classTweaker statt accessWidener v2). Das stimmt nicht: Fabrics eigene Datei
+	 * traegt in 26.2 unveraendert `accessWidener v2 official`. Der erste Boot scheiterte an
+	 * etwas anderem -- der Kopf stand auf Zeile 6 statt auf Zeile 1, weil ein Kommentarblock
+	 * davor gerutscht war. Die Fehlermeldung nannte das neue Format und schickte damit in die
+	 * falsche Richtung; Begruendung steht jetzt in der Datei selbst.
+	 *
+	 * Von sechs Eintraegen ist einer uebrig (ModelPart.children fuer den Blender-Export) --
+	 * die anderen fuenf zeigten auf Gestrichenes. */
+	/* Vor 26.3 kommen die Freigaben der Nachruestung (src/compat/compat.accesswidener) dazu.
+	 * Loom braucht die Datei schon beim Konfigurieren, darum entsteht sie hier und nicht
+	 * erst im Bau; processResources legt dieselbe Fassung ins Jar. */
+	accessWidenerPath.set(zugriff)
+
+	/*
+	 * Ports der DEV-instanz — bewusst NEBEN denen der CurseForge-instanz.
+	 *
+	 * CF laeuft auf den defaults (studio 7900, bridge 9880, jdwp 5005). Die dev-instanz
+	 * liegt daneben, damit beide gleichzeitig laufen koennen: der nutzer arbeitet in CF,
+	 * waehrend hier gemessen wird. Ohne diese trennung band die zweite instanz still
+	 * nichts und jede messung ging an die falsche JVM.
+	 */
+	ext.devPorts = [
+		studio: project.findProperty("studioPort") ?: 7901,
+		bridge: project.findProperty("bridgePort") ?: 9881,
+		jdwp  : project.findProperty("jdwpPort")   ?: 5006,
+	]
+
+	/*
+	 * Startet direkt in eine welt statt ins hauptmenue — spart bei jedem test das
+	 * durchklicken von menue -> weltliste -> laden.
+	 *
+	 *   ./gradlew runQuick                 (welt "New World")
+	 *   ./gradlew runQuick -Pwelt=<name>   (andere welt)
+	 *
+	 * Angelegt 2026-07-27: die UI-klickerei per bildschirm-koordinaten kostete pro test
+	 * minuten und traf oft daneben (fenstergroesse verschiebt die pixel-positionen).
+	 */
+	runs {
+		client {
+			if (bbsGraphics != null) {
+				programArgs "--graphicsBackend", bbsGraphics
+			}
+			if (project.hasProperty("bbs.vulkanValidation")) {
+				programArgs "--vulkanValidation"
+			}
+		}
+		quick {
+			client()
+			configName = "Quick"
+
+			if (bbsGraphics != null) {
+				programArgs "--graphicsBackend", bbsGraphics
+			}
+			if (project.hasProperty("bbs.vulkanValidation")) {
+				programArgs "--vulkanValidation"
+			}
+
+			/* AUTONOMIE 2026-07-27: mit -Pdebug oeffnet die instanz JDWP auf :5005.
+			 *
+			 *     ./gradlew runQuick -Pdebug
+			 *
+			 * Danach kann hotswap-cf.ps1 (oder IntelliJ) klassen live austauschen, ohne
+			 * neustart. Ohne den schalter bleibt der port zu — JDWP kostet etwas leistung
+			 * und soll nicht immer offen sein. suspend=n: das game wartet nicht auf einen
+			 * debugger, es startet normal durch. */
+			if (project.hasProperty("debug"))
+			{
+				vmArgs "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${devPorts.jdwp}"
+			}
+
+			/*
+			 * ⛔ EIGENE PORTS FUER DIE DEV-INSTANZ (2026-07-27, teuer gelernt).
+			 *
+			 * Unser mod startet seine server in JEDER instanz — auch in der CurseForge-instanz,
+			 * in der der nutzer arbeitet. Beide griffen nach denselben ports, also gewann wer
+			 * zuerst da war: die dev-instanz startete, band nichts, lief aber weiter, und JEDE
+			 * messung ging still an die CF-instanz mit ihrem ALTEN klassenstand. Ich suchte den
+			 * fehler eine halbe stunde im code (route "fehlte", EXEC "deaktiviert") — er lag im
+			 * port-konflikt. Schlimmer: beim aufraeumen haette ich fast die arbeitsinstanz des
+			 * nutzers gekillt.
+			 *
+			 * Die properties existierten laengst (mcstudio.port, blenderbridge.port) und waren
+			 * genau dafuer gedacht ("dev-instanz-koexistenz") — sie wurden nur nie gesetzt.
+			 *
+			 * Ueberschreibbar: ./gradlew runQuick -PstudioPort=7902 -PbridgePort=9882
+			 * HttpDebugServer (7777) braucht nichts — der sucht sich selbst einen freien port.
+			 */
+			property "mcstudio.port", devPorts.studio.toString()
+			property "blenderbridge.port", devPorts.bridge.toString()
+			/* DaVinci-Link: Testinstanzen installieren ihr Resolve-Skript nur in einen eigenen
+			 * Ordner, nie in Resolves echten (DavinciScriptInstall). */
+			if (project.hasProperty("davinciScripts")) {
+				property "davincilink.scripts", project.property("davinciScripts").toString()
+			}
+
+			/* ⭐ VOLLES HOTSWAP (2026-07-27 wiederhergestellt — war im alten fork eingerichtet).
+			 *
+			 * Mit der gebundelten JBR (../jbr-dcevm-home, 21.0.9-nomod) und dem hotswap-agent
+			 * in deren lib/hotswap/ kann die laufende JVM NEUE METHODEN, FELDER UND KLASSEN
+			 * aufnehmen — nicht nur methoden-rümpfe. Damit braucht ein feature-umbau keinen
+			 * neustart mehr.
+			 *
+			 * ⛔ canAddMethod()/canUnrestrictedlyRedefineClasses() melden trotzdem `false`.
+			 * Beide sind deprecated und sagen NICHTS über die echte fähigkeit — nie daran
+			 * messen, immer eine echte klasse ändern und die wirkung im laufenden prozess
+			 * prüfen. (Diese fehlmessung kostete uns einen tag, siehe CLAUDE.md regel 0d.)
+			 *
+			 * Auf einer stock-JVM werden die -XX-flags ignoriert; dann bleibt es bei
+			 * body-hotswap. Deshalb ist die JBR über org.gradle.java.home fest gesetzt. */
+			/* Die redefinition-flags stehen NICHT hier, sondern als JDK_JAVA_OPTIONS weiter
+			 * unten am run-task — siehe die begruendung dort. Als vmArgs kommen sie beim
+			 * game-prozess nicht an. */
+			/* ⛔ KEIN -XX:HotswapAgent=fatjar. Das flag laedt den agent in den system-classloader;
+			 * Minecrafts log4j sucht org.hotswap.agent.config.PluginManager dann ueber Knot und
+			 * findet ihn nicht -> NoClassDefFoundError beim allerersten log-aufruf, das game
+			 * startet gar nicht. Der fork, der gestern lief, setzt es auch nicht: die beiden
+			 * AllowRedefinition-flags der JBR reichen fuer add-method/add-field. */
+
+			/* jdk.jshell für den blenderbridge-EXEC-kanal (in-JVM REPL). Ohne das modul
+			 * meldet EXEC "jdk.jshell unavailable" statt zu funktionieren. */
+			vmArgs "--add-modules=jdk.jshell"
+
+			/*
+			 * ⭐ MIXIN-HOTSWAP (2026-07-29, user-order „will nie wieder restarts sehen").
+			 *
+			 * Die MixinBruecke macht die LOGIK eines Handlers hotswapbar, nicht die WEBUNG.
+			 * Neues Mixin, anderer Injection Point, geänderte Handler-Signatur kosteten
+			 * deshalb weiterhin einen Boot — der letzte verbliebene Boot-Grund.
+			 *
+			 * Mixin bringt dagegen ein eigenes Werkzeug mit, das nie eingeschaltet war:
+			 * `org.spongepowered.tools.agent.MixinAgent` steckt im sponge-mixin-jar, das
+			 * ohnehin auf dem Classpath liegt, und dessen Manifest trägt Agent-Class,
+			 * Premain-Class, Can-Redefine-Classes und Can-Retransform-Classes. Mit
+			 * `mixin.hotSwap=true` DEFINIERT der Mixin-Prozessor die Mixin-Klassen als
+			 * echte JVM-Klassen; erst dann kann JDWP sie redefinieren, und der Agent webt
+			 * die Zielklassen daraufhin neu.
+			 *
+			 * ⛔ NACHTRÄGLICH ANHÄNGEN REICHT NICHT — gemessen: der Agent lässt sich per
+			 * Attach-API an die laufende JVM hängen (`ANGEHAENGT`, Instanz lief weiter),
+			 * aber die Mixin-Klassen waren da längst nicht als JVM-Klassen definiert
+			 * (`ungeladen (kommt beim ersten zugriff frisch)`), also gab es nichts zu
+			 * redefinieren. Die Eigenschaft muss beim START stehen.
+			 *
+			 * ⭐ BELEGT AM 2026-07-29 AN DER TEST-INSTANZ, die ganze Kette:
+			 *   1. `mixin.hotSwap = true` steht (ohne Agent-Boot: null).
+			 *   2. `hotswap.ps1 <MixinKlasse>` meldet `REDEFINED: 1 klasse(n)`.
+			 *      Dieselbe Klasse in der Instanz OHNE Agent: `ungeladen`.
+			 *   3. Der Agent protokolliert die Neu-Webung:
+			 *      `(FabricLoader/Mixin/agent) Redefining mixin com/afrobama/.../…Mixin`
+			 *   4. WIRKUNG: der gewobene Handler rief danach einen Klassennamen, den es erst
+			 *      im NACH dem Boot kompilierten Quelltext gab — nachgewiesen über eine neue
+			 *      Brückenmeldung. Kein Neustart.
+			 *
+			 * Deshalb STANDARD AN (User-Order 2026-07-29: „will nie wieder restarts sehen").
+			 * Abschalten, falls der Agent je im Weg steht:  ./gradlew runQuick -PkeinMixinHotswap
+			 */
+			if (!project.hasProperty("keinMixinHotswap"))
+			{
+				/* ⛔ NICHT ÜBER EINE PROJEKT-KONFIGURATION. Der jar hängt an fabric-loader
+				 * und steht auf LOOMS launch-classpath, nicht in compileClasspath oder
+				 * runtimeClasspath — zwei Versuche darüber schlugen fehl. Er liegt aber
+				 * verlässlich im Gradle-Modul-Cache; die Fassung wird nicht festgenagelt,
+				 * sondern die neueste genommen. */
+				def cache = new File(gradle.gradleUserHomeDir,
+					"caches/modules-2/files-2.1/net.fabricmc/sponge-mixin")
+				def gefunden = []
+
+				if (cache.exists())
+				{
+					cache.eachFileRecurse { datei ->
+						if (datei.name.startsWith("sponge-mixin-") && datei.name.endsWith(".jar"))
+						{
+							gefunden << datei
+						}
+					}
+				}
+
+				/* ⛔ "NEUESTE DATEI" IST NICHT "NEUESTE FASSUNG" (2026-08-10, eine Stunde).
+				 * Hier stand nur `sort { -it.lastModified() }`. Gradle lud irgendwann
+				 * sponge-mixin-0.15.5+mixin.0.8.7-SOURCES.jar nach — ein Quelltext-Archiv
+				 * ohne Premain-Class. Es hiess sponge-mixin-*.jar, es war die neueste
+				 * Datei, also wurde es der Agent. Ergebnis:
+				 *
+				 *     Error occurred during initialization of VM
+				 *     agent library failed Agent_OnLoad: instrument
+				 *
+				 * Die JVM startete gar nicht mehr — und das Boot-Log meldete davor
+				 * freundlich "[mixin-hotswap] agent: ...-sources.jar". Die AUSWAHL log,
+				 * nicht der Start: sie meldete Erfolg fuer eine Datei, die die verlangte
+				 * Faehigkeit nicht hat. Zwei taugliche Agent-JARs lagen daneben.
+				 *
+				 * Ein Namensfilter auf "-sources" waere die Symptomkur; morgen heisst es
+				 * -javadoc oder -slim. Gefiltert wird deshalb auf die EIGENSCHAFT, die
+				 * gebraucht wird: steht Premain-Class/Agent-Class im Manifest? */
+				def istAgent = { datei ->
+					try
+					{
+						return new java.util.zip.ZipFile(datei).withCloseable { zip ->
+							def eintrag = zip.getEntry("META-INF/MANIFEST.MF")
+
+							if (eintrag == null)
+							{
+								return false
+							}
+
+							def text = zip.getInputStream(eintrag).getText("UTF-8")
+
+							return text.contains("Premain-Class:") || text.contains("Agent-Class:")
+						}
+					}
+					catch (Exception fehler)
+					{
+						return false        // unlesbar/kaputt = kein Agent
+					}
+				}
+
+				def tauglich = gefunden.findAll(istAgent)
+
+				if (tauglich.isEmpty() && !gefunden.isEmpty())
+				{
+					throw new GradleException(
+						"-PmixinHotswap: " + gefunden.size() + " sponge-mixin-*.jar gefunden, "
+						+ "aber KEINES hat Premain-Class im Manifest (nur Quelltext-/Doku-Archive?): "
+						+ gefunden.collect { it.name }.join(", "))
+				}
+
+				def mixinJar = tauglich.sort { -it.lastModified() }.find { true }
+
+				if (mixinJar == null)
+				{
+					/* Ein Werkzeug, das nicht kann was verlangt wird, muss LAUT scheitern —
+					 * ein stilles Weiterlaufen ohne Agent sähe aus wie „Mixin-Hotswap geht
+					 * nicht", und genau diese Fehldiagnose hat schon Monate gekostet. */
+					/* ⛔ DEN AUSWEG MITGEBEN (2026-08-23, Umzug auf Omarchy). Auf einer frischen
+					 * Maschine ist der Gradle-Cache leer, das JAR landet dort erst NACH der
+					 * Aufloesung — die diese Zeile in der KONFIGURATIONSPHASE verhindert.
+					 * Henne-Ei: der Bau scheiterte mit "kein sponge-mixin-*.jar", was wie
+					 * "Mixin-Hotswap kaputt" aussieht statt wie "Cache noch kalt". */
+					throw new GradleException(
+						"-PmixinHotswap: kein sponge-mixin-*.jar unter " + cache
+						+ "\n  Cache noch kalt? Einmal './gradlew compileClientJava -PkeinMixinHotswap'"
+						+ " laufen lassen, danach liegt das JAR da und normale Bauläufe gehen wieder.")
+				}
+
+				property "mixin.hotSwap", "true"
+				vmArgs "-javaagent:${mixinJar.absolutePath}"
+
+				println "[mixin-hotswap] agent: ${mixinJar.name}"
+			}
+
+			/*
+			 * ⛔ EIGENER LAUFORDNER FUER DIE TEST-INSTANZ (2026-07-29, R3 in docs/REIBUNGEN.md).
+			 *
+			 * Zwei clients duerfen sich `run/` nicht teilen: Minecraft haelt eine session.lock
+			 * auf der geladenen welt, und options.txt/config werden beim beenden ueberschrieben.
+			 * Die zweite instanz bekommt deshalb `run_2` (steht schon in .gitignore).
+			 *
+			 * WOFUER ueberhaupt eine zweite: meine beweis-laeufe haben dem nutzer panel,
+			 * kategorie und cursor unter den haenden weggezogen, einmal sein vorbereitetes
+			 * testszenario zerschossen. Die test-instanz darf ich jederzeit ruinieren.
+			 *
+			 *   pwsh tools/dev-neustart.ps1 -Test -Starten
+			 */
+			/* Die aktive Version laeuft weiter im gemeinsamen run/, jede andere in versions/<v>/run. */
+			runDir project.findProperty("laufordner") ?: (stonecutter.current.isActive() ? "../../run" : "run")
+
+			/* ⛔ A/B-VERGLEICH BRAUCHT DENSELBEN NUTZERNAMEN (2026-08-10). Der Dev-Launcher
+			 * wuerfelt sonst je Start einen "PlayerNNN" — und Minecraft waehlt die Standardhaut
+			 * (Steve/Alex) aus dem UUID-Hash des Namens. Gemessen: 1.21.1 zeigte Player306 mit
+			 * rotbraunem Arm, 26.2 Player963 mit blassem. 45 % Bildabweichung, komplett
+			 * hausgemacht. Mit -Pnutzer=AB sind beide Seiten gleich. */
+			programArgs "--username", (project.findProperty("nutzer") ?: "Player")
+			programArgs "--quickPlaySingleplayer", (project.findProperty("welt") ?: "New World")
+
+			/* GL-FEHLER LAUT MACHEN:  ./gradlew runQuick -PglDebug
+			 *
+			 * Ohne das schweigt der Treiber: ein ungueltiger GL-Aufruf reisst die JVM
+			 * kommentarlos mit einer Zugriffsverletzung (0xC0000005) ab -- kein Crashreport,
+			 * keine Ausnahme, nichts im Log. Genau so stirbt der BBS-Editor beim ersten
+			 * Zeichnen (Aufgabe 88).
+			 *
+			 * --checkGlErrors laesst Minecraft nach jedem Aufruf glGetError lesen und die
+			 * Stelle melden. Kostet Bilder pro Sekunde, deshalb nicht standardmaessig an --
+			 * aber beim Suchen eines nativen Absturzes ist es der Unterschied zwischen
+			 * "irgendwo im Zeichnen" und einer Zeilennummer.
+			 * --renderDebugLabels beschriftet zusaetzlich die GPU-Objekte, damit die Meldung
+			 * sagt WELCHER Puffer/welche Textur gemeint ist. */
+			if (project.hasProperty("glDebug"))
+			{
+				programArgs "--checkGlErrors", "--renderDebugLabels"
+			}
+
+			/* ZEICHENSPUR DER BBS-OBERFLAECHE:  ./gradlew runQuick -Pfuehler
+			 *
+			 * Ergaenzt --checkGlErrors um den Fall, den es NICHT faengt: einen Absturz, der
+			 * kein ungueltiger GL-Aufruf ist (glGetError bleibt still, die JVM stirbt trotzdem).
+			 * Der Fuehler schreibt vor JEDEM Oberflaechenelement eine ungepufferte Zeile nach
+			 * System.err -- die letzte Zeile im Log benennt dann den Verursacher.
+			 *
+			 * Siehe mchorse.bbs_mod.ui.framework.elements.utils.Zeichenfuehler. */
+			if (project.hasProperty("fuehler"))
+			{
+				/* ⚠️ Loom kennt kein jvmArgs -- die Startklasse heisst RunConfigSettings und
+				 * bietet vmArg(s)/property. property(k, v) setzt daraus ein -Dk=v. */
+				property "bbs.zeichenfuehler", "true"
+			}
+
+			/* MIXIN-AUDIT, standardmaessig AN (2026-08-03).
+			 *
+			 * Schreibt beim Start run_N/.mixin.out/audit/mixin_implementation_report.txt:
+			 * jede Klasse, der ein Mixin ein Interface anhaengt, ohne dessen Methoden zu
+			 * implementieren. Das ist ein stiller Fehler -- er faellt erst als
+			 * AbstractMethodError auf, wenn die Methode zufaellig gerufen wird.
+			 *
+			 * Kostet nichts messbares (Start unveraendert bei 21 s). Erster Lauf: drei
+			 * Befunde, alle FREMD (zweimal Fabrics PacketListenerExtensions, einmal
+			 * PreparableReloadListener an LevelRenderer) -- keiner aus unserem Code. Damit
+			 * ist diese Fehlerklasse fuer uns ausgeschlossen, was vorher niemand wusste.
+			 *
+			 * Die gewobenen Klassen zusaetzlich auf die Platte schreiben (viele Dateien,
+			 * nur zur Fehlersuche):   ./gradlew runQuick -PmixinExport */
+			property "mixin.checks.interfaces", "true"
+			/* 1.20.1 im Dev-Lauf: Loom hebt LWJGL auf Java >= 19 von 3.3.1 auf 3.3.4 (3.3.1 laeuft dort
+			 * nicht); Sodium 0.5 verweigert dann den Start (Issue 2561). Spieler laufen mit Java 17
+			 * und 3.3.1 -- der Schalter betrifft nur diese Entwicklungslaeufe. */
+			if (vor1202) property "sodium.checks.issue2561", "false"
+
+			if (project.hasProperty("mixinExport"))
+			{
+				property "mixin.debug.export", "true"
+				property "mixin.debug.verbose", "true"
+			}
+		}
+	}
+}
+
+/* P3-26.2-AUS: integrations-code fremder mods aus dem build genommen.
+ *
+ * WARUM: diese 36 dateien sprechen die API von Iris, Veil, MCEF und PhysicsMod an. Deren
+ * abhaengigkeiten sind weiter unten stillgelegt (dieselbe markierung), also KOENNEN sie
+ * nicht uebersetzen -- sie meldeten 312 der 2292 client-fehler, also 14 %, ohne dass eine
+ * einzige davon etwas mit 26.2 zu tun hat. Sie verschwinden, wenn die fremdmods
+ * zurueckkommen, nicht durch portieren.
+ *
+ * ⛔ DER AUSSCHLUSS ALLEIN WAERE EIN STARTABBRUCH OHNE COMPILERFEHLER. Elf dieser klassen
+ * standen in `bbs.client.mixins.json` und eine konfiguration in `fabric.mod.json`. Ein
+ * mixin-eintrag, dessen klasse nicht im jar liegt, bricht den start ab. Darum gehoeren
+ * drei stellen zusammen und wurden zusammen geaendert:
+ *   1. dieser ausschluss
+ *   2. bbs.client.mixins.json  -> iris- und sodium-eintraege nach "_P3-26.2-AUS" verschoben
+ *   3. fabric.mod.json         -> bbstools.physicsmod.mixins.json ausgetragen
+ *
+ * ZURUECKHOLEN, einzeln und je mit eigenem beweis: abhaengigkeit anschalten, eintrag hier
+ * streichen, mixin-namen zurueck in die konfiguration, bauen, booten, wirkung messen.
+ */
+def physicsModJar = rootProject.file("libs/physics-mod-pro-v186-fabric-mc-26.2.jar")
+
+sourceSets {
+	client {
+		java {
+			/* Ohne das jar fallen genau die vier dateien heraus, die net.diebuddies
+			 * importieren: die drei mixins und ihre bruecken-logik. Nur PhysikModLogik
+			 * traegt die fremdtypen ausserhalb des mixin-pakets — die mixins rufen sie
+			 * ueber MixinBruecke, also namentlich, und vermissen sie zur laufzeit nicht. */
+			if (!physicsModJar.exists()) exclude "com/afrobama/bbstools/client/mixin/physicsmod/**"
+			if (!physicsModJar.exists()) exclude "com/afrobama/blendertransform/PhysikModLogik.java"
+			exclude "com/afrobama/bbstools/client/bbs/veil/**"
+			exclude "com/afrobama/bbstools/client/veil/**"
+			// 2026-08-10 raus: physicsmod ist wieder im build (v186, mc 26.2).
+			exclude "com/afrobama/bbstools/client/web/MCEFWeb*"
+			/* ⛔ BLEIBT AUS, auch mit Iris im Build (2026-08-10 gemessen). Diese drei
+			 * Dateien sind UNSER code vom 27.07. fuer 1.21.1 und nie nach 26.2 portiert
+			 * worden — der Ausschluss hatte das verdeckt. Sie scheitern nicht an Iris,
+			 * sondern an 26.2: WorldRenderContext (Fabric-API umbenannt), RenderStateShard
+			 * (entfallen), getTimer() -> getDeltaTracker(), getPosition() -> position().
+			 * Das ist Portierarbeit, kein Update. */
+			exclude "com/afrobama/bbstools/client/crowd/mass/CrowdIris*"
+			exclude "com/afrobama/bbstools/client/crowd/mass/CrowdMassVeil*"
+			/* ⛔ HIER STAND EIN AUSSCHLUSS DES GANZEN fracture-PAKETS -- ER WAR FALSCH.
+			 * Grundlage war eine suche nach dem WORT "PhysicsMod", und das steht dort in
+			 * kommentaren und klassennamen. Die IMPORTE sagen etwas anderes: keine einzige
+			 * der 26 fracture-dateien importiert net.diebuddies (PhysicsMod), com.sk89q
+			 * (WorldEdit), foundry.veil oder net.irisshaders. BonePhysicsSimulator ist
+			 * BBS-eigene knochenphysik, kein PhysicsMod-anhang.
+			 *
+			 * Ausgeschlossen bleiben nur die drei MIXINS, die wirklich in PhysicsMod-klassen
+			 * injizieren (com/afrobama/bbstools/client/mixin/physicsmod/**, weiter oben).
+			 * Das feature selbst wird portiert, nicht stillgelegt.
+			 *
+			 * Geprueft mit: python tools/fremdmod-schluss.py */
+			// 2026-08-10 raus: sodium ist wieder im build (0.9.2-alpha.4, mc 26.2).
+			/* NICHT das ganze paket: ShaderCurves und QueueMap darin sind das DATENMODELL
+			 * des shader-kurven-clips, an dem UICurveClip, CurveClientClip und BBSRendering
+			 * haengen -- BBS-code, kein Iris-anhang. Nur die drei klassen, die wirklich
+			 * gegen Iris uebersetzen, fliegen raus. */
+			exclude "mchorse/bbs_mod/utils/sodium/**"
+			exclude "mchorse/bbs_mod/forms/renderers/utils/RecolorVertexSodiumConsumer.java"
+			/* Zweite welle, gleiche ursache: fremd-mods ohne 26.2-bau. */
+			/* NUR die drei, die gegen Veil uebersetzen. BBSFxState und BBSFxCommand sind
+			 * eigener zustand bzw. eigener befehl -- 79 stellen im baum haengen an
+			 * BBSFxState, ein pauschales BBSFx* riss sie alle mit. */
+			exclude "com/afrobama/bbstools/client/fx/BBSFxPipelineRegistrar.java"
+			exclude "com/afrobama/bbstools/client/fx/BBSFxShadowmapPrePass.java"
+			exclude "com/afrobama/bbstools/client/fx/BBSFxUniformPusher.java"
+			exclude "com/afrobama/bbstools/client/crowd/mass/BBSCrowdAcceleratedRenderer.java"
+			exclude "com/afrobama/bbstools/client/mixin/accelrender/**"
+			exclude "com/afrobama/bbstools/client/web/BBSWebBridge.java"
+			/* Dritte welle: die BEFEHLE und registraturen, die die oben ausgeschlossenen
+			 * renderer bedienen. Sie sind der bedienteil derselben features -- ohne den
+			 * renderer haben sie nichts zu schalten.
+			 *
+			 * ⛔ WELCHE FEATURES DAMIT AUS SIND, damit es niemand spaeter suchen muss:
+			 *   /accelrender + /crowdgpu + /crowdmass  -> massen-crowd auf GPU (AcceleratedRendering, Iris)
+			 *   /bbsfx + demo-sequenzer                 -> Veil-nachbearbeitung (bloom, supernova, grain)
+			 *   fracture komplett                       -> PhysicsMod-zerbrechen, gravitationsgewehr
+			 *   MCEF-webseite im spiel                  -> MCEF
+			 * Alle vier kommen mit ihrer abhaengigkeit zurueck, nicht durch portieren. */
+			exclude "com/afrobama/bbstools/client/cinematic/AccelRenderCommand.java"
+			exclude "com/afrobama/bbstools/client/cinematic/CrowdGpuCommand.java"
+			exclude "com/afrobama/bbstools/client/fx/BBSFxCommand.java"
+			exclude "com/afrobama/bbstools/client/fx/effects/DemoSequencer.java"
+			exclude "com/afrobama/bbstools/client/crowd/mass/CrowdMassCommand.java"
+			exclude "com/afrobama/bbstools/client/crowd/mass/CrowdInstancedRenderer.java"
+			exclude "com/afrobama/bbstools/client/crowd/mass/CrowdMassSolidToggleCommand.java"
+			/* 2026-07-31: LegacyRendererDebuggers ist WIEDER DRIN. Ausgeschlossen war die ganze
+			 * Klasse, weil ZWEI ihrer Huellen gegen Iris bzw. AcceleratedRendering uebersetzen --
+			 * das kostete achtunddreissig funktionierende Debugger mit, darunter eval (unser
+			 * Messkanal) und live-log. Die zwei Huellen stehen jetzt allein in LegacyCrowdDebuggers,
+			 * und nur die bleibt draussen. */
+			exclude "com/afrobama/bbstools/client/debug/LegacyCrowdDebuggers.java"
+			/* Nachlauf: reine Debug-Tracer FUER die oben ausgeschlossenen Klassen.
+			 * Sie tauchten erst im zweiten Bau auf -- ein Ausschluss erzeugt eine kleine
+			 * Welle, weil andere Dateien die entfernten Pakete importieren. */
+			exclude "com/afrobama/bbstools/client/mixin/debug/MixinMethodTracer_Veil*"
+		}
+	}
+}
+
+
+/* Vor 26.3: was 26.3 an Mojangs Klassen NEU hat und unser Code breit nutzt (z. B.
+ * PoseStack.rotate), wird nachgeruestet. Das Interface spritzt Loom beim Kompilieren ein
+ * (Eintrag in fabric.mod.json, siehe stonecutter.gradle), ein Mixin zur Laufzeit
+ * (src/compat/client). So bleibt der gemeinsame Code reines 26.3. */
+def nachruesten = stonecutter.eval(stonecutter.current.version, "<26.3")
+
+/* Hooks, die erst der 26.3-Port braucht und deren Ziel es davor nicht gibt. Vor 26.3
+ * laufen dort die Wege des 26.2-Stands (Drahtgitter per Polygonmodus, Hand ueber den
+ * Spieler, Himmel/Hand ohne Zielumlenkung). Sie werden nicht kompiliert und aus den
+ * Mixin-Listen gestrichen (processResources). */
+def nurAb263 = [
+	"mchorse/bbs_mod/mixin/client/LevelExtractorMixin.java",
+	"mchorse/bbs_mod/mixin/client/NativeDrawPassMixin.java",
+	"mchorse/bbs_mod/mixin/client/SkyRenderTargetMixin.java",
+	"mchorse/bbs_mod/mixin/client/TerrainWireframePipelinesMixin.java",
+	"mchorse/bbs_mod/mixin/client/sodium/TerrainWireframePipelineMixin.java",
+	"com/afrobama/blendertransform/NativeDrawPassLogik.java",
+	"com/afrobama/blendertransform/TrackerHandExtraktionLogik.java",
+]
+
+/* Vor 26.1 (rein OpenGL, Nutzerentscheid 2026-10-12: Vulkan erst ab 26.3): Vulkan-Code und
+ * die Vitrail-Emission auf Vulkan-Speicher gibt es dort nicht. Gleichnamige Ersatzdateien in
+ * src/compat/vor261: NativeTimestampWriter (OpenGL-Haelfte), NanoVkRenderer (nie aktiv). */
+def nurAb261 = [
+	/* Export-HUD: eigener GUI-Durchgang nur, wo 26.x die GUI nach dem Bild zeichnet; Ersatz in vor261. */
+	"mchorse/bbs_mod/client/ExportHud.java",
+	"mchorse/bbs_mod/mixin/client/VulkanDescriptorPushMixin.java",
+	"mchorse/bbs_mod/mixin/client/VulkanTextureStagingMixin.java",
+	"mchorse/bbs_mod/mixin/client/vitrail/BbsEmissionStorageMixin.java",
+	"mchorse/bbs_mod/graphics/texture/VulkanDepthUpload.java",
+	"mchorse/bbs_mod/integrations/vitrail/VitrailEmissionCompositor.java",
+	"com/afrobama/bbstools/client/perf/NativeVulkanQueryPool.java",
+	"com/afrobama/bbstools/client/perf/NativeTimestampWriter.java",
+	"com/afrobama/bbstools/client/perf/NativeTimestampPass.java",
+	"com/afrobama/blendertransform/VitrailEmissionLogik.java",
+	"com/mcstudio/nano/NanoVkImages.java",
+	"com/mcstudio/nano/NanoVkRenderer.java",
+	"dev/vitrail/render/storage/BbsEmissionStorage.java",
+	/* 26.2-Blockmodell-API (BlockModelResolver, BlockModelRenderState); Ersatz in src/compat/vor261. */
+	"mchorse/bbs_mod/graphics/Blockmodell.java",
+	"mchorse/bbs_mod/graphics/Gegenstandsmodell.java",
+	/* Vitrail laeuft auf Vulkan: die ganze Integration entfaellt, die Fassaden, die der
+	 * gemeinsame Code befragt, stehen in src/compat/vor261 ("nicht aktiv"). */
+	"mchorse/bbs_mod/integrations/vitrail/",
+	"mchorse/bbs_mod/mixin/client/vitrail/",
+	"dev/vitrail/",
+	"com/afrobama/blendertransform/Vitrail",
+	"com/mcstudio/nano/NanoVkNative.java",
+	/* Mixins auf 26.2-Klassen; gleichnamige Ersatzdateien in src/compat/vor261. */
+	"mchorse/bbs_mod/mixin/client/GuiItemAtlasMixin.java",
+	"com/afrobama/bbstools/client/mixin/ProjectionPreviewAspectMixin.java",
+	"mchorse/bbs_mod/mixin/client/ModelFeatureRendererMixin.java",
+	"mchorse/bbs_mod/mixin/client/GameRendererMixin.java",
+	"mchorse/bbs_mod/mixin/client/CameraMixin.java",
+	"mchorse/bbs_mod/mixin/client/InGameHudMixin.java",
+	"mchorse/bbs_mod/mixin/client/EntityRendererMixin.java",
+	"mchorse/bbs_mod/mixin/client/ClientWorldPropertiesMixin.java",
+	"mchorse/bbs_mod/mixin/client/RenderPassScissorMixin.java",
+	"mchorse/bbs_mod/mixin/client/ChromaNebelMixin.java",
+	"mchorse/bbs_mod/mixin/client/ChromaWolkenMixin.java",
+	"mchorse/bbs_mod/mixin/client/BackgroundRendererMixin.java",
+	"mchorse/bbs_mod/mixin/client/GuiRenderStateAccessor.java",
+	/* Ruft 26.2s Gui.extractRenderState(Takt, …); niemand nutzt es, vor 26.1 entfaellt es. */
+	"mchorse/bbs_mod/mixin/client/InGameHudAccessor.java",
+	/* Sitzen vor 26.1 in compat GameRendererFovMixin (FOV kommt dort aus GameRenderer.getFov). */
+	"com/afrobama/bbstools/client/mixin/SprintFOVMixin.java",
+	"com/afrobama/bbstools/client/mixin/GameRendererTrackerSprintFovMixin.java",
+	"mchorse/bbs_mod/mixin/client/BlockModelRenderStateAccessor.java",
+	/* Zweiter Weltdurchgang ueber die 26.x-Extraktion; Ersatz in src/compat/vor261 loescht nur. */
+	"com/afrobama/blendertransform/ZweitKamera.java",
+]
+/* Gemeinsame Dateien, die vor 1.21.5 nicht kompiliert werden (Ziel fehlt, die Schicht vor1215
+ * erledigt es selbst); eine gleichnamige Datei in src/compat/vor1215 ersetzt sie. */
+def nurAb1215 = [
+	/* Texture Studio braucht Rinku (nur 26.3); Stubs in src/compat/vor1215. */
+	"mchorse/bbs_mod/ui/texturstudio/",
+	/* Hilfe-Video im Spiel spielt in Rinku (nur 26.3); Ersatz in src/compat/vor1215 (Systembrowser). */
+	"mchorse/bbs_mod/ui/hilfe/HilfeKanal.java",
+	"mchorse/bbs_mod/ui/hilfe/HilfeFlug.java",
+	"mchorse/bbs_mod/ui/hilfe/UIHilfeFenster.java",
+	"mchorse/bbs_mod/ui/hilfe/UIHilfeMini.java",
+	"mchorse/bbs_mod/ui/framework/elements/utils/SchnittSpiegel.java",
+	"mchorse/bbs_mod/mixin/client/GuiGraphicsExtractorAccessor.java",
+	"mchorse/bbs_mod/mixin/client/EntityRenderDispatcherMixin.java",
+	"mchorse/bbs_mod/mixin/client/ChromaHimmelMixin.java",
+	"com/afrobama/blendertransform/OrthoNebelLogik.java",
+	/* Nur Messpunkt am Himmelszustand (gibt es vor 1.21.5 nicht), kein Funktionsverlust. */
+	"mchorse/bbs_mod/mixin/client/HimmelMessMixin.java",
+	"com/afrobama/blendertransform/HimmelMessLogik.java",
+	/* GuiRenderer (Sortierung der GUI-Elemente) gibt es erst ab 1.21.6. */
+	"com/afrobama/bbstools/client/mixin/GuiRendererSortierungMixin.java",
+	/* Item-Atlas der GUI ebenfalls erst ab 1.21.6; davor zeichnen Icons direkt, nichts zu schaerfen. */
+	"mchorse/bbs_mod/mixin/client/GuiRendererAtlasMixin.java",
+	"mchorse/bbs_mod/mixin/client/ChunkSectionsToRenderMixin.java",
+	"com/afrobama/bbstools/client/mixin/EditorModeChunkSkipMixin.java",
+	/* Mixins mit 1.21.6+-Zielen; gleichnamige Fassungen in src/compat/vor1215 ersetzen sie. */
+	"mchorse/bbs_mod/mixin/client/WorldRendererMixin.java",
+	"mchorse/bbs_mod/mixin/client/LivingEntityRendererMixin.java",
+	"mchorse/bbs_mod/mixin/client/LevelRendererAccessor.java",
+	"mchorse/bbs_mod/mixin/client/BlockEntityRenderDispatcherMixin.java",
+	/* Lesepuffer waehlt die eigene GL-Schicht selbst (TexturBefehle). */
+	"mchorse/bbs_mod/mixin/client/GlReadBufferMixin.java",
+]
+/* Gemeinsame Dateien, die vor 1.21.2 nicht kompiliert werden (Gegenstands-Sonderzeichner gibt
+ * es erst ab 1.21.4; vor1212 registriert per Regel Fabrics BuiltinItemRendererRegistry). */
+def nurAb1212 = [
+	"mchorse/bbs_mod/client/renderer/item/GunSpecialRenderer.java",
+	"mchorse/bbs_mod/client/renderer/item/ModelBlockSpecialRenderer.java",
+	"mchorse/bbs_mod/mixin/client/SpecialModelRenderersAccessor.java",
+	"com/afrobama/bbstools/client/mixin/LivingEntityRendererTextureMixin.java",
+	"com/afrobama/bbstools/client/ragdoll/BBSTexturedZombieRenderer.java",
+	"mchorse/bbs_mod/cubic/render/vanilla/ArmorRenderer.java",
+	"mchorse/bbs_mod/mixin/client/PlayerEntityRendererMixin.java",
+	"com/afrobama/bbstools/client/mixin/CrowdLODMixin.java",
+	"mchorse/bbs_mod/mixin/client/LivingEntityRendererInvoker.java",
+]
+def ausgelassen = nurAb263 + (compatStufe == "vor261" ? nurAb261 : []) + (vor1215 ? nurAb1215 : []) + (vor1212 ? nurAb1212 : [])
+
+if (nachruesten) {
+	/* Loom liest die fabric.mod.json beim KONFIGURIEREN, Stonecutter erzeugt sie erst beim
+	 * Bauen. Fehlt die Injection noch (frischer Klon), wuerde Loom still ohne sie arbeiten und
+	 * der Compiler mit hunderten unverstaendlichen Fehlern scheitern — darum laut abbrechen. */
+	/* Der AKTIVE Knoten baut aus src/ selbst (Stonecutter hat sie beim Umschalten umgeschrieben),
+	 * nur die anderen aus build/generated — sonst brach jeder Bau nach "Set active project to
+	 * <alte Version>" hier ab, auch nach processResources (oeffentliche Versionszweige, 2026-10-14). */
+	def erzeugt = stonecutter.current.isActive() ? rootProject.file("src/main/resources/fabric.mod.json")
+		: file("build/generated/stonecutter/main/resources/fabric.mod.json")
+	def gewollt = compatInjiziert(stufen).values().flatten()
+	if (!erzeugt.exists() || gewollt.any { !erzeugt.text.contains(it) }) {
+		gradle.taskGraph.whenReady { graph ->
+			if (graph.allTasks.any { it.project == project && it.name.startsWith("compile") }) {
+				throw new GradleException("${project.path}: die Nachruestung (src/compat) ist Loom noch nicht bekannt. "
+					+ "Einmal 'sh ./gradlew ${project.path}:processResources' laufen lassen, dann neu bauen.")
+			}
+		}
+	}
+
+	sourceSets {
+		/* Nachruestung fuer den gemeinsamen Code (Netzwerk, Server): src/compat/<stufe>/main/java. */
+		main {
+			stufen.each { name ->
+				def ordner = rootProject.file("src/compat/" + name + "/main/java")
+				if (ordner.exists()) java.srcDir ordner
+				def res = rootProject.file("src/compat/" + name + "/main/resources")
+				if (res.exists()) resources.srcDir res
+			}
+		}
+		client {
+			/* Nur der SDL-Fensterfilter (WindowMixin, vor 26.3 aus) ruft sie auf. */
+			java.exclude "com/afrobama/blendertransform/SdlWindowEventLogik.java"
+			/* Nur im gemeinsamen Code: eine gleichnamige Datei in src/compat ersetzt die ausgelassene
+			 * (z. B. NativeTimestampWriter vor 26.1). */
+			def compatWurzel = rootProject.file("src/compat").absolutePath
+			/* Eintraege mit "/" am Ende sind Ordner, ohne ".java" am Ende Namensanfaenge. */
+			java.exclude { element ->
+				def pfad = element.relativePath.pathString
+				!element.file.absolutePath.startsWith(compatWurzel) && ausgelassen.any { eintrag ->
+					eintrag.endsWith(".java") ? pfad == eintrag : (!element.directory && pfad.startsWith(eintrag))
+				}
+			}
+			/* Nirgends instanziiert; SprintFovTrackerLogik fragt sie nur per Reflection ab und
+			 * kommt mit ihrem Fehlen zurecht. Ihre Hand-Logik wurde fuer 26.3 umgebaut. */
+			java.exclude "com/afrobama/bbstools/client/tracker/BBSToolsTrackerClientClip.java"
+			java.srcDir rootProject.file("src/compat/client/java")
+			compatJava.each { java.srcDir it }
+			/* Ressourcen fallen von oben nach unten durch; eine hoehere Stufe ersetzt gleichnamige. */
+			def vollStufen = compatVoll(stufen)
+			vollStufen.each { name -> resources.srcDir rootProject.file("src/compat/" + name + "/resources") }
+			resources.exclude { element ->
+				def i = vollStufen.findIndexOf { element.file.absolutePath.startsWith(rootProject.file("src/compat/" + it + "/resources").absolutePath) }
+				i > 0 && !element.directory && vollStufen.subList(0, i).any { rootProject.file("src/compat/" + it + "/resources/" + element.relativePath.pathString).exists() }
+			}
+			if (stufen.size() > 1) {
+				/* Dateien tieferer Stufen, die eine hoehere ersetzt oder weglaesst. */
+				java.exclude { element ->
+					def pfad = element.relativePath.pathString
+					def i = stufen.findIndexOf { element.file.absolutePath.startsWith(rootProject.file("src/compat/" + it + "/java").absolutePath) }
+					i > 0 && !element.directory && stufen.subList(0, i).any { hoeher ->
+						rootProject.file("src/compat/" + hoeher + "/java/" + pfad).exists()
+							|| weglassenVon(hoeher).any { it.endsWith(".java") ? pfad == it : pfad.startsWith(it) }
+					}
+				}
+			}
+		}
+	}
+}
+
+dependencies {
+	// To change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	/* Namenskollision mit der eigenen GL-Schicht (src/compat/vor1215): heisst eine Mojang-Klasse
+	 * dieser Version wie eine Schicht-Klasse (1.20.1-1.21.1 pipeline.RenderPipeline, 1.21.4
+	 * buffers.GpuFence), biegt remapJar UNSERE Klasse auf Mojangs intermediary-Namen um — im
+	 * Produktions-jar lag dann net/minecraft/class_4491.class, und BBS rief Mojangs Klasse
+	 * (IllegalAccessError in echter 1.20.1-Instanz, 2026-10-14; Dev-Laeufe zeigen es nicht).
+	 * Eine Loom-Mapping-Schicht benennt Mojangs Klasse im named-Raum um, unsere bleibt frei.
+	 * Gegenprobe: `unzip -Z1 <jar> | grep '^net/minecraft/class_'` muss leer sein. */
+	def kollisionen = rootProject.file("gradle/mappings-kollisionen/${project.minecraft_version}.tiny")
+	if (kollisionen.exists()) mappings loom.layered { officialMojangMappings(); mappings(kollisionen) { it.mergeNamespace("official") } }
+	else loomx.applyMojangMappings()
+	/* ⛔ MOJANG-MAPPINGS STATT YARN (2026-07-30, P2 des 26.2-ports).
+	 *
+	 * Fabric unterstuetzt Yarn ab 26.1 nicht mehr offiziell. Der umzug laeuft darum HIER
+	 * auf 1.21.1, wo das spiel noch laeuft und jede messung gegenpruefbar ist — nicht
+	 * gleichzeitig mit dem versionssprung.
+	 *
+	 * ⛔ ZWEI HAELFTEN, UND EINE ALLEIN BRINGT NUR FEHLER: `migrateMappings` schreibt den
+	 * QUELLTEXT um, diese zeile den CLASSPATH. Nach dem quelltext-umzug allein meldete
+	 * javac 100x "Package net.minecraft.core ist nicht vorhanden" — die quellen sprachen
+	 * schon Mojang, die gemappte MC-abhaengigkeit noch Yarn.
+	 *
+	 * `yarn_mappings` in gradle.properties ist damit unbenutzt, bleibt aber vorerst
+	 * stehen: der zweig 1.21.1 baut weiter darueber. */
+	/* ⛔ AB 26.1 GIBT ES KEINE MAPPINGS-ZEILE MEHR — Minecraft ist nicht mehr obfuskiert.
+	 *
+	 * Gemessen 2026-07-30: im version-manifest fehlen `client_mappings`/`server_mappings`
+	 * ab 26.1 (1.21.11 hat sie noch, 26.1/26.1.2/26.2/26.3-snapshot nicht), und im jar steht
+	 * `net/minecraft/client/renderer/entity/PandaRenderer.class` statt `class_310`. Es gibt
+	 * schlicht nichts zu mappen.
+	 *
+	 * `loom.officialMojangMappings()` versucht trotzdem etwas zu holen und bricht ab mit
+	 * "Failed to find official mojang mappings for 26.2". Das Fabric-Beispielprojekt auf dem
+	 * 26.2-zweig hat an dieser stelle GAR KEINE zeile.
+	 *
+	 * Fuer den zweig 1.21.1 gilt das NICHT — dort ist die zeile noetig und steht auch da. */
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API. This is technically optional, but you probably want it anyway.
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+	/* P1/P2 (2026-08-17, spike -> vollausbau): NanoVG — antialiasierte 2D-vektorgrafik
+	 * AUF MCs GL-kontext, aus DERSELBEN LWJGL-familie/-version wie MC (3.3.3, gemessen
+	 * im classpath). Natives fuer alle plattformen, die MC selbst bedient. */
+	/* ⛔ include() IST PFLICHT, nicht Kosmetik. runtimeOnly und implementation legen
+	 * das modul nur in den DEV-classpath, den Gradle stellt — ins ausgelieferte jar
+	 * kommt es damit nicht. Beim endnutzer fehlt dann org.lwjgl.nanovg und der mod
+	 * stirbt im ladevorgang, weil der client-start NanoProbe.register() ruft.
+	 * Gemeldet 2026-08-24: "die kommen nicht rein". Minecraft bringt LWJGL 3.3.3
+	 * mit, aber NICHT das nanovg-modul. Gegenprobe am gebauten jar:
+	 * `unzip -l build/libs/*.jar | grep nanovg` muss 7 treffer zeigen, nicht 0.
+	 * Dieselbe regel wie weiter unten bei jflac/jlayer. */
+	implementation include("org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}")
+	/* Vor 26.1 bringt Minecraft kein lwjgl-vulkan mit. Der gemeinsame Code nutzt VK-Konstanten
+	 * auch im OpenGL-Weg (Sampler-Pruefung); javac setzt sie als Zahlen ein. Nur zum Kompilieren —
+	 * die Vulkan-Wege selbst sind vor 26.1 ausgeblendet (nurAb261, Versionsbloecke). */
+	if (compatStufe == "vor261") compileOnly "org.lwjgl:lwjgl-vulkan:${project.lwjgl_version}"
+	include "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-linux"
+	include "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-linux-arm64"
+	include "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-windows"
+	include "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-windows-arm64"
+	include "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-macos"
+	include "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-macos-arm64"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-linux"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-linux-arm64"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-windows"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-windows-arm64"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-macos"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:${project.lwjgl_version}:natives-macos-arm64"
+	/* Vor 1.20.5 bringt Minecraft kein lwjgl-freetype mit (VektorSchrift braucht es): wie nanovg mitliefern. */
+	if (vor1205) {
+		implementation include("org.lwjgl:lwjgl-freetype:${project.findProperty("freetype_version") ?: project.lwjgl_version}")
+		["natives-linux", "natives-linux-arm64", "natives-windows", "natives-windows-arm64", "natives-macos", "natives-macos-arm64"].each { n ->
+			include "org.lwjgl:lwjgl-freetype:${project.findProperty("freetype_version") ?: project.lwjgl_version}:${n}"
+			runtimeOnly "org.lwjgl:lwjgl-freetype:${project.findProperty("freetype_version") ?: project.lwjgl_version}:${n}"
+		}
+	}
+	
+	// Uncomment the following line to enable the deprecated Fabric API modules. 
+	// These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
+
+	// implementation "net.fabricmc.fabric-api:fabric-api-deprecated:${project.fabric_version}"
+	/* MERGE 2026-07-27: aus dem CML-upstream — video-wiedergabe (VideoClip, VideoRenderer,
+	 * VideoWaveformCache). Ohne die lib faellt der komplette video-clip-block weg. */
+	// P3-26.2-AUS: implementation "maven.modrinth:watermedia:2.1.37"
+	/* 2026-08-10 WIEDER AN: 0.9.2-alpha.4 fuer mc 26.2 (Modrinth, 07.08.).
+	 * ⚠️ ALPHA-KANAL — es gibt fuer 26.2 nichts Stabileres. */
+	/* ⛔ 0.9.1 (RELEASE), NICHT 0.9.2-alpha.4 — sonst startet Fabric gar nicht erst.
+	 * Gemessen 2026-08-10: Sodium 0.9.2-alpha.4 traegt `breaks iris @ [<=1.11.2]`, und
+	 * 1.11.2 ist die NEUESTE Iris fuer 26.2 (Modrinth: 1.11.0/1.11.1/1.11.2, mehr gibt es
+	 * nicht). Der Bruch kommt also von Sodiums Seite; Iris selbst verlangt nur `sodium 0.9.x`.
+	 * 0.9.1 ist ein Release vom selben Tag wie Iris 1.11.2 — das zusammengehoerige Paar.
+	 *
+	 * Wer Sodium wieder hochzieht, verliert Iris. Fabric sagt das beim Start deutlich
+	 * ("Incompatible mods found"), es ist also kein stiller Ausfall. */
+	modImplementation "maven.modrinth:sodium:${project.sodium_version}"
+	/* P3-26.2-AUS: 2026-08-10 versucht, 1.11.2 fuer mc 26.2 anzuschalten -> ROT.
+	 * Nicht die Fassung ist schuld, das ist Portierarbeit statt Update.
+	 *
+	 * NACHGEMESSEN am selben Tag (abhaengigkeit an, die vier iris-ausschluesse raus,
+	 * compileClientJava): es sind GENAU 4 FEHLER IN 2 DATEIEN, nicht drei Klassen.
+	 * IrisUtils und IrisTextureWrapperLoader uebersetzen inzwischen sauber, und 6 der
+	 * 7 mixins unter mixin/client/iris ebenfalls. Offen sind nur:
+	 *
+	 *   1. ShaderCurves.addUniforms(List) fehlt -> CustomUniformsBuilderMixin:18.
+	 *      Kein Drift: die methode wurde in 10bfb41cd bei GENAU DIESER stilllegung
+	 *      entfernt, weil sie Iris-typen fuehrt. Zurueckholen = jenen hunk zurueck.
+	 *
+	 *   2. IrisTextureWrapper haengt an AbstractTexture.getId() und
+	 *      load(ResourceManager). BEIDE GIBT ES IN 26.2 NICHT MEHR — gemessen in der
+	 *      laufenden JVM, AbstractTexture hat nur noch:
+	 *          GpuTexture getTexture() · GpuSampler getSampler()
+	 *          GpuTextureView getTextureView() · void releaseTextures()
+	 *      Die klasse reicht Iris eine GL-textur-NUMMER durch. Das ist damit kein
+	 *      umbenennen, sondern ein umbau der uebergabe auf GpuTexture — und er muss
+	 *      zu dem passen, was Iris 1.11.2 auf SEINER seite erwartet.
+	 *
+	 * Punkt 2 ist die eigentliche Arbeit. Wer sie anfaengt: erst nachsehen, was Iris
+	 * 1.11.2 fuer 26.2 als textur-uebergabe verlangt, dann bauen — nicht umgekehrt. */
+	add(bbsGraphics == "vulkan" ? "modCompileOnly" : "modImplementation", "maven.modrinth:iris:${project.iris_version}")
+	/* Iris bettet jcpp, glsl-transformer und antlr per Jar-in-Jar ein; im Dev-Lauf landen sie
+	 * nicht im Klassenpfad, und das erste Shaderpack stirbt an
+	 * NoClassDefFoundError org/anarres/cpp/PreprocessorListener (gemessen 2026-10-13, 1.21.11).
+	 * Dieselben Fassungen wie in Iris' META-INF/jars, ohne Transitive wie dort (glsl-transformer
+	 * je Knoten: Iris 1.7/1.8 betten 2.0.1 ein, das auch unter Java 17 laeuft). */
+	if (bbsGraphics != "vulkan") {
+		runtimeOnly("org.anarres:jcpp:1.4.14") { transitive = false }
+		runtimeOnly("io.github.douira:glsl-transformer:${project.glsl_transformer_version}") { transitive = false }
+		runtimeOnly("org.antlr:antlr4-runtime:4.13.1") { transitive = false }
+	}
+	// Vitrail, exact Modrinth version ID per Minecraft version (versions/<v>/gradle.properties).
+	compileOnly "maven.modrinth:oSIKhgz3:${project.vitrail_version}"
+	// Rinku (Chromium im Spiel) fuer das Texture Studio: nur zum Kompilieren, der Nutzer installiert es selbst.
+	compileOnly "maven.modrinth:rinku:3.0.5-26.3-fabric"
+
+	/* ⭐ spark — ETABLIERTER PROFILER STATT EIGENER ZAEHLER (2026-08-03).
+	 *
+	 * Warum fremd statt selbst: an einem Tag haben fuenf eigene Messwerkzeuge falsche
+	 * Auskunft gegeben (Details: docs/WERKZEUG-ERSATZ.md). spark ist der Industriestandard
+	 * im Minecraft-Umfeld -- PaperMC empfiehlt es, Mojang zitiert es in Bugreports,
+	 * 200 Mio+ Downloads. Es misst ohne Safepoint-Verzerrung, zeigt Aufrufbaeume als
+	 * Flamegraph und analysiert die Heap-Verteilung im laufenden Spiel.
+	 *
+	 * modRuntimeOnly, NICHT implementation: es ist ein Werkzeug fuer die
+	 * Entwicklungsumgebung und darf weder gebuendelt noch zur Laufzeit verlangt werden.
+	 *
+	 * Bedienung im Spiel:  /spark profiler start  ...  /spark profiler stop
+	 * 1.10.173 ist die erste Fassung mit Minecraft 26.2 (ueber die Modrinth-API geprueft,
+	 * nicht geraten). */
+	/* spark liegt NICHT als Gradle-Abhaengigkeit vor: dieses Loom-Setup stellt keine
+	 * mod*-Dependency-Konfigurationen bereit (geprueft: nur modCompileClasspath
+	 * existiert). Das Jar liegt stattdessen in run_N/mods/ -- Fabric Loader nimmt es
+	 * von dort. Siehe docs/WERKZEUG-ERSATZ.md. */
+
+	/* AUTONOMIE 2026-07-27: fremd-mods gegen die com/afrobama kompiliert.
+	 * Alle compileOnly — sie werden NICHT gebuendelt und NICHT zur laufzeit verlangt;
+	 * die betroffenen features (Veil-FX, PhysicsMod-fracture, accelerated crowd-rendering,
+	 * MCEF-webbridge) pruefen selbst per FabricLoader.isModLoaded() und schalten sich ab.
+	 * Die jars liegen in libs/. */
+	/* ⛔ VEIL HAT KEINEN 26.2-BAU — und das ist kein Warten, sondern ein Zustand.
+	 * Modrinth am 2026-08-10 abgefragt: neueste Fabric-Fassung ist 4.4.1 vom 2026-07-31,
+	 * und ALLE Fassungen listen nur 1.21.1. Das Jar in libs/ ist folgerichtig
+	 * veil-fabric-1.21.1-4.0.1.jar.
+	 *
+	 * Folge fuer die zwei MixinMethodTracer_Veil*: die stehen in KEINER mixins.json --
+	 * nicht einmal geparkt -- und koennen also gar nicht weben. Sie auf die Bruecke zu
+	 * heben waere Arbeit an totem Quelltext; ohne Wirtsmod gibt es nichts zu tauschen und
+	 * nichts zu messen. Sie bleiben als einzige Mixins im Baum ohne Bruecke. */
+	// P3-26.2-AUS: compileOnly fileTree(dir: "libs", include: ["veil-fabric*.jar"])
+	// P3-26.2-AUS: compileOnly fileTree(dir: "libs", include: ["acceleratedrendering*.jar"])
+	/* 2026-08-10 WIEDER AN: v186 fuer mc 26.2, geholt mit tools/patreon-holen.mjs.
+	 * compileOnly — nur die drei Mixins unter mixin/physicsmod/ brauchen die Typen.
+	 * Die uebrigen acht Dateien, die PhysicsMod ansprechen, arbeiten per Reflection
+	 * (FracturePhysicsBridge allein 17x) und kompilieren auch ohne. */
+	/* ⛔ NUR WENN DAS JAR DALIEGT. Physics Mod Pro ist "all rights reserved" und darf dem
+	 * repository nicht beiliegen (siehe LICENSE.md) — ein fremder klon hat es also nicht.
+	 * Ohne die bedingung scheiterte `gradlew build` dort an net.diebuddies.physics, und das
+	 * waere die erste erfahrung eines jeden, der den fork bauen will. Mit dem jar in libs/
+	 * baut alles wie zuvor; ohne es fallen die drei mixins unter mixin/physicsmod/ heraus
+	 * (dieselbe mechanik wie bei veil/accelrender weiter oben). Die uebrigen acht dateien,
+	 * die PhysicsMod ansprechen, arbeiten per reflection und kompilieren ohne das jar. */
+	if (physicsModJar.exists()) compileOnly files(physicsModJar)
+	// P3-26.2-AUS: compileOnly files("libs/worldedit-mod-7.3.8.jar")
+	// P3-26.2-AUS: compileOnly "com.cinemamod:mcef:2.1.6-1.21.1"
+
+	/* AUTONOMIE 2026-07-27: audio-decoder fuer com/afrobama/bbstools/audio
+	 * (MASFlacReader, MASMp3Reader) — liest FLAC/MP3 fuer die lipsync-/waveform-spur.
+	 * include() = wird in den jar gebuendelt, sonst fehlt sie zur laufzeit. */
+	implementation include("org.jflac:jflac-codec:1.5.2")
+	implementation include("com.googlecode.soundlibs:jlayer:1.0.1.4")
+
+	// P3-26.2-AUS: implementation "org.anarres:jcpp:1.4.14"
+	// P3-26.2-AUS: implementation "io.github.douira:glsl-transformer:2.0.0-pre13"
+}
+
+/* ⭐ VOLLES HOTSWAP — die JBR NUR fuer den game-lauf, nicht fuer den build.
+ *
+ * WARUM NICHT org.gradle.java.home: das wuerde auch gradle+loom auf die JBR umstellen.
+ * Loom cached mappings und remap-ergebnisse pro JVM — ein wechsel loest einen kompletten
+ * neubau aus und provoziert fabric-loader-fehler, weil die caches nicht zusammenpassen.
+ * Der build bleibt deshalb auf der gewohnten JVM; nur der gestartete client laeuft auf
+ * der JBR, und nur DIE braucht die redefinition-faehigkeit.
+ *
+ * Greift automatisch, wenn ../jbr-dcevm-home existiert — sonst laeuft alles wie bisher
+ * (dann eben nur body-hotswap statt vollem).
+ */
+tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach {
+	/* Testinstanzen (-Plaufordner) bekommen die Companion-Mod DERSELBEN Version in ihren
+	 * mods-Ordner (Studio-/Eval-Port, Sonden). Vorher zweimal von Hand kopiert (1.21.11, 1.21.4)
+	 * -- und ohne sie startet der Client still ohne Port. Vor 26.1 ist die Jar remapped. */
+	if (project.hasProperty("laufordner")) {
+		def ver = stonecutter.current.version
+		def modsOrdner = file(project.property("laufordner").toString() + "/mods")
+		def libs = rootProject.file("dev/versions/${ver}/build/libs")
+		it.dependsOn(":dev:${ver}:" + (stonecutter.eval(ver, "<26.1") ? "remapJar" : "jar"))
+		it.doFirst {
+			modsOrdner.mkdirs()
+			modsOrdner.listFiles().findAll { f -> f.name.startsWith("bbsdev-") && f.name.endsWith(".jar") }*.delete()
+			def jar = libs.listFiles().find { f -> f.name ==~ /bbsdev-.*-${java.util.regex.Pattern.quote(ver)}\.jar/ }
+			if (jar == null) throw new GradleException("Companion-Jar fuer ${ver} fehlt in ${libs}")
+			java.nio.file.Files.copy(jar.toPath(), new File(modsOrdner, jar.name).toPath())
+			logger.lifecycle("[companion] ${jar.name} -> ${modsOrdner}")
+			/* Frische Testinstanz: der Barrierefreiheits-Erststart blockiert --quickPlaySingleplayer
+			 * (1.21.4, gemessen: Bildschirm AccessibilityOnboardingScreen statt Welt). */
+			def optionen = new File(modsOrdner.parentFile, "options.txt")
+			if (!optionen.exists()) optionen.text = "onboardAccessibility:false\n"
+			else if (optionen.text.contains("onboardAccessibility:true")) optionen.text = optionen.text.replace("onboardAccessibility:true", "onboardAccessibility:false")
+		}
+	}
+	/* V1-Messung: ./gradlew runQuick -Prenderdoc laedt librenderdoc in die CLIENT-JVM
+	 * (LD_PRELOAD ueber die gradle-kette wird gestrippt — hier ist der einzige ort). */
+	if (project.hasProperty("renderdoc")) {
+		it.environment("LD_PRELOAD", "/usr/lib/librenderdoc.so")
+		/* Ohne die Eigenschaft bindet RenderDocBridge die API nicht ("init skipped") und
+		 * triggerCapture tut still nichts. */
+		it.systemProperty("bbstools.renderdoc.preload", "true")
+		it.doFirst { logger.lifecycle("[renderdoc] librenderdoc.so in die client-jvm geladen, Bruecke an (RenderDocBridge.triggerCapture per /eval)") }
+	}
+	/* V1: ./gradlew runQuick -Papitrace zeichnet ALLE GL-Calls der Client-JVM auf
+	 * (apitrace dump zum Lesen); TRACE_FILE steuert den Ablageort. */
+	if (project.hasProperty("apitrace")) {
+		it.environment("LD_PRELOAD", "/usr/lib/apitrace/wrappers/glxtrace.so")
+		it.environment("TRACE_FILE", project.findProperty("apitrace") ?: "/tmp/bbs-v1.trace")
+		it.doFirst { logger.lifecycle("[apitrace] glxtrace.so aktiv -> ${project.findProperty("apitrace") ?: "/tmp/bbs-v1.trace"}") }
+	}
+
+	/* WELCHE JBR — umschaltbar, weil der 26.2-port zwei braucht (2026-07-30).
+	 *
+	 * Der pfad stand hier fest verdrahtet. Fuer P1 des ports (beweisen, dass DCEVM auch auf
+	 * Java 25 traegt) muss zwischen 21 und 25 hin und her geschaltet werden — und zwar mit
+	 * demselben spiel, damit der vergleich etwas wert ist. Eine datei dafuer jedes mal zu
+	 * editieren ist genau die reibung, die man einmal beseitigt statt zwanzigmal ertraegt.
+	 *
+	 *     ./gradlew runClient                          -> ../jbr25-dcevm-home  (25, ab 26.2)
+	 *     ./gradlew runClient -Pbbs.jbr=jbr-dcevm-home   (21, fuer vergleiche)
+	 *
+	 * ⚠️ DER DEFAULT IST AM 2026-07-31 AUF 25 GEDREHT WORDEN, und zwar nicht aus vorliebe:
+	 * 26.2 LAEUFT AUF JAVA 21 GAR NICHT. Der erste boot des ports scheiterte daran, gemessen
+	 * am loader:
+	 *
+	 *     Mod 'Fabric API' (fabric-api) 0.156.0+26.2 requires version 25 or later of
+	 *     'OpenJDK 64-Bit Server VM' (java), but only the wrong version is present: 21!
+	 *
+	 * Der compile zielte laengst auf 25 (release = 25 weiter unten), nur die LAUFZEIT hing
+	 * noch auf der alten JBR -- eine haelfte umgestellt, die andere vergessen. Die 21er bleibt
+	 * ueber -Pbbs.jbr erreichbar, fuer den fall dass jemand die zwei vergleichen will. */
+	/* ⛔ DER BINAERNAME IST PLATTFORMABHAENGIG (2026-08-07, umzug auf linux).
+	 * Hier stand fest `bin/java.exe`. Unter linux heisst die datei `bin/java`, also war
+	 * jbr.exists() IMMER falsch — der client waere still auf der system-JVM gestartet und
+	 * der else-zweig unten haette "nur body-hotswap moeglich" gemeldet, obwohl die JBR
+	 * vollstaendig danebenlag. Ein fehlender exe-suffix, der wie ein fehlendes feature
+	 * aussieht: genau die sorte fehldiagnose, die hier schon monate gekostet hat. */
+	def jbrBin = System.getProperty("os.name").toLowerCase().contains("windows") ? "java.exe" : "java"
+	def jbrAngabe = project.findProperty("bbs.jbr")
+	def jbrHome
+
+	if (jbrAngabe)
+	{
+		def angegeben = file(jbrAngabe.toString())
+		jbrHome = angegeben.isAbsolute() ? angegeben : file("${rootDir}/../${jbrAngabe}")
+	}
+	else
+	{
+		/* Worktrees liegen nicht zwingend neben der JBR. gradle.properties kennt den
+		 * tatsaechlichen absoluten Pfad bereits; denselben Stand auch fuer den Client
+		 * verwenden, statt still auf die eingeschraenkte Standard-JVM-Konfiguration
+		 * zurueckzufallen. */
+		def gradleJavaHome = project.findProperty("org.gradle.java.home")
+		def eingestellt = gradleJavaHome ? file(gradleJavaHome.toString()) : null
+		jbrHome = eingestellt != null && eingestellt.isDirectory()
+			? eingestellt : file("${rootDir}/../jbr25-dcevm-home")
+	}
+
+	def jbr = new File(jbrHome, "bin/${jbrBin}")
+
+	/* ⛔ HEAP-DECKEL, WEIL ES OHNE IHN KEINEN GIBT (2026-08-02, user-order nach RAM-defekt).
+	 *
+	 * Es stand NIRGENDS ein -Xmx fuer den client — nur der gradle-daemon hatte einen
+	 * (gradle.properties, 4G). Ohne -Xmx nimmt die JVM ein VIERTEL des physischen RAM:
+	 * auf dieser 32-GB-maschine also 8 GB JE INSTANZ. Bei referenz + patient + quick sind
+	 * das 24 GB, die sich das spiel nehmen DARF — neben Cyberpunk und den werkzeugen.
+	 * Anlass war handfest: zwei 16-GB-riegel sind tot, die maschine bleibt bei 32 GB.
+	 *
+	 * Umstellbar ohne die datei anzufassen, wie bei bbs.jbr:
+	 *
+	 *     ./gradlew runClient                      -> 3G
+	 *     ./gradlew runClient -Pbbs.heap=2G        -> 2G  (kleine testwelt, sichtweite 2)
+	 *     ./gradlew runClient -Pbbs.heap=6G        -> 6G  (wenn eine messung mehr braucht)
+	 *
+	 * ⚠️ WARUM JDK_JAVA_OPTIONS UND NICHT vmArgs: derselbe grund wie bei den -XX-flags
+	 * unten — loom startet ueber net.fabricmc.devlaunchinjector.Main, und diese JVM erbt
+	 * vmArgs NICHT. Ein -Xmx dort waere still wirkungslos geblieben und haette wie ein
+	 * fix ausgesehen. Gegenprobe im laufenden spiel:
+	 *
+	 *     python tools/dev.py ev 'Runtime.getRuntime().maxMemory() / 1048576'
+	 *
+	 * Der wert steht AUSSERHALB des jbr-zweigs, weil der deckel auch dann gelten muss,
+	 * wenn die JBR fehlt — sonst haengt die speichergrenze an einer hotswap-frage. */
+	def heap = project.findProperty("bbs.heap") ?: "3G"
+	def jvmOptionen = ["-Xmx${heap}"]
+
+	/* Zusaetzliche JVM-flags fuer messreihen, z.B. -Pbbs.jvm=-XX:+UseSerialGC
+	 *
+	 * ⛔ WOFUER: am 2026-08-02 starb die JVM DREIMAL an derselben adresse
+	 * (ChangePointersObjectClosure::do_object, jvmtiEnhancedRedefineClasses.cpp) beim
+	 * redefine der FilmController-hierarchie. Der stack ist reines G1
+	 * (G1ParallelObjectIterator), und DCEVM erzwang urspruenglich SERIAL GC — die
+	 * groessenveraendernden GC-eingriffe stecken nur im mark-and-compact-algorithmus.
+	 * Ohne diesen schalter liesse sich die naheliegendste gegenprobe gar nicht fahren:
+	 * dieselbe reihe einmal unter G1 und einmal unter Serial.
+	 *
+	 * Bewusst allgemein gehalten und ohne vorgabe — ein GC still umzustellen waere eine
+	 * verhaltensaenderung, die niemand beauftragt hat. */
+	def extra = project.findProperty("bbs.jvm")
+
+	if (extra)
+	{
+		jvmOptionen += extra.toString().split(" ").findAll { it }
+		it.doFirst { logger.lifecycle("[jvm] zusatz-flags: ${extra}") }
+	}
+
+	if (jbr.exists())
+	{
+		it.executable = jbr.absolutePath
+
+		/* ⛔ Die -XX-flags MUESSEN ueber JDK_JAVA_OPTIONS kommen, nicht ueber vmArgs.
+		 *
+		 * GEMESSEN 2026-07-27: loom startet den client nicht direkt, sondern ueber
+		 * net.fabricmc.devlaunchinjector.Main mit einer launch.cfg. Dessen JVM erbt die
+		 * vmArgs NICHT — im laufenden game meldete
+		 * ManagementFactory.getRuntimeMXBean().getInputArguments() nur die -D-properties,
+		 * und redefineClasses scheiterte an "schema change not implemented", obwohl die
+		 * flags auf der prozess-kommandozeile standen.
+		 *
+		 * JDK_JAVA_OPTIONS liest JEDE JVM der kette beim start — damit kommen sie an. */
+		jvmOptionen += ["-XX:+AllowEnhancedClassRedefinition",
+		                "-XX:+AllowRedefinitionToAddDeleteMethods"]
+
+		/* ⛔ OHNE DAS STIRBT DIE JVM NACH HOTSWAPS (ciMethod.cpp:749 "old method not detected").
+		 * DCEVM tauscht die Klasse aus, die Typprofile (MethodData) zeigen aber weiter auf die
+		 * ALTE Fassung; C2 sagt per PredictedCallGenerator genau diese voraus, inlined sie und
+		 * stolpert in find_monomorphic_target ueber alte Methoden. JBR hat die Profil-Bereinigung
+		 * im Quelltext auskommentiert (MethodDataCleaner, FIXME). -UseTypeProfile laesst C2
+		 * Empfaengerprofile ignorieren; C2 und CHA bleiben an.
+		 * Gemessen 2026-10-12, run_31 unter Last (Film laeuft, Regie-Liste sichtbar):
+		 *   ohne Flag 2 von 8 Tauschen tot (beide PredictedCallGenerator im hs_err),
+		 *   mit Flag 0 von 16. Ein Bildraten-Preis war im Rauschen nicht erkennbar. */
+		jvmOptionen += ["-XX:-UseTypeProfile"]
+
+		it.doFirst { logger.lifecycle("[hotswap] client auf JBR + volle redefinition: ${jbr.absolutePath}") }
+	}
+	else
+	{
+		/* Den GESUCHTEN pfad nennen, nicht einen fest getippten. Vorher stand hier immer
+		 * "../jbr-dcevm-home", auch wenn nach jbr25-dcevm-home gesucht wurde — die meldung
+		 * schickte damit auf die falsche faehrte. */
+		it.doFirst { logger.lifecycle("[hotswap] ${jbr} fehlt — nur body-hotswap moeglich") }
+	}
+
+	it.environment "JDK_JAVA_OPTIONS", jvmOptionen.join(" ")
+
+	/* ⛔ RENDERDOC BRAUCHT LD_PRELOAD, dlopen aus Java reicht NICHT (2026-08-11 gemessen).
+	 * Der Fabric-Preloader (-Dbbstools.renderdoc.preload=true) laedt librenderdoc.so per
+	 * dlopen und meldet sauber "ATTACHED — API v1.7.0". TriggerCapture feuert danach auch,
+	 * das Instanz-Log sagt "next frame will be captured" — und es entsteht NICHTS:
+	 * getNumCaptures bleibt 0, kein .rdc, und RenderDocs eigenes Log endet nach
+	 * "Registering OpenGL hooks" ohne eine einzige Mitschnitt-Zeile. Die Hooks kommen zu
+	 * spaet an den schon erzeugten GL-Kontext. Genau davor warnt der Kopf des Preloaders.
+	 * Mit LD_PRELOAD sitzen sie vor dem ersten GL-Aufruf.
+	 *
+	 *     ./gradlew runQuick -Pbbs.ldpreload=/usr/lib/librenderdoc.so
+	 *
+	 * Nur setzen, wenn gefragt — dauerhaft eingehaengt kostet es Leistung und faengt
+	 * jeden Lauf ab. */
+	def vorladen = project.findProperty("bbs.ldpreload")
+
+	if (vorladen)
+	{
+		it.environment "LD_PRELOAD", vorladen.toString()
+		it.doFirst { logger.lifecycle("[renderdoc] LD_PRELOAD=${vorladen}") }
+	}
+
+	it.doFirst { logger.lifecycle("[speicher] heap-deckel ${heap} (umstellen mit -Pbbs.heap=<wert>)") }
+}
+
+/* Java 17 (1.20.x beim Spieler): Mixin weigert sich, JAVA_21 als Kompatibilitaetsstufe auf einer
+ * 17er-JVM zu setzen (gemessen 2026-10-14 in einer echten 1.20.1-Instanz). */
+if ((project.java_version as int) < 21) {
+	tasks.matching { it.name ==~ /process(Client)?Resources/ }.configureEach {
+		inputs.property "mixinStufe", "JAVA_" + project.java_version
+		filesMatching("*.mixins.json") { filter { zeile -> zeile.replace('"JAVA_21"', '"JAVA_' + project.java_version + '"') } }
+	}
+}
+
+processResources {
+	inputs.property "version", project.version
+
+	/* Die Resolve-Seite des DaVinci-Links (Aufgabe 79) reist im Mod mit; DavinciScriptInstall
+	 * legt sie in Resolves Skriptordner. Eine Quelle, kein Kopierschritt von Hand. */
+	from(rootProject.file("davinci")) {
+		include "bbs_link.py"
+		into "assets/bbs/davinci"
+	}
+	inputs.property "physicsMod", physicsModJar.exists()
+
+	inputs.property "minecraft_version", project.minecraft_version
+	inputs.property "loader_version", project.loader_version
+	inputs.property "java_version", project.java_version
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version, "minecraft_version": project.minecraft_version,
+			"loader_version": project.loader_version, "java_version": project.java_version
+	}
+
+	/* Ohne das Physics-Mod-jar sind die drei mixins nicht kompiliert — dann darf ihre
+	 * konfiguration auch nicht in fabric.mod.json stehen, sonst sucht Mixin beim start
+	 * nach klassen (samt mixin-plugin), die es nicht gibt. Als JSON-umbau, nicht als
+	 * zeilenfilter: der eintrag ist ein objekt ueber mehrere zeilen. */
+	inputs.property "nachruesten", nachruesten
+	inputs.property "compatStufe", compatStufe
+	inputs.file zugriff
+	doLast {
+		if (nachruesten) {
+			/* Dieselbe Fassung, die Loom beim Konfigurieren bekommen hat (siehe zugriff). */
+			new File(destinationDir, "bbs.accesswidener").text = zugriff.text
+
+			def datei = new File(destinationDir, "fabric.mod.json")
+			def daten = new groovy.json.JsonSlurper().parse(datei)
+			daten.mixins = daten.mixins + [[config: "bbs.compat.mixins.json", environment: "client"]]
+			/* Nachruestung im gemeinsamen Code (src/compat/<stufe>/main/resources), beide Seiten. */
+			if (new File(destinationDir, "bbs.compat.main.mixins.json").exists()) {
+				daten.mixins = daten.mixins + [[config: "bbs.compat.main.mixins.json", environment: "*"]]
+			}
+			/* Zusaetzliche Client-Mixins einer Stufe ueber vor1215 (src/compat/<stufe>/resources/bbs.compat.<stufe>.mixins.json). */
+			compatVoll(stufen).each { name ->
+				if (rootProject.file("src/compat/" + name + "/resources/bbs.compat." + name + ".mixins.json").exists()) {
+					daten.mixins = daten.mixins + [[config: "bbs.compat." + name + ".mixins.json", environment: "client"]]
+				}
+			}
+			datei.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(daten))
+		}
+		if (compatStufe == "vor261") {
+			/* Vor 26.1 ist die Vitrail-Integration ausgelassen (nurAb261) -- ihre Mixin-Listen auch. */
+			def datei = new File(destinationDir, "fabric.mod.json")
+			def daten = new groovy.json.JsonSlurper().parse(datei)
+			daten.mixins = daten.mixins.findAll { eintrag ->
+				!((eintrag instanceof Map ? eintrag.config : eintrag).toString().contains("vitrail"))
+			}
+			datei.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(daten))
+		}
+		if (!physicsModJar.exists()) {
+			def datei = new File(destinationDir, "fabric.mod.json")
+			def daten = new groovy.json.JsonSlurper().parse(datei)
+			daten.mixins = daten.mixins.findAll { eintrag ->
+				!((eintrag instanceof Map ? eintrag.config : eintrag).toString().contains("physicsmod"))
+			}
+			datei.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(daten))
+		}
+	}
+}
+
+/* Vor 26.3: die Hooks aus nurAb263 (vor 26.1 auch nurAb261) aus allen Mixin-Listen streichen. */
+tasks.matching { it.name in ["processResources", "processClientResources"] }.configureEach { aufgabe ->
+	aufgabe.inputs.property "ausgelassen", ausgelassen
+	aufgabe.doLast {
+		if (nachruesten) {
+			/* Ersetzte Mixins (gleicher Pfad in src/compat/<stufe>/java) bleiben in der Liste. */
+			def gestrichen = (ausgelassen.findAll { it.contains("/mixin/") && it.endsWith(".java") && !compatJava.any { ordner -> new File(ordner, it).exists() && !vor261Weg.contains(it) } }
+				/* Weggelassene Mixins tieferer Stufen, die keine hoehere Stufe ersetzt (vor1212: aus der Liste von vor1215). */
+				+ vor261Weg.findAll { it.contains("/mixin/") && it.endsWith(".java") && !new File(compatOrdner, "java/" + it).exists() })
+				.collect { it.replace(".java", "").replace("/", ".") }
+			fileTree(aufgabe.destinationDir).matching { include "*.mixins.json" }.each { datei ->
+				def konfig = new groovy.json.JsonSlurper().parse(datei)
+				def paket = konfig["package"]
+				def vorher = groovy.json.JsonOutput.toJson(konfig)
+				["mixins", "client", "server"].each { feld ->
+					if (konfig[feld] != null) {
+						konfig[feld] = konfig[feld].findAll { !gestrichen.contains(paket + "." + it) }
+					}
+				}
+				if (groovy.json.JsonOutput.toJson(konfig) != vorher) {
+					datei.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(konfig))
+				}
+			}
+		}
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = (project.java_version as int)
+
+	/* ⛔ DECKEL HOCH, SOLANGE DER PORT LAEUFT (2026-07-30).
+	 *
+	 * javac bricht nach 100 fehlern ab und schreibt "100 Fehler". Das ist ein DECKEL, keine
+	 * messung — und wer ihn als umfang meldet, meldet einen zaehler statt einer zahl. Beim
+	 * mappings-umzug stand dort zweimal 100, einmal waren es in wahrheit 2 (nach dem
+	 * classpath-wechsel) und einmal deutlich mehr. Ohne diese zeile weiss man nie, welches
+	 * von beidem man gerade vor sich hat.
+	 *
+	 * Kostet im gruenen zustand nichts: wo keine fehler sind, gibt es nichts zu zaehlen. */
+	it.options.compilerArgs << "-Xmaxerrs" << "10000"
+}
+
+java {
+	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+	// if it is present.
+	// If you remove this line, sources will not be generated.
+	withSourcesJar()
+
+	/* ⛔ 25, WEIL MC 26.2 ES VERLANGT (P3, 2026-07-30). Die toolchain unten sagt gradle,
+	 * WOMIT es das uebersetzt — ohne sie versucht javac 21 auf release 25 zu zielen und
+	 * scheitert mit "release version 25 not supported". */
+	sourceCompatibility = JavaVersion.toVersion(project.java_version)
+	targetCompatibility = JavaVersion.toVersion(project.java_version)
+
+	toolchain {
+		/* Gebaut wird immer mit dem JDK 25, das Gradle faehrt; release haelt die API der
+		 * Version ein (21 fuer 1.21.x, 17 fuer 1.20.x). */
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+jar {
+	from("LICENSE") {
+		rename { "${it}_${project.base.archivesName.get()}"}
+	}
+}
+
+// configure the maven publication
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			from components.java
+		}
+	}
+
+	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+	repositories {
+		// Add repositories to publish to here.
+		// Notice: This block does NOT have the same function as the block in the top level.
+		// The repositories here will be used for publishing your artifact, not for
+		// retrieving dependencies.
+	}
+}
+/* ⭐ CLIENT-GAMETESTS MIT SCREENSHOT-VERGLEICH (2026-08-03).
+ *
+ * WOFUER: beweis.py vergleicht Bilder mit selbst gebauter Schwellenlogik. Fabric bringt
+ * genau das seit 1.21.5 mit -- geprueft, die Klassen liegen im Klassenpfad:
+ *   TestScreenshotComparisonOptions   of() withRegion(4) withSize(2) withGrayscale()
+ *                                     meanSquaredDifference(1) findColor(2)
+ * findColor kann sogar MEHR als mein Eigenbau: es sucht eine Farbe im Bild. Damit waere der
+ * orange Umriss direkt lokalisierbar gewesen, statt Koordinaten von Hand abzulesen.
+ *
+ * createSourceSet legt einen eigenen SourceSet `gametest` an -- der Produktivcode bleibt
+ * unberuehrt, und ein Fehler hier kann den normalen Bau nicht kaputtmachen.
+ * Vor 1.21.2 hat die Fabric-API kein client.gametest.v1 -- dort entfaellt der SourceSet. */
+if (!vor1212) {
+	fabricApi {
+		configureTests {
+			createSourceSet = true
+			modId = "bbs-gametest"
+			enableClientGameTests = true
+			eula = true
+		}
+	}
+}
+
+/* Client resource tasks exist after Loom's split source-set setup. */
+apply from: rootProject.file('gradle/nanovg-natives.gradle')

@@ -1,0 +1,572 @@
+// Coded by Afrobama/Claude — Army System P4: render-loop bypass.
+//
+// BBS's BaseFilmController.render() loops every replay serially and runs the
+// full renderEntity prework (matrix build + 2× world.getLightLevel chunk
+// lookup + new FormRenderingContext + FormUtilsClient.render descent down to
+// the cancelled render3D). Measured ~7-13ms/frame at ~2900 replays — the FPS
+// wall after the bake removed the animator cost.
+//
+// This bypass replaces that loop for a PURE crowd of "simple" replays:
+//   - compute each replay's worldMatrix IN PARALLEL via BBS's own
+//     getMatrixForRenderWithRotation (verified bit-exact vs the real captured
+//     matrix: bypass-compare logged maxDelta=0 over 8M samples), and
+//   - submit straight into FastPathBatch (Tier 2-h draws it at AFTER_ENTITIES).
+//   - then cancel the original render() loop entirely.
+// Parallel is SAFE here because the bake removed per-frame animation: this loop
+// is pure matrix math reading per-replay state, no shared mutable model.
+//
+// ALL-OR-NOTHING per frame: if ANY replay is not simple-eligible (actor,
+// grouped, anchored→relative, non-ModelForm, non-cubic), we do NOT cancel —
+// BBS renders the whole frame normally (current behaviour). So mixed/cinematic
+// scenes are untouched; only uniform armies take the fast path.
+//
+// Default OFF (ENABLE_RENDER_LOOP_BYPASS). Opt-in + toggleable → cannot break
+// the default experience; verify visually before relying on it.
+package com.afrobama.bbstools.client.mixin.bbs;
+
+import com.afrobama.bbstools.client.bbs.fastpath.AnimationBakeCache;
+import com.afrobama.bbstools.client.bbs.fastpath.EligibleReplay;
+import com.afrobama.bbstools.client.bbs.fastpath.FastPathBatch;
+import com.afrobama.bbstools.client.bbs.fastpath.ReplayBakeUtil;
+import com.afrobama.bbstools.client.bbs.fastpath.Tier2hInstancedDraw;
+import com.afrobama.bbstools.perf.BBSPerfConfig;
+
+import io.netty.util.collection.IntObjectMap;
+
+import mchorse.bbs_mod.film.BaseFilmController;
+import mchorse.bbs_mod.film.Film;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.forms.FormUtilsClient;
+import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
+import mchorse.bbs_mod.cubic.ModelInstance;
+import mchorse.bbs_mod.cubic.data.model.Model;
+
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.OverlayTexture;
+
+import org.joml.Matrix4f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+@Mixin(value = BaseFilmController.class, remap = false)
+public abstract class BaseFilmControllerRenderLoopBypassMixin
+{
+    private static final Logger BBSTOOLS$LOG = LoggerFactory.getLogger("bbstools/render-bypass");
+    private static long bbstools$lastFailLogMs = 0L;
+
+    @Shadow @Final public Film film;
+    @Shadow protected IntObjectMap<IEntity> entities;
+    @Shadow public boolean paused;
+
+    @Shadow public abstract int getTick();
+    @Shadow protected abstract void updateEntityAndForm(IEntity entity, int tick);
+    /** BBS per-replay live render — used to draw the SELECTED replay natively so
+     *  keyframe edits show instantly (the rest go through the instanced cache). */
+    @Shadow protected abstract void renderEntity(WorldRenderContext context, Replay replay, IEntity entity);
+
+    /** Bake-tick submissions don't use the world matrix (only entity/instance/
+     *  renderer/transition) — share one identity to avoid per-tick allocs. */
+    private static final Matrix4f BBSTOOLS$BAKE_IDENTITY = new Matrix4f();
+
+    /** Round-robin start so the budget rotates across replays each frame
+     *  (otherwise the first replay would fully bake before the second starts). */
+    private int bbstools$bakeCursor = 0;
+
+    /** Idle-skip state: last frame's camera/tick/crowd-size, and whether the last
+     *  frame actually drew via the full bypass (so an idle skip is safe to reuse). */
+    private double  bbstools$idleCamX, bbstools$idleCamY, bbstools$idleCamZ;
+    private int     bbstools$idleTick = Integer.MIN_VALUE;
+    private int     bbstools$idleSize = -1;
+    private boolean bbstools$idleDrewLast = false;
+
+    /** VAT atlas generation at the last full-bypass flush. The idle path reuses the
+     *  GPU MeshBundles via Tier2hInstancedDraw.redrawAllBundles(); those bundles are
+     *  only (re)built on a FULL flush. While the crowd bakes, the VAT atlas is rebuilt
+     *  repeatedly (tier2hVatRebuilds++), switching bundles from per-frame mode to VAT
+     *  mode. If the bypass idle-skips across a rebuild it keeps redrawing STALE pre-VAT
+     *  bundles → little/nothing drawn → BBS falls back to the vanilla per-replay render
+     *  = massive FPS drop (observed: 500 replays @ 40fps until a full flush rebuilt the
+     *  VAT bundles → 147fps). Forcing a full flush whenever this generation changes
+     *  guarantees the cached bundles always match the current atlas. */
+    private long    bbstools$idleVatGen = -1L;
+
+    /** Eligibility-snapshot cache for work-reuse (ENABLE_BYPASS_WORK_REUSE). The
+     *  `work` list is camera-independent, so a camera MOVE / playback frame can
+     *  reuse it and skip the ~1ms rebuild while the crowd SIZE is unchanged.
+     *  Nulled on every rebuild attempt so a bail (mixed/actor scene) can't leave
+     *  a stale list that the next frame would wrongly reuse. */
+    private List<EligibleReplay> bbstools$cachedWork = null;
+    private int            bbstools$cachedWorkSize = -1;
+
+    @Inject(method = "render(Lnet/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext;)V",
+        at = @At("HEAD"), cancellable = true, remap = false)
+    private void bbstools$renderLoopBypass(WorldRenderContext context, CallbackInfo ci)
+    {
+        /* Publish the live crowd count EVERY frame, BEFORE any flag guard, so ModelFormRendererFastPathMixin
+         * (per-replay, no controller ref) can gate its render3D cancel on ARMY_REPLAY_THRESHOLD. Runs even
+         * when the bypass itself is disabled — this method's @Inject fires unconditionally; only the body
+         * below short-circuits. Without this, the fast path hijacked render3D for tiny scenes too. */
+        BBSPerfConfig.liveReplayCount = (this.entities == null) ? 0 : this.entities.size();
+
+        /* FIX B part 1 — start each frame with no stashed selected render. The bypass
+         * sets one (below) only on a successful cancel; any bail/throw therefore leaves
+         * it null so the AFTER_ENTITIES hook can't re-fire last frame's selected. */
+        Tier2hInstancedDraw.clearPendingSelected();
+
+        /* VIDEO-EXPORT GUARD — never cancel the vanilla render() while the video recorder is
+         * running. The bypass draws a simplified base-mesh crowd (no bodyparts/equipment); the
+         * final MP4 must look like the original, so during export we fall through to BBS's full
+         * per-replay render. Offline render → the slowdown is acceptable. Mirrors the guard in
+         * ModelFormRendererFastPathMixin so the whole fast path is dormant during export. */
+        try
+        {
+            mchorse.bbs_mod.utils.VideoRecorder bbstools$vr = mchorse.bbs_mod.BBSModClient.getVideoRecorder();
+            if (bbstools$vr != null && bbstools$vr.isRecording()) return;
+        }
+        catch (Throwable ignored) {}
+
+        if (!BBSPerfConfig.ENABLE_RENDER_LOOP_BYPASS) return;
+        if (!BBSPerfConfig.ENABLE_TIER2_H) return;
+        if (this.film == null || this.entities == null || this.entities.isEmpty()) return;
+
+        /* Count gate: below the army threshold, render 100% vanilla BBS (correct + already fast for a
+         * handful of replays). Disengage cleanly so no baked/instanced state lingers into a small
+         * scene (the sim-skips key on crowdBakeComplete, so resetting it here also disables them). */
+        if (this.entities.size() < BBSPerfConfig.ARMY_REPLAY_THRESHOLD)
+        {
+            if (BBSPerfConfig.crowdBakeComplete) BBSPerfConfig.crowdBakeComplete = false;
+            return;
+        }
+
+        try
+        {
+            long bbstools$t0 = System.nanoTime();
+            List<Replay> replays = this.film.replays.getList();
+            if (replays == null || replays.isEmpty()) return;
+
+            Camera cam = context.camera();
+            if (cam == null) return;
+            final double cx = cam.getPos().x, cy = cam.getPos().y, cz = cam.getPos().z;
+            final float tickDelta = context.tickCounter().getTickDelta(false);
+            final float transition = this.paused ? 0F : tickDelta;
+            BBSPerfConfig.filmIsPlaying = !this.paused;
+
+            /* IDLE FAST-SKIP. If camera + film tick + crowd size are ALL identical
+             * to last frame's successful bypass, the snapshot+matrix+submit prep
+             * below would rebuild a submission set that idle-reuse just discards
+             * (~1.7ms wasted render-thread). Skip it: redraw the cached crowd and
+             * render only the selected replay live. Camera compared EXACTLY so the
+             * camera-relative crowd matrices can never be stale (no swim). */
+            boolean bbstools$canIdle = BBSPerfConfig.ENABLE_BYPASS_IDLE_SKIP
+                && this.bbstools$idleDrewLast
+                && cx == this.bbstools$idleCamX && cy == this.bbstools$idleCamY && cz == this.bbstools$idleCamZ
+                && this.getTick() == this.bbstools$idleTick
+                && this.entities.size() == this.bbstools$idleSize
+                /* Force a full flush after any VAT atlas rebuild so the cached idle
+                 * bundles are never stale (else: crowd falls to vanilla → FPS crater). */
+                && BBSPerfConfig.tier2hVatRebuilds == this.bbstools$idleVatGen
+                /* FIX B part 2 — the idle fast-skip only redraws GPU instanced bundles.
+                 * If the last flush had ANY CPU-fallback bucket (equipment/shape-key/BOBJ
+                 * models with no SkinnedMeshIR), an idle skip leaves those undrawn = crowd
+                 * invisible when the camera is still. Disable idle for fallback content;
+                 * the full path re-renders it every frame (still fast — the per-replay
+                 * entity descent is gone). */
+                && !Tier2hInstancedDraw.lastFlushHadFallback();
+            this.bbstools$idleDrewLast = false; /* pessimistic: any bail leaves this false */
+
+            if (bbstools$canIdle)
+            {
+                /* Defer the idle crowd redraw to AFTER_ENTITIES (correct world
+                 * modelView). Drawing it here at the bypass point used the editor/UI
+                 * matrix → crowd rendered at camera height. */
+                if (BBSPerfConfig.ENABLE_CROWD_DRAW) Tier2hInstancedDraw.requestIdleRedraw();
+
+                Object selRef = BBSPerfConfig.ENABLE_EDIT_LIVE ? BBSPerfConfig.currentEntityRef : null;
+                if (selRef != null)
+                {
+                    for (Map.Entry<Integer, IEntity> en : this.entities.entrySet())
+                    {
+                        if (en.getValue() != selRef) continue;
+                        int si = en.getKey();
+                        if (si >= 0 && si < replays.size())
+                        {
+                            Replay sr = replays.get(si);
+                            if (sr != null)
+                            {
+                                /* FIX B part 1 — defer to AFTER_ENTITIES (correct world
+                                 * modelView) instead of rendering here at the bypass point. */
+                                final Replay fsr = sr;
+                                final IEntity fent = en.getValue();
+                                Tier2hInstancedDraw.setPendingSelected(c -> this.renderEntity(c, fsr, fent));
+                                BBSPerfConfig.editLiveRenders++;
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                this.bbstools$idleDrewLast = true; /* still a valid drawn frame */
+                BBSPerfConfig.bypassIdleSkips++;
+                BBSPerfConfig.bypassFrames++;
+                BBSPerfConfig.bbstoolsLastBypassDrawFrame = BBSPerfConfig.bbstoolsRenderFrameId;
+                ci.cancel();
+                return;
+            }
+
+            /* Snapshot eligible entries; bail (no cancel) on the first
+             * non-simple replay so BBS renders the whole frame normally.
+             *
+             * WORK-REUSE: the eligibility set + renderer/instance refs are
+             * camera-INDEPENDENT (only worlds[k] below depends on the camera), so
+             * a camera MOVE / playback frame can reuse last frame's list and skip
+             * this whole loop (~1ms bypassSnapUs). Valid while the crowd SIZE is
+             * unchanged; the cache is nulled at every rebuild so a bail can't
+             * leave a stale list that a later mixed/actor scene would reuse. */
+            List<EligibleReplay> work;
+            if (BBSPerfConfig.ENABLE_BYPASS_WORK_REUSE
+                && this.bbstools$cachedWork != null
+                && this.bbstools$cachedWorkSize == this.entities.size())
+            {
+                work = this.bbstools$cachedWork;
+                BBSPerfConfig.bypassWorkReuses++;
+            }
+            else
+            {
+                this.bbstools$cachedWork = null;
+                this.bbstools$cachedWorkSize = -1;
+
+                List<EligibleReplay> built = new ArrayList<>(this.entities.size());
+                for (Map.Entry<Integer, IEntity> entry : this.entities.entrySet())
+                {
+                    int i = entry.getKey();
+                    IEntity entity = entry.getValue();
+                    if (entity == null) return;
+                    if (i < 0 || i >= replays.size()) return;
+                    Replay replay = replays.get(i);
+                    if (replay == null) return;
+
+                    if (i == this.bbstools$exception()) return;
+                    if (replay.actor.get()) return;
+                    if (!replay.group.get().isEmpty()) return;
+                    if (replay.relative.get()) return;
+
+                    Form form = entity.getForm();
+                    if (!(form instanceof ModelForm modelForm)) return;
+                    /* Anchored forms shift the matrix in renderEntity → not the
+                     * plain getMatrixForRenderWithRotation result. Reject. */
+                    if (modelForm.anchor != null && modelForm.anchor.get() != null
+                        && modelForm.anchor.get().replay >= 0) return;
+
+                    ModelFormRenderer renderer = bbstools$rendererFor(form);
+                    if (renderer == null) return;
+                    ModelInstance instance = renderer.getModel();
+                    if (instance == null || !(instance.model instanceof Model)) return;
+
+                    built.add(new EligibleReplay(i, replay, entity, renderer, instance, modelForm));
+                }
+
+                if (built.isEmpty()) return;
+                this.bbstools$cachedWork = built;
+                this.bbstools$cachedWorkSize = this.entities.size();
+                work = built;
+            }
+
+            long bbstools$tSnap = System.nanoTime();
+
+            /* PARALLEL — pure matrix math (bake removed shared-model animation,
+             * so no race). worldMatrix verified bit-exact (maxDelta=0). */
+            final int n = work.size();
+            final Matrix4f[] worlds = new Matrix4f[n];
+            java.util.stream.IntStream.range(0, n).parallel().forEach(k ->
+            {
+                EligibleReplay e = work.get(k);
+                worlds[k] = BaseFilmController.getMatrixForRenderWithRotation(
+                    e.entity(), cx, cy, cz, transition);
+            });
+            long bbstools$tMat = System.nanoTime();
+
+            /* SERIAL — FastPathBatch.submit is not thread-safe; cheap list add. */
+            int fullLight = LightmapTextureManager.pack(15, 15);
+            /* Hide-until-ready: with smart cache on, skip submitting replays
+             * whose bone cache isn't complete → invisible until baked, then
+             * they pop in. Matches the normal-path gate (HideUntilReadyMixin),
+             * which can't fire here because we cancel render() wholesale. */
+            /* SIZE fence (policed here because this is the one place that always holds the live entity
+             * map): if the crowd grew/shrank, the latched completeness is stale → reset so neither the
+             * hide-skip below nor the WT bake (which trusts the flag WITHOUT its own size check) can
+             * skip a not-yet-baked new replay. */
+            if (BBSPerfConfig.crowdBakeComplete
+                && BBSPerfConfig.crowdBakeCompleteSize != this.entities.size())
+            {
+                BBSPerfConfig.crowdBakeComplete = false;
+            }
+
+            /* Crowd-fully-baked short-circuit: once a full pass hid nothing, every replay is baked, so
+             * the per-replay firstUncachedTick + expectedTicks check (~6.8% at 20k) is pure waste.
+             * Fenced by gen (current bake) + size; reset to false by AnimationBakeCache.unbind/clear. */
+            boolean bbstools$fullyBaked = BBSPerfConfig.crowdBakeComplete
+                && BBSPerfConfig.crowdBakeCompleteGen == BBSPerfConfig.tier2hVatRebuilds
+                && BBSPerfConfig.crowdBakeCompleteSize == this.entities.size();
+            boolean hide = BBSPerfConfig.ENABLE_ARMY_BAKE && BBSPerfConfig.ENABLE_BAKE_HIDE_UNTIL_READY && !bbstools$fullyBaked;
+            int camDur = 0;
+            if (hide)
+            {
+                try { camDur = this.film.camera.calculateDuration(); }
+                catch (Throwable t) { camDur = 0; }
+            }
+            int bbstools$hiddenThisPass = 0;
+            /* Carve out the SELECTED replay (if any): skip it from the instanced
+             * bake and render its real mesh live (below). render3D skips it too
+             * (currentEntityRef match) so vanilla render3D draws the live pose.
+             * The crowd stays on this fast parallel path → no fps cliff editing. */
+            Object selRef = BBSPerfConfig.ENABLE_EDIT_LIVE ? BBSPerfConfig.currentEntityRef : null;
+            EligibleReplay selected = null;
+
+            /* OPT-IN frustum cull: drop instances fully OUTSIDE the camera frustum.
+             * They're off-screen → invisible, so this NEVER hides a visible replay,
+             * but it removes their gbuffer pixels → Iris's deferred passes shade far
+             * fewer crowd fragments (the measured 11.2ms→6.4ms on/off-screen gap).
+             * worlds[k] are camera-relative, matching proj*modelView. */
+            org.joml.FrustumIntersection bbstools$frustum = null;
+            if (BBSPerfConfig.ENABLE_FRUSTUM_CULL)
+            {
+                try
+                {
+                    Matrix4f mv  = com.mojang.blaze3d.systems.RenderSystem.getModelViewMatrix();
+                    Matrix4f prj = com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix();
+                    bbstools$frustum = new org.joml.FrustumIntersection(new Matrix4f(prj).mul(mv));
+                }
+                catch (Throwable ig) { bbstools$frustum = null; }
+            }
+
+            for (int k = 0; k < n; k++)
+            {
+                EligibleReplay e = work.get(k);
+                if (selRef != null && e.entity() == selRef) { selected = e; continue; }
+                if (bbstools$frustum != null)
+                {
+                    Matrix4f w = worlds[k];
+                    if (!bbstools$frustum.testSphere(w.m30(), w.m31(), w.m32(),
+                            BBSPerfConfig.FRUSTUM_CULL_RADIUS))
+                    {
+                        BBSPerfConfig.frustumCulled++;
+                        continue; /* off-screen → not submitted (still cached for redraw) */
+                    }
+                }
+                if (hide)
+                {
+                    int expected = ReplayBakeUtil.expectedTicks(e.replay(), camDur);
+                    if (AnimationBakeCache.firstUncachedTick(e.entity(), expected) >= 0)
+                    {
+                        BBSPerfConfig.hiddenUntilReady++;
+                        bbstools$hiddenThisPass++;
+                        continue; /* not baked yet → don't draw */
+                    }
+                }
+                if (!BBSPerfConfig.ENABLE_CROWD_DRAW) continue; /* diagnostic: skip crowd, keep camera/world identical */
+                FastPathBatch.Submission sub = new FastPathBatch.Submission(
+                    e.renderer(), e.entity(), e.instance(), e.form(),
+                    worlds[k], fullLight, OverlayTexture.DEFAULT_UV,
+                    mchorse.bbs_mod.utils.colors.Colors.WHITE, transition, false);
+                FastPathBatch.submit(sub);
+            }
+
+            /* PUBLISH crowd-fully-baked: this pass ran the hide check over the whole crowd and hid
+             * nothing → every eligible replay is baked. Latch the dirty flag (fenced by gen + size)
+             * so the hide check above AND the skip-baked-properties gate go O(1) from next frame.
+             * Only when no frustum cull (culled replays skip the hide check, so we can't conclude). */
+            if (hide && bbstools$hiddenThisPass == 0 && bbstools$frustum == null)
+            {
+                BBSPerfConfig.crowdBakeCompleteGen  = BBSPerfConfig.tier2hVatRebuilds;
+                BBSPerfConfig.crowdBakeCompleteSize = this.entities.size();
+                BBSPerfConfig.crowdBakeComplete     = true;
+            }
+
+            long bbstools$tSub = System.nanoTime();
+
+            /* Trigger the Tier 2-h capture NOW — cancelling render() skips the
+             * RETURN-inject (BaseFilmControllerFlushMixin) that normally calls
+             * flush(), so our submissions would never be captured/drawn. */
+            if (BBSPerfConfig.ENABLE_CROWD_DRAW) FastPathBatch.flush();
+            long bbstools$tFlush = System.nanoTime();
+
+            /* Render the SELECTED replay's LIVE mesh — vanilla BBS renderEntity,
+             * NO re-posing (startRenderFrame already set its pose this frame).
+             * It descends into render3D, which SKIPS it (currentEntityRef match)
+             * → the real mesh draws instead of the bake → keyframe edits are live.
+             * Only ONE replay, so cheap; the crowd already flushed (instanced).
+             * This finally works because render3D no longer cancels the selected;
+             * earlier carve-outs were silently baked+cancelled by that mixin. */
+            if (selected != null)
+            {
+                /* FIX B part 1 — defer the selected's live mesh to AFTER_ENTITIES (correct
+                 * world modelView) instead of rendering here at the bypass point, where the
+                 * live modelView is the editor/UI matrix → it drew at camera height ("abbild"
+                 * that tracks the camera). The crowd already defers for the same reason. */
+                final Replay fsr = selected.replay();
+                final IEntity fent = selected.entity();
+                Tier2hInstancedDraw.setPendingSelected(c -> this.renderEntity(c, fsr, fent));
+                BBSPerfConfig.editLiveRenders++;
+            }
+
+            long bbstools$tCarve = System.nanoTime();
+            BBSPerfConfig.bypassSnapUs  = (bbstools$tSnap  - bbstools$t0)     / 1000L;
+            BBSPerfConfig.bypassMatUs   = (bbstools$tMat   - bbstools$tSnap)  / 1000L;
+            BBSPerfConfig.bypassSubUs   = (bbstools$tSub   - bbstools$tMat)   / 1000L;
+            BBSPerfConfig.bypassFlushUs = (bbstools$tFlush - bbstools$tSub)   / 1000L;
+            BBSPerfConfig.bypassCarveUs = (bbstools$tCarve - bbstools$tFlush) / 1000L;
+
+            /* Background baking moved OUT of the render loop → BackgroundBaker
+             * (client tick) so it fills AFK; the bypass only runs during
+             * playback. The live record-on-render path here still caches the
+             * frames it actually draws. */
+
+            /* Record this frame's state so an identical next frame can idle-skip. */
+            this.bbstools$idleCamX = cx;
+            this.bbstools$idleCamY = cy;
+            this.bbstools$idleCamZ = cz;
+            this.bbstools$idleTick = this.getTick();
+            this.bbstools$idleSize = this.entities.size();
+            this.bbstools$idleVatGen = BBSPerfConfig.tier2hVatRebuilds;
+            this.bbstools$idleDrewLast = true;
+
+            BBSPerfConfig.bypassFrames++;
+            BBSPerfConfig.bypassReplays += n;
+            BBSPerfConfig.bbstoolsLastBypassDrawFrame = BBSPerfConfig.bbstoolsRenderFrameId;
+            ci.cancel();
+        }
+        catch (Throwable t)
+        {
+            /* Never break BBS render — fall back to the vanilla loop. */
+            BBSPerfConfig.bypassFallbacks++;
+            long now = System.currentTimeMillis();
+            if (now - bbstools$lastFailLogMs > 30_000L)
+            {
+                bbstools$lastFailLogMs = now;
+                BBSTOOLS$LOG.warn("[render-bypass] threw — vanilla loop this frame: {}", t.toString());
+            }
+        }
+    }
+
+    /** Progressive background bake. Fills ONE replay's remaining ticks at a
+     *  time (advancing only when a replay is fully cached) so bars complete
+     *  visibly one-by-one — and crucially SKIPS already-cached ticks within a
+     *  replay instead of stopping at the first one (live render scatters cached
+     *  ticks; the old "stop at first cached" made it bake ~4 ticks/frame and
+     *  appear stuck). Every entity it poses is restored to the live film tick
+     *  before returning so the visible frame is unaffected. */
+    private void bbstools$backgroundBake(List<EligibleReplay> work, int fullLight)
+    {
+        int n = work.size();
+        if (n == 0) return;
+        int budget = BBSPerfConfig.BG_BAKE_TICKS_PER_FRAME;
+        if (budget <= 0) return;
+
+        int camDuration;
+        try { camDuration = this.film.camera.calculateDuration(); }
+        catch (Throwable t) { camDuration = 0; }
+
+        int filmTick = this.getTick();
+        int idx = ((this.bbstools$bakeCursor % n) + n) % n;
+        int examined = 0;
+
+        while (budget > 0 && examined < n)
+        {
+            if (idx >= n) idx = 0;
+            EligibleReplay e = work.get(idx);
+            int expected = ReplayBakeUtil.expectedTicks(e.replay(), camDuration);
+            BBSPerfConfig.bgBakeExpectedSample = expected;
+
+            int first = AnimationBakeCache.firstUncachedTick(e.entity(), expected);
+            if (first < 0)
+            {
+                /* Fully cached → next replay. */
+                idx++;
+                examined++;
+                continue;
+            }
+
+            /* Bake every gap in THIS replay until the budget runs out — skip
+             * (don't stop at) ticks the live path already cached. */
+            boolean touched = false;
+            for (int t = first; t < expected && budget > 0; t++)
+            {
+                if (AnimationBakeCache.get(e.entity(), t) != null) continue; /* already cached → skip */
+
+                this.bbstools$bakePose(e, t);
+                FastPathBatch.Submission sub = new FastPathBatch.Submission(
+                    e.renderer(), e.entity(), e.instance(), e.form(),
+                    BBSTOOLS$BAKE_IDENTITY, fullLight, OverlayTexture.DEFAULT_UV,
+                    mchorse.bbs_mod.utils.colors.Colors.WHITE, 0F, false);
+                if (Tier2hInstancedDraw.bakeRecord(sub))
+                {
+                    BBSPerfConfig.bgBakeTicks++;
+                    budget--;
+                    touched = true;
+                }
+            }
+
+            /* Restore this replay's entity to the live film tick. */
+            if (touched)
+            {
+                this.bbstools$bakePose(e, e.replay().getTick(filmTick));
+                BBSPerfConfig.bgBakeRestores++;
+            }
+
+            if (AnimationBakeCache.firstUncachedTick(e.entity(), expected) < 0)
+            {
+                /* Completed this replay → advance to the next one. */
+                idx++;
+                examined++;
+            }
+            else
+            {
+                /* Budget exhausted mid-replay → resume here next frame. */
+                break;
+            }
+        }
+
+        this.bbstools$bakeCursor = idx;
+    }
+
+    /** Pose one entity exactly as BaseFilmController.updateEntities would for a
+     *  given tick — minus applyClientActions (item/HUD/particles), which don't
+     *  affect bone matrices and would cause off-screen side effects during a
+     *  bake. setAge+update+form.update + keyframes.apply matches the live path. */
+    private void bbstools$bakePose(EligibleReplay e, int tick)
+    {
+        this.updateEntityAndForm(e.entity(), tick);
+        /* updateEntityAndForm → setAge(tick)+update() leaves age=tick+1, but
+         * bakeRecord keys the cache by getAge() while this loop's skip-check
+         * uses `tick` → off-by-one freeze at half. Re-pin age to tick. */
+        e.entity().setAge(tick);
+        e.replay().keyframes.apply(tick, e.entity());
+    }
+
+    private static ModelFormRenderer bbstools$rendererFor(Form form)
+    {
+        Object r = FormUtilsClient.getRenderer(form);
+        return (r instanceof ModelFormRenderer mfr) ? mfr : null;
+    }
+
+    private int bbstools$exception()
+    {
+        return ((BaseFilmController) (Object) this).exception;
+    }
+
+}

@@ -1,0 +1,19 @@
+plugins {
+	id 'dev.kikugie.stonecutter'
+}
+
+/* Muss beim Commit auf der neuesten Version stehen (= vcsVersion in settings.gradle). */
+stonecutter.active "26.2"
+
+/* Alle Versionen bauen; die Jars liegen danach unter versions/<v>/build/libs. */
+tasks.register("chiseledBuild") {
+	group = "project"
+	description = "Baut jede deklarierte Minecraft-Version."
+	dependsOn(stonecutter.tasks.named("build").map { it.values() })
+}
+
+/* Speziellere Regeln zuerst: bei ueberlappenden Treffern gewinnt die zuerst eingetragene Regel
+ * (Stonecutter verkettet nicht), also treffen die Regeln fuer aeltere Knoten den 26.3-Text vor der allgemeinen. */
+apply from: rootProject.file('gradle/stonecutter-regeln-1214.gradle')
+apply from: rootProject.file('gradle/stonecutter-regeln.gradle')
+apply from: rootProject.file('gradle/stonecutter-regeln-fabric.gradle')

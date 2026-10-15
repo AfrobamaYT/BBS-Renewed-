@@ -1,0 +1,16 @@
+# vor1215-Dateien, die vor 1.21.2 nicht kompiliert werden (Ziel fehlt) oder die vor1212 selbst erledigt.
+# GpuBuffer ist hier ein eigener Shim und traegt GpuBufferAlt selbst.
+mchorse/bbs_mod/compat/mixin/GpuBufferAltMixin.java
+# 1.21.1 laedt Kern-Shader erst bei Bedarf, kein ShaderManager zum Auslassen.
+mchorse/bbs_mod/compat/mixin/ShaderManagerBbsMixin.java
+# Gegenstands-Render-Zustaende gibt es erst ab 1.21.4; Gegenstandsmodell (vor1212) zeichnet direkt.
+mchorse/bbs_mod/compat/ItemStackRenderStateAlt.java
+mchorse/bbs_mod/compat/mixin/ItemStackRenderStateAltMixin.java
+# Ruestungszier hat in 1.21.1 eine andere Struktur (TrimAlt nur fuer 1.21.4).
+mchorse/bbs_mod/compat/TrimAlt.java
+# Spawn-Gruende vor 1.21.2: die Regel in stonecutter-regeln-1214 laesst sie ganz weg.
+mchorse/bbs_mod/compat/alt/EntitySpawnRequest.java
+# Modellpose vor 1.21.2 im LivingEntityRendererMixin (vor1212) mit erledigt.
+mchorse/bbs_mod/mixin/client/ModelFeatureRendererMixin.java
+# Freigaben fuer TrimAlt (EquipmentLayerRenderer gibt es vor 1.21.2 nicht).
+zugriff:EquipmentLayerRenderer$TrimSpriteKey
