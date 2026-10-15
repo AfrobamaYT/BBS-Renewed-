@@ -1,0 +1,127 @@
+package com.afrobama.bbstools.client.mixin;
+
+import com.afrobama.bbstools.perf.BBSPerfConfig;
+
+import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.forms.renderers.FormRenderer;
+import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
+
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.Camera;
+import net.minecraft.util.math.Vec3d;
+
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+/**
+ * BBS form-renderer perf hooks: optionally skip the entire shadow pass for
+ * forms (saves vertex submission to Iris shadow), and skip body-part rendering
+ * for actors beyond LOD_DETAIL_RADIUS_SQ. The main mesh still renders — only
+ * the cosmetic body-part stack is dropped at distance.
+ *
+ * Migrated from BBS-CML-EDITION fork's mchorse.bbs_mod.mixin.client.FormRendererMixin.
+ */
+/* Reverted from priority=2000 — that approach caused a fatal
+ *  InjectionError crash. When OUR mixin won the redirect race, BBS-CML's
+ *  stock FormRendererMixin (require=1, default priority 1000) failed
+ *  to find its target (already redirected) and threw at JVM startup.
+ *
+ *  Back to default priority. BBS-CML's stock mixin wins; ours is
+ *  silently skipped. The form-edit panel body-parts bug is therefore
+ *  CURRENTLY an unfixable upstream BBS-CML issue from this mod's side
+ *  — fixing it requires either patching BBS-CML's source OR a custom
+ *  MixinExtras @WrapOperation approach (which I can ship as a
+ *  follow-up but needs more investigation to avoid crashes).
+ *
+ *  The shadow-pass skip @Inject still applies and is independent of
+ *  the BBS conflict. */
+@Mixin(value = FormRenderer.class, remap = false)
+public abstract class FormRendererMixin
+{
+    @Inject(method = "render", at = @At("HEAD"), cancellable = true, remap = false)
+    private void bbs$skipShadowPass(FormRenderingContext context, CallbackInfo ci)
+    {
+        BBSPerfConfig.formRendererCallCount++;
+
+        boolean shadowPass = BBSRendering.isIrisShadowPass();
+
+        if (shadowPass)
+        {
+            BBSPerfConfig.shadowPassDetectedCount++;
+        }
+
+        if (BBSPerfConfig.SKIP_ALL_SHADOW_PASSES && shadowPass)
+        {
+            BBSPerfConfig.formRendererSkipCount++;
+            ci.cancel();
+        }
+    }
+
+    /** Once-only log so we can confirm in latest.log whether the
+     *  redirect actually applied. With require=0 a wrong target fails
+     *  silently — our previous version targeted "render3D" where
+     *  renderBodyParts is NOT called (verified via javap; the call is
+     *  in the outer "render" method at offset 186), so the redirect
+     *  silently never ran. Switching to "render" matches the actual
+     *  call site. */
+    private static volatile boolean BBS_LOD_REDIRECT_FIRED;
+
+    @Redirect(method = "render", at = @At(value = "INVOKE",
+        target = "Lmchorse/bbs_mod/forms/renderers/FormRenderer;renderBodyParts(Lmchorse/bbs_mod/forms/renderers/FormRenderingContext;)V"),
+        remap = false, require = 0)
+    private void bbs$lodSkipBodyParts(FormRenderer self, FormRenderingContext context)
+    {
+        if (!BBS_LOD_REDIRECT_FIRED)
+        {
+            BBS_LOD_REDIRECT_FIRED = true;
+            org.slf4j.LoggerFactory.getLogger("bbstools/perf-lod").info(
+                "FormRendererMixin.bbs$lodSkipBodyParts ACTIVE — first fire (context.ui={} modelRenderer={} entity={})",
+                context == null ? "null-ctx" : Boolean.toString(context.ui),
+                context == null ? "null-ctx" : Boolean.toString(context.modelRenderer),
+                context == null || context.entity == null ? "null" : context.entity.getClass().getSimpleName());
+        }
+
+        /* Editor preview / form-edit panel uses UIPickableFormRenderer
+         *  which sets context.modelRenderer = true (NOT context.ui).
+         *  In that case the in-world camera distance is meaningless —
+         *  camera tracks the player while the panel renders the form
+         *  at fixed UI screen coords, often pointing at an actor far
+         *  away → distSq always > 1024 → entire body-part stack gets
+         *  skipped → user sees only the axis gizmo. Bail out for any
+         *  UI-style render context. */
+        if (context != null && (context.ui || context.modelRenderer))
+        {
+            self.renderBodyParts(context);
+            return;
+        }
+
+        if (BBSPerfConfig.ENABLE_LOD && context != null && context.entity != null)
+        {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc != null && mc.gameRenderer != null)
+            {
+                Camera cam = mc.gameRenderer.getCamera();
+                if (cam != null)
+                {
+                    Vec3d p = cam.getPos();
+                    double dx = context.entity.getX() - p.x;
+                    double dy = context.entity.getY() - p.y;
+                    double dz = context.entity.getZ() - p.z;
+                    double distSq = dx * dx + dy * dy + dz * dz;
+
+                    if (distSq > BBSPerfConfig.LOD_DETAIL_RADIUS_SQ)
+                    {
+                        BBSPerfConfig.lodBodyPartSkipCount++;
+                        return;
+                    }
+                }
+            }
+        }
+
+        self.renderBodyParts(context);
+    }
+
+}

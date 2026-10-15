@@ -1,0 +1,20 @@
+{
+    "net/minecraft/world/item/ItemStack": [
+        "mchorse/bbs_mod/compat/main/KomponentenAlt"
+    ],
+    "com/mojang/blaze3d/vertex/VertexConsumer": [
+        "mchorse/bbs_mod/compat/vertex/VertexNeu"
+    ],
+    "com/mojang/blaze3d/vertex/BufferBuilder": [
+        "mchorse/bbs_mod/compat/vertex/BufferBuilderAlt"
+    ],
+    "net/minecraft/client/Minecraft": [
+        "mchorse/bbs_mod/compat/vertex/MinecraftZeit"
+    ],
+    "com/mojang/blaze3d/vertex/MeshData$DrawState": [
+        "-"
+    ],
+    "com/mojang/blaze3d/vertex/PoseStack": [
+        "mchorse/bbs_mod/compat/vertex/MatrixStapelAlt"
+    ]
+}

@@ -1,0 +1,58 @@
+pluginManagement {
+	repositories {
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		maven {
+			name = 'KikuGie Releases'
+			url = 'https://maven.kikugie.dev/releases'
+		}
+		mavenCentral()
+		gradlePluginPortal()
+	}
+}
+
+/* Mehrere Minecraft-Versionen aus EINER Quelle (Stonecutter). Jede Version ist ein Knoten
+ * unter versions/<v>/ mit eigener gradle.properties; alle teilen src/. Wo die API sich
+ * unterscheidet, steht im Code ein `//? if`-Block oder es gibt je Version eine eigene Datei.
+ * Gebaut wird gegen die NEUESTE Version — das ist auch, was in src/ eingecheckt ist.
+ * Alle Versionen bauen: sh ./gradlew chiseledBuild   (siehe docs/MEHRVERSION.md)
+ * loom-back-compat waehlt pro Version die passende Loom-Variante (26.x unobfuskiert,
+ * aeltere mit Remap) und legt dort Mojangs Mappings an, damit die Namen ueberall gleich sind. */
+plugins {
+	id 'dev.kikugie.stonecutter' version '0.9.8'
+	id 'dev.kikugie.loom-back-compat' version '0.4.2'
+}
+
+/* Zwei Baeume mit denselben Versionen: der Mod (Wurzel) und die Companion-Mod dev/. */
+stonecutter {
+	shared {
+		versions '26.3', '26.2', '1.21.11', '1.21.4', '1.21.1', '1.20.4', '1.20.1'
+		vcsVersion = '26.3'
+	}
+	create(rootProject)
+}
+
+rootProject.name = "BBS mod"
+
+/* Tasks OHNE Projektpfad laufen ab Stonecutter 0.7 in JEDEM Versionsknoten — `runQuick`
+ * startete so zwei Clients (26.2 und 26.3), gemessen mit -m am 2026-10-12. Die Werkzeuge im
+ * Baum und alle Gewohnheiten meinen aber die aktive Version. Darum geht ein Task ohne Pfad
+ * an den aktiven Knoten (bei Bau-Tasks auch an den der Companion-Mod), wie vor Stonecutter.
+ * Alle Versionen: `chiseledBuild`, oder ausdruecklich `:26.2:build`. */
+def aktiv = (file("stonecutter.gradle").text =~ /stonecutter\.active\s+"([^"]+)"/)[0][1]
+def auchCompanion = ["build", "assemble", "jar", "classes", "clean", "compileJava", "compileClientJava",
+	"processResources", "processClientResources"] as Set
+def umgeleitet = []
+gradle.startParameter.taskNames.each { name ->
+	if (name.startsWith("-") || name.contains(":") || name in ["chiseledBuild", "projects", "tasks", "help", "wrapper"]) {
+		umgeleitet << name
+	} else {
+		umgeleitet << ":" + aktiv + ":" + name
+	}
+}
+gradle.startParameter.taskNames = umgeleitet
+
+/* Die Companion-Mod mit allem, was nur in der Entwicklung laufen soll.
+ * Der oeffentliche Bau ist `:` allein — `dev` ist ein eigenes Modul, keine Kopie. */

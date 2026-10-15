@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "com.afrobama.bbstools.client.mixin.accelrender",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "com.afrobama.bbstools.client.mixin.accelrender.BBSAccelRenderMixinPlugin",
+  "client": [
+    "SyncWaitTimeoutMixin",
+    "AcceleratedRingBuffersInitialSizeMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

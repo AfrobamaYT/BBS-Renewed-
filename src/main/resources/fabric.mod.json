@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "id": "bbs",
+  "version": "${version}",
+  "name": "BBS FS mod",
+  "description": "A new generation of video production mod",
+  "authors": [
+    "Afrobama"
+  ],
+  "contributors": [
+    "McHorse (BBS mod)",
+    "Wemppy (bbs-fs)",
+    "ElGatoPro300 (bbs-mod-cml-edition)",
+    "Chryfi (tracker clip)",
+    "FunkyFight (minor features and bug fixes)",
+    "ElGatoPro300 (bug fixes)",
+    "McMiro (Arabic translations)",
+    "Chunk7 (Chinese translations)",
+    "CheesyKirah (German translations)",
+    "aoa (Korean translations)",
+    "Nioum (French translations)",
+    "csabee (Hungarian translations)",
+    "Nikashi33 (Indonesian translations)",
+    "Legoego19 (Polish translations)",
+    "Fanyel (Portuguese translations)",
+    "El_Redstoniano (Spanish translations)",
+    "Sam Su~ (Thai translations)",
+    "Rüyaperest (Turkish translations)",
+    "Kirkus (Ukrainian translations)",
+    "Eleeter (Urdu translations)",
+    "Diobede (Vietnamese translations)"
+  ],
+  "contact": {
+    "homepage": "https://github.com/AfrobamaYT/bbs-neu2",
+    "sources": "https://github.com/AfrobamaYT/bbs-neu2"
+  },
+  "license": "GPL-2.0-or-later",
+  "icon": "assets/bbs/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "mchorse.bbs_mod.BBSMod",
+      "com.afrobama.bbstools.BBSToolsMod"
+    ],
+    "client": [
+      "mchorse.bbs_mod.BBSModClient",
+      "com.afrobama.bbstools.client.BBSToolsModClient",
+      "com.blenderbridge.BlenderBridgeClient",
+      "com.davincilink.DavinciLinkClient",
+      "mchorse.bbs_mod.ui.texturstudio.TexturStudioStart"
+    ]
+  },
+  "mixins": [
+    "bbs.mixins.json",
+    {
+      "config": "bbs.client.mixins.json",
+      "environment": "client"
+    },
+    "bbstools.mixins.json",
+    {
+      "config": "bbstools.client.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "blenderbridge.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "bbstools.physicsmod.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "bbs.vitrail.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "bbs.vitrail.attachments.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "bbs.vitrail.geometry.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "bbs.vitrail.render.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "custom": {"loom:injected_interfaces": {"net/minecraft/client/player/AbstractClientPlayer":["mchorse/bbs_mod/compat/AbstractClientPlayerAlt"],"net/minecraft/client/renderer/RenderType":["mchorse/bbs_mod/compat/RenderTypeAlt"],"com/mojang/blaze3d/vertex/PoseStack\u0024Pose":["mchorse/bbs_mod/compat/PoseAlt"],"net/minecraft/client/renderer/block/ModelBlockRenderer":["mchorse/bbs_mod/compat/ModelBlockRendererAlt"],"com/mojang/blaze3d/vertex/PoseStack":["mchorse/bbs_mod/compat/PoseStackRotations","mchorse/bbs_mod/compat/PoseStackAlt"],"com/mojang/blaze3d/vertex/VertexFormat":["mchorse/bbs_mod/compat/VertexFormatAlt"],"net/minecraft/client/renderer/GameRenderer":["mchorse/bbs_mod/compat/GameRendererAlt"],"net/minecraft/client/gui/Gui":["mchorse/bbs_mod/compat/GuiAlt"],"net/minecraft/client/player/LocalPlayer":["mchorse/bbs_mod/compat/LocalPlayerAlt"],"net/minecraft/client/gui/GuiGraphics":["mchorse/bbs_mod/compat/GuiGraphicsAlt"],"net/minecraft/client/resources/model/ModelManager":["mchorse/bbs_mod/compat/ModelManagerAlt"],"net/minecraft/client/renderer/block/model/BakedQuad":["mchorse/bbs_mod/compat/BakedQuadAlt"],"net/minecraft/client/color/block/BlockColors":["mchorse/bbs_mod/compat/BlockColorsAlt"],"net/minecraft/client/multiplayer/ClientLevel":["mchorse/bbs_mod/compat/ClientLevelAlt"],"com/mojang/blaze3d/vertex/MeshData\u0024DrawState":["mchorse/bbs_mod/compat/DrawStateAlt"],"net/minecraft/client/Minecraft":["mchorse/bbs_mod/compat/MinecraftAlt"],"com/mojang/blaze3d/pipeline/RenderTarget":["mchorse/bbs_mod/compat/RenderTargetAlt"],"net/minecraft/client/renderer/texture/AbstractTexture":["mchorse/bbs_mod/compat/AbstractTextureAlt"],"net/minecraft/client/renderer/texture/OverlayTexture":["mchorse/bbs_mod/compat/OverlayTextureAlt"],"com/mojang/blaze3d/systems/RenderSystem\u0024AutoStorageIndexBuffer":["mchorse/bbs_mod/compat/SequenzPufferAlt"],"net/minecraft/client/Camera":["mchorse/bbs_mod/compat/CameraAlt"],"com/mojang/blaze3d/platform/Window":["mchorse/bbs_mod/compat/WindowAlt"],"com/mojang/blaze3d/vertex/VertexConsumer":["mchorse/bbs_mod/compat/VertexConsumerAlt"],"net/minecraft/client/gui/navigation/ScreenRectangle":["mchorse/bbs_mod/compat/ScreenRectangleAlt"]}},
+  "accessWidener": "bbs.accesswidener",
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=${java_version}",
+    "fabric-api": "*"
+  }
+}

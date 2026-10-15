@@ -1,0 +1,9 @@
+{
+    "_kommentar": [
+        "Grundmodell des Waffen-Gegenstands, ohne Geometrie. Gezeichnet wird der",
+        "Sonderzeichner bbs:gun, siehe assets/bbs/items/gun.json.",
+        "Begruendung fuer den fehlenden display-Block und das fehlende parent:",
+        "siehe template_model_block.json."
+    ],
+    "gui_light": "front"
+}
