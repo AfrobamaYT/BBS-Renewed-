@@ -1,0 +1,105 @@
+package com.afrobama.bbstools.client.mixin;
+
+import com.afrobama.bbstools.perf.BBSPerfConfig;
+
+import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.film.BaseFilmController;
+import mchorse.bbs_mod.film.FilmControllerContext;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.forms.entities.IEntity;
+
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.Frustum;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
+
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+/**
+ * Distance-cull BBS film actors so far-away replays don't pay the full
+ * render-form cost. Read from BBSPerfConfig (live-tweakable).
+ *
+ * Migrated from BBS-CML-EDITION fork's mchorse.bbs_mod.mixin.client.BaseFilmControllerMixin.
+ */
+@Mixin(value = BaseFilmController.class, remap = false)
+public abstract class BaseFilmControllerMixin
+{
+    @Inject(method = "renderEntity", at = @At("HEAD"), cancellable = true, remap = false)
+    private static void bbs$cullActorsByDistance(FilmControllerContext context, CallbackInfo ci)
+    {
+        if (!BBSPerfConfig.ENABLE_DISTANCE_CULLING) return;
+        if (context.map != null || context.relative || context.entity == null) return;
+
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc == null || mc.gameRenderer == null) return;
+
+        Camera camera = mc.gameRenderer.getCamera();
+        if (camera == null) return;
+
+        Vec3d cam = camera.getPos();
+        double dx = context.entity.getX() - cam.x;
+        double dy = context.entity.getY() - cam.y;
+        double dz = context.entity.getZ() - cam.z;
+        double distSq = dx * dx + dy * dy + dz * dz;
+
+        if (distSq > BBSPerfConfig.MAX_RENDER_DISTANCE_SQ)
+        {
+            BBSPerfConfig.distanceCullCount++;
+            ci.cancel();
+            return;
+        }
+
+        if (BBSRendering.isIrisShadowPass() && distSq > BBSPerfConfig.SHADOW_CULLING_DISTANCE_SQ)
+        {
+            BBSPerfConfig.shadowCullCount++;
+            ci.cancel();
+        }
+    }
+
+    /**
+     * Tier 3e: per-replay frustum culling on the INSTANCE renderEntity
+     * dispatcher (BaseFilmController.java:1001), which is where the
+     * outer film loop actually delegates each replay. The pre-existing
+     * static-helper inject (line 88) only catches calls that go through
+     * the static path and misses the per-replay dispatch.
+     *
+     * Build an AABB around the entity's interpolated position with
+     * radius {@code REPLAY_FRUSTUM_BOX_RADIUS} (default 2 blocks each
+     * way ⇒ 4-block cube). If the camera frustum can't see the box,
+     * cancel the per-replay render before BBS pays the form-stack walk.
+     *
+     * Skipped when {@code replay.relative} is true — relative replays
+     * are positioned in camera-anchored space and the world-space test
+     * doesn't apply.
+     */
+    @Inject(method = "renderEntity(Lnet/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext;Lmchorse/bbs_mod/film/replays/Replay;Lmchorse/bbs_mod/forms/entities/IEntity;)V",
+        at = @At("HEAD"), cancellable = true, remap = false)
+    private void bbs$frustumCullReplay(WorldRenderContext context, Replay replay,
+        IEntity entity, CallbackInfo ci)
+    {
+        if (!BBSPerfConfig.ENABLE_REPLAY_FRUSTUM_CULL) return;
+        if (replay == null || entity == null) return;
+        if (Boolean.TRUE.equals(replay.relative.get())) return;
+        if (BBSRendering.isIrisShadowPass()) return;
+
+        Frustum frustum = context.frustum();
+        if (frustum == null) return;
+
+        double r = BBSPerfConfig.REPLAY_FRUSTUM_BOX_RADIUS;
+        double ex = entity.getX();
+        double ey = entity.getY();
+        double ez = entity.getZ();
+        Box box = new Box(ex - r, ey - r, ez - r, ex + r, ey + r, ez + r);
+        if (!frustum.isVisible(box))
+        {
+            BBSPerfConfig.replayFrustumCullCount++;
+            ci.cancel();
+        }
+    }
+
+}

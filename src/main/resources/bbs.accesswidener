@@ -1,0 +1,43 @@
+accessWidener v2 official
+# ⛔ DER KOPF MUSS AUF ZEILE 1 STEHEN. Kein Kommentar davor, keine Leerzeile.
+#
+# Genau daran ist der erste 26.2-Boot gescheitert (2026-07-31): ein erklaerender
+# Kommentarblock stand oben, der Kopf rutschte auf Zeile 6, und der Loader brach ab mit
+#     ClassTweakerFormatException: line 1: Invalid access widener file header.
+#     Expected: 'classTweaker <version> <namespace>'
+# Die Meldung nennt das NEUE Format und legt damit nahe, man muesse umstellen -- das ist eine
+# FALSCHE FAEHRTE. Fabrics eigene Datei (fabric-transitive-access-wideners-v1.classtweaker)
+# traegt in 26.2 unveraendert `accessWidener v2 official` und wird unter demselben
+# fabric.mod.json-Schluessel deklariert. Der Leser stolpert ueber die ZEILE, nicht ueber das
+# Format. Wer der Meldung folgt, baut eine Umstellung, die niemand braucht.
+#
+# ⛔ NAMENSRAUM `official`, NICHT `named` (26.2).
+# Ab 26.1 ist Minecraft nicht mehr obfuskiert -- es gibt nur noch EINEN Namensraum, und der
+# heisst `official`. Loom bricht sonst ab mit
+#     Expected official namespace for access widener entry, found: named
+# Auf dem Zweig 1.21.1 gilt weiter `named`.
+
+# ============================================================================
+# 26.2: VON SECHS EINTRAEGEN UEBERLEBT EINER.
+#
+# Die anderen fuenf zeigten auf Klassen und Felder, die es nicht mehr gibt. Ein Eintrag auf
+# ein nicht existierendes Mitglied laesst den Start scheitern -- deshalb geloescht statt
+# auskommentiert, und hier aufgeschrieben, damit niemand sie suchen muss:
+#
+#   RenderSystem.shaderLightDirections    Feld existiert, aber als GpuBufferSlice statt
+#                                         Vector3f[] -- und es gibt jetzt oeffentliche
+#                                         getShaderLights()/setShaderLights(). Nicht noetig.
+#   GlStateManager.TEXTURES/activeTexture com.mojang.blaze3d.platform.GlStateManager ist WEG
+#                                         (es gibt nur noch blaze3d.opengl.GlStateManager).
+#   Minecraft.mainRenderTarget            Feld gestrichen. Umgelenkt wird jetzt ueber
+#                                         RenderSystem.outputColorTextureOverride -- ein
+#                                         offizieller Weg statt eines aufgebohrten Feldes.
+#                                         Das ist die Richtung des ganzen Umstiegs: was BBS
+#                                         frueher aufbohren musste, ist heute vorgesehen.
+#   MultiBufferSource$BufferSource        MultiBufferSource ist ersatzlos gestrichen; der
+#     .startedBuilders / .lastSharedType   Sofortmodus, den es bediente, existiert nicht mehr.
+# ============================================================================
+
+# Unsere blenderbridge (EntityExporter) liest die Knochen-Hierarchie von Vanilla-Modellen,
+# um sie nach Blender zu exportieren. In 26.2 weiterhin `private final`.
+accessible field net/minecraft/client/model/geom/ModelPart children Ljava/util/Map;

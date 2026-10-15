@@ -1,0 +1,114 @@
+name: Native NanoVG Vulkan
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - port/26.3-nanovg-20261010
+      - port/26.3-vulkan-20261010
+    paths:
+      - native/nanovg-vulkan/**
+      - src/client/java/com/mcstudio/nano/NanoVk*.java
+      - .github/workflows/native-nanovg-vulkan.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-nanovg-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x64
+            runner: ubuntu-22.04
+            arch: x64
+            library: libbbs_nanovg_vk.so
+          - target: linux-arm64
+            runner: ubuntu-22.04-arm
+            arch: arm64
+            library: libbbs_nanovg_vk.so
+          - target: windows-x64
+            runner: windows-2025
+            arch: x64
+            library: bbs_nanovg_vk.dll
+          - target: windows-arm64
+            runner: windows-11-arm
+            arch: arm64
+            library: bbs_nanovg_vk.dll
+          - target: macos-x64
+            runner: macos-15-intel
+            arch: x64
+            library: libbbs_nanovg_vk.dylib
+          - target: macos-arm64
+            runner: macos-15
+            arch: arm64
+            library: libbbs_nanovg_vk.dylib
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: KhronosGroup/Vulkan-Headers
+          ref: 6802bb4733b63ed5efd3adb308a6c885ef180ea1 # Vulkan SDK 1.4.363.0
+          path: .ci/vulkan-headers
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: ${{ matrix.target == 'windows-arm64' && 'microsoft' || 'temurin' }}
+          java-version: '25'
+          architecture: ${{ matrix.arch }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+          architecture: ${{ matrix.arch }}
+      - name: Build on Linux or macOS
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          python native/nanovg-vulkan/tests/test_fingerprint.py
+          python native/nanovg-vulkan/build.py --target ${{ matrix.target }} --vulkan-headers .ci/vulkan-headers/include --output build/nano/${{ matrix.target }}/${{ matrix.library }} --manifest build/nano/${{ matrix.target }}/manifest.json
+      - name: Build on Windows using the installed Microsoft toolchain
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath`) do set "BBS_VS=%%i"
+          if not defined BBS_VS exit /b 1
+          call "%BBS_VS%\Common7\Tools\VsDevCmd.bat" -no_logo -arch=${{ matrix.arch }} -host_arch=${{ matrix.arch }}
+          if errorlevel 1 exit /b %errorlevel%
+          python native/nanovg-vulkan/tests/test_fingerprint.py
+          if errorlevel 1 exit /b %errorlevel%
+          python native/nanovg-vulkan/build.py --target ${{ matrix.target }} --cc clang-cl --vulkan-headers .ci/vulkan-headers/include --output build/nano/${{ matrix.target }}/${{ matrix.library }} --manifest build/nano/${{ matrix.target }}/manifest.json
+          if errorlevel 1 exit /b %errorlevel%
+      - name: Real JNI and LWJGL 3.4.3 load probe
+        run: python native/nanovg-vulkan/probe.py --target ${{ matrix.target }} --library build/nano/${{ matrix.target }}/${{ matrix.library }} --report build/nano/${{ matrix.target }}/probe.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: bbs-nanovg-${{ matrix.target }}
+          path: build/nano/
+          if-no-files-found: error
+          retention-days: 14
+
+  package:
+    name: Verify and package all six classifiers
+    needs: native
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: bbs-nanovg-*
+          path: build/native-matrix
+          merge-multiple: true
+      - run: python3 native/nanovg-vulkan/package.py --input build/native-matrix --output build/native-package
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: bbs-nanovg-all-platforms
+          path: build/native-package/
+          if-no-files-found: error
+          retention-days: 14

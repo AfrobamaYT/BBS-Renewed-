@@ -1,0 +1,41 @@
+{
+    "required": true,
+    "package": "mchorse.bbs_mod.compat.mixin",
+    "compatibilityLevel": "JAVA_17",
+    "client": [
+        "PoseStackRotationsMixin",
+        "VertexFormatAltMixin",
+        "RenderPipelineAltMixin",
+        "RenderPipelineBuilderAltMixin",
+        "RenderPipelineGuiTopologieMixin",
+        "RenderPassAltMixin",
+        "GlRenderPassAltMixin",
+        "CommandEncoderAltMixin",
+        "GlCommandEncoderAltMixin",
+        "GpuDeviceAltMixin",
+        "GpuTextureAltMixin",
+        "GameRendererAltMixin",
+        "GuiAltMixin",
+        "LocalPlayerAltMixin",
+        "GuiGraphicsAltMixin",
+        "ModelManagerAltMixin",
+        "BakedQuadAltMixin",
+        "BlockColorsAltMixin",
+        "ClientLevelAltMixin",
+        "RenderSystemAltMixin",
+        "DrawStateAltMixin",
+        "DynamicUniformsAltMixin",
+        "GlBufferAltMixin",
+        "CameraRenderStateAltMixin",
+        "LevelRendererAltMixin",
+        "GlTextureViewAltMixin",
+        "GpuBufferAltMixin",
+        "MinecraftAltMixin",
+        "MinecraftFilmpufferMixin",
+        "RenderTypeAltMixin",
+        "GameRendererFovMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

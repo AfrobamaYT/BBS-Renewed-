@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "mchorse.bbs_mod.compat.main.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "ItemStackKomponentenMixin",
+    "KlippKontextMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
