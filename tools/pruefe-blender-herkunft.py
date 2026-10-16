@@ -177,7 +177,8 @@ def main() -> int:
         if not valid_date(entry.get("modified")):
             errors.append(f"{port_id}: modified muss YYYY-MM-DD sein.")
 
-        if not isinstance(entry.get("parity_evidence"), str) or not entry["parity_evidence"]:
+        parity_evidence = entry.get("parity_evidence")
+        if not isinstance(parity_evidence, str) or not parity_evidence:
             errors.append(f"{port_id}: parity_evidence fehlt.")
 
         commit = entry.get("upstream_commit")
@@ -186,12 +187,18 @@ def main() -> int:
             errors.append(f"{port_id}: verified braucht einen exakten 40-stelligen Commit.")
 
         if status == "verified":
+            documents = set(re.findall(r"\bdocs/[A-Za-z0-9_./-]+\.md", parity_evidence)) if isinstance(parity_evidence, str) else set()
             for path in sorted(files):
                 text = path.read_text(encoding="utf-8")
+                documents.update(re.findall(r"\bdocs/[A-Za-z0-9_./-]+\.md", text))
 
                 if "Direct-Blender-Port:" not in text:
                     relative = path.relative_to(ROOT)
                     errors.append(f"{port_id}: {relative} hat keinen Direct-Blender-Port-Vermerk.")
+
+            for document in sorted(documents):
+                if not (ROOT / document).is_file():
+                    errors.append(f"{port_id}: referenzierter Beleg fehlt: {document}")
 
         if status in {"planned", "legacy-unresolved"}:
             message = f"{port_id}: status {status}; nicht releasefaehig."

@@ -41,8 +41,8 @@
         "2001-2002 NaN Holding BV. All rights reserved."
       ],
       "modified": "2026-10-15",
-      "parity_evidence": "docs/INSTALL-REVALIDATED-20261015.md: integrated product 49c29c08686f2b76b358bbe6a6f9d72f9d78d38dcb906093b7ac6ef1f60be24e passes 22/22 against freshly compiled official Blender, no overlay; max difference 2.90000001e-08 at 1e-6. Fresh separate Blender and actual owned game both pass 15 poses x 212 bones at 1e-3.",
-      "artifact_source_commit": "c6cd47b98daa4b576b851058d6ffd0800d24aa04",
+      "parity_evidence": "docs/BLENDER-IK-PROVENANCE-2026-10-15.md: actual anonymous Preview 2 product 05ae129423604889fd75459da1fb3dd45b451c092a25ab930c99b4d862d3606e passes 22/22 against freshly compiled official Blender, no overlay; max difference 2.90000001e-08 at 1e-6. Numerical solver scope; complete rig/editor/recording parity is separate.",
+      "artifact_source_commit": "80a1d8924e8aa798cffe7c64c2cfbf9020ed4644",
       "independent_support": [
         "IKAffine.java",
         "IKMatN.java",
