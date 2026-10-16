@@ -935,16 +935,21 @@ publishing {
  * findColor kann sogar MEHR als mein Eigenbau: es sucht eine Farbe im Bild. Damit waere der
  * orange Umriss direkt lokalisierbar gewesen, statt Koordinaten von Hand abzulesen.
  *
- * createSourceSet legt einen eigenen SourceSet `gametest` an -- der Produktivcode bleibt
- * unberuehrt, und ein Fehler hier kann den normalen Bau nicht kaputtmachen. */
+ * createSourceSet keeps the test classes out of the product JAR. check compiles
+ * the suite; explicit production-client tasks execute its graphical cases. */
 fabricApi {
 	configureTests {
 		createSourceSet = true
 		modId = "bbs-gametest"
+		/* Only fabric-client-gametest entrypoints are registered in this suite. */
+		enableGameTests = false
 		enableClientGameTests = true
 		eula = true
 	}
 }
+
+/* Compile the registered client suite during check; graphical runs stay explicit. */
+tasks.named("check") { dependsOn tasks.named("gametestClasses") }
 
 /* Client resource tasks exist after Loom's split source-set setup. */
 apply from: 'gradle/nanovg-natives.gradle'

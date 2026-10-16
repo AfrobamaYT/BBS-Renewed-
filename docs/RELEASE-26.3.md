@@ -33,7 +33,12 @@ decompressed product entry against Preview 1 finds exactly two changed files:
 `COPYING_bbs` and `META-INF/LICENSE-BLENDER-IK.txt`. Both match the pinned complete
 licence above; every class and all remaining resources are byte-identical.
 
-The public build and required server GameTest pass locally on Java 25. The API check also
+The public build passes locally on Java 25. Correction, 2026-10-17: the previously
+reported server GameTest task contained no server test functions, so its successful
+exit provides no assertion evidence. This tree registers client GameTests only.
+Their compilation remains part of `check`; graphical execution uses the explicit
+production-client tasks. The Windows/Linux world/dashboard evidence below comes
+from those actual client runs. The API check also
 passes with `_JAVA_OPTIONS=-Dbbs.release.api_probe=true`, and `apiDump` reproduces the
 original snapshot byte for byte. The native gate checks the ABI, source fingerprint and
 binary checksum of all six bundled NanoVG Vulkan libraries. The Blender provenance release
