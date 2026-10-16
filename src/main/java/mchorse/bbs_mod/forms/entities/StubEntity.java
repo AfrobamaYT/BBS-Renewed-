@@ -16,6 +16,10 @@ import java.util.Map;
 
 public class StubEntity implements IEntity
 {
+    private boolean swimming, flying, fallFlying;
+    private float leaningPitch;
+    private int roll;
+
     private Level world;
     private int age;
 
@@ -660,7 +664,7 @@ public class StubEntity implements IEntity
     @Override
     public float getLeaningPitch(float tickDelta)
     {
-        return 0;
+        return this.leaningPitch;
     }
 
     @Override
@@ -672,17 +676,7 @@ public class StubEntity implements IEntity
     @Override
     public Pose getEntityPose()
     {
-        if (this.mountTarget != null || this.sitting)
-        {
-            return Pose.SITTING;
-        }
-
-        if (this.sneaking)
-        {
-            return Pose.CROUCHING;
-        }
-
-        return Pose.STANDING;
+        return this.mountTarget != null || this.sitting ? Pose.SITTING : EntityState.pose(this.fallFlying, this.swimming, this.sneaking);
     }
 
     @Override
@@ -724,14 +718,23 @@ public class StubEntity implements IEntity
     @Override
     public int getRoll()
     {
-        return 0;
+        return this.roll;
     }
 
     @Override
     public boolean isFallFlying()
     {
-        return false;
+        return this.fallFlying;
     }
+
+    /* Recorded body states (BBS FS e383f1930): the stub has no ticks, so it just holds them. */
+    @Override public boolean isSwimming() { return this.swimming; }
+    @Override public void setSwimming(boolean swimming) { this.swimming = swimming; }
+    @Override public boolean isFlying() { return this.flying; }
+    @Override public void setFlying(boolean flying) { this.flying = flying; }
+    @Override public void setFallFlying(boolean fallFlying) { this.fallFlying = fallFlying; }
+    @Override public void setLeaningPitch(float leaningPitch) { this.leaningPitch = leaningPitch; }
+    @Override public void setRoll(int roll) { this.roll = roll; }
 
     @Override
     public Vec3 getRotationVec(float transition)

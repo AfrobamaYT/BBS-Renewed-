@@ -123,7 +123,8 @@ public final class ModelPhysicsRuntime
 
         wind = resolveWindDirection(wind, baseTransform);
 
-        applyCompiled(entity.getWorld(), entity.getAge(), transition, model, instance, compiled.chains(), wind, constraints, state, baseTransform);
+        /* What the form rides when anchored (a passenger in a car); none for chains run model-local. */
+        applyCompiled(entity.getWorld(), entity.getAge(), transition, model, instance, compiled.chains(), wind, constraints, baseTransform == null ? null : PhysicsCarrier.von(form), state, baseTransform);
     }
 
     /**
@@ -146,7 +147,7 @@ public final class ModelPhysicsRuntime
         return new ModelPhysicsConfig.Wind(wind.strength(), dir.x, dir.y, dir.z, wind.turbulence(), wind.turbulenceSpeed(), wind.turbulenceScale(), false);
     }
 
-    private static void applyCompiled(Level world, int age, float transition, IModel model, ModelInstance instance, List<ModelPhysicsCache.CompiledChain> compiledChains, ModelPhysicsConfig.Wind wind, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, InstanceState state, Matrix4f baseTransform)
+    private static void applyCompiled(Level world, int age, float transition, IModel model, ModelInstance instance, List<ModelPhysicsCache.CompiledChain> compiledChains, ModelPhysicsConfig.Wind wind, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, PhysicsCarrier carrier, InstanceState state, Matrix4f baseTransform)
     {
         Set<String> wanted = new HashSet<>();
         Set<String> chainIds = new HashSet<>();
@@ -180,11 +181,11 @@ public final class ModelPhysicsRuntime
 
         for (ModelPhysicsCache.CompiledChain chain : compiledChains)
         {
-            applyChain(world, age, transition, model, instance, chain, wind, constraints, frames, state);
+            applyChain(world, age, transition, model, instance, chain, wind, constraints, frames, carrier, state);
         }
     }
 
-    private static void applyChain(Level world, int age, float transition, IModel model, ModelInstance instance, ModelPhysicsCache.CompiledChain chain, ModelPhysicsConfig.Wind wind, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Map<String, PivotFrame> frames, InstanceState instanceState)
+    private static void applyChain(Level world, int age, float transition, IModel model, ModelInstance instance, ModelPhysicsCache.CompiledChain chain, ModelPhysicsConfig.Wind wind, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Map<String, PivotFrame> frames, PhysicsCarrier carrier, InstanceState instanceState)
     {
         List<String> ids = chain.chainRootToEnd();
         int pivotCount = ids.size();
@@ -314,7 +315,7 @@ public final class ModelPhysicsRuntime
         }
 
         ChainSolver.computePoseTargets(model, ids, chainFrames, chain.restLengths(), anchor, anchorRotation, target != null, state);
-        ChainSolver.step(world, age, transition, model, ids, chain, gravity, damping, stiffness, wind, constraints, anchor, anchorRotation, chainFrames.get(0).parentRotation(), target, chainFrames, state);
+        ChainSolver.step(world, age, transition, model, ids, chain, gravity, damping, stiffness, wind, constraints, anchor, anchorRotation, chainFrames.get(0).parentRotation(), target, chainFrames, carrier, state);
 
         Vector3f[] positions = ChainSolver.renderInterpolate(state, state.renderAlpha, anchor, anchorRotation, target);
         ModelRotationBlender.applyWeightedRotations(model, chainFrames.get(0).parentRotation(), ids, positions, weight);

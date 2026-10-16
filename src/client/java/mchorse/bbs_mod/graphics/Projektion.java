@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.graphics;
 
 import com.mojang.blaze3d.ProjectionType;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.mixin.client.LevelRendererAccessor;
 import net.minecraft.client.Minecraft;

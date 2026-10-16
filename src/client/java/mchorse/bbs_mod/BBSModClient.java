@@ -17,8 +17,8 @@ import mchorse.bbs_mod.client.renderer.entity.GunProjectileEntityRenderer;
 import mchorse.bbs_mod.client.renderer.item.GunItemRenderer;
 import mchorse.bbs_mod.client.renderer.item.ModelBlockItemRenderer;
 import mchorse.bbs_mod.cubic.model.ModelManager;
-import mchorse.bbs_mod.events.register.RegisterClientSettingsEvent;
-import mchorse.bbs_mod.events.register.RegisterL10nEvent;
+import mchorse.bbs_mod.api.client.events.RegisterClientSettingsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterL10nEvent;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.film.WorldVideoExportSession;
@@ -78,13 +78,12 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -138,13 +137,12 @@ public class BBSModClient implements ClientModInitializer
     private static boolean customGUIScale;
     /** Das dashboard, ohne es zu erzeugen (null wenn noch keins offen ist).
      *
-     *  MERGE 2026-07-27: aus dem CML-fork — fragt den UI-zustand ab, ohne ein dashboard
-     *  zu oeffnen. */
+     *  MERGE 2026-07-27: aus dem CML-fork — unsere autonomie-schicht (mcstudio, blenderbridge)
+     *  fragt darueber den UI-zustand ab, ohne ein dashboard zu oeffnen. */
     public static UIDashboard peekDashboard()
     {
         return dashboard;
     }
-
 
     public static TextureManager getTextures()
     {
@@ -184,6 +182,17 @@ public class BBSModClient implements ClientModInitializer
     public static VideoRecorder getVideoRecorder()
     {
         return videoRecorder;
+    }
+
+    /** Read the completed world/HUD image after rendering, outside the level's open pass. */
+    public static void captureFinishedFrame()
+    {
+        if (Minecraft.getInstance().level != null && videoRecorder.isRecording() && BBSRendering.canRender)
+        {
+            BBSRendering.fuellen();
+            minecraftSoundCapture.captureFrame();
+            videoRecorder.recordFrame();
+        }
     }
 
     public static MinecraftSoundCapture getMinecraftSoundCapture()
@@ -277,13 +286,12 @@ public class BBSModClient implements ClientModInitializer
     }
 
     /**
-     * The scale at which GUI is being rendered right now (GUI pixels to
-     * framebuffer pixels). Unlike the ui_scale setting itself, this is always
-     * the actual applied value, including the "0 = Minecraft's scale" mode.
+     * Framebuffer pixels per BBS UI unit right now, fractional values included (see UISkala);
+     * the "0 = Minecraft's scale" mode gives Minecraft's own factor.
      */
     public static float getGUIScale()
     {
-        return (float) Minecraft.getInstance().getWindow().getGuiScale();
+        return mchorse.bbs_mod.ui.framework.UISkala.effektiv();
     }
 
     public static float getOriginalFramebufferScale()
@@ -312,7 +320,7 @@ public class BBSModClient implements ClientModInitializer
 
     public static void onEndKey(long window, int key, int scancode, int action, int modifiers, CallbackInfo info)
     {
-        if (action != GLFW.GLFW_PRESS)
+        if (action != InputConstants.PRESS)
         {
             return;
         }
@@ -415,6 +423,7 @@ public class BBSModClient implements ClientModInitializer
         BBSMod.setupConfig(Icons.KEY_CAP, "keybinds", new File(BBSMod.getSettingsFolder(), "keybinds.json"), KeybindSettings::register);
 
         BBSMod.events.post(new RegisterClientSettingsEvent());
+        mchorse.bbs_mod.client.AddonRegister.client();
 
         BBSSettings.language.postCallback((v, f) -> reloadLanguage(getLanguageKey()));
         BBSSettings.userIntefaceScale.postCallback((v, f) ->
@@ -490,14 +499,14 @@ public class BBSModClient implements ClientModInitializer
             .register(Link.bbs("curve"), CurveClientClip.class, new ClipFactoryData(Icons.ARC, 0xff1493));
 
         /* Keybinds */
-        keyDashboard = this.createKey("dashboard", GLFW.GLFW_KEY_0);
-        keyItemEditor = this.createKey("item_editor", GLFW.GLFW_KEY_HOME);
-        keyPlayFilm = this.createKey("play_film", GLFW.GLFW_KEY_RIGHT_CONTROL);
-        keyPauseFilm = this.createKey("pause_film", GLFW.GLFW_KEY_BACKSLASH);
-        keyRecordReplay = this.createKey("record_replay", GLFW.GLFW_KEY_RIGHT_ALT);
-        keyRecordVideo = this.createKey("record_video", GLFW.GLFW_KEY_F4);
-        keyPlayFilmAndRecord = this.createKey("play_film_and_record", GLFW.GLFW_KEY_F6);
-        keyOpenReplays = this.createKey("open_replays", GLFW.GLFW_KEY_RIGHT_SHIFT);
+        keyDashboard = this.createKey("dashboard", InputConstants.KEY_0);
+        keyItemEditor = this.createKey("item_editor", InputConstants.KEY_HOME);
+        keyPlayFilm = this.createKey("play_film", InputConstants.KEY_RCONTROL);
+        keyPauseFilm = this.createKey("pause_film", InputConstants.KEY_BACKSLASH);
+        keyRecordReplay = this.createKey("record_replay", InputConstants.KEY_RALT);
+        keyRecordVideo = this.createKey("record_video", InputConstants.KEY_F4);
+        keyPlayFilmAndRecord = this.createKey("play_film_and_record", InputConstants.KEY_F6);
+        keyOpenReplays = this.createKey("open_replays", InputConstants.KEY_RSHIFT);
         /* Bestehendes Replay in der WELT waehlen, ohne ins Dashboard gezogen zu werden.
          * Der Sprach-Schluessel key.bbs.open_quick_replays lag die ganze Zeit im Baum — die
          * Taste war beim Fork-Wechsel verlorengegangen, die Uebersetzung nicht. Siehe
@@ -507,15 +516,11 @@ public class BBSModClient implements ClientModInitializer
          * (BBSToolsKeys.QUICK_REPLAY_PICKER). Der Nutzer am 2026-07-30: "ich will das der
          * button fuer die welt und im dashboard gleich sind" — zwei Tasten fuer dieselbe Box
          * sind zwei Dinge zum Merken. */
-        keyOpenQuickReplays = this.createKey("open_quick_replays", GLFW.GLFW_KEY_GRAVE_ACCENT);
-        keyOpenMorphing = this.createKey("open_morphing", GLFW.GLFW_KEY_B);
-        keyDemorph = this.createKey("demorph", GLFW.GLFW_KEY_PERIOD);
-        keyTeleport = this.createKey("teleport", GLFW.GLFW_KEY_Y);
+        keyOpenQuickReplays = this.createKey("open_quick_replays", InputConstants.KEY_GRAVE);
+        keyOpenMorphing = this.createKey("open_morphing", InputConstants.KEY_B);
+        keyDemorph = this.createKey("demorph", InputConstants.KEY_PERIOD);
+        keyTeleport = this.createKey("teleport", InputConstants.KEY_Y);
         keyZoom = this.createKeyMouse("zoom", 2);
-
-        /* Drahtgitter-Sicht für den Editor (Aufnahmen planen, bei denen ein Darsteller
-         * unter der Erde startet). Eigene Klasse, siehe mchorse.bbs_mod.client.WeltDrahtgitter. */
-        mchorse.bbs_mod.client.WeltDrahtgitter.anmelden();
 
         /* Der Sammler des laufenden Weltdurchgangs wird angemeldet, solange BBS zeichnet,
          * und danach wieder abgemeldet. Die Form-Renderer holen ihn dort ab (FormSammler);
@@ -558,7 +563,7 @@ public class BBSModClient implements ClientModInitializer
                  * den Schatten ganz weg, statt ihn zu reparieren: aus dem Zeichen-Durchgang
                  * entfernt, im Sammel-Durchgang nie erreicht. Genau so gemessen, bevor diese
                  * Zeile dazukam. renderCoolStuff ruft beide, in dieser Reihenfolge. */
-                if (Minecraft.getInstance().gui.screen() instanceof UIScreen screen)
+                if (Minecraft.getInstance().gui.screen() instanceof UIScreen screen && !mchorse.bbs_mod.ui.film.FilmKameraAnsicht.nurFiguren(context))
                 {
                     screen.renderInWorld(context);
                 }
@@ -580,7 +585,7 @@ public class BBSModClient implements ClientModInitializer
 
             try
             {
-            BBSRendering.renderCoolStuff(context);
+            boolean last = mchorse.bbs_mod.forms.FormRenderLast.open(); try { BBSRendering.renderCoolStuff(context); } finally { mchorse.bbs_mod.forms.FormRenderLast.close(last); } /* films and editor forms: render last (BBS FS a0fe6de30) */
 
             if (BBSSettings.chromaSkyEnabled.get())
             {
@@ -673,7 +678,7 @@ public class BBSModClient implements ClientModInitializer
 
         ClientTickEvents.START_CLIENT_TICK.register((client) ->
         {
-            BBSRendering.startTick();
+            BBSRendering.startTick(); mchorse.bbs_mod.forms.renderers.utils.FormUeberlagerung.hochladen(); /* palette writes never inside a render pass */
         });
 
         /* 26.2 (fabric-lifecycle-events 4.1.3): START_WORLD_TICK/END_WORLD_TICK heissen jetzt
@@ -708,7 +713,7 @@ public class BBSModClient implements ClientModInitializer
                 films.update();
                 modelBlockItemRenderer.update();
                 gunItemRenderer.update();
-                textures.update();
+                textures.update(); sounds.update(); /* prunes stopped and orphaned sources (BBS FS dcf49cf95) */
             }
 
             worldExportSession.update();
@@ -916,7 +921,7 @@ public class BBSModClient implements ClientModInitializer
     {
         return KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key." + BBSMod.MOD_ID + "." + id,
-            InputConstants.Type.KEYSYM,
+            InputConstants.Type.KEYBOARD,
             key,
             BBSKeyCategories.BBS_MAIN
         ));

@@ -213,10 +213,13 @@ public final class Blockmodell
                 stapel.mulPose(anzeigeM);
             }
 
-            net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh eingefroren =
-                ((net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableMesh) masche(ZUSTAND)).immutableCopy();
-            sammler.submitCustomGeometry(stapel, ebene, (pose, verbraucher) ->
-                viereckeAusMasche(pose, umfaerbungM.apply(verbraucher), toenungM, hellM, overlay, eingefroren));
+            /* Freeze Fabric's reusable mesh before the next block is resolved. Keep the existing
+             * fallback lambda signature intact for draws already queued during a live swap. */
+            if (!BlockMaschenAuftrag.einreichen(masche(ZUSTAND), stapel, sammler, ebene, umfaerbungM, toenungM, hellM, overlay))
+            {
+                sammler.submitCustomGeometry(stapel, ebene, (pose, verbraucher) ->
+                    viereckeAusMasche(pose, umfaerbungM.apply(verbraucher), toenungM, hellM, overlay, ZUSTAND));
+            }
 
             if (anzeigeM != null)
             {
@@ -468,11 +471,11 @@ public final class Blockmodell
      * @return {@code false}, wenn keine Masche da ist oder sie leer ist
      */
     private static boolean viereckeAusMasche(PoseStack.Pose pose, VertexConsumer verbraucher,
-        int[] toenung, int licht, int overlay, Object zustand)
+        int[] toenung, int licht, int overlay, BlockModelRenderState zustand)
     {
-        Object masche = zustand instanceof BlockModelRenderState modell ? masche(modell) : zustand;
+        Object masche = masche(zustand);
 
-        if (!(masche instanceof net.fabricmc.fabric.api.client.renderer.v1.mesh.MeshView mm)
+        if (!(masche instanceof net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableMesh mm)
             || mm.size() == 0)
         {
             return false;

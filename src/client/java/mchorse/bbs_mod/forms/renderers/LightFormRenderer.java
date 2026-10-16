@@ -13,7 +13,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
  * <p>BBS ruft an mehreren stellen {@code FormUtilsClient.getRenderer(form).collectMatrices(...)}
  * OHNE null-check — z.b. {@code BaseFilmController.renderAxes} (die gizmo-achsen des im editor
  * AUSGEWAEHLTEN actors) und {@code getGizmoBoneEvaluatedRotation}. Eine registrierte form ohne
- * renderer ist dort eine sichere NPE auf dem render-thread: lichter importieren,
+ * renderer ist dort eine sichere NPE auf dem render-thread: lichter aus Blender importieren,
  * den licht-actor anklicken, crash. Deshalb gehoert zu jedem eintrag in der form-registry
  * ({@code BBSMod}) zwingend ein eintrag in {@code FormUtilsClient} — beides oder keins.</p>
  *

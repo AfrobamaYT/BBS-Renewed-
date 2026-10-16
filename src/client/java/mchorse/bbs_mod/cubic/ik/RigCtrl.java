@@ -55,6 +55,8 @@ public class RigCtrl
     public static void leeren()
     {
         proModell = null;
+        mchorse.bbs_mod.cubic.render.RigDeko.leeren();
+        RigPoseListe.leeren();
     }
 
     private static List<Eintrag> eigenes(String modellId)

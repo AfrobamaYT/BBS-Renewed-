@@ -1,24 +1,23 @@
 package mchorse.bbs_mod.graphics;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.render.TextureSetup;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
 import java.nio.ByteBuffer;
-import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.function.Consumer;
+import mchorse.bbs_mod.client.BBSRendering;
 
 /**
  * Ein Netz, das auf der Grafikkarte LIEGENBLEIBT und mehrfach gezeichnet werden kann.
@@ -53,6 +52,8 @@ public class GehaltenesNetz implements AutoCloseable
      * Indexpuffer benutzt, der fuer Vierecke und Dreiecke immer dieselbe Folge hat.
      */
     private GpuBuffer eigeneIndizes;
+    private GpuBufferSlice indexAnsicht;
+    private boolean closed;
 
     private final MeshData.DrawState zustand;
 
@@ -62,13 +63,15 @@ public class GehaltenesNetz implements AutoCloseable
     }
 
     /**
-     * Fuer Netze, die nur im laufenden Bild gezeichnet werden (SofortZeichner, Rig-Widgets).
+     * Fuer Netze, die nur im laufenden RenderPearl-Submit gezeichnet werden (SofortZeichner, Rig-Widgets).
      *
      * <p>Die Ecken landen in Vanillas {@code TransientMemory} -- persistent gemappte Bloecke,
      * die je Bild rotiert werden -- statt in einem eigenen Puffer, der nach dem Zug sofort
      * wieder geloescht wird. Anlegen und Loeschen kosteten im Rig-Film 4,1-4,5 % (Playback) bzw.
      * 5,2-5,3 % (Stillstand) des Renderthreads, danach 1,3-1,8 % (27.09.2026). Das Stueck gilt
-     * nur in diesem Bild.</p>
+     * Im Vulkan-Backend gilt das Stueck nur bis zum naechsten Submit; die echte
+     * TransientGpuBuffer-Lebensdauer wird vor jedem Draw geprueft. Die genannten
+     * Profilwerte stammen aus dem frueheren GL-Lauf.</p>
      */
     public static GehaltenesNetz kurzlebig(MeshData netz)
     {
@@ -97,15 +100,58 @@ public class GehaltenesNetz implements AutoCloseable
 
             if (indizes != null)
             {
-                this.eigeneIndizes = RenderSystem.getDevice().createBuffer(
-                    () -> "bbs-gehaltene-indizes", GpuBuffer.USAGE_INDEX, indizes);
+                if (kurzlebig)
+                {
+                    this.indexAnsicht = RenderSystem.getDevice().createCommandEncoder().transientMemory()
+                        .uploadGpu(indizes, this.zustand.indexType().bytes, GpuBuffer.USAGE_INDEX);
+                }
+                else
+                {
+                    this.eigeneIndizes = RenderSystem.getDevice().createBuffer(
+                        () -> "bbs-gehaltene-indizes", GpuBuffer.USAGE_INDEX, indizes);
+                    this.indexAnsicht = this.eigeneIndizes.slice();
+                }
             }
+        }
+        catch (RuntimeException | Error failure)
+        {
+            this.close();
+            throw failure;
         }
     }
 
     public int eckenZahl()
     {
         return this.zustand.vertexCount();
+    }
+
+    /** Stock feature execution over the actual retained buffers, without reinterpreting vertices. */
+    public net.minecraft.client.renderer.StagedVertexBuffer.ExecuteInfo execution(RenderPipeline pipeline)
+    {
+        if (this.closed) throw new IllegalStateException("Retained mesh execution after close");
+        this.bindungPruefen(pipeline);
+        int stride = this.zustand.format().getVertexSize();
+        validateVertices(this.eckenAnsicht, this.zustand.vertexCount(), stride);
+        if (this.eckenAnsicht.offset() % stride != 0)
+            throw new IllegalStateException("Stock feature execution cannot represent this vertex slice offset");
+        int baseVertex = Math.toIntExact(this.eckenAnsicht.offset() / stride);
+        GpuBuffer indices;
+        com.mojang.renderpearl.api.pipeline.IndexType type;
+        int firstIndex = 0;
+        if (this.indexAnsicht != null)
+        {
+            indices = this.indexAnsicht.buffer();
+            type = this.zustand.indexType();
+            firstIndex = indexStart(this.indexAnsicht, type, this.zustand.indexCount());
+        }
+        else
+        {
+            RenderSystem.AutoStorageIndexBuffer sequential = RenderSystem.getSequentialBuffer(this.zustand.primitiveTopology());
+            indices = sequential.getBuffer(this.zustand.indexCount());
+            type = sequential.type();
+        }
+        return new net.minecraft.client.renderer.StagedVertexBuffer.ExecuteInfo(this.eckenAnsicht.buffer(),
+            indices, type, baseVertex, firstIndex, this.zustand.indexCount(), this.zustand.primitiveTopology());
     }
 
     /**
@@ -124,11 +170,21 @@ public class GehaltenesNetz implements AutoCloseable
     public void zeichnen(RenderPipeline pipeline, Matrix4f modelView, Vector4f farbe,
         TextureSetup textur, RenderTarget ziel, Consumer<RenderPass> zusatz)
     {
+        if (ziel == null && Zeichenziel.eigenes())
+        {
+            this.zeichnen(pipeline, modelView, farbe, textur, Zeichenziel.farbe(), Zeichenziel.tiefe(), zusatz);
+            return;
+        }
+        if (ziel == null && BBSRendering.outputColorTextureOverride != null)
+        {
+            this.zeichnen(pipeline, modelView, farbe, textur, BBSRendering.outputColorTextureOverride,
+                BBSRendering.outputDepthTextureOverride, zusatz);
+            return;
+        }
         RenderTarget echtes = ziel != null ? ziel : Minecraft.getInstance().gameRenderer.mainRenderTarget();
 
         this.zeichnen(pipeline, modelView, farbe, textur,
-            ziel == null ? null : echtes.getColorTextureView(),
-            ziel == null ? null : echtes.getDepthTextureView(), zusatz);
+            echtes.getColorTextureView(), echtes.getDepthTextureView(), zusatz);
     }
 
     /**
@@ -147,15 +203,7 @@ public class GehaltenesNetz implements AutoCloseable
     public void zeichnen(RenderPipeline pipeline, Matrix4f modelView, Vector4f farbe,
         TextureSetup textur, GpuTextureView farbZiel, GpuTextureView tiefenZiel, Consumer<RenderPass> zusatz)
     {
-        if (farbZiel == null)
-        {
-            RenderTarget target = Minecraft.getInstance().gameRenderer.mainRenderTarget();
-            farbZiel = RenderSystem.outputColorTextureOverride != null
-                ? RenderSystem.outputColorTextureOverride : target.getColorTextureView();
-            tiefenZiel = RenderSystem.outputColorTextureOverride != null
-                ? RenderSystem.outputDepthTextureOverride : target.getDepthTextureView();
-        }
-
+        if (this.closed) throw new IllegalStateException("GehaltenesNetz draw after close");
         if (this.eckenAnsicht == null || this.zustand.vertexCount() <= 0)
         {
             messen("leer", pipeline);
@@ -165,6 +213,7 @@ public class GehaltenesNetz implements AutoCloseable
 
         messen("kommt-an", pipeline);
         bindungPruefen(pipeline);
+        validateVertices(this.eckenAnsicht, this.zustand.vertexCount(), this.zustand.format().getVertexSize());
 
         /* ⛔ DER INDEXTYP GEHOERT ZU DEM PUFFER, DER WIRKLICH GEBUNDEN WIRD (2026-08-05,
          * Bugliste #17b).
@@ -183,12 +232,14 @@ public class GehaltenesNetz implements AutoCloseable
          * Folgespeicher fuer sie ebenfalls SHORT liefert -- darum fiel es nur an den
          * Ringen auf. Wer den Typ aus dem Netz nimmt, hat zwei Quellen fuer eine Sache. */
         GpuBuffer indizes;
-        com.mojang.blaze3d.IndexType indexTyp;
+        com.mojang.renderpearl.api.pipeline.IndexType indexTyp;
+        int firstIndex = 0;
 
-        if (this.eigeneIndizes != null)
+        if (this.indexAnsicht != null)
         {
-            indizes = this.eigeneIndizes;
+            indizes = this.indexAnsicht.buffer();
             indexTyp = this.zustand.indexType();
+            firstIndex = indexStart(this.indexAnsicht, indexTyp, this.zustand.indexCount());
         }
         else
         {
@@ -215,19 +266,14 @@ public class GehaltenesNetz implements AutoCloseable
             Zeichenbereich.aktiv(), farbZiel.getWidth(0), farbZiel.getHeight(0));
 
         /* Inside a Sammelpass scope consecutive draws to the same target share one pass. */
-        RenderPass geteilt = Sammelpass.holen(farbZiel, tiefenZiel, bereich);
-        RenderPass durchgang = geteilt != null ? geteilt : tiefenZiel == null
-            ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                () -> "bbs-gehalten", farbZiel, Optional.empty())
-            : bereich == null
-                ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                    () -> "bbs-gehalten", farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty())
-                : RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                    () -> "bbs-gehalten", farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty(), bereich);
-
-        try
+        RenderPass geteilt = GpuBackend.isOpenGl() ? Sammelpass.holen(farbZiel, tiefenZiel, bereich) : null;
+        try (DrawPassLease lease = geteilt != null ? DrawPassLease.borrowExisting(geteilt, farbZiel, tiefenZiel)
+            : DrawPassLease.open(RenderSystem.getDevice().createCommandEncoder(), () -> "bbs-gehalten",
+                farbZiel, tiefenZiel, bereich))
         {
-            durchgang.setPipeline(pipeline);
+            RenderPass durchgang = lease.pass();
+            pipeline = lease.pipeline(pipeline);
+            durchgang.setPipeline(RenderSystem.getCompiledPipeline(pipeline));
 
             RenderSystem.bindDefaultUniforms(durchgang);
             durchgang.setUniform("DynamicTransforms", transformationen);
@@ -246,17 +292,33 @@ public class GehaltenesNetz implements AutoCloseable
 
             durchgang.setVertexBuffer(0, this.eckenAnsicht);
             durchgang.setIndexBuffer(indizes, indexTyp);
-            durchgang.drawIndexed(this.zustand.indexCount(), 1, 0, 0, 0);
+            durchgang.drawIndexed(this.zustand.indexCount(), 1, firstIndex, 0, 0);
 
             messen("gezeichnet", pipeline);
         }
-        finally
-        {
-            if (geteilt == null)
-            {
-                durchgang.close();
-            }
-        }
+    }
+
+    static int indexStart(GpuBufferSlice slice, com.mojang.renderpearl.api.pipeline.IndexType type, int count)
+    {
+        validateSlice(slice, GpuBuffer.USAGE_INDEX, Math.multiplyExact((long) count, type.bytes));
+        if (slice.offset() % type.bytes != 0) throw new IllegalArgumentException("Index slice offset is not element aligned");
+        return Math.toIntExact(slice.offset() / type.bytes);
+    }
+
+    static void validateVertices(GpuBufferSlice slice, int count, int stride)
+    {
+        if (count < 0 || stride <= 0) throw new IllegalArgumentException("Invalid vertex geometry dimensions");
+        validateSlice(slice, GpuBuffer.USAGE_VERTEX, Math.multiplyExact((long) count, stride));
+    }
+
+    private static void validateSlice(GpuBufferSlice slice, int usage, long required)
+    {
+        if (slice == null || slice.buffer().isClosed())
+            throw new IllegalStateException("GPU mesh slice is closed or expired after its RenderPearl submit");
+        if (required < 0 || slice.offset() < 0 || slice.length() < required
+            || Math.addExact(slice.offset(), slice.length()) > slice.buffer().size()
+            || (slice.buffer().usage() & usage) == 0)
+            throw new IllegalArgumentException("GPU mesh slice exceeds its actual buffer/range/usage contract");
     }
 
     /**
@@ -332,7 +394,7 @@ public class GehaltenesNetz implements AutoCloseable
         /* ⚠️ Das Feld hat IMMER die volle Laenge (16 Plaetze) und ist an den unbenutzten
          * Stellen null -- seine Laenge sagt also nichts. Gezaehlt werden muss, was wirklich
          * belegt ist. (Dieser Irrtum hat hier einmal 16 statt 1 gemeldet.) */
-        VertexFormat[] bindungen = pipeline.getVertexFormatBindings();
+        VertexFormat[] bindungen = pipeline.getVertexFormatBindings().toArray(new VertexFormat[0]);
         int belegt = 0;
 
         for (VertexFormat format : bindungen)
@@ -356,13 +418,13 @@ public class GehaltenesNetz implements AutoCloseable
         int erwartet = bindungen[0].getVertexSize();
         int geliefert = this.zustand.format().getVertexSize();
 
-        if (erwartet != geliefert)
+        if (erwartet != geliefert || !bindungen[0].equals(this.zustand.format()))
         {
             throw new IllegalStateException(
                 "Pipeline " + pipeline.getLocation() + " erwartet " + erwartet
-                + " Byte je Ecke, das Netz liefert aber " + geliefert + " ("
-                + this.zustand.format() + "). Der Shader wuerde " + geliefert + "/" + erwartet
-                + "-mal so weit lesen, wie der Puffer reicht.");
+                + " Byte je Ecke im Format " + bindungen[0] + ", das Netz liefert " + geliefert
+                + " Byte im Format " + this.zustand.format()
+                + ". Schrittweite und Attribute muessen beide zur Pipeline passen.");
         }
     }
 
@@ -370,14 +432,17 @@ public class GehaltenesNetz implements AutoCloseable
     {
         if (ansicht != null)
         {
-            durchgang.bindTexture(name, ansicht, abtaster);
+            durchgang.setUniform(name, ansicht, abtaster);
         }
     }
 
     @Override
     public void close()
     {
+        if (this.closed) return;
+        this.closed = true;
         this.eckenAnsicht = null;
+        this.indexAnsicht = null;
 
         if (this.ecken != null)
         {

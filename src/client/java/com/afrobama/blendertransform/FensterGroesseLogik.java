@@ -40,7 +40,9 @@ public final class FensterGroesseLogik
 
         int hoechster = Math.max(1, Math.min(pufferBreite / 320, pufferHoehe / 240));
 
-        return Math.min(Math.max(Math.round(eigene), 1), hoechster);
+        /* Aufgerundet, nicht gerundet: den Rest bis zum Zwischenwert verkleinert die BBS-
+         * Oberflaeche selbst (UISkala). Math.round machte aus 1,5 stumm eine 2. */
+        return mchorse.bbs_mod.ui.framework.UISkala.ganzzahl(eigene, hoechster);
     }
 
     /** {@code getScreenWidth} @RETURN. */

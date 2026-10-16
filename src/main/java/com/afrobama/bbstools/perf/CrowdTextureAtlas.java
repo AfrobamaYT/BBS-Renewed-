@@ -229,7 +229,7 @@ public final class CrowdTextureAtlas implements IFeatureDebugger
      * zerfallen (9 von 12 Laeufen), Ursache war dieselbe Zeile in {@code Texture.bind()}.
      *
      * <p>⚠️ NICHT UMGESTELLT, weil diese Klasse in {@code src/main} liegt und
-     * {@code com.mojang.blaze3d.opengl} dort nicht existiert. Die drei aufraeumenden
+     * {@code com.mojang.renderpearl.backend.opengl} dort nicht existiert. Die drei aufraeumenden
      * Bloecke dieser Klasse stellen den Zustand jetzt exakt wieder her und sind damit
      * unschaedlich; nur dieser eine bleibt offen. Preis fuer die saubere Loesung:
      * diese Klasse und {@link BindlessTextureRegistry} nach {@code src/client}

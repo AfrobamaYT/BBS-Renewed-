@@ -60,7 +60,7 @@ public class WorldVideoExportSession extends VideoExportSession
         this.firstTickPaused = false;
 
         long delayMs = (long) (Math.max(0F, BBSSettings.videoDelay.get()) * 1000F);
-        boolean started = this.begin(BBSRendering.getTexture().id, size.width, size.height, delayMs);
+        boolean started = this.begin(() -> BBSRendering.getTexture().gpu(), size.width, size.height, delayMs);
 
         if (!started)
         {

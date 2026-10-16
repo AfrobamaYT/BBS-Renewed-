@@ -2,7 +2,7 @@
 package com.afrobama.bbstools.client.campreview;
 
 import com.afrobama.bbstools.clip.BBSToolsAddCameraClip;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
@@ -11,7 +11,6 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.Minecraft;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +71,7 @@ public class UIClipCameraPreview extends UIElement
     public boolean manuallyPositioned;
 
     public boolean freeFlyActive;
+    private boolean lastFPressed;
 
     /** True when in Free Mode (camera locked to the per-tile free
      *  pose, ignoring clip-animation). Camera Mode = follow clip. */
@@ -156,36 +156,6 @@ public class UIClipCameraPreview extends UIElement
     }
 
     @Override
-    protected boolean subKeyPressed(UIContext context)
-    {
-        if (context.isFocused())
-        {
-            return false;
-        }
-        if (this.area.isInside(context.mouseX, context.mouseY) && context.isPressed(GLFW.GLFW_KEY_F))
-        {
-            if (!this.freeMode)
-            {
-                this.enterFreeMode();
-            }
-            this.freeFlyActive = !this.freeFlyActive;
-            suppressBBSFlight();
-            return true;
-        }
-        if (this.freeFlyActive)
-        {
-            int key = context.getKeyCode();
-            if (key == GLFW.GLFW_KEY_W || key == GLFW.GLFW_KEY_A || key == GLFW.GLFW_KEY_S
-                || key == GLFW.GLFW_KEY_D || key == GLFW.GLFW_KEY_SPACE || key == GLFW.GLFW_KEY_LEFT_CONTROL
-                || key == GLFW.GLFW_KEY_Q || key == GLFW.GLFW_KEY_E || key == GLFW.GLFW_KEY_T || key == GLFW.GLFW_KEY_G)
-            {
-                return true;
-            }
-        }
-        return super.subKeyPressed(context);
-    }
-
-    @Override
     public void render(UIContext context)
     {
         if (this.dragging)
@@ -210,7 +180,41 @@ public class UIClipCameraPreview extends UIElement
 
         boolean hovered = this.area.isInside(context.mouseX, context.mouseY);
 
+        /* F key while hovered: enter Free Mode + activate free-fly so
+         *  the user can park the camera anywhere. Second F press
+         *  exits free-fly (camera stays at parked pose since we're
+         *  still in Free Mode). Pressing F in Camera Mode auto-flips
+         *  to Free Mode + starts the fly.
+         *
+         *  Side-effect: BBS's panel.setFlight(false) is called every
+         *  frame while our free-fly is active so the main BBS preview
+         *  doesn't ALSO fly with WASD (BBS's flight is also bound to
+         *  F in the dashboard, both my hover-poll and BBS's KeybindManager
+         *  would otherwise fire together).
+         *
+         *  26.2: Window.getWindow() heisst nicht mehr so — der rohe GLFW-Zeiger
+         *  waere jetzt Window.handle(). Gebraucht wird er hier aber nicht mehr,
+         *  weil InputConstants.isKeyDown das Window-Objekt selbst nimmt
+         *  (javap: isKeyDown(com.mojang.blaze3d.platform.Window, int)).
+         *  Darum wandert der Typ von long auf Window durch alle Tastenabfragen. */
         Window handle = Minecraft.getInstance().getWindow();
+        boolean fDown = InputConstants.isKeyDown(InputConstants.KEY_F);
+        if (hovered && fDown && !lastFPressed)
+        {
+            if (!this.freeMode)
+            {
+                this.enterFreeMode();
+                this.freeFlyActive = true;
+                LOG.info("F: entered FREE MODE + free-fly for clip {}", this.clipId);
+            }
+            else
+            {
+                this.freeFlyActive = !this.freeFlyActive;
+                LOG.info("F: free-fly {} (free mode) for clip {}",
+                    this.freeFlyActive ? "ENABLED" : "disabled", this.clipId);
+            }
+        }
+        lastFPressed = fDown;
 
         if (this.freeFlyActive)
         {
@@ -255,7 +259,7 @@ public class UIClipCameraPreview extends UIElement
          *  RenderTarget hat keine GL-Textur-ID mehr (javap: nur noch
          *  getColorTexture() und getColorTextureView()). Eine rohe int-ID
          *  KANN es in 26.2 auch nicht mehr geben, weil Texturen ueber
-         *  RenderPass.bindTexture(String, GpuTextureView, GpuSampler)
+         *  RenderPass.setUniform(String, GpuTextureView, GpuSampler)
          *  gebunden werden. Die Framebuffer-Seite steht damit fest; offen ist
          *  die Gegenseite: Batcher2D.texturedBox(int, ...) ist noch nicht
          *  portiert (Batcher2D haengt selbst an Tesselator/BufferUploader/
@@ -263,7 +267,7 @@ public class UIClipCameraPreview extends UIElement
          *  uebersetzt erst, wenn Batcher2D eine GpuTextureView-Ueberladung hat. */
         if (fb != null)
         {
-            com.mojang.blaze3d.textures.GpuTextureView texId = fb.getColorTextureView();
+            com.mojang.renderpearl.api.textures.GpuTextureView texId = fb.getColorTextureView();
             if (texId != null)
             {
                 /* V-flip framebuffer (bottom-up) into UI space. */
@@ -279,10 +283,10 @@ public class UIClipCameraPreview extends UIElement
                          * dasselbe Objekt zurueck -- hier entsteht nichts pro Bild. NEAREST,
                          * damit die Vorschau pixelig bleibt wie das Spiel. */
                         com.mojang.blaze3d.systems.RenderSystem.getSamplerCache().getSampler(
-                            com.mojang.blaze3d.textures.AddressMode.CLAMP_TO_EDGE,
-                            com.mojang.blaze3d.textures.AddressMode.CLAMP_TO_EDGE,
-                            com.mojang.blaze3d.textures.FilterMode.NEAREST,
-                            com.mojang.blaze3d.textures.FilterMode.NEAREST, false)),
+                            com.mojang.renderpearl.api.textures.AddressMode.CLAMP_TO_EDGE,
+                            com.mojang.renderpearl.api.textures.AddressMode.CLAMP_TO_EDGE,
+                            com.mojang.renderpearl.api.textures.FilterMode.NEAREST,
+                            com.mojang.renderpearl.api.textures.FilterMode.NEAREST, false)),
                     Colors.WHITE,
                     x, y, w, h,
                     0, ClipViewportFramebuffers.getHeight(),
@@ -325,13 +329,73 @@ public class UIClipCameraPreview extends UIElement
 
         if (haveFreshPick)
         {
-            mchorse.bbs_mod.ui.utils.StencilFormFramebuffer stencil = BoneHoverPickService.getStencil(this.clipId);
-            mchorse.bbs_mod.graphics.texture.Texture texture = stencil.getFramebuffer().getMainTexture();
-            mchorse.bbs_mod.graphics.texture.Texture highlight = stencil.hervorhebungsbild();
-            mchorse.bbs_mod.graphics.Bildfilter.kennungHervorheben(texture, highlight, pick.pickedIndex,
-                mchorse.bbs_mod.BBSSettings.stencilHighlightColor.get());
-            context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
-                highlight, Colors.WHITE, x, y, w, h, 0, texture.height, texture.width, 0, texture.width, texture.height);
+            /* ⛔ 26.2, STEHENGELASSEN — NICHT ERFUNDEN:
+             *  RenderPipeline und com.mojang.blaze3d.shaders.Uniform gibt es in
+             *  26.2 nicht mehr (jar-auskunft: kein Ersatz unter diesem Namen;
+             *  Uniform existiert nur noch als com.mojang.renderpearl.backend.opengl.Uniform,
+             *  eine leere AutoCloseable-Schnittstelle). Einzelne Uniforms setzt
+             *  man nicht mehr — Werte gehen als UBO in den RenderPass
+             *  (RenderPass.setUniform(String, GpuBufferSlice)). Ein 1:1-Ersatz
+             *  fuer getUniform("Target").set(int) EXISTIERT NICHT; das haengt am
+             *  Port von mchorse.bbs_mod.client.BBSShaders (eigenes Manifest:
+             *  15 eigene Shader, deren .json der ShaderManager nicht mehr liest)
+             *  und an der Shader-Ueberladung von Batcher2D. Alles, was ich hier
+             *  schreiben wuerde, waere geraten — darum bleibt der Block stehen
+             *  und wird gemeldet. */
+            try
+            {
+                RenderPipeline previewProgram =
+                    mchorse.bbs_mod.client.BBSShaders.getPickerPreviewProgram();
+                if (previewProgram != null)
+                {
+                    /* ⛔ 26.2 OFFEN, mit bekanntem Rezept: die Hervorhebung muss VORHER in ein eigenes
+                     * Bild gerechnet werden (Bildfilter.kennungHervorheben), weil ein GUI-Element die
+                     * fuenf Werte nicht binden kann. Vier andere Aufrufstellen sind schon umgestellt.
+                     *
+                     * WAS HIER FEHLT: ein Zwischenbild. Die anderen holen es von ihrem
+                     * StencilFormFramebuffer; BoneHoverPickService.Result haelt aber nur rohe Zahlen
+                     * (stencilTexId, stencilW/H). Es braucht dort eine eigene Zieltextur -- eine
+                     * geteilte waere falsch, weil die Oberflaeche erst nach dem Sammeln zeichnet.
+                     *
+                     * Bis dahin bleibt der Compilerfehler stehen: eine Vorschau, die still die falsche
+                     * Kennung hervorhebt, ist teurer als eine, die nicht baut. */
+                    /* ⛔ DIE HERVORHEBUNG IST WEG, und das ist die ehrlichere von zwei
+                     * schlechten Moeglichkeiten.
+                     *
+                     * Hier wurde dem Shader die Kennung des getroffenen Knochens als Uniform
+                     * uebergeben. Einzel-Uniforms gibt es in 26.2 nicht mehr -- nur noch
+                     * Uniform-BLOECKE, die ueber den Durchgang gebunden werden, und ein
+                     * GUI-Element macht keinen eigenen Durchgang auf.
+                     *
+                     * Der Wert (pick.pickedIndex) waere also stehengeblieben, was immer zuvor
+                     * darin stand: die Vorschau haette den FALSCHEN Knochen blau markiert, und
+                     * nichts haette es gemeldet. Lieber gar keine Markierung.
+                     *
+                     * ZURUECKHOLEN, Rezept steht: die Hervorhebung VORHER in ein eigenes Bild
+                     * rechnen (Bildfilter.kennungHervorheben -- vier andere Aufrufstellen sind
+                     * schon so umgestellt). Was fehlt, ist eine eigene Zieltextur an
+                     * BoneHoverPickService.Result; eine geteilte waere falsch, weil die
+                     * Oberflaeche erst nach dem Sammeln zeichnet. */
+
+                    /* 26.2: enableBlend()/defaultBlendFunc() sind ersatzlos weg —
+                     *  das Mischen haengt jetzt an der Pipeline. Damit es beim
+                     *  Portieren von BBSShaders nicht STILL verlorengeht, hier der
+                     *  gemessene Sollwert: der alte defaultBlendFunc() entspricht
+                     *  exakt BlendFunction.TRANSLUCENT
+                     *  (SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ONE, ONE_MINUS_SRC_ALPHA;
+                     *  javap auf BlendFunction.<clinit>). Die Ersatz-Pipeline fuer
+                     *  picker_preview MUSS diese Mischfunktion tragen, sonst sieht
+                     *  die blaue Knochen-Markierung anders aus, ohne dass etwas meldet. */
+
+                    /* Der Zeichenaufruf ist mit der Hervorhebung entfallen. Er reichte die
+                     * rohe Stencil-Texturkennung durch; rohe GL-Nummern nimmt die GUI in 26.2
+                     * nirgends mehr an (es braucht eine Textursicht samt Abtaster), und ohne
+                     * die Kennung aus dem Uniform haette der Shader ohnehin nicht gewusst,
+                     * WELCHEN Knochen er faerben soll. Beides zusammen ergaebe ein Bild, das
+                     * plausibel aussieht und den falschen Knochen markiert. */
+                }
+            }
+            catch (Throwable ignored) {}
 
             String label = pick.form.getFormIdOrName();
             if (pick.bone != null && !pick.bone.isEmpty())
@@ -416,18 +480,14 @@ public class UIClipCameraPreview extends UIElement
         int relX = context.mouseX - this.area.x;
         if (relX >= this.area.w - RESIZE_HANDLE_PX && relY >= this.area.h - RESIZE_HANDLE_PX) return false;
 
-        Window handle = Minecraft.getInstance().getWindow();
-        boolean shift = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT)
-            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT);
-        boolean ctrl = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)
-            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL);
+        BoneHoverPickService.Result pick = BoneHoverPickService.RESULTS.get(this.clipId);
+        if (pick == null || pick.form == null) return true;
 
-        BoneHoverPickService.Result pick = com.afrobama.blendertransform.GameRendererPreviewPrePassLogik.pickNow(this.clipId,
-            new BoneHoverPickService.Request(relX, relY, this.area.w, this.area.h, shift, ctrl));
-        if (pick == null || pick.form == null)
-        {
-            return true;
-        }
+        Window handle = Minecraft.getInstance().getWindow();
+        boolean shift = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+            || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
+        boolean ctrl = InputConstants.isKeyDown(InputConstants.KEY_LCONTROL)
+            || InputConstants.isKeyDown(InputConstants.KEY_RCONTROL);
 
         mchorse.bbs_mod.ui.film.UIFilmPanel panel = BoneHoverPickRunner.findPanel();
         if (panel == null) return true;
@@ -528,18 +588,18 @@ public class UIClipCameraPreview extends UIElement
         float rightZ   =  (float) Math.sin(yawRad);
 
         float speed = MOVE_BASE_PER_FRAME;
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(InputConstants.KEY_LSHIFT))
         {
             speed *= MOVE_FAST_MULT;
         }
 
         double dx = 0, dy = 0, dz = 0;
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_W)) { dx += forwardX * speed; dz += forwardZ * speed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_S)) { dx -= forwardX * speed; dz -= forwardZ * speed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_A)) { dx -= rightX   * speed; dz -= rightZ   * speed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_D)) { dx += rightX   * speed; dz += rightZ   * speed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_SPACE))      { dy += speed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)) { dy -= speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_W)) { dx += forwardX * speed; dz += forwardZ * speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_S)) { dx -= forwardX * speed; dz -= forwardZ * speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_A)) { dx -= rightX   * speed; dz -= rightZ   * speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_D)) { dx += rightX   * speed; dz += rightZ   * speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_SPACE))      { dy += speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_LCONTROL)) { dy -= speed; }
 
         if (dx != 0 || dy != 0 || dz != 0)
         {
@@ -548,7 +608,7 @@ public class UIClipCameraPreview extends UIElement
         }
 
         float rotSpeed = ROT_BASE_PER_FRAME;
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(InputConstants.KEY_LSHIFT))
         {
             rotSpeed *= 2F;
         }
@@ -557,10 +617,10 @@ public class UIClipCameraPreview extends UIElement
         double newYaw   = angle.y;
         boolean rotChanged = false;
 
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_Q)) { newYaw -= rotSpeed; rotChanged = true; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_E)) { newYaw += rotSpeed; rotChanged = true; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_T)) { newPitch -= rotSpeed; rotChanged = true; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_G)) { newPitch += rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_Q)) { newYaw -= rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_E)) { newYaw += rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_T)) { newPitch -= rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_G)) { newPitch += rotSpeed; rotChanged = true; }
 
         if (rotChanged)
         {
@@ -621,28 +681,28 @@ public class UIClipCameraPreview extends UIElement
         float rightZ   =  (float) Math.sin(yawRad);
 
         float speed = MOVE_BASE_PER_FRAME;
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(InputConstants.KEY_LSHIFT))
         {
             speed *= MOVE_FAST_MULT;
         }
 
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_W)) { this.freePose[0] += forwardX * speed; this.freePose[2] += forwardZ * speed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_S)) { this.freePose[0] -= forwardX * speed; this.freePose[2] -= forwardZ * speed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_A)) { this.freePose[0] -= rightX   * speed; this.freePose[2] -= rightZ   * speed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_D)) { this.freePose[0] += rightX   * speed; this.freePose[2] += rightZ   * speed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_SPACE)) { this.freePose[1] += speed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)) { this.freePose[1] -= speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_W)) { this.freePose[0] += forwardX * speed; this.freePose[2] += forwardZ * speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_S)) { this.freePose[0] -= forwardX * speed; this.freePose[2] -= forwardZ * speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_A)) { this.freePose[0] -= rightX   * speed; this.freePose[2] -= rightZ   * speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_D)) { this.freePose[0] += rightX   * speed; this.freePose[2] += rightZ   * speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_SPACE)) { this.freePose[1] += speed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_LCONTROL)) { this.freePose[1] -= speed; }
 
         float rotSpeed = ROT_BASE_PER_FRAME;
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(InputConstants.KEY_LSHIFT))
         {
             rotSpeed *= 2F;
         }
 
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_Q)) { this.freePose[3] -= rotSpeed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_E)) { this.freePose[3] += rotSpeed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_T)) { this.freePose[4] -= rotSpeed; }
-        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_G)) { this.freePose[4] += rotSpeed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_Q)) { this.freePose[3] -= rotSpeed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_E)) { this.freePose[3] += rotSpeed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_T)) { this.freePose[4] -= rotSpeed; }
+        if (InputConstants.isKeyDown(InputConstants.KEY_G)) { this.freePose[4] += rotSpeed; }
 
         if (this.freePose[4] > 89F) this.freePose[4] = 89F;
         if (this.freePose[4] < -89F) this.freePose[4] = -89F;

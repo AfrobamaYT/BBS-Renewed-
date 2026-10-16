@@ -1,18 +1,18 @@
 package mchorse.bbs_mod.graphics;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.render.TextureSetup;
 import org.joml.Matrix4f;
@@ -21,6 +21,7 @@ import org.joml.Vector4f;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.function.Consumer;
 
 /**
  * Zeichnet ein selbst aufgebautes Netz sofort — der Ersatz fuer
@@ -52,11 +53,10 @@ import java.util.OptionalDouble;
  * }
  * }</pre>
  *
- * <p>⚠️ EIN DURCHGANG JE AUFRUF. Vanilla sammelt gleichartige Geometrie und schickt sie
- * gebuendelt; dieser Weg oeffnet fuer jedes Netz einen eigenen Durchgang, weil BBS'
- * Hilfsgeometrie an beliebiger Stelle im Bild auftaucht. Fuer Gizmos, Pfade und
- * Drahtgitter ist das richtig. Wer damit hunderte Netze pro Bild zeichnet, hat den
- * Flaschenhals hier und nicht im Aufrufer — dann sammeln, nicht optimieren.
+ * <p>Der Vulkan-Weltweg benutzt den vorhandenen Durchgang bei identischen Anhaengen.
+ * Ausserhalb davon wird ein eigener Durchgang geoeffnet. GL kann aufeinanderfolgende
+ * Zuege weiterhin ueber {@link Sammelpass} sammeln. Die Geometrie gehoert dabei nur
+ * zum aktuellen RenderPearl-Submit.
  */
 public final class SofortZeichner
 {
@@ -98,6 +98,13 @@ public final class SofortZeichner
      */
     public static void zeichnen(RenderPipeline pipeline, MeshData netz, Matrix4f modelView, Vector4f farbe, TextureSetup textur, RenderTarget ziel)
     {
+        zeichnen(pipeline, netz, modelView, farbe, textur, ziel, null);
+    }
+
+    /** Additional bindings belong to this draw, including the model uniform's actual transient slice. */
+    public static void zeichnen(RenderPipeline pipeline, MeshData netz, Matrix4f modelView, Vector4f farbe,
+        TextureSetup textur, RenderTarget ziel, Consumer<RenderPass> zusatz)
+    {
         if (netz == null)
         {
             return;
@@ -109,7 +116,7 @@ public final class SofortZeichner
          * nicht an einer der beiden Kopien vorbeigeht. */
         try (GehaltenesNetz kurzlebig = GehaltenesNetz.kurzlebig(netz))
         {
-            kurzlebig.zeichnen(pipeline, modelView, farbe, textur, ziel, null);
+            kurzlebig.zeichnen(pipeline, modelView, farbe, textur, ziel, zusatz);
         }
     }
 
@@ -120,8 +127,8 @@ public final class SofortZeichner
      * Auswahl-Durchgang (siehe {@link PickZiel}).
      */
     public static void zeichnen(RenderPipeline pipeline, MeshData netz, Matrix4f modelView, Vector4f farbe,
-        TextureSetup textur, com.mojang.blaze3d.textures.GpuTextureView farbZiel,
-        com.mojang.blaze3d.textures.GpuTextureView tiefenZiel)
+        TextureSetup textur, com.mojang.renderpearl.api.textures.GpuTextureView farbZiel,
+        com.mojang.renderpearl.api.textures.GpuTextureView tiefenZiel)
     {
         if (netz == null)
         {
@@ -146,6 +153,14 @@ public final class SofortZeichner
     public static TextureSetup entityTextur(mchorse.bbs_mod.graphics.texture.Texture textur)
     {
         return TextureSetup.singleTextureWithLightmap(textur.view(), textur.sampler());
+    }
+
+    public static TextureSetup modellTextur(mchorse.bbs_mod.graphics.texture.Texture textur)
+    {
+        net.minecraft.client.renderer.GameRenderer renderer = Minecraft.getInstance().gameRenderer;
+        GpuSampler linear = RenderSystem.getSamplerCache().getClampToEdge(com.mojang.renderpearl.api.textures.FilterMode.LINEAR);
+        return new TextureSetup(textur.view(), mchorse.bbs_mod.forms.renderers.utils.FormUeberlagerung.view(), renderer.lightmap(),
+            textur.sampler(), linear, linear);
     }
 
     private SofortZeichner()

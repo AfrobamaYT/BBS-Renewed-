@@ -55,6 +55,12 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
         UIButton openGameDirectory = new UIButton(UIKeys.UTILITY_OPEN_GAME_FOLDER, (b) -> this.openFolder(BBSMod.getGameFolder()));
         UIButton openAudioDirectory = new UIButton(UIKeys.UTILITY_OPEN_AUDIO_FOLDER, (b) -> this.openFolder(BBSMod.getAudioFolder()));
         UIButton openModelsDirectory = new UIButton(UIKeys.UTILITY_OPEN_MODELS_FOLDER, (b) -> this.openFolder(BBSMod.getAssetsPath("models")));
+        /* The TrueType fonts labels and subtitles pick from (BBS FS 18dda16c6) */
+        UIButton openFontsDirectory = new UIButton(mchorse.bbs_mod.l10n.L10n.lang("studio.ui.utility.open_fonts_folder"), (b) ->
+        {
+            mchorse.bbs_mod.fonts.FontManager.getFolder().mkdirs();
+            this.openFolder(mchorse.bbs_mod.fonts.FontManager.getFolder());
+        });
 
         UIIcon textures = new UIIcon(Icons.MATERIAL, (b) ->
         {
@@ -174,7 +180,7 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
             thread.start();
         });
 
-        this.view.add(UI.label(UIKeys.UTILITY_OPEN_FOLDER), UI.row(openGameDirectory, openModelsDirectory, openAudioDirectory).marginBottom(UIConstants.SECTION_GAP));
+        this.view.add(UI.label(UIKeys.UTILITY_OPEN_FOLDER), UI.row(openGameDirectory, openModelsDirectory, openAudioDirectory, openFontsDirectory).marginBottom(UIConstants.SECTION_GAP));
         this.view.add(UI.label(UIKeys.UTILITY_RELOAD_LABEL), UI.row(textures, language, models, sounds, terrain));
         this.view.add(defaultCommands.marginBottom(UIConstants.SECTION_GAP));
         this.view.add(UI.column(UI.label(UIKeys.UTILITY_RESIZE_WINDOW), UI.row(this.width, this.height)).marginBottom(UIConstants.SECTION_GAP));

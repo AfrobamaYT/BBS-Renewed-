@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.forms.entities;
 
+import mchorse.bbs_mod.mixin.LivingEntityFallFlyAccessor;
+import mchorse.bbs_mod.mixin.EntityFlagInvoker;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.utils.AABB;
@@ -11,6 +13,7 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.WalkAnimationState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -221,7 +224,7 @@ public class MCEntity implements IEntity
     {
         if (this.mcEntity instanceof LivingEntity living)
         {
-            living.swing(InteractionHand.MAIN_HAND);
+            living.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
         }
     }
 
@@ -230,7 +233,7 @@ public class MCEntity implements IEntity
     {
         if (this.mcEntity instanceof LivingEntity living)
         {
-            return living.getAttackAnim(tickDelta);
+            return living.getSwingAnimation(tickDelta);
         }
 
         return 0F;
@@ -720,8 +723,19 @@ public class MCEntity implements IEntity
     @Override
     public int getRoll()
     {
-        return 0;
+        return this.mcEntity instanceof LivingEntity living ? ((LivingEntityFallFlyAccessor) living).bbs$getFallFlyTicks() : 0;
     }
+
+    /* Recorded body states (BBS FS e383f1930). Creative flight is a permission on a real player and
+     * the lean grows each tick on its own, so a film writes neither; gliding is a tracked flag, and
+     * writing it is what makes every client spread the wings. */
+    @Override public boolean isSwimming() { return this.mcEntity.isSwimming(); }
+    @Override public void setSwimming(boolean swimming) { this.mcEntity.setSwimming(swimming); }
+    @Override public boolean isFlying() { return this.mcEntity instanceof Player player && player.getAbilities().flying; }
+    @Override public void setFlying(boolean flying) {}
+    @Override public void setFallFlying(boolean fallFlying) { ((EntityFlagInvoker) this.mcEntity).bbs$setSharedFlag(EntityState.FALL_FLYING_FLAG, fallFlying); }
+    @Override public void setLeaningPitch(float leaningPitch) {}
+    @Override public void setRoll(int roll) { if (this.mcEntity instanceof LivingEntity living) ((LivingEntityFallFlyAccessor) living).bbs$setFallFlyTicks(roll); }
 
     @Override
     public boolean isFallFlying()

@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 /**
  * Exposes {@code MobEntity#goalSelector} and {@code MobEntity#targetSelector}
- * (protected in vanilla 1.21.1) so AI goals can be cleared on bake/play
+ * (protected in vanilla 1.21.1) so MobArmy can clear AI goals on bake/play
  * without needing an access widener.
  */
 @Mixin(Mob.class)

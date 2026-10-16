@@ -4,7 +4,7 @@
 // verification using this class.
 //
 // Usage:
-//   BBSDiag.feature("replay-fastpath").event("draw")
+//   BBSDiag.feature("crowd-mass-veil").event("draw")
 //          .field("n", n).field("ok", drew).emit();
 //
 //   BBSDiag.feature("sprint-fov").throttled1Hz().event("write")

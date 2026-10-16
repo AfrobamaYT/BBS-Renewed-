@@ -36,7 +36,9 @@ rootProject {
 			run.mods.from(fabricApi)
 			run.mods.from(gametestApi)
 			run.mods.from(gametestJar.flatMap { it.archiveFile })
-			run.runDir = p.file("build/produktionstest")
+			run.runDir = p.file(p.findProperty("bbs.productionRunDir") ?: "build/produktionstest")
+			run.programArgs.addAll(["--width", "1280", "--height", "720",
+				"--graphicsBackend", p.findProperty("bbs.graphics") ?: "opengl"])
 			run.useXVFB = System.getProperty("os.name").toLowerCase().contains("linux")
 			/* Without this, a loader error (missing dependency, incompatible mod) opens an
 			 * error window and the run waits for a click forever instead of failing. */

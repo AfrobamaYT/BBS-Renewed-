@@ -174,6 +174,71 @@ public class SoundManager implements IWatchDogListener
         return null;
     }
 
+    /** An owned source whose owner stopped asking for it this long is orphaned: the clip was deleted or its film rebuilt */
+    private static final long OWNED_IDLE_MS = 5_000;
+
+    /**
+     * The owner's own source for this file, made on the first ask. Keyed by the OWNER, not the file:
+     * two clips of the same audio sit at different positions, and one shared source can only be at
+     * one of them, so the later clip used to overwrite the earlier one's playback (BBS FS dcf49cf95).
+     * {@code relative} works as in {@link #playUnique(Link, boolean)}.
+     */
+    public SoundPlayer playUnique(Object owner, Link link, boolean relative)
+    {
+        Iterator<SoundPlayer> it = this.sounds.iterator();
+
+        while (it.hasNext())
+        {
+            SoundPlayer player = it.next();
+
+            if (player.getOwner() != owner) continue;
+
+            if (player.getBuffer().getId().equals(link))
+            {
+                player.refresh();
+
+                return player;
+            }
+
+            /* The owner points at another file now: its old source has nothing left to play */
+            player.stop();
+            player.delete();
+            it.remove();
+
+            break;
+        }
+
+        SoundBuffer buffer = this.get(link, true);
+
+        if (buffer == null) return null;
+
+        SoundPlayer player = new SoundPlayer(buffer).unique().owner(owner);
+
+        player.setRelative(relative);
+        player.play();
+        this.sounds.add(player);
+
+        return player;
+    }
+
+    /** Disposes of an owner's source: a clip whose context is shutting down */
+    public void stopOwned(Object owner)
+    {
+        Iterator<SoundPlayer> it = this.sounds.iterator();
+
+        while (it.hasNext())
+        {
+            SoundPlayer player = it.next();
+
+            if (player.getOwner() == owner)
+            {
+                player.stop();
+                player.delete();
+                it.remove();
+            }
+        }
+    }
+
     public SoundPlayer playUnique(Link link)
     {
         return this.playUnique(link, true);
@@ -244,8 +309,11 @@ public class SoundManager implements IWatchDogListener
         {
             SoundPlayer player = it.next();
 
-            if (player.canBeRemoved())
+            boolean orphaned = player.getOwner() != null && System.currentTimeMillis() - player.getLastUsed() > OWNED_IDLE_MS;
+
+            if (player.canBeRemoved() || orphaned)
             {
+                player.stop();
                 player.delete();
                 it.remove();
             }

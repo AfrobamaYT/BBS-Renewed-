@@ -12,6 +12,11 @@ public final class PoseTrackVisibility
     public static boolean isAnimated(UIKeyframeSheet sheet, UIKeyframeSheet parent)
     {
         if (sheet.channel == null || !sheet.channel.isEmpty()) return true;
+        /* The replay's own overlay layers (pose_overlay0..N, transform_overlay0..N, set by
+         * recording.pose_overlays and transform_overlays) are working layers: hidden while empty, a model
+         * showed one pose overlay and several transform overlays, another the reverse,
+         * depending on which happened to hold a keyframe (owner, 2026-10-14). */
+        if (sheet.id != null && sheet.id.matches("(pose|transform)_overlay\\d*")) return true;
         PerLimbService.PoseBonePath path = PerLimbService.parsePoseBonePath(sheet.id);
         if (parent == null || path == null) return false;
 

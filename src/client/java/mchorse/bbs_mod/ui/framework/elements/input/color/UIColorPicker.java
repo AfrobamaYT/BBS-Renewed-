@@ -1,10 +1,11 @@
 package mchorse.bbs_mod.ui.framework.elements.input.color;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.client.FormPipelines;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.settings.values.ui.ValueColors;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -20,7 +21,6 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 
@@ -64,6 +64,10 @@ public class UIColorPicker extends UIElement
 
     public boolean editAlpha;
 
+    /** What the popup opened with: Escape goes back to it, and an unchanged color is not "recent" (BBS FS 7aa8cf2a4) */
+    private final Color initial = new Color();
+    final FarbwaehlerZusatz zusatz = new FarbwaehlerZusatz(this);
+
     public Area picker = new Area();
     public Area hue = new Area();
     public Area red = new Area();
@@ -73,7 +77,7 @@ public class UIColorPicker extends UIElement
     public Area preview = new Area();
 
     private int dragging = -1;
-    private final Color hsv = new Color();
+    final Color hsv = new Color();
     private final Color tempColor = new Color();
     private final Color tempColor2 = new Color();
 
@@ -109,7 +113,7 @@ public class UIColorPicker extends UIElement
          * Durchgang laege darum UNTER dem gesamten GUI-Stapel: 26.2 sammelt die Oberflaeche
          * erst und zeichnet sie danach. Die Ecken gehen deshalb in dieselbe Warteschlange
          * wie jedes andere Bedienelement (Batcher2D.netz). */
-        batcher.netz(FormPipelines.holen(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, true, false, false), (bauer) ->
+        batcher.netz(FormPipelines.holen(com.mojang.renderpearl.api.pipeline.PrimitiveTopology.TRIANGLES, true, false, false), (bauer) ->
         {
             bauer.addVertex(matrix4f, x1, y1, 0F).setColor(color.r, color.g, color.b, 1);
             bauer.addVertex(matrix4f, x1, y2, 0F).setColor(color.r, color.g, color.b, 1);
@@ -170,7 +174,7 @@ public class UIColorPicker extends UIElement
             }
         });
 
-        this.eventPropagataion(EventPropagation.BLOCK_INSIDE).add(this.input, this.favorite, this.recent);
+        this.eventPropagataion(EventPropagation.BLOCK_INSIDE).add(this.input, this.favorite, this.recent, this.zusatz.reiter, this.zusatz.felder, this.zusatz.pipette);
     }
 
     public UIColorPicker editAlpha()
@@ -194,34 +198,41 @@ public class UIColorPicker extends UIElement
     private void syncHexInputAfterEdit()
     {
         this.input.setText(this.color.stringify(this.editAlpha));
+        this.input.setColor(Colors.WHITE, true);
     }
 
+    /**
+     * A color typed by hand. Half-typed input is left alone, but input of the right length that
+     * still isn't a color turns the field red instead of silently making the color black, which
+     * is what a failed parse handed back; six digits keep the alpha the picker has (BBS FS 7aa8cf2a4).
+     */
     private void applyColorFromHexInput(String string)
     {
-        if (!this.isCompleteHexColorInput(string))
+        String t = string == null ? "" : string.trim();
+        int digits = t.startsWith("#") ? t.length() - 1 : t.length();
+        int parsed;
+
+        if (digits != 6 && digits != 8)
         {
+            this.input.setColor(Colors.WHITE, true);
+
             return;
         }
 
-        this.setValue(Colors.parse(string));
+        try
+        {
+            parsed = Colors.parseWithException(t);
+        }
+        catch (Exception e)
+        {
+            this.input.setColor(Colors.A100 | Colors.RED, true);
+
+            return;
+        }
+
+        this.input.setColor(Colors.WHITE, true);
+        this.setValue(parsed, digits == 8);
         this.notifyColorChanged();
-    }
-
-    private boolean isCompleteHexColorInput(String raw)
-    {
-        if (raw == null)
-        {
-            return false;
-        }
-
-        String t = raw.trim();
-
-        if (t.startsWith("#"))
-        {
-            t = t.substring(1);
-        }
-
-        return t.length() == 6 || t.length() == 8;
     }
 
     protected void callback()
@@ -240,28 +251,40 @@ public class UIColorPicker extends UIElement
 
     public void setValue(int color)
     {
-        this.color.set(color, this.editAlpha);
+        this.setValue(color, this.editAlpha);
+    }
+
+    /** A color without alpha handed to an alpha picker keeps the picker's alpha instead of turning transparent */
+    public void setValue(int color, boolean withAlpha)
+    {
+        float alpha = this.color.a;
+
+        this.color.set(color, withAlpha && this.editAlpha);
+
+        if (this.editAlpha && !withAlpha) this.color.a = alpha;
+
         this.syncHsvFromColor();
     }
 
     public void setup(int x, int y)
     {
         this.xy(x, y);
+        this.initial.copy(this.color);
     }
 
-    private void notifyColorChanged()
+    void notifyColorChanged()
     {
         this.updateField();
         this.callback();
     }
 
-    private void syncHsvFromColor()
+    void syncHsvFromColor()
     {
         Colors.RGBtoHSV(this.hsv, this.color.r, this.color.g, this.color.b);
         this.hsv.a = this.color.a;
     }
 
-    private void syncColorFromHsv()
+    void syncColorFromHsv()
     {
         Colors.HSVtoRGB(this.color, this.hsv.r, this.hsv.g, this.hsv.b);
         this.color.a = this.hsv.a;
@@ -294,7 +317,8 @@ public class UIColorPicker extends UIElement
     private void closePicker()
     {
         this.removeFromParent();
-        this.addToRecent();
+
+        if (!this.color.equals(this.initial)) this.addToRecent();
     }
 
     /* GuiElement overrides */
@@ -334,8 +358,8 @@ public class UIColorPicker extends UIElement
         layout.paletteWidth = layout.width - POPUP_PADDING * 2;
         layout.favoriteHeight = this.favorite.colors.isEmpty() ? 0 : this.favorite.getHeight(layout.paletteWidth);
         layout.recentHeight = this.recent.colors.isEmpty() ? 0 : this.recent.getHeight(layout.paletteWidth);
-        layout.contentY = HEADER_HEIGHT;
-        layout.paletteY = layout.contentY + (layout.hsv ? HSV_PICKER_SIZE + HSV_SECTION_GAP : RGB_SLIDER_HEIGHT + RGB_SECTION_GAP);
+        layout.contentY = HEADER_HEIGHT + FarbwaehlerZusatz.KOPF;
+        layout.paletteY = layout.contentY + (layout.hsv ? HSV_PICKER_SIZE + HSV_SECTION_GAP : RGB_SLIDER_HEIGHT + RGB_SECTION_GAP) + FarbwaehlerZusatz.FELDER;
         layout.height = layout.paletteY;
 
         if (layout.favoriteHeight > 0)
@@ -367,7 +391,8 @@ public class UIColorPicker extends UIElement
         int previewX = this.area.ex() - POPUP_PADDING - PREVIEW_SIZE;
 
         this.preview.set(previewX, this.area.y + POPUP_PADDING, PREVIEW_SIZE, PREVIEW_SIZE);
-        this.input.set(contentX, this.area.y + POPUP_PADDING, layout.paletteWidth - PREVIEW_SIZE - POPUP_PADDING, INPUT_HEIGHT);
+        this.input.set(contentX, this.area.y + POPUP_PADDING, layout.paletteWidth - PREVIEW_SIZE * 2 - POPUP_PADDING, INPUT_HEIGHT);
+        this.zusatz.anordnen(contentX, contentY - FarbwaehlerZusatz.KOPF, layout.paletteWidth, this.area.y + layout.paletteY - FarbwaehlerZusatz.FELDER - 6);
 
         if (layout.hsv)
         {
@@ -382,7 +407,7 @@ public class UIColorPicker extends UIElement
 
         if (layout.favoriteHeight > 0 && layout.recentHeight > 0)
         {
-            this.recent.set(contentX, this.favorite.area.ey() + PALETTE_GAP, layout.paletteWidth, layout.recentHeight);
+            this.recent.set(contentX, this.area.y + layout.paletteY + layout.favoriteHeight + PALETTE_GAP, layout.paletteWidth, layout.recentHeight); /* from the layout: favorite.area is last pass's (BBS FS 026115d93) */
         }
         else
         {
@@ -449,7 +474,7 @@ public class UIColorPicker extends UIElement
     @Override
     public boolean subMouseClicked(UIContext context)
     {
-        if (this.beginDragging(context))
+        if (this.zusatz.klick(context, this.preview, this.initial) || this.beginDragging(context))
         {
             return true;
         }
@@ -473,9 +498,19 @@ public class UIColorPicker extends UIElement
     @Override
     protected boolean subKeyPressed(UIContext context)
     {
-        if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+        /* Escape puts the color back the way it opened, and closes */
+        if (context.isPressed(InputConstants.KEY_ESCAPE))
         {
-            this.closePicker();
+            if (this.zusatz.abbrechen()) return true;
+
+            this.removeFromParent();
+
+            if (!this.color.equals(this.initial))
+            {
+                this.color.copy(this.initial);
+                this.syncHsvFromColor();
+                this.notifyColorChanged();
+            }
 
             return true;
         }
@@ -486,10 +521,12 @@ public class UIColorPicker extends UIElement
     @Override
     public void render(UIContext context)
     {
+        if (this.zusatz.pipetteZeichnen(context)) return;
+
         this.handleDragging(context);
 
         this.area.render(context.batcher, Colors.LIGHTEST_GRAY);
-        this.renderRect(context.batcher, this.preview.x, this.preview.y, this.preview.ex(), this.preview.ey());
+        this.zusatz.vorschau(context.batcher, this.preview, this.initial);
         context.batcher.outline(this.preview.x, this.preview.y, this.preview.ex(), this.preview.ey(), Colors.A25);
 
         if (this.isHsvPicker())
@@ -651,13 +688,13 @@ public class UIColorPicker extends UIElement
             context.batcher.iconArea(Icons.CHECKBOARD, this.alpha.x, this.red.y, this.alpha.w, this.alpha.ey() - this.red.y);
         }
 
-        this.renderRgbSlider(context.batcher, this.red, this.tempColor.copy(this.color).set(0F, DRAG_RGB_RED).getARGBColor(), this.tempColor2.copy(this.color).set(1F, DRAG_RGB_RED).getARGBColor());
-        this.renderRgbSlider(context.batcher, this.green, this.tempColor.copy(this.color).set(0F, DRAG_RGB_GREEN).getARGBColor(), this.tempColor2.copy(this.color).set(1F, DRAG_RGB_GREEN).getARGBColor());
-        this.renderRgbSlider(context.batcher, this.blue, this.tempColor.copy(this.color).set(0F, DRAG_RGB_BLUE).getARGBColor(), this.tempColor2.copy(this.color).set(1F, DRAG_RGB_BLUE).getARGBColor());
+        context.batcher.gradientHBox(this.red.x, this.red.y, this.red.ex(), this.red.ey(), this.tempColor.copy(this.color).set(0F, DRAG_RGB_RED).getARGBColor(), this.tempColor2.copy(this.color).set(1F, DRAG_RGB_RED).getARGBColor());
+        context.batcher.gradientHBox(this.green.x, this.green.y, this.green.ex(), this.green.ey(), this.tempColor.copy(this.color).set(0F, DRAG_RGB_GREEN).getARGBColor(), this.tempColor2.copy(this.color).set(1F, DRAG_RGB_GREEN).getARGBColor());
+        context.batcher.gradientHBox(this.blue.x, this.blue.y, this.blue.ex(), this.blue.ey(), this.tempColor.copy(this.color).set(0F, DRAG_RGB_BLUE).getARGBColor(), this.tempColor2.copy(this.color).set(1F, DRAG_RGB_BLUE).getARGBColor());
 
         if (this.editAlpha)
         {
-            this.renderRgbSlider(context.batcher, this.alpha, this.tempColor.copy(this.color).set(0F, DRAG_RGB_ALPHA).getARGBColor(), this.tempColor2.copy(this.color).set(1F, DRAG_RGB_ALPHA).getARGBColor());
+            context.batcher.gradientHBox(this.alpha.x, this.alpha.y, this.alpha.ex(), this.alpha.ey(), this.tempColor.copy(this.color).set(0F, DRAG_RGB_ALPHA).getARGBColor(), this.tempColor2.copy(this.color).set(1F, DRAG_RGB_ALPHA).getARGBColor());
         }
 
         context.batcher.outline(this.red.x, this.red.y, this.red.ex(), this.editAlpha ? this.alpha.ey() : this.blue.ey(), Colors.A25);
@@ -714,11 +751,6 @@ public class UIColorPicker extends UIElement
 
         batcher.iconArea(Icons.CHECKBOARD, this.alpha.x, this.alpha.y, this.alpha.w, this.alpha.h);
         batcher.gradientVBox(this.alpha.x, this.alpha.y, this.alpha.ex(), this.alpha.ey(), opaque, this.tempColor2.getARGBColor());
-    }
-
-    private void renderRgbSlider(Batcher2D batcher, Area area, int left, int right)
-    {
-        batcher.gradientHBox(area.x, area.y, area.ex(), area.ey(), left, right);
     }
 
     private void renderSliderBackdrop(Batcher2D batcher, Area picker, int right)

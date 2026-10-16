@@ -1,8 +1,8 @@
 package mchorse.bbs_mod.utils.iris;
 
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;

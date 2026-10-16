@@ -43,7 +43,7 @@ public class DamageControl
             }
         }
         
-        this.blocks.add(new BlockCapture(new BlockPos(pos), state, blockEntity));
+        this.blocks.add(new BlockCapture(pos.immutable(), state, blockEntity));
     }
 
     public void addEntity(Entity entity)

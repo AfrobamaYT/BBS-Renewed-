@@ -1,9 +1,18 @@
 package mchorse.bbs_mod.graphics;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
+import org.joml.Vector4f;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -53,10 +62,58 @@ public class Framebuffer
 
     private boolean deleteTextures;
     private boolean advancedClearing;
+    private final boolean openGl;
+    private boolean deleted;
+    private int[] drawAttachments = {GL30.GL_COLOR_ATTACHMENT0};
+    private static final Deque<TargetBinding> bindings = new ArrayDeque<>();
+    private record TargetBinding(Framebuffer framebuffer, GpuTextureView color, GpuTextureView depth,
+        com.mojang.renderpearl.api.commands.RenderPass.RenderArea area, GlPassBinding gl) {}
+
+    /** Real GL state around an engine pass; an RBO remains attached to its real BBS FBO. */
+    static final class GlPassBinding
+    {
+        private final Framebuffer owner;
+        private final int read = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+        private final int draw = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
+        private final int[] viewport = new int[4], scissor = new int[4];
+        private final boolean scissorEnabled = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
+        private final boolean depthEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        private final boolean depthWrite = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+        private final int depthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
+        GlPassBinding(Framebuffer owner)
+        {
+            this.owner = owner;
+            GL11.glGetIntegerv(GL11.GL_VIEWPORT, this.viewport);
+            GL11.glGetIntegerv(GL11.GL_SCISSOR_BOX, this.scissor);
+        }
+        void bind()
+        {
+            if (this.owner != null) GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, this.owner.id);
+        }
+        void restore()
+        {
+            GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.read);
+            GlStateManager._glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, this.draw);
+            GlStateManager._viewport(this.viewport[0], this.viewport[1], this.viewport[2], this.viewport[3]);
+            GlStateManager._scissorBox(this.scissor[0], this.scissor[1], this.scissor[2], this.scissor[3]);
+            if (this.scissorEnabled) GlStateManager._enableScissorTest(); else GlStateManager._disableScissorTest();
+            if (this.depthEnabled) GlStateManager._enableDepthTest(); else GlStateManager._disableDepthTest();
+            GlStateManager._depthMask(this.depthWrite); GlStateManager._depthFunc(this.depthFunc);
+        }
+    }
+
+    static GlPassBinding glPassBindingFor(GpuTextureView color, GpuTextureView depth)
+    {
+        Framebuffer owner = bindings.isEmpty() ? null : bindings.peek().framebuffer;
+        if (owner != null && (!owner.openGl || !sameAttachment(owner.colorView(), color)
+            || !sameAttachment(owner.depthView(), depth))) owner = null;
+        return new GlPassBinding(owner);
+    }
 
     public Framebuffer()
     {
-        this.id = GL30.glGenFramebuffers();
+        this.openGl = GpuBackend.isOpenGl();
+        this.id = this.openGl ? GL30.glGenFramebuffers() : -1;
     }
 
     public Framebuffer enableAdvancedClearing()
@@ -83,13 +140,16 @@ public class Framebuffer
      */
     public Framebuffer attach(Texture texture, int attachment)
     {
+        if (this.anhaenge.containsValue(attachment))
+            throw new IllegalArgumentException("Framebuffer attachment already occupied: " + attachment);
         this.textures.add(texture);
         this.anhaenge.put(texture, attachment);
 
-        this.bind();
-        texture.bind();
+        if (!this.openGl) return this;
 
-        GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, attachment, texture.target, texture.id, 0);
+        GlPassBinding gl = new GlPassBinding(this);
+        try { gl.bind(); texture.bind(); GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, attachment, texture.target, texture.id, 0); }
+        finally { gl.restore(); }
 
         return this;
     }
@@ -101,23 +161,24 @@ public class Framebuffer
      */
     public void anhangNachziehen()
     {
-        this.bind();
-
-        for (Texture texture : this.textures)
+        if (!this.openGl)
         {
-            Integer anhang = this.anhaenge.get(texture);
-
-            if (anhang == null)
-            {
-                continue;
-            }
-
-            texture.bind();
-
-            GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, anhang, texture.target, texture.id, 0);
+            this.descriptor("BBS framebuffer attachment validation", false);
+            return;
         }
-
-        this.unbind();
+        GlPassBinding gl = new GlPassBinding(this);
+        gl.bind();
+        try
+        {
+            for (Texture texture : this.textures)
+            {
+                Integer anhang = this.anhaenge.get(texture);
+                if (anhang == null) continue;
+                texture.bind();
+                GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, anhang, texture.target, texture.id, 0);
+            }
+        }
+        finally { gl.restore(); }
     }
 
     /**
@@ -126,9 +187,10 @@ public class Framebuffer
     public void attach(Renderbuffer renderbuffer)
     {
         this.renderbuffers.add(renderbuffer);
-        renderbuffer.bind();
-
-        GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, renderbuffer.target, GL30.GL_RENDERBUFFER, renderbuffer.id);
+        if (!this.openGl) return;
+        GlPassBinding gl = new GlPassBinding(this);
+        try { gl.bind(); renderbuffer.bind(); GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, renderbuffer.target, GL30.GL_RENDERBUFFER, renderbuffer.id); }
+        finally { gl.restore(); }
     }
 
     public void attachments(int count)
@@ -145,7 +207,11 @@ public class Framebuffer
 
     public void attachments(int... attachments)
     {
-        GL30.glDrawBuffers(attachments);
+        this.drawAttachments = attachments.clone();
+        if (!this.openGl) return;
+        GlPassBinding gl = new GlPassBinding(this);
+        try { gl.bind(); GL30.glDrawBuffers(attachments); }
+        finally { gl.restore(); }
     }
 
     public void applyClear()
@@ -158,12 +224,20 @@ public class Framebuffer
     {
         Texture texture = this.getMainTexture();
 
-        GL11.glViewport(0, 0, texture.width, texture.height);
         this.bind();
+        if (this.openGl) GL11.glViewport(0, 0, texture.width, texture.height);
+        Zeichenbereich.setzen(0, 0, texture.width, texture.height);
     }
 
     public void clear()
     {
+        if (!this.openGl)
+        {
+            CommandEncoder encoder = FramebufferUtils.outsidePass("Framebuffer clear");
+            // Load-op clears target only the attached mip level and selected draw buffers.
+            try (var pass = encoder.createRenderPass(this.descriptor("BBS framebuffer clear", true))) {}
+            return;
+        }
         if (this.advancedClearing)
         {
             int i = 0;
@@ -213,16 +287,45 @@ public class Framebuffer
      * richtig halten, nie zusaetzlich verwirren. */
     public void bind()
     {
-        GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, this.id);
+        if (!this.openGl) FramebufferUtils.outsidePass("Framebuffer target setup");
+        this.descriptor("BBS framebuffer target validation", false);
+        if (bindings.isEmpty() || bindings.peek().framebuffer != this)
+            bindings.push(new TargetBinding(this, Zeichenziel.farbe(), Zeichenziel.tiefe(), Zeichenbereich.aktiv(),
+                this.openGl ? new GlPassBinding(this) : null));
+        Zeichenziel.setzen(this.colorView(), this.depthView());
+        if (this.openGl) GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, this.id);
     }
 
     public void unbind()
     {
-        GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+        /* Setup code (attach + unbind) never entered a draw target. While another target is
+         * bound -- a stencil buffer created lazily in the middle of the film preview's frame
+         * (crash 2026-10-13 20:53) -- there is nothing of ours to restore. */
+        if (bindings.stream().noneMatch(binding -> binding.framebuffer == this)) return;
+        if (bindings.peek().framebuffer != this) throw new IllegalStateException("Framebuffer targets must be restored in LIFO order");
+        TargetBinding previous = bindings.pop();
+        Zeichenziel.setzen(previous.color, previous.depth);
+        if (previous.area == null) Zeichenbereich.freigeben();
+        else Zeichenbereich.setzen(previous.area.x(), previous.area.y(), previous.area.width(), previous.area.height());
+        if (previous.gl != null) previous.gl.restore();
     }
 
     public void resize(int w, int h)
     {
+        w = Math.max(1, w);
+        h = Math.max(1, h);
+        if (!this.openGl)
+        {
+            FramebufferUtils.outsidePass("Framebuffer resize");
+            for (Texture texture : this.textures) texture.setSize(w, h);
+            for (Renderbuffer renderbuffer : this.renderbuffers) renderbuffer.resize(w, h);
+            if (!bindings.isEmpty() && bindings.peek().framebuffer == this)
+            {
+                Zeichenziel.setzen(this.colorView(), this.depthView());
+                Zeichenbereich.setzen(0, 0, w, h);
+            }
+            return;
+        }
         boolean neueNummern = false;
 
         for (Texture texture : this.textures)
@@ -243,23 +346,19 @@ public class Framebuffer
          * glFramebufferTexture2D wirkt ausschliesslich auf das gebundene FBO. */
         if (neueNummern)
         {
-            this.bind();
-
-            for (Texture texture : this.textures)
+            GlPassBinding gl = new GlPassBinding(this);
+            gl.bind();
+            try
             {
-                Integer anhang = this.anhaenge.get(texture);
-
-                if (anhang == null)
+                for (Texture texture : this.textures)
                 {
-                    continue;
+                    Integer anhang = this.anhaenge.get(texture);
+                    if (anhang == null) continue;
+                    texture.bind();
+                    GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, anhang, texture.target, texture.id, 0);
                 }
-
-                texture.bind();
-
-                GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, anhang, texture.target, texture.id, 0);
             }
-
-            this.unbind();
+            finally { gl.restore(); }
         }
 
         for (Renderbuffer renderbuffer : this.renderbuffers)
@@ -268,11 +367,22 @@ public class Framebuffer
             renderbuffer.resize(w, h);
             renderbuffer.unbind();
         }
+        if (!bindings.isEmpty() && bindings.peek().framebuffer == this)
+        {
+            Zeichenziel.setzen(this.colorView(), this.depthView());
+            Zeichenbereich.setzen(0, 0, w, h);
+            GlStateManager._viewport(0, 0, w, h);
+        }
     }
 
     public void delete()
     {
-        GL30.glDeleteFramebuffers(this.id);
+        if (this.deleted) return;
+        if (bindings.stream().anyMatch(b -> b.framebuffer == this))
+            throw new IllegalStateException("Cannot destroy a bound framebuffer");
+        if (this.openGl && this.id >= 0) GL30.glDeleteFramebuffers(this.id);
+        this.id = -1;
+        this.deleted = true;
 
         if (this.deleteTextures)
         {
@@ -292,5 +402,82 @@ public class Framebuffer
         }
 
         this.renderbuffers.clear();
+    }
+
+    public GpuTextureView colorView()
+    {
+        if (this.deleted) throw new IllegalStateException("Framebuffer was destroyed");
+        for (Texture texture : this.textures)
+            if (Integer.valueOf(GL30.GL_COLOR_ATTACHMENT0).equals(this.anhaenge.get(texture)))
+                return texture.attachmentView();
+        throw new IllegalStateException("Framebuffer has no COLOR_ATTACHMENT0");
+    }
+
+    public GpuTextureView depthView()
+    {
+        GpuTextureView result = null;
+        for (Texture texture : this.textures)
+            if (texture.getFormat().isDepth())
+            {
+                if (result != null) throw new IllegalStateException("Duplicate framebuffer depth attachments");
+                result = texture.attachmentView();
+            }
+        for (Renderbuffer renderbuffer : this.renderbuffers)
+            if (renderbuffer.view() != null)
+            {
+                if (result != null) throw new IllegalStateException("Duplicate framebuffer depth attachments");
+                result = renderbuffer.view();
+            }
+        return result;
+    }
+
+    /** Ordered draw-buffer locations, including MRT holes, expressed as real engine attachments. */
+    public RenderPassDescriptor descriptor(String label, boolean clear)
+    {
+        if (this.deleted) throw new IllegalStateException("Framebuffer was destroyed");
+        Texture main = this.getMainTexture();
+        RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(() -> label);
+        int limit = RenderSystem.getDevice().getDeviceInfo().limits().maxColorAttachments();
+        if (this.drawAttachments.length > limit) throw new IllegalArgumentException("MRT exceeds actual device limit " + limit);
+        for (int attachment : this.drawAttachments)
+        {
+            if (attachment == GL11.GL_NONE) { descriptor.withUnusedColorAttachment(); continue; }
+            Texture texture = this.textures.stream().filter(t -> Integer.valueOf(attachment).equals(this.anhaenge.get(t)))
+                .findFirst().orElseThrow(() -> new IllegalStateException("Missing framebuffer draw attachment " + attachment));
+            if (!texture.getFormat().isColor()) throw new IllegalArgumentException("Draw attachment is not a color texture");
+            GpuTextureView view = texture.attachmentView();
+            FramebufferUtils.validateAttachment(view, main.width, main.height);
+            descriptor.withColorAttachment(view, clear && (!this.advancedClearing || texture.isClearable())
+                ? Optional.of(new Vector4f(0F, 0F, 0F, 0F)) : Optional.empty());
+        }
+        GpuTextureView depth = this.depthView();
+        if (depth != null)
+        {
+            FramebufferUtils.validateAttachment(depth, main.width, main.height);
+            boolean clearDepth = !this.advancedClearing || this.textures.stream()
+                .anyMatch(t -> t.getFormat().isDepth() && t.isClearable());
+            descriptor.withDepthAttachment(depth, clear && clearDepth ? OptionalDouble.of(0D) : OptionalDouble.empty());
+        }
+        return descriptor.build();
+    }
+
+    public boolean isDeleted() { return this.deleted; }
+
+    /** Complete MRT descriptor for the active exact target; callers must preserve their native world pass first. */
+    public static RenderPassDescriptor descriptorFor(String label, GpuTextureView color, GpuTextureView depth,
+        com.mojang.renderpearl.api.commands.RenderPass.RenderArea area)
+    {
+        if (bindings.isEmpty()) return null;
+        Framebuffer framebuffer = bindings.peek().framebuffer;
+        if (!sameAttachment(framebuffer.colorView(), color) || !sameAttachment(framebuffer.depthView(), depth)) return null;
+        RenderPassDescriptor descriptor = framebuffer.descriptor(label, false);
+        return area == null ? descriptor : new RenderPassDescriptor(descriptor.label(), descriptor.colorAttachments(),
+            descriptor.depthAttachment(), area);
+    }
+
+    private static boolean sameAttachment(GpuTextureView a, GpuTextureView b)
+    {
+        return a == null || b == null ? a == b : a.texture() == b.texture()
+            && a.baseMipLevel() == b.baseMipLevel() && a.mipLevels() == b.mipLevels();
     }
 }

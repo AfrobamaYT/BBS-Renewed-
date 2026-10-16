@@ -199,9 +199,29 @@ public class UISoundOverlayPanel extends UIStringOverlayPanel
         this.switchToMode(ViewMode.FOLDER);
     }
 
+    /**
+     * Sounds from outside the assets tree, e.g. the DaVinci link's media pool. They are listed
+     * under their own names and become an asset only when picked ({@link #take}), so nothing is
+     * copied for a sound nobody uses.
+     */
+    public interface ExtraSounds
+    {
+        java.util.Collection<String> names();
+
+        /** The asset link for a listed name; throws if the sound cannot be had. */
+        Link take(String name);
+    }
+
+    public static final List<ExtraSounds> EXTRA = new java.util.concurrent.CopyOnWriteArrayList<>();
+
     private static Set<String> getSoundEvents()
     {
         Set<String> locations = new HashSet<>();
+
+        for (ExtraSounds extra : EXTRA)
+        {
+            locations.addAll(extra.names());
+        }
 
         /* Der ganze assets-baum, nicht nur audio/. Gemessen 2026-07-29 in der DEV-instanz:
          * von fuenf klaengen lag KEIN einziger unter audio/ — sie steckten in
@@ -373,6 +393,23 @@ public class UISoundOverlayPanel extends UIStringOverlayPanel
 
     private void pickAudio(String audio)
     {
+        for (ExtraSounds extra : EXTRA)
+        {
+            if (audio != null && extra.names().contains(audio))
+            {
+                try
+                {
+                    audio = extra.take(audio).toString();
+                }
+                catch (RuntimeException e)
+                {
+                    System.err.println("[sounds] could not take " + audio + ": " + e.getMessage());
+
+                    return;
+                }
+            }
+        }
+
         this.selectedSound = audio;
 
         if (audio == null || audio.isEmpty() || audio.equals(UIKeys.GENERAL_NONE.get()))

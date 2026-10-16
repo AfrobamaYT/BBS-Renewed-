@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.utils.iris;
 
-import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.GpuTexture;
 import mchorse.bbs_mod.client.BBSRendering;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;

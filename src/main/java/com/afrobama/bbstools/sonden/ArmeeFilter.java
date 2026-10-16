@@ -4,11 +4,13 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 /**
- * "Verwaltet die Companion-Mod diese Kreatur?" — die Frage, die der Ragdoll-Umbau stellen
- * muss, um solche Kreaturen in Ruhe zu lassen.
+ * "Gehoert diese Kreatur zu einer Massen-Armee?" — die Frage, die der Ragdoll-Umbau stellen
+ * muss, um Armee-Kreaturen in Ruhe zu lassen.
  *
- * <p>Ohne Companion ist die Antwort immer nein, und der Aufrufer laeuft unveraendert
- * weiter.</p>
+ * <p>Die Armee selbst ({@code com.afrobama.bbstools.crowd.MobArmy}) liegt seit 2026-09-09 in
+ * der Companion-Mod, weil der Release-Zweig sie ohnehin ausgebaut hatte. Ohne Companion gibt
+ * es keine Armee-Kreaturen — dann ist die Antwort immer nein, und der Aufrufer laeuft
+ * unveraendert weiter.</p>
  *
  * <p>⛔ Kein {@code Class.forName} an der Aufrufstelle: die drei Stellen liegen in Schleifen
  * ueber ALLE Kreaturen im Umkreis. Ein Praedikat, das ohne Companion konstant {@code false}

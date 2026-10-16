@@ -12,7 +12,6 @@ import java.util.Set;
 
 public class PhysicsKeyframeFactory implements IKeyframeFactory<PhysicsControls>
 {
-    private static final PhysicsControl IDENTITY = new PhysicsControl();
     private final ThreadLocal<Set<String>> keys = ThreadLocal.withInitial(HashSet::new);
     private final ThreadLocal<PhysicsControls> output = ThreadLocal.withInitial(PhysicsControls::new);
 
@@ -68,7 +67,7 @@ public class PhysicsKeyframeFactory implements IKeyframeFactory<PhysicsControls>
 
             for (String key : keys)
             {
-                i.get(key).autoLerp(read(preAp, key), read(ap, key), read(bp, key), read(postBp, key), pt, at, bt, qt, clamped, x);
+                i.get(key).autoLerp(preAp.get(key), ap.get(key), bp.get(key), postBp.get(key), pt, at, bt, qt, clamped, x);
             }
 
             return i;
@@ -85,15 +84,10 @@ public class PhysicsKeyframeFactory implements IKeyframeFactory<PhysicsControls>
 
         for (String key : keys)
         {
-            i.get(key).lerp(read(preA, key), read(a, key), read(b, key), read(postB, key), interpolation, x);
+            i.get(key).lerp(preA.get(key), a.get(key), b.get(key), postB.get(key), interpolation, x);
         }
 
         return i;
-    }
-
-    private static PhysicsControl read(PhysicsControls value, String key)
-    {
-        return value == null ? IDENTITY : value.controls.getOrDefault(key, IDENTITY);
     }
 
     private Set<String> collect(PhysicsControls preA, PhysicsControls a, PhysicsControls b, PhysicsControls postB)

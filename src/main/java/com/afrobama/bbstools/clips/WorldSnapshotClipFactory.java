@@ -34,7 +34,7 @@
 //      }
 //
 //      and ensure the event class import resolves to
-//      `mchorse.bbs_mod.events.register.RegisterActionClipsEvent`.
+//      `mchorse.bbs_mod.api.events.RegisterActionClipsEvent`.
 //
 //   B. (fallback) Call WorldSnapshotClipFactory.tryReflectiveRegister()
 //      from inside BBSToolsModClient's onInitializeClient() AFTER the
@@ -148,7 +148,7 @@ public final class WorldSnapshotClipFactory
         try
         {
             Class<?> eventCls = Class.forName(
-                "mchorse.bbs_mod.events.register.RegisterActionClipsEvent");
+                "mchorse.bbs_mod.api.events.RegisterActionClipsEvent");
             LOG.info("RegisterActionClipsEvent found ({}); add a typed override " +
                      "in BBSToolsAddon for proper subscription.", eventCls.getName());
         }

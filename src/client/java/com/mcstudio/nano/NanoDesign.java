@@ -29,6 +29,10 @@ public final class NanoDesign
 	public static final int WIDGET_HI  = 0x4A4A4A;
 	public static final int FELD       = 0x505050;
 	public static final int FELD_HI    = 0x5B5B5B;
+	/* Katalog G7, Blender's property states: keyed on this frame (yellow), animated elsewhere (green).
+	 * Darker than Blender's #DDD700/#53992E so the white text keeps about 4:1 contrast. */
+	public static final int FELD_KEY      = 0x8E7F12;
+	public static final int FELD_ANIMIERT = 0x3E7A2A;
 
 	/* ===== Text ===== */
 	public static final int TXT        = 0xE0E0E0;

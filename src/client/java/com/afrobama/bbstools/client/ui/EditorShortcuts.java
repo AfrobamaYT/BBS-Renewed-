@@ -40,7 +40,6 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,29 +83,29 @@ public final class EditorShortcuts
     {
         duplicateClip = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.editor_duplicate_clip",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_D,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_D,
             BBSKeyCategories.BBSTOOLS
         ));
 
         togglePlay = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.editor_toggle_play",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_SPACE,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_SPACE,
             BBSKeyCategories.BBSTOOLS
         ));
 
         jumpStart = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.editor_jump_start",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_HOME,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_HOME,
             BBSKeyCategories.BBSTOOLS
         ));
 
         jumpEnd = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.editor_jump_end",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_END,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_END,
             BBSKeyCategories.BBSTOOLS
         ));
 
@@ -146,10 +145,10 @@ public final class EditorShortcuts
         }
 
         long handle = client.getWindow().handle();
-        boolean ctrl  = isKeyHeld(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
-                     || isKeyHeld(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);
-        boolean shift = isKeyHeld(handle, GLFW.GLFW_KEY_LEFT_SHIFT)
-                     || isKeyHeld(handle, GLFW.GLFW_KEY_RIGHT_SHIFT);
+        boolean ctrl  = isKeyHeld(handle, InputConstants.KEY_LCONTROL)
+                     || isKeyHeld(handle, InputConstants.KEY_RCONTROL);
+        boolean shift = isKeyHeld(handle, InputConstants.KEY_LSHIFT)
+                     || isKeyHeld(handle, InputConstants.KEY_RSHIFT);
 
         try
         {
@@ -651,7 +650,7 @@ public final class EditorShortcuts
 
     private static boolean isKeyHeld(long handle, int key)
     {
-        try { return InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), key); } catch (Throwable t) { return false; }
+        try { return InputConstants.isKeyDown(key); } catch (Throwable t) { return false; }
     }
 
     private static void actionBar(Minecraft client, String msg)

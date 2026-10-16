@@ -4,7 +4,7 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
+import mchorse.bbs_mod.api.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -102,9 +102,16 @@ public class ModelBlockEntity extends BlockEntity
     {
         ModelBlockEntityUpdateCallback.EVENT.invoker().update(this);
 
+        this.properties.getEquipment().apply(this.entity);
         this.entity.update();
         this.entity.setWorld(world);
         this.properties.update(this.entity);
+    }
+
+    /** The block's physical shape, from the body settings against the current form and transform */
+    public net.minecraft.world.phys.shapes.VoxelShape getShape()
+    {
+        return this.properties.getBody().buildShape(this.properties.getForm(), this.properties.getTransform());
     }
 
     @Nullable
@@ -156,6 +163,13 @@ public class ModelBlockEntity extends BlockEntity
         this.properties.fromData(data);
 
         BlockPos pos = this.getBlockPos();
+
+        /* Light and sound live in the block STATE, where the engine reads them; the body is their source */
+        if (!world.isClientSide())
+        {
+            mchorse.bbs_mod.blocks.ModelBlock.mirrorBlockState(world, pos);
+        }
+
         BlockState blockState = world.getBlockState(pos);
 
         world.sendBlockUpdated(pos, blockState, blockState, Block.UPDATE_CLIENTS);

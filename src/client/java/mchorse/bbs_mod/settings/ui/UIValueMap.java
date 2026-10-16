@@ -289,7 +289,15 @@ public class UIValueMap
     {
         IUIValueFactory<T> factory = (IUIValueFactory<T>) factories.get(value.getClass());
 
-        return factory == null ? Collections.emptyList() : factory.create(value, element);
+        List<UIElement> elements = factory == null ? Collections.emptyList() : factory.create(value, element);
+
+        /* Every setting answers a right click with "reset" (BBS FS c79e8231c); rebuilding the list
+         * is what shows the reset, as the widgets read their value when they are made */
+        Runnable refresh = element instanceof UISettingsOverlayPanel panel ? panel::refresh : null;
+
+        for (UIElement created : elements) mchorse.bbs_mod.ui.utils.values.UIValues.resettable(created, () -> value, refresh);
+
+        return elements;
     }
 
     public static interface IUIValueFactory <T extends BaseValue>

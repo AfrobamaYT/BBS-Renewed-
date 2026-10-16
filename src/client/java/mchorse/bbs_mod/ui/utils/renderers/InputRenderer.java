@@ -1,7 +1,9 @@
 package mchorse.bbs_mod.ui.utils.renderers;
 
+import com.mcstudio.nano.NanoDesign;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
+import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
@@ -23,6 +25,9 @@ import java.util.List;
  */
 public class InputRenderer
 {
+    /** One for every screen and the HUD: a key pressed in the world is still on the board when a screen opens. */
+    public static final InputRenderer INSTANCE = new InputRenderer();
+
     private static boolean disabledForFrame = false;
 
     private List<PressedKey> pressedKeys = new ArrayList<>();
@@ -106,7 +111,19 @@ public class InputRenderer
 
         if (BBSSettings.enableKeystrokeRendering.get())
         {
-            this.renderKeys(menu, mouseX, mouseY);
+            /* The dashboard's status bar lies on the bottom edge: the key caps sit above it, not over its hints */
+            int unten = menu instanceof UIDashboard ? (int) NanoDesign.H_STATUS : 0;
+
+            this.renderKeys(menu.context.batcher, menu.width, menu.height, mouseX, mouseY, unten);
+        }
+    }
+
+    /** In the world, with no screen open: the same key caps over the HUD, bottom left. */
+    public void renderWorld(Batcher2D batcher, int width, int height)
+    {
+        if (BBSSettings.enableKeystrokeRendering.get())
+        {
+            this.renderKeys(batcher, width, height, 0, height, 0);
         }
     }
 
@@ -161,10 +178,10 @@ public class InputRenderer
     /**
      * Render pressed key strokes
      */
-    private void renderKeys(UIBaseMenu menu, int mouseX, int mouseY)
+    private void renderKeys(Batcher2D batcher, int width, int height, int mouseX, int mouseY, int unten)
     {
-        float lqx = Math.round(mouseX / (float) menu.width);
-        float lqy = Math.round(mouseY / (float) menu.height);
+        float lqx = Math.round(mouseX / (float) width);
+        float lqy = Math.round(mouseY / (float) height);
         int mode = BBSSettings.keystrokeMode.get();
 
         if (lqx == this.currentQX && lqy == this.currentQY)
@@ -199,8 +216,8 @@ public class InputRenderer
 
         int fy = qy > 0.5F ? 1 : -1;
         int offset = BBSSettings.keystrokeOffset.get();
-        int mx = offset + (int) (qx * (menu.width - offset * 2));
-        int my = offset + (int) (qy * (menu.height - 20 - offset * 2));
+        int mx = offset + (int) (qx * (width - offset * 2));
+        int my = offset + (int) (qy * (height - 20 - offset * 2 - unten));
 
         Iterator<PressedKey> it = this.pressedKeys.iterator();
 
@@ -218,8 +235,6 @@ public class InputRenderer
                 int y = my + (int) (Interpolations.EXP_INOUT.interpolate(0, 1, key.getFactor()) * 50 * fy);
                 int fw = 16 + key.width;
 
-                Batcher2D batcher = menu.context.batcher;
-
                 batcher.icon(Icons.KEY_CAP_LEFT, x, y);
                 batcher.iconArea(Icons.KEY_CAP_REPEATABLE, x + 4, y, fw - 8, 20);
                 batcher.icon(Icons.KEY_CAP_RIGHT, x + fw, y, 1F, 0F);
@@ -233,50 +248,59 @@ public class InputRenderer
 
     public void keyPressed(UIContext context, int key)
     {
-        if (key < 0 || context == null)
+        if (context != null && context.activeElement == null)
+        {
+            this.keyPressed(key, context.menu.width);
+        }
+    }
+
+    /** A key pressed with no screen open (flying, recording, the dashboard hidden): {@code width} is the GUI width. */
+    public void keyPressedWorld(int key, int width)
+    {
+        this.keyPressed(key, width);
+    }
+
+    private void keyPressed(int key, int width)
+    {
+        if (key < 0)
         {
             return;
         }
 
-        boolean inputUnfocused = context.activeElement == null;
+        PressedKey last = null;
+        int offset = -1000;
 
-        if (inputUnfocused)
+        for (PressedKey pressed : this.pressedKeys)
         {
-            PressedKey last = null;
-            int offset = -1000;
-
-            for (PressedKey pressed : this.pressedKeys)
+            if (pressed.key == key)
             {
-                if (pressed.key == key)
-                {
-                    offset = pressed.increment(Batcher2D.getDefaultTextRenderer());
-                }
-                else if (offset != -1000)
-                {
-                    pressed.x += offset;
-                }
-
-                last = pressed;
+                offset = pressed.increment(Batcher2D.getDefaultTextRenderer());
+            }
+            else if (offset != -1000)
+            {
+                pressed.x += offset;
             }
 
-            if (offset != -1000)
-            {
-                return;
-            }
-
-            offset = BBSSettings.keystrokeOffset.get();
-            int x = last == null ? 0 : last.x + last.width + 18;
-            PressedKey newKey = new PressedKey(key, x);
-
-            newKey.setupName(Minecraft.getInstance().font);
-
-            if (newKey.x + newKey.width + offset > context.menu.width - offset * 2)
-            {
-                newKey.x = 0;
-            }
-
-            this.pressedKeys.add(newKey);
+            last = pressed;
         }
+
+        if (offset != -1000)
+        {
+            return;
+        }
+
+        offset = BBSSettings.keystrokeOffset.get();
+        int x = last == null ? 0 : last.x + last.width + 18;
+        PressedKey newKey = new PressedKey(key, x);
+
+        newKey.setupName(Minecraft.getInstance().font);
+
+        if (newKey.x + newKey.width + offset > width - offset * 2)
+        {
+            newKey.x = 0;
+        }
+
+        this.pressedKeys.add(newKey);
     }
 
     /**

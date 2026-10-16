@@ -2,7 +2,7 @@ package mchorse.bbs_mod.particles.components.appearance;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
@@ -646,7 +646,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
         else
         {
             Vector3d pos = particle.getGlobalPosition(emitter);
-            BlockPos blockPos = new BlockPos((int) pos.x, (int) pos.y, (int) pos.z);
+            BlockPos blockPos = BlockPos.containing(pos.x, pos.y, pos.z);
             /* 26.2: LevelRenderer.getLightColor ist umgezogen und heisst jetzt
              * LightCoordsUtil.getLightCoords -- dieselbe Rechnung (Eigenleuchten des Blocks
              * beruecksichtigt), nur nicht mehr am Weltzeichner. Level erfuellt

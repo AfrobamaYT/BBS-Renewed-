@@ -46,14 +46,14 @@ public class CubicModelAnimator
                 segment.a.getTick(), segment.b.getTick(),
                 segment.a.rx, segment.a.ry,
                 segment.b.lx, segment.b.ly,
-                segment.x
+                segment.getInterpolationProgress(true)
             );
         }
 
         double pre = segment.preA.getValue().get();
         double post = segment.postB.getValue().get();
 
-        return segment.b.getInterpolation().interpolate(IInterp.context.set(pre, start, destination, post, segment.x));
+        return segment.b.getInterpolation().interpolate(IInterp.context.set(pre, start, destination, post, segment.getInterpolationProgress(true)));
     }
 
     public static void animate(Model model, Animation animation, float frame, float blend, boolean skipInitial)

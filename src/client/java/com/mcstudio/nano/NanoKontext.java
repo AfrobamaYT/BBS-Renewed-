@@ -19,6 +19,8 @@ import org.lwjgl.nanovg.NanoVGGL3;
 final class NanoKontext
 {
 	private static long vg;
+	private static NanoVkRenderer vulkan;
+	private static boolean shutdownAngemeldet;
 	private static java.nio.ByteBuffer schriftRegular;
 	private static java.nio.ByteBuffer schriftBold;
 
@@ -30,12 +32,29 @@ final class NanoKontext
 	/** Oeffentlich fuer Messrouten — der Handle selbst bleibt unveraendert. */
 	public static long holen()
 	{
+		if (!shutdownAngemeldet)
+		{
+			shutdownAngemeldet = true;
+			net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING
+				.register(client -> verwerfen());
+		}
+
 		if (vg != 0)
 		{
 			return vg;
 		}
 
-		long neu = NanoVGGL3.nvgCreate(NanoVGGL3.NVG_ANTIALIAS | NanoVGGL3.NVG_STENCIL_STROKES);
+		long neu;
+
+		if (NanoVkRenderer.active())
+		{
+			vulkan = new NanoVkRenderer();
+			neu = vulkan.context();
+		}
+		else
+		{
+			neu = NanoVGGL3.nvgCreate(NanoVGGL3.NVG_ANTIALIAS | NanoVGGL3.NVG_STENCIL_STROKES);
+		}
 
 		if (neu == 0)
 		{
@@ -49,7 +68,7 @@ final class NanoKontext
 
 		if (schriftRegular == null || schriftBold == null)
 		{
-			NanoVGGL3.nvgDelete(neu);
+			loeschen(neu);
 
 			return 0;
 		}
@@ -60,7 +79,7 @@ final class NanoKontext
 		if (regular == -1 || fett == -1)
 		{
 			System.out.println("[nano] font-anlage fehlgeschlagen (regular=" + regular + ", bold=" + fett + ")");
-			NanoVGGL3.nvgDelete(neu);
+			loeschen(neu);
 
 			return 0;
 		}
@@ -70,12 +89,32 @@ final class NanoKontext
 		return vg;
 	}
 
+	static NanoVkRenderer vulkan()
+	{
+		return vulkan;
+	}
+
+	private static void loeschen(long kontext)
+	{
+		NanoBilder.verwerfen(kontext);
+
+		if (vulkan != null)
+		{
+			vulkan.close();
+			vulkan = null;
+		}
+		else
+		{
+			NanoVGGL3.nvgDelete(kontext);
+		}
+	}
+
 	/** Verwerfen (frisch=1-Debugweg der Probe). Die Schrift-Puffer bleiben — naechstes holen() nutzt sie neu. */
 	static void verwerfen()
 	{
 		if (vg != 0)
 		{
-			NanoVGGL3.nvgDelete(vg);
+			loeschen(vg);
 			vg = 0;
 		}
 	}

@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.forms.editors.states.keyframes;
 
+import org.lwjgl.sdl.SDLMouse;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.film.replays.PerLimbService;
@@ -44,7 +45,6 @@ import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
-import org.lwjgl.glfw.GLFW;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -85,7 +85,7 @@ public class UIAnimationStateEditor extends UIElement
             this.editArea.x(BBSSettings.editorLayoutSettings.getStateEditorSizeH());
             this.getParent().resize();
         });
-        draggable.cursors(GLFW.GLFW_CROSSHAIR_CURSOR, GLFW.GLFW_CROSSHAIR_CURSOR);
+        draggable.cursors(SDLMouse.SDL_SYSTEM_CURSOR_CROSSHAIR, SDLMouse.SDL_SYSTEM_CURSOR_CROSSHAIR);
 
         draggable.reference(() -> new Vector2i(this.editArea.area.x, this.area.y));
         draggable.rendering((context) ->
@@ -176,13 +176,13 @@ public class UIAnimationStateEditor extends UIElement
             this.keys.add(sheet.isBoneTrack ? sheet.title.get() : StringUtils.fileName(sheet.id));
         }
 
+        sheets.removeIf((v) -> v.id.equals("anchor"));
+
+        /* If the track filter empties the list, keep the timeline: the filter lives in its menu (BBS FS a86b0688e) */
+        boolean hadTracks = !sheets.isEmpty();
+
         sheets.removeIf((v) ->
         {
-            if (v.id.equals("anchor"))
-            {
-                return true;
-            }
-
             String filterKey = UIReplaysEditor.getSheetFilterKey(v);
 
             for (String s : BBSSettings.disabledSheets.get())
@@ -219,7 +219,7 @@ public class UIAnimationStateEditor extends UIElement
             lastForm = form;
         }
 
-        if (!sheets.isEmpty())
+        if (!sheets.isEmpty() || hadTracks)
         {
             this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIAnimationStateKeyframes(this.editor, consumer)).target(this.editArea);
             this.keyframeEditor.relative(this).h(1F).wTo(this.editArea.area);
@@ -456,7 +456,7 @@ public class UIAnimationStateEditor extends UIElement
          * keeps as-is and GLOBAL/VIEW reorient away from. This editor had the two
          * swapped, so its LOCAL gizmo drew the parent's axes. forceMatrix keeps
          * the rotation-bearing matrix for the axis sampler regardless. */
-        Matrix4f matrix = (forceMatrix || bone.b) ? map.get(bone.a).matrix() : map.get(bone.a).origin();
+        Matrix4f matrix = mchorse.bbs_mod.ui.utils.GizmoGimbal.merken(forceMatrix || bone.b, map.get(bone.a));
 
         return matrix == null ? Matrices.EMPTY_4F : matrix;
     }

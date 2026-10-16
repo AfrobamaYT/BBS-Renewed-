@@ -1,5 +1,6 @@
 package com.mcstudio.nano;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -74,6 +75,8 @@ public class NanoFlaeche extends UIElement
 	private long hoverSeit;
 	/** Ob der Tooltip beim letzten Zeichenlauf schon stand — verhindert Dauer-Neuzeichnen. */
 	private boolean tooltipStand;
+	private Object[] letzterTooltip;
+	private long letzterTooltipBis;
 	private float mausX = -1;
 	private float mausY = -1;
 
@@ -118,23 +121,6 @@ public class NanoFlaeche extends UIElement
 	public float letzterKlickX()
 	{
 		return this.klickX;
-	}
-
-	public float letzterKlickY()
-	{
-		return this.klickY;
-	}
-
-	/**
-	 * Aktuelle Mausposition in Flaechen-Pixeln, oder -1 ausserhalb.
-	 *
-	 * <p>Gebraucht fuer Zonen, die WAEHREND des Zuges die absolute Lage brauchen statt der
-	 * Verschiebung — der Abspielkopf der Zeitleiste springt an die Maus, er zaehlt keine
-	 * Deltas.</p>
-	 */
-	public float mausPositionX()
-	{
-		return this.mausX;
 	}
 
 	/**
@@ -204,8 +190,10 @@ public class NanoFlaeche extends UIElement
 
 		float rx = context.mouseX() - this.area.x;
 		float ry = context.mouseY() - this.area.y;
+		/* A tooltip's action line takes clicks also outside the input field (Help, spec 6) */
+		NanoZonen.Zone z = this.zonen.treffe(rx * this.skala, ry * this.skala);
 
-		return rx >= this.eingabeFeld[0] && rx < this.eingabeFeld[0] + this.eingabeFeld[2]
+		return z != null && z.id().equals("tooltip-aktion") || rx >= this.eingabeFeld[0] && rx < this.eingabeFeld[0] + this.eingabeFeld[2]
 			&& ry >= this.eingabeFeld[1] && ry < this.eingabeFeld[1] + this.eingabeFeld[3];
 	}
 
@@ -216,26 +204,33 @@ public class NanoFlaeche extends UIElement
 	}
 
 	/**
-	 * Tooltip, der jetzt faellig ist: {x, y, Beschreibung, Taste} — oder null. Faellig heisst,
+	 * Tooltip, der jetzt faellig ist: {x, y, Beschreibung, Taste, Zonen-id} — oder null. Faellig heisst,
 	 * die Maus steht seit mehr als einer halben Sekunde auf derselben Zone und diese hat einen
 	 * Hinweis. Blender wartet „a few moments"; 500 ms trifft das, ohne beim Vorbeifahren zu
 	 * flackern.
 	 */
 	public Object[] tooltipFaellig()
 	{
-		if (this.hover.isEmpty() || System.currentTimeMillis() - this.hoverSeit < 500L)
+		long jetzt = System.currentTimeMillis();
+		NanoZonen.Zone z = this.hover.isEmpty() || jetzt - this.hoverSeit < 500L ? null : this.zonen.treffe(this.mausX, this.mausY);
+
+		if (z != null && !z.hinweis().isEmpty())
 		{
-			return null;
+			this.letzterTooltip = new Object[] {z.x(), z.y() + z.h(), z.hinweis(), z.taste(), z.id()};
+			this.letzterTooltipBis = jetzt + 240L;
+
+			return this.letzterTooltip;
 		}
 
-		NanoZonen.Zone z = this.zonen.treffe(this.mausX, this.mausY);
+		/* One with an action line stays while the mouse is on that line, and 240 ms after it left
+		 * the zone — long enough to get there (Help, spec 6) */
+		boolean aufZeile = this.hover.equals("tooltip-aktion");
+		boolean bleibt = this.letzterTooltip != null && (aufZeile || jetzt < this.letzterTooltipBis)
+			&& NanoBausteine.tooltipZusatz.apply((String) this.letzterTooltip[4]) != null;
 
-		if (z == null || z.hinweis().isEmpty())
-		{
-			return null;
-		}
+		this.letzterTooltipBis = bleibt && aufZeile ? jetzt + 240L : this.letzterTooltipBis;
 
-		return new Object[] {z.x(), z.y() + z.h(), z.hinweis(), z.taste()};
+		return bleibt ? this.letzterTooltip : null;
 	}
 
 	/** Welche Zone hat gerade Tastatur-Fokus? Leer = keine. */
@@ -248,6 +243,7 @@ public class NanoFlaeche extends UIElement
 	{
 		this.fokus = id == null ? "" : id;
 		this.dirty = true;
+		texteingabe(this, !this.fokus.isEmpty());
 
 		if (this.fokus.isEmpty())
 		{
@@ -264,6 +260,14 @@ public class NanoFlaeche extends UIElement
 		}
 	}
 
+	/* MC 26.3 types only into a field registered with its TextInputManager, as Textbox does; the
+	 * surfaces never were, their search fields stayed mute (measured 2026-10-14) */
+	private static void texteingabe(NanoFlaeche flaeche, boolean an)
+	{
+		net.minecraft.client.Minecraft.getInstance().textInputManager().onTextInputFocusChange(flaeche, an);
+		NanoTextFokus.synchronisieren(flaeche);
+	}
+
 	/**
 	 * Nimmt jeder ANDEREN Flaeche den Tastatur-Fokus.
 	 *
@@ -277,6 +281,7 @@ public class NanoFlaeche extends UIElement
 		{
 			fokusBesitzer.fokus = "";
 			fokusBesitzer.dirty = true;
+			texteingabe(fokusBesitzer, false);
 			fokusBesitzer = null;
 		}
 	}
@@ -369,7 +374,7 @@ public class NanoFlaeche extends UIElement
 	@Override
 	public void render(UIContext context)
 	{
-		this.skala = (float) net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale();
+		this.skala = mchorse.bbs_mod.BBSModClient.getGUIScale();
 
 		int wunschB = Math.max(1, Math.round(this.area.w * this.skala));
 		int wunschH = Math.max(1, Math.round(this.area.h * this.skala));
@@ -460,10 +465,12 @@ public class NanoFlaeche extends UIElement
 
 		if (this.textur != null)
 		{
-			/* v-geflippt: NanoVG malt in GL-richtung (ursprung unten links). */
+			/* Vulkan's NanoVG shader uses top-left image rows; OpenGL uses bottom-left. */
+			boolean vulkan = NanoKontext.vulkan() != null;
 			context.batcher.texturedBox(this.textur, 0xFFFFFFFF,
 				this.area.x, this.area.y, this.area.w, this.area.h,
-				0, this.texHoehe, this.texBreite, 0, this.texBreite, this.texHoehe);
+				0, vulkan ? 0 : this.texHoehe, this.texBreite, vulkan ? this.texHoehe : 0,
+				this.texBreite, this.texHoehe);
 		}
 
 		super.render(context);
@@ -614,7 +621,7 @@ public class NanoFlaeche extends UIElement
 		{
 			int taste = context.getKeyCode();
 
-			if (taste == org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSPACE)
+			if (taste == InputConstants.KEY_BACKSPACE)
 			{
 				this.tastenHandler.accept(this.fokus, '\b');
 				this.dirty = true;
@@ -622,11 +629,19 @@ public class NanoFlaeche extends UIElement
 				return true;
 			}
 
-			if (taste == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER || taste == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
+			if (taste == InputConstants.KEY_RETURN || taste == InputConstants.KEY_ESCAPE)
 			{
+				if (taste == InputConstants.KEY_RETURN) this.tastenHandler.accept(this.fokus, '\n'); /* as documented at beimTippen */
 				this.fokus = "";
 				this.dirty = true;
+				texteingabe(this, false);
 
+				return true;
+			}
+
+			/* A letter typed into the field is not also an editor key */
+			if (taste >= InputConstants.KEY_SPACE && taste <= InputConstants.KEY_GRAVE && !mchorse.bbs_mod.graphics.window.Window.isCtrlPressed() && !mchorse.bbs_mod.graphics.window.Window.isAltPressed())
+			{
 				return true;
 			}
 		}
@@ -687,15 +702,23 @@ public class NanoFlaeche extends UIElement
 
 		int wunschB = Math.max(1, Math.round(this.area.w * this.skala));
 		int wunschH = Math.max(1, Math.round(this.area.h * this.skala));
+		NanoVkRenderer vulkan = NanoKontext.vulkan();
+
+		if (vulkan != null)
+		{
+			this.vulkanMalen(vulkan, wunschB, wunschH);
+			return;
+		}
+
 		NanoGlKlammer klammer = NanoGlKlammer.sichern();
 
 		try
 		{
 			if (this.textur == null)
 			{
-				this.textur = new Texture();
-				this.fbo = GL33C.glGenFramebuffers();
-				this.rbo = GL33C.glGenRenderbuffers();
+				this.textur = NanoRessourcen.textur();
+				this.fbo = NanoRessourcen.fbo(this.textur);
+				this.rbo = NanoRessourcen.rbo(this.textur);
 			}
 
 			if (wunschB != this.texBreite || wunschH != this.texHoehe)
@@ -741,6 +764,36 @@ public class NanoFlaeche extends UIElement
 		finally
 		{
 			klammer.zurueck();
+		}
+	}
+
+	private void vulkanMalen(NanoVkRenderer vulkan, int breite, int hoehe)
+	{
+		try
+		{
+			if (this.textur == null)
+			{
+				this.textur = NanoRessourcen.textur();
+			}
+
+			if (breite != this.texBreite || hoehe != this.texHoehe)
+			{
+				this.textur.setSize(breite, hoehe);
+				this.texBreite = breite;
+				this.texHoehe = hoehe;
+			}
+
+			this.zonen.bauBeginnen();
+			vulkan.begin(this.textur.attachmentView(), breite, hoehe);
+			this.inhalt.zeichnen(vulkan.context(), breite, hoehe, this.mausX, this.mausY, this);
+			vulkan.end();
+			this.zonen.uebernehmen();
+			this.dirty = false;
+		}
+		catch (Throwable error)
+		{
+			vulkan.cancel();
+			throw new IllegalStateException("NanoVG Vulkan surface failed (" + breite + "x" + hoehe + ")", error);
 		}
 	}
 }

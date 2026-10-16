@@ -1,250 +1,147 @@
 package mchorse.bbs_mod.ui.film;
 
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.ProjectionType;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.clips.misc.Subtitle;
-import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.client.FormPipelines;
-import mchorse.bbs_mod.graphics.Framebuffer;
-import mchorse.bbs_mod.graphics.Projektion;
-import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.texture.Texture;
-import mchorse.bbs_mod.graphics.texture.TextureFormat;
-import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
-import mchorse.bbs_mod.utils.MatrixStackUtils;
+import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.render.TextureSetup;
-import net.minecraft.client.renderer.BindGroupLayouts;
-import net.minecraft.client.renderer.ProjectionMatrixBuffer;
-import net.minecraft.client.renderer.SubmitNodeStorage;
-import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
-import net.minecraft.network.chat.Style;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
-import org.joml.Matrix4f;
-import org.joml.Vector4f;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
+import org.joml.Matrix3x2fStack;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
-/** Renders caption textures into the current world target before export readback. */
+/**
+ * Subtitles over the frame. Until 1.21 they were drawn into a framebuffer of their own and that
+ * texture was put on the frame, through a shader that blurred its shadow. In 26.3 the GUI draws
+ * are deferred, so the text never reached that framebuffer: it landed on the screen at the
+ * framebuffer's local coordinates, and the composite's PoseStack translation was dropped as
+ * well, so every subtitle sat at the window's top-left. They are drawn into the GUI directly
+ * now, through its 2D pose, mapped onto the frame; the blurred shadow is gone, the text shadow
+ * stays. Positions keep their old space: half the main render target.
+ */
 public class UISubtitleRenderer
 {
-    private static final RenderPipeline CAPTION = RenderPipeline.builder()
-        .withLocation(Identifier.fromNamespaceAndPath("bbs", "pipeline/subtitles_world"))
-        .withVertexShader(Identifier.fromNamespaceAndPath("bbs", "core/subtitles"))
-        .withFragmentShader(Identifier.fromNamespaceAndPath("bbs", "core/subtitles"))
-        .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX_COLOR)
-        .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
-        .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
-        .withBindGroupLayout(BindGroupLayouts.PROJECTION)
-        .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
-        .withColorTargetState(new ColorTargetState(com.mojang.blaze3d.pipeline.BlendFunction.TRANSLUCENT))
-        .withDepthStencilState(Optional.empty()).withCull(false).build();
-
-    private record Layout(List<String> lines, int textWidth, int textHeight, Texture image,
-        float imageWidth, float imageHeight, float width, float height)
-    {}
-
-    public static void renderSubtitles(PoseStack unusedStack, Batcher2D unusedBatcher, List<Subtitle> subtitles)
+    public static void renderSubtitles(Batcher2D batcher, List<Subtitle> subtitles, Area frame)
     {
-        if (subtitles.isEmpty())
+        if (subtitles.isEmpty() || frame.w <= 0 || frame.h <= 0)
         {
             return;
         }
-        Minecraft client = Minecraft.getInstance();
-        RenderTarget target = BBSRendering.isCustomSize() ? BBSRendering.getFramebuffer() : client.gameRenderer.mainRenderTarget();
-        float width = target.width / 2F;
-        float height = target.height / 2F;
-        com.mojang.blaze3d.buffers.GpuBufferSlice previousProjection = RenderSystem.getProjectionMatrixBuffer();
-        ProjectionType previousType = RenderSystem.getProjectionType();
-        RenderSystem.getModelViewStack().pushMatrix().identity();
-        try (ProjectionMatrixBuffer projection = new ProjectionMatrixBuffer("bbs-subtitle-world"))
+
+        /* Placement units: a frame 1080 high, as wide as the aspect makes it (BBS FS 7f19dfbd5) */
+        float width = UIImageRenderer.getUnitWidth();
+        float height = mchorse.bbs_mod.camera.data.Placement.HEIGHT;
+        Matrix3x2fStack pose = batcher.getContext().pose();
+
+        for (Subtitle subtitle : subtitles)
         {
-            RenderSystem.setProjectionMatrix(projection.getBuffer(Projektion.umgekehrt(
-                new Matrix4f().setOrtho(0F, width, height, 0F, -100F, 100F))), ProjectionType.ORTHOGRAPHIC);
-            int index = 0;
-            for (Subtitle subtitle : subtitles)
+            float alpha = Colors.getA(subtitle.color);
+
+            if (alpha <= 0)
             {
-                float alpha = Colors.getA(subtitle.color);
-                if (alpha <= 0F)
+                continue;
+            }
+
+            String label = StringUtils.processColoredText(subtitle.label);
+            /* Screen pixels per layout unit: the placement's scale over the frame's units, at the GUI scale */
+            float pixels = subtitle.placement.scaleX * frame.w / width * (float) net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale();
+            FontRenderer custom = subtitle.font == null || subtitle.font.path.isEmpty() ? null : mchorse.bbs_mod.fonts.FontManager.get().get(subtitle.font, subtitle.fontSize, pixels);
+            FontRenderer font = custom == null ? Batcher2D.getDefaultTextRenderer() : custom;
+            /* 0 has always drawn every line on top of the last, so it is free to mean "ask the font" (BBS FS fd189d58f) */
+            int lineHeight = subtitle.lineHeight > 0 ? subtitle.lineHeight : font.getLineHeight();
+            List<String> strings = subtitle.maxWidth <= 10 ? Arrays.asList(label) : font.wrap(label, subtitle.maxWidth);
+            int w = 0;
+
+            for (String string : strings)
+            {
+                w = Math.max(w, font.getWidth(string.trim()));
+            }
+
+            int h = (strings.size() - 1) * lineHeight + font.getHeight();
+            Texture image = null;
+            float gap = 6F;
+            float imageW = 0F;
+            float imageH = 0F;
+
+            if (subtitle.image != null && BBSModClient.getTextures().has(subtitle.image))
+            {
+                image = BBSModClient.getTextures().getTexture(subtitle.image);
+
+                if (image != BBSModClient.getTextures().getError())
                 {
-                    continue;
+                    imageH = Math.max(0, lineHeight * subtitle.imageScale);
+                    imageW = image.height > 0 ? image.width * (imageH / image.height) : 0F;
                 }
-                Layout layout = layout(subtitle);
-                Texture texture = renderTexture(subtitle, layout, index++);
-                PoseStack pose = new PoseStack();
-                pose.translate(width * subtitle.windowX + subtitle.x, height * subtitle.windowY + subtitle.y, 0F);
-                Transform transform = new Transform();
-                transform.lerp(subtitle.transform, 1F - subtitle.factor);
-                MatrixStackUtils.applyTransform(pose, transform);
-                float x = -texture.width * subtitle.anchorX;
-                float y = -texture.height * subtitle.anchorY;
-                drawQuad(texture, CAPTION, pose, x, y, x + texture.width, y + texture.height,
-                    untertitelFarbe(subtitle.shadow, subtitle.shadowOpaque, alpha), target.getColorTextureView(), null);
-            }
-        }
-        finally
-        {
-            RenderSystem.setProjectionMatrix(previousProjection, previousType);
-            RenderSystem.getModelViewStack().popMatrix();
-        }
-    }
-
-    private static Layout layout(Subtitle subtitle)
-    {
-        Font font = Minecraft.getInstance().font;
-        List<String> lines = new ArrayList<>();
-        for (String line : StringUtils.processColoredText(subtitle.label).split("\\n", -1))
-        {
-            lines.addAll(subtitle.maxWidth <= 10 ? List.of(line) : FontRenderer.wrap(font, line, subtitle.maxWidth));
-        }
-        int w = lines.stream().mapToInt(line -> font.width(line.trim())).max().orElse(0);
-        int h = (lines.size() - 1) * subtitle.lineHeight + font.lineHeight;
-        Texture image = subtitle.image == null || !BBSModClient.getTextures().has(subtitle.image)
-            ? null : BBSModClient.getTextures().getTexture(subtitle.image);
-        if (image == BBSModClient.getTextures().getError())
-        {
-            image = null;
-        }
-        float imageH = image == null ? 0F : Math.max(0F, (subtitle.lineHeight > 0 ? subtitle.lineHeight : font.lineHeight) * subtitle.imageScale);
-        float imageW = image == null || image.height <= 0 ? 0F : image.width * imageH / image.height;
-        return new Layout(lines, w, h, image, imageW, imageH,
-            w + (imageH > 0F ? 6F + imageW : 0F), Math.max(h, imageH));
-    }
-
-    private static Texture renderTexture(Subtitle subtitle, Layout layout, int index)
-    {
-        Framebuffer framebuffer = BBSModClient.getFramebuffers().getFramebuffer(Link.bbs("camera_subtitles_" + index), f ->
-        {
-            Texture color = new Texture();
-            color.setSize(2, 2);
-            color.setFilter(GL11.GL_NEAREST);
-            color.setWrap(org.lwjgl.opengl.GL13.GL_CLAMP_TO_EDGE);
-            Texture depth = new Texture();
-            depth.setFormat(TextureFormat.DEPTH_F24);
-            depth.setSize(2, 2);
-            f.deleteTextures().attach(color, GL30.GL_COLOR_ATTACHMENT0);
-            f.attach(depth, GL30.GL_DEPTH_ATTACHMENT);
-            f.unbind();
-        });
-        int width = Math.max(2, (int) ((layout.width + 10F) * subtitle.size));
-        int height = Math.max(2, (int) ((layout.height + 10F) * subtitle.size));
-        if (framebuffer.getMainTexture().width != width || framebuffer.getMainTexture().height != height)
-        {
-            framebuffer.resize(width, height);
-        }
-        Texture color = framebuffer.getMainTexture();
-        Texture depth = framebuffer.textures.get(1);
-        com.mojang.blaze3d.textures.GpuTextureView previousColor = RenderSystem.outputColorTextureOverride;
-        com.mojang.blaze3d.textures.GpuTextureView previousDepth = RenderSystem.outputDepthTextureOverride;
-        com.mojang.blaze3d.buffers.GpuBufferSlice previousProjection = RenderSystem.getProjectionMatrixBuffer();
-        ProjectionType previousType = RenderSystem.getProjectionType();
-        com.mojang.blaze3d.systems.ScissorState previousScissor = new com.mojang.blaze3d.systems.ScissorState(RenderSystem.getScissorStateForRenderTypeDraws());
-        com.mojang.blaze3d.systems.RenderPass.RenderArea previousArea = mchorse.bbs_mod.graphics.Zeichenbereich.aktiv();
-        RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(color.gpu(), new Vector4f(0F, 0F, 0F, 0F), depth.gpu(), 0D);
-        RenderSystem.outputColorTextureOverride = color.view();
-        RenderSystem.outputDepthTextureOverride = depth.view();
-        RenderSystem.disableScissorForRenderTypeDraws();
-        mchorse.bbs_mod.graphics.Zeichenbereich.freigeben();
-        try (ProjectionMatrixBuffer projection = new ProjectionMatrixBuffer("bbs-subtitle-text"))
-        {
-            RenderSystem.setProjectionMatrix(projection.getBuffer(Projektion.umgekehrt(new Matrix4f()
-                .setOrtho(0F, layout.width + 10F, layout.height + 10F, 0F, -100F, 100F))), ProjectionType.ORTHOGRAPHIC);
-            PoseStack pose = new PoseStack();
-            float yy = 5F + (layout.height - layout.textHeight) / 2F;
-            float textLeft = 5F + (layout.imageHeight > 0F && !subtitle.imageRight ? layout.imageWidth + 6F : 0F);
-            if (Colors.getA(subtitle.backgroundColor) > 0F)
-            {
-                float offset = subtitle.backgroundOffset;
-                drawQuad(null, FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, false), pose,
-                    5F - offset, yy - offset, 5F + layout.width + offset - 1F, yy + layout.textHeight + offset,
-                    Colors.mulA(subtitle.backgroundColor, Colors.getA(subtitle.color)), color.view(), null);
-            }
-            if (layout.imageHeight > 0F)
-            {
-                float x = subtitle.imageRight ? 5F + layout.width - layout.imageWidth : 5F;
-                float y = 5F + (layout.height - layout.imageHeight) / 2F;
-                drawQuad(layout.image, FormPipelines.holen(DefaultVertexFormat.POSITION_TEX_COLOR, "position_tex_color",
-                    PrimitiveTopology.TRIANGLES, true, false, false), pose, x, y, x + layout.imageWidth, y + layout.imageHeight,
-                    Colors.WHITE, color.view(), null);
-            }
-            SubmitNodeStorage collector = new SubmitNodeStorage();
-            Font font = Minecraft.getInstance().font;
-            for (String line : layout.lines)
-            {
-                String text = line.trim();
-                float x = textLeft + (layout.textWidth - font.width(text)) / 2F;
-                collector.submitText(pose, x, yy, sink -> net.minecraft.util.StringDecomposer.iterateFormatted(text, Style.EMPTY, sink),
-                    subtitle.textShadow, Font.DisplayMode.NORMAL, LightCoordsUtil.FULL_BRIGHT, Colors.setA(subtitle.color, 1F), 0, 0);
-                yy += subtitle.lineHeight;
-            }
-            Minecraft client = Minecraft.getInstance();
-            try (FeatureRenderDispatcher dispatcher = new FeatureRenderDispatcher(client.gameRenderer.renderBuffers(),
-                client.getModelManager(), client.getAtlasManager(), client.font, client.gameRenderer.gameRenderState()))
-            {
-                dispatcher.renderAllFeatures(collector);
-            }
-        }
-        finally
-        {
-            RenderSystem.outputColorTextureOverride = previousColor;
-            RenderSystem.outputDepthTextureOverride = previousDepth;
-            RenderSystem.setProjectionMatrix(previousProjection, previousType);
-            RenderSystem.getScissorStateForRenderTypeDraws().setFrom(previousScissor);
-            if (previousArea != null)
-            {
-                mchorse.bbs_mod.graphics.Zeichenbereich.setzen(previousArea.x(), previousArea.y(), previousArea.width(), previousArea.height());
-            }
-        }
-        return color;
-    }
-
-    private static void drawQuad(Texture texture, RenderPipeline pipeline, PoseStack pose,
-        float x1, float y1, float x2, float y2, int color,
-        com.mojang.blaze3d.textures.GpuTextureView target, com.mojang.blaze3d.textures.GpuTextureView depth)
-    {
-        try (ByteBufferBuilder memory = new ByteBufferBuilder(256))
-        {
-            BufferBuilder builder = new BufferBuilder(memory, PrimitiveTopology.QUADS,
-                texture == null ? DefaultVertexFormat.POSITION_COLOR : DefaultVertexFormat.POSITION_TEX_COLOR);
-            float[][] points = {{x1, y1, 0F, 1F}, {x1, y2, 0F, 0F}, {x2, y2, 1F, 0F}, {x2, y1, 1F, 1F}};
-            for (float[] point : points)
-            {
-                com.mojang.blaze3d.vertex.VertexConsumer vertex = builder.addVertex(pose.last().pose(), point[0], point[1], 0F).setColor(color);
-                if (texture != null)
+                else
                 {
-                    vertex.setUv(point[2], point[3]);
+                    image = null;
                 }
             }
-            TextureSetup binding = texture == null ? null : TextureSetup.singleTexture(texture.view(), texture.sampler());
-            SofortZeichner.zeichnen(pipeline, builder.build(), RenderSystem.getModelViewMatrixCopy(), null, binding, target, depth);
-        }
-    }
 
-    private static int untertitelFarbe(float blur, boolean opaque, float alpha)
-    {
-        int r = Math.round(Math.min(Math.max(blur, 0F), 25.5F) * 10F);
-        int g = opaque ? 10 : 0;
-        int a = Math.round(Math.min(Math.max(alpha, 0F), 1F) * 255F);
-        return (a << 24) | (r << 16) | (g << 8);
+            boolean withImage = image != null && imageH > 0;
+            float contentW = w + (withImage ? gap + imageW : 0);
+            float contentH = Math.max(h, imageH);
+            Transform transform = new Transform();
+
+            transform.lerp(subtitle.transform, 1F - subtitle.factor);
+
+            pose.pushMatrix();
+            pose.translate(frame.x, frame.y);
+            pose.scale(frame.w / width, frame.h / height);
+            mchorse.bbs_mod.camera.data.Placement placement = subtitle.placement;
+            float x = width * placement.windowX + placement.offsetX;
+            float y = height * placement.windowY + placement.offsetY;
+            float fw = (contentW + 10) * placement.scaleX;
+            float fh = (contentH + 10) * placement.scaleY;
+
+            subtitle.box.set(x - fw * placement.anchorX, y - fh * placement.anchorY, fw, fh, width);
+
+            pose.translate(x + transform.translate.x, y + transform.translate.y);
+            pose.rotate(transform.rotate.z);
+            pose.scale(transform.scale.x * placement.scaleX, transform.scale.y * placement.scaleY);
+            pose.translate(-(contentW + 10) * placement.anchorX, -(contentH + 10) * placement.anchorY);
+
+            float baseX = 5F;
+            float textLeft = baseX + (withImage && !subtitle.imageRight ? imageW + gap : 0F);
+            float yy = 5F + (contentH - h) / 2F;
+
+            if (Colors.getA(subtitle.backgroundColor) > 0)
+            {
+                float o = subtitle.backgroundOffset;
+
+                batcher.box(baseX - o, yy - o, baseX + contentW + o - 1F, yy + h + o, Colors.mulA(subtitle.backgroundColor, alpha));
+            }
+
+            if (withImage)
+            {
+                float imageX = subtitle.imageRight ? baseX + contentW - imageW : baseX;
+
+                batcher.texturedBox(image, Colors.setA(Colors.WHITE, alpha), imageX, 5F + (contentH - imageH) / 2F, imageW, imageH, 0, 0, image.width, image.height, image.width, image.height);
+            }
+
+            FontRenderer previous = batcher.font;
+
+            batcher.font = font;
+
+            try
+            {
+                for (String string : strings)
+                {
+                    string = string.trim();
+                    batcher.text(string, (int) (textLeft + (w - font.getWidth(string)) / 2F), (int) yy, Colors.setA(subtitle.color, alpha), subtitle.textShadow);
+                    yy += lineHeight;
+                }
+            }
+            finally
+            {
+                batcher.font = previous;
+            }
+
+            pose.popMatrix();
+        }
     }
 }

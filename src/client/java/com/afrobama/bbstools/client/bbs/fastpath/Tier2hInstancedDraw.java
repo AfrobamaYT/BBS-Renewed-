@@ -43,6 +43,7 @@ import mchorse.bbs_mod.cubic.render.CubicMatrixRenderer;
 import mchorse.bbs_mod.cubic.render.CubicRenderer;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
+import mchorse.bbs_mod.graphics.GpuBackend;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
@@ -172,7 +173,7 @@ public final class Tier2hInstancedDraw
      *  BBSToolsModClient init.
      *
      *  AFTER_ENTITIES (not AFTER_TRANSLUCENT) is the integration point the
-     *  working older instanced renderers use:
+     *  working crowd renderers (CrowdBOBJGL/CrowdInstancedRenderer) use:
      *  Iris has the entity-pass gbuffer FBO bound with drawBuffers=[0..3],
      *  so our raw glDrawElementsInstanced lands in the same MRT attachments
      *  as vanilla entities and the composite pass picks it up with full
@@ -186,6 +187,17 @@ public final class Tier2hInstancedDraw
     {
         if (EVENT_REGISTERED) return;
         EVENT_REGISTERED = true;
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(client -> Tier2hNativeDraw.close());
+        net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.COLLECT_SUBMITS.register(ctx ->
+        {
+            if (GpuBackend.isVulkan() && !AUTO_DISABLED && BBSPerfConfig.ENABLE_TIER2_H
+                && (!DEFERRED.isEmpty() || IDLE_REDRAW_PENDING))
+            {
+                Tier2hNativeDraw.prepare(DEFERRED, IDLE_REDRAW_PENDING);
+                LAST_FLUSH_HAD_FALLBACK = Tier2hNativeDraw.hasFallback();
+            }
+            if (nativeEnabled()) NativeCrowdFrame.prepared();
+        });
         net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.AFTER_SOLID_FEATURES.register(ctx ->
         {
             try { drawDeferred(ctx); }
@@ -212,6 +224,13 @@ public final class Tier2hInstancedDraw
     {
         if (AUTO_DISABLED) return;
         Map<String, List<FastPathBatch.Submission>> batch = FastPathBatch.snapshotBatch();
+        if (nativeEnabled())
+        {
+            if (!NativeCrowdFrame.collecting()) return;
+            for (var entry : batch.entrySet())
+                DEFERRED.computeIfAbsent(entry.getKey(), key -> new java.util.ArrayList<>()).addAll(entry.getValue());
+            return;
+        }
         DEFERRED.clear();
         for (Map.Entry<String, List<FastPathBatch.Submission>> e : batch.entrySet())
         {
@@ -227,6 +246,14 @@ public final class Tier2hInstancedDraw
     public static void drawDeferred(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext ctx)
     {
         if (AUTO_DISABLED) { DEFERRED.clear(); IDLE_REDRAW_PENDING = false; PENDING_SELECTED = null; return; }
+
+        if (GpuBackend.isVulkan())
+        {
+            DeferredSelectedRender selected = PENDING_SELECTED;
+            PENDING_SELECTED = null;
+            if (selected != null && ctx != null) selected.render(ctx);
+            return;
+        }
 
         boolean idle = IDLE_REDRAW_PENDING;
         IDLE_REDRAW_PENDING = false;
@@ -320,8 +347,48 @@ public final class Tier2hInstancedDraw
         flushMap(FastPathBatch.snapshotBatch());
     }
 
+    public static boolean nativeEnabled()
+    {
+        return BBSPerfConfig.ENABLE_TIER2_H && BBSPerfConfig.ENABLE_TIER2_DRAW && BBSPerfConfig.ENABLE_TIER2_GPU
+            && BBSPerfConfig.ENABLE_FAST_PATH_RENDER && !AUTO_DISABLED && GpuBackend.isVulkan();
+    }
+
+    public static void beginNativeFrame()
+    {
+        if (!nativeEnabled()) return;
+        DEFERRED.clear();
+        NativeCrowdFrame.begin();
+    }
+
+    /** Called from the existing native world pass; preparation belongs to COLLECT_SUBMITS. */
+    public static void drawNativeDeferred(com.mojang.renderpearl.api.commands.RenderPass pass)
+    {
+        if (AUTO_DISABLED || !BBSPerfConfig.ENABLE_TIER2_H) return;
+        if (DEFERRED.isEmpty() && !IDLE_REDRAW_PENDING) return;
+        try
+        {
+            Tier2hNativeDraw.draw(pass);
+            if (IDLE_REDRAW_PENDING && DEFERRED.isEmpty()) BBSPerfConfig.tier2hIdleReuses++;
+            BBSPerfConfig.tier2hFlushes++;
+        }
+        finally
+        {
+            DEFERRED.clear();
+            IDLE_REDRAW_PENDING = false;
+        }
+    }
+
+    static float[] nativePalette(FastPathBatch.Submission submission)
+    {
+        return NativeCrowdFrame.palette(submission, Tier2hInstancedDraw::extractMatricesFor);
+    }
+
     private static void flushMap(Map<String, List<FastPathBatch.Submission>> batch)
     {
+        if (GpuBackend.isVulkan())
+        {
+            throw new IllegalStateException("Native instancing must prepare before and draw inside the existing world pass");
+        }
         if (AUTO_DISABLED) return;
         if (batch == null || batch.isEmpty()) return;
 
@@ -347,11 +414,12 @@ public final class Tier2hInstancedDraw
         int submissionsDrawn = 0;
         int instancedDraws   = 0;
 
-        /* Minimal state — match the older working instanced renderer. Fullbright
+        /* Minimal state — match the working CrowdBOBJGL renderer. Fullbright
          * shader, so NO lightmap/overlay enable (those bind textures to
          * units 1/2 + change state, an extra desync surface we don't need). */
         /* 26.2: enableBlend/defaultBlendFunc sind entfallen. Eigenes GL-Programm, also
          * eigener Zustand -- Standardmischung ist Quell-Alpha ueber Gegen-Alpha. */
+        Tier2hGlZustand vorher = new Tier2hGlZustand();
         Tier2hGlZustand.mischenAn();
 
         try
@@ -409,7 +477,7 @@ public final class Tier2hInstancedDraw
         }
         finally
         {
-            Tier2hGlZustand.mischenAus();
+            vorher.zurueck();
         }
 
         BBSPerfConfig.tier2hBucketsProcessed += bucketsProcessed;
@@ -452,7 +520,7 @@ public final class Tier2hInstancedDraw
         // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
         // 26.2: setup/teardownOverlayColor entfaellt -- das Overlay ist kein globaler Zustand mehr, sondern Sampler1 des Zeichenaufrufs (SofortZeichner bindet alle drei).
         GL11C.glEnable(GL11C.GL_DEPTH_TEST);
-        GL11C.glDepthFunc(GL11C.GL_LEQUAL);
+        GL11C.glDepthFunc(GL11C.GL_GEQUAL);
         GL11C.glDepthMask(true);
         GL11C.glEnable(GL11C.GL_CULL_FACE);
 
@@ -580,7 +648,6 @@ public final class Tier2hInstancedDraw
         ByteBuffer bScratch = ensureBoneScratch(neededSsbo);
         iScratch.clear();
         bScratch.clear();
-        FloatBuffer bFb = bScratch.asFloatBuffer();
 
         float[] mat4Tmp = new float[16];
 
@@ -592,60 +659,11 @@ public final class Tier2hInstancedDraw
             float[] cachedFlat = CACHED_FLAT_POOL[i];
             if (cachedFlat == null && (ex == null || ex.matrices == null || ex.matrices.isEmpty())) continue;
 
-            /* Build worldMat = s.worldMatrix × Y180 — matches Tier 2-d. */
-            Matrix4f world = new Matrix4f(s.worldMatrix);
-            world.rotateY((float) MathUtils.PI);
-            world.get(mat4Tmp);
-
-            int base = drawableN * INSTANCE_STRIDE;
-            iScratch.position(base);
-            for (int k = 0; k < 16; k++) iScratch.putFloat(mat4Tmp[k]);
-            iScratch.putInt(s.light);
-
-            /* Pack ARGB (UNorm8). */
-            Color formColor = s.form.color.get().copy();
-            formColor.mul(s.color);
-            Color instColor = new Color().set(s.instance.config.color.get());
-            int packedColor = packColor(
-                formColor.r * instColor.r,
-                formColor.g * instColor.g,
-                formColor.b * instColor.b,
-                formColor.a * instColor.a);
-            iScratch.putInt(packedColor);
-            iScratch.putInt(0); /* VAT PaletteRow — unused on the per-frame path */
-
-            /* Pack bone matrices for this instance. */
-            int boneBase = drawableN * bonesPerInstance * 16;
-            if (cachedFlat != null)
-            {
-                /* FAST PATH: cached flat array is already column-major in exactly
-                 * the bone-buffer layout → straight arraycopy, NO Matrix4f
-                 * round-trip. Identity-fill any slots beyond the cached bone
-                 * count (matches the old `bi >= boneSlotsAvail → IDENTITY`). */
-                int avail = cachedFlat.length / 16;
-                int copyBones = Math.min(avail, bonesPerInstance);
-                bFb.position(boneBase);
-                bFb.put(cachedFlat, 0, copyBones * 16);
-                for (int bi = copyBones; bi < bonesPerInstance; bi++)
-                {
-                    IDENTITY.get(mat4Tmp);
-                    bFb.position(boneBase + bi * 16);
-                    bFb.put(mat4Tmp);
-                }
-            }
-            else
-            {
-                int boneSlotsAvail = ex.matrices.size();
-                for (int bi = 0; bi < bonesPerInstance; bi++)
-                {
-                    Matrix4f bm;
-                    if (bi < boneSlotsAvail) bm = ex.matrices.get(bi);
-                    else                     bm = IDENTITY;
-                    bm.get(mat4Tmp);
-                    bFb.position(boneBase + bi * 16);
-                    bFb.put(mat4Tmp);
-                }
-            }
+            iScratch.position(drawableN * INSTANCE_STRIDE);
+            Tier2hVertexPacking.glInstance(iScratch, s, 0);
+            bScratch.position(drawableN * boneBytesPerInstance);
+            if (cachedFlat != null) Tier2hVertexPacking.palette(bScratch, cachedFlat, bonesPerInstance);
+            else Tier2hVertexPacking.palette(bScratch, ex.matrices, bonesPerInstance);
 
             drawableN++;
         }
@@ -678,15 +696,15 @@ public final class Tier2hInstancedDraw
         if (drawableN > b.boneTexRows)
         {
             int newRows = Math.max(drawableN, b.boneTexRows * 2);
-            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(b.boneTex);
+            com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(b.boneTex);
             GL11C.glTexImage2D(GL11C.GL_TEXTURE_2D, 0, GL30C.GL_RGBA32F,
                 b.boneTexWidth, newRows, 0, GL11C.GL_RGBA, GL11C.GL_FLOAT, (java.nio.ByteBuffer) null);
             b.boneTexRows = newRows;
-            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
+            com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(0);
         }
 
         /* ======================================================
-         * GL handling MATCHES the older proven-working instanced renderer:
+         * GL handling MATCHES the proven-working CrowdBOBJGL renderer:
          * pure raw GL, sampled textures (NO SSBO — glBindBufferBase
          * mid-Iris-pipeline clobbers Iris's SSBO bindings → crash).
          * ====================================================== */
@@ -699,7 +717,7 @@ public final class Tier2hInstancedDraw
         /* Upload bone palettes into the bone texture. bScratch is laid out
          * instance-major (one row = one instance's 4*boneCount texels). */
         Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
-        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(b.boneTex);
+        com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(b.boneTex);
         /* Force tight pixel-store state. Another mod (or MC) may leave
          * GL_UNPACK_ROW_LENGTH / SKIP_* non-zero — then glTexSubImage2D
          * reads with the wrong stride and runs off the end of bScratch →
@@ -723,10 +741,10 @@ public final class Tier2hInstancedDraw
             try { BBSModClient.getTextures().bindTexture(texture); } catch (Throwable ig) {}
         }
 
-        /* Depth/cull state — match the older instanced renderer. */
+        /* Depth/cull state — match CrowdBOBJGL. */
         Tier2hGlZustand zustand = new Tier2hGlZustand();
         GL11C.glEnable(GL11C.GL_DEPTH_TEST);
-        GL11C.glDepthFunc(GL11C.GL_LEQUAL);
+        GL11C.glDepthFunc(GL11C.GL_GEQUAL);
         GL11C.glDepthMask(true);
         GL11C.glDisable(GL11C.GL_CULL_FACE);
 
@@ -749,15 +767,15 @@ public final class Tier2hInstancedDraw
         }
         finally
         {
-            /* Raw cleanup — match the older instanced renderer. Unbind both texture units
+            /* Raw cleanup — match CrowdBOBJGL. Unbind both texture units
              * we touched (0 diffuse, 1 bone), restore active unit. */
             zustand.zurueck();
             GL20C.glUseProgram(0);
             GL30C.glBindVertexArray(0);
             GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
-            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
+            com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(0);
             Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
-            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
+            com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(0);
         }
 
         BBSPerfConfig.tier2hPhaseGNsAccum += System.nanoTime() - phaseGNs;
@@ -817,17 +835,7 @@ public final class Tier2hInstancedDraw
         ByteBuffer vbo = MemoryUtil.memAlloc(vbytes).order(ByteOrder.nativeOrder());
         try
         {
-            for (int v = 0; v < ir.vertCount; v++)
-            {
-                int pi = v * 3, ui = v * 2, bi = v * 4;
-                vbo.putFloat(ir.positions[pi]).putFloat(ir.positions[pi + 1]).putFloat(ir.positions[pi + 2]);
-                vbo.putFloat(ir.uvs[ui]).putFloat(ir.uvs[ui + 1]);
-                vbo.putFloat(ir.normals[pi]).putFloat(ir.normals[pi + 1]).putFloat(ir.normals[pi + 2]);
-                int boneSlot = ir.boneIndices[bi];
-                if (boneSlot < 0) boneSlot = 0;
-                vbo.putInt(boneSlot);
-            }
-            vbo.flip();
+            Tier2hVertexPacking.mesh(vbo, ir);
 
             b.vbo = GL15C.glGenBuffers();
             GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, b.vbo);
@@ -845,13 +853,7 @@ public final class Tier2hInstancedDraw
         ByteBuffer ebo = MemoryUtil.memAlloc(ibytes).order(ByteOrder.nativeOrder());
         try
         {
-            for (int q = 0; q < ir.quadCount; q++)
-            {
-                int base = q * 4;
-                ebo.putInt(base + 0).putInt(base + 1).putInt(base + 2);
-                ebo.putInt(base + 0).putInt(base + 2).putInt(base + 3);
-            }
-            ebo.flip();
+            Tier2hVertexPacking.indices(ebo, ir.quadCount);
 
             b.ebo = GL15C.glGenBuffers();
             GL15C.glBindBuffer(GL15C.GL_ELEMENT_ARRAY_BUFFER, b.ebo);
@@ -880,11 +882,11 @@ public final class Tier2hInstancedDraw
          * each bone = 4 texels (its mat4 columns). NEAREST filter +
          * texelFetch in the shader. NO SSBO — glBindBufferBase mid-Iris
          * pipeline crashed; a sampled texture is Iris-safe (same approach
-         * as the older working anim atlas). */
+         * as the working CrowdBOBJGL anim atlas). */
         b.boneTexWidth = b.boneCount * 4;
         int initialRows = 256;
         b.boneTex = GL11C.glGenTextures();
-        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(b.boneTex);
+        com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(b.boneTex);
         GL11C.glTexParameteri(GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_MIN_FILTER, GL11C.GL_NEAREST);
         GL11C.glTexParameteri(GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_MAG_FILTER, GL11C.GL_NEAREST);
         GL11C.glTexParameteri(GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_WRAP_S, GL12C.GL_CLAMP_TO_EDGE);
@@ -892,7 +894,7 @@ public final class Tier2hInstancedDraw
         GL11C.glTexImage2D(GL11C.GL_TEXTURE_2D, 0, GL30C.GL_RGBA32F,
             b.boneTexWidth, initialRows, 0, GL11C.GL_RGBA, GL11C.GL_FLOAT, (java.nio.ByteBuffer) null);
         b.boneTexRows = initialRows;
-        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
+        com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(0);
 
         /* Build VAO with all attribs wired (matches shader layout). */
         b.vao = GL30C.glGenVertexArrays();
@@ -1099,22 +1101,6 @@ public final class Tier2hInstancedDraw
         return ex;
     }
 
-    private static int packColor(float r, float g, float b, float a)
-    {
-        int ri = clampUByte(r);
-        int gi = clampUByte(g);
-        int bi = clampUByte(b);
-        int ai = clampUByte(a);
-        return (ai << 24) | (ri << 16) | (gi << 8) | bi;
-    }
-
-    private static int clampUByte(float v)
-    {
-        if (v <= 0F) return 0;
-        if (v >= 1F) return 255;
-        return (int) (v * 255F);
-    }
-
     private static void ensureExtractorPool(int needed)
     {
         if (EXTRACTOR_POOL.length < needed)
@@ -1274,16 +1260,28 @@ public final class Tier2hInstancedDraw
      *  prep. The GL buffers + bone texture/atlas already hold last frame's data. */
     public static void redrawAllBundles()
     {
-        bbstools$gpuTimerBegin();
-        for (MeshBundle b : BUNDLES.values())
+        if (GpuBackend.isVulkan())
         {
-            if (b != null && b.everDrawn && b.lastDrawableN > 0 && b.lastTexture != null)
+            requestIdleRedraw();
+            return;
+        }
+        Tier2hGlZustand vorher = new Tier2hGlZustand();
+        bbstools$gpuTimerBegin();
+        try
+        {
+            for (MeshBundle b : BUNDLES.values())
             {
-                try { bbstools$drawCore(b, b.lastTexture, b.lastDrawableN, b.lastDrawMode); }
-                catch (Throwable ig) {}
+                if (b != null && b.everDrawn && b.lastDrawableN > 0 && b.lastTexture != null)
+                {
+                    bbstools$drawCore(b, b.lastTexture, b.lastDrawableN, b.lastDrawMode);
+                }
             }
         }
-        bbstools$gpuTimerEnd();
+        finally
+        {
+            bbstools$gpuTimerEnd();
+            vorher.zurueck();
+        }
     }
 
     private static void bbstools$drawCore(MeshBundle b, Link texture, int drawableN, int mode)
@@ -1292,7 +1290,7 @@ public final class Tier2hInstancedDraw
         /* Bone palette → unit 1 (already populated; no upload). VAT mode reuses
          * the persisted atlas texture, per-frame mode the per-instance bone tex. */
         Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
-        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(mode == 1 ? b.atlasTex : b.boneTex);
+        com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(mode == 1 ? b.atlasTex : b.boneTex);
 
         /* Diffuse → unit 0. */
         Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE0);
@@ -1303,7 +1301,7 @@ public final class Tier2hInstancedDraw
 
         Tier2hGlZustand zustand = new Tier2hGlZustand();
         GL11C.glEnable(GL11C.GL_DEPTH_TEST);
-        GL11C.glDepthFunc(GL11C.GL_LEQUAL);
+        GL11C.glDepthFunc(GL11C.GL_GEQUAL);
         GL11C.glDepthMask(true);
         GL11C.glDisable(GL11C.GL_CULL_FACE);
 
@@ -1331,9 +1329,9 @@ public final class Tier2hInstancedDraw
             GL20C.glUseProgram(0);
             GL30C.glBindVertexArray(0);
             GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
-            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
+            com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(0);
             Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
-            com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
+            com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(0);
         }
     }
 
@@ -1430,7 +1428,7 @@ public final class Tier2hInstancedDraw
 
         /* Upload the whole atlas ONCE into the bundle's atlas texture. */
         if (b.atlasTex == 0) b.atlasTex = GL11C.glGenTextures();
-        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(b.atlasTex);
+        com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(b.atlasTex);
         if (totalRows > b.atlasRowsCap || b.atlasRowsCap == 0)
         {
             GL11C.glTexParameteri(GL11C.GL_TEXTURE_2D, GL11C.GL_TEXTURE_MIN_FILTER, GL11C.GL_NEAREST);
@@ -1448,7 +1446,7 @@ public final class Tier2hInstancedDraw
         scratch.position(0).limit(width * totalRows * 16);
         GL11C.glTexSubImage2D(GL11C.GL_TEXTURE_2D, 0, 0, 0,
             width, totalRows, GL11C.GL_RGBA, GL11C.GL_FLOAT, scratch);
-        com.mojang.blaze3d.opengl.GlStateManager._bindTexture(0);
+        com.mojang.renderpearl.backend.opengl.GlStateManager._bindTexture(0);
 
         b.atlasUsedRows       = totalRows;
         b.atlasTicksPerGroup  = ticksPerGroup;
@@ -1492,24 +1490,8 @@ public final class Tier2hInstancedDraw
             else if (tick >= ticksPerGroup) tick = ticksPerGroup - 1;
             int paletteRow = baseRow + tick;
 
-            Matrix4f world = new Matrix4f(s.worldMatrix);
-            world.rotateY((float) MathUtils.PI);
-            world.get(mat4Tmp);
-
-            int base = drawableN * INSTANCE_STRIDE;
-            iScratch.position(base);
-            for (int k = 0; k < 16; k++) iScratch.putFloat(mat4Tmp[k]);
-            iScratch.putInt(s.light);
-
-            Color formColor = s.form.color.get().copy();
-            formColor.mul(s.color);
-            Color instColor = new Color().set(s.instance.config.color.get());
-            iScratch.putInt(packColor(
-                formColor.r * instColor.r,
-                formColor.g * instColor.g,
-                formColor.b * instColor.b,
-                formColor.a * instColor.a));
-            iScratch.putInt(paletteRow);
+            iScratch.position(drawableN * INSTANCE_STRIDE);
+            Tier2hVertexPacking.glInstance(iScratch, s, paletteRow);
 
             drawableN++;
         }

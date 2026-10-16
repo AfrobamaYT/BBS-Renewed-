@@ -1,5 +1,6 @@
 package com.afrobama.blendertransform;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -8,7 +9,6 @@ import mchorse.bbs_mod.ui.framework.UIScreen;
 import net.minecraft.client.player.KeyboardInput;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.phys.Vec2;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Logik der Tastatur-Steuerung beim Steuern eines Darstellers — im Kernel-Paket, damit sie
@@ -63,16 +63,16 @@ public final class KeyboardInputSteuerungLogik
             return null;
         }
 
-        boolean vor = Window.isKeyPressed(GLFW.GLFW_KEY_W);
-        boolean zurueck = Window.isKeyPressed(GLFW.GLFW_KEY_S);
-        boolean links = Window.isKeyPressed(GLFW.GLFW_KEY_A);
-        boolean rechts = Window.isKeyPressed(GLFW.GLFW_KEY_D);
+        boolean vor = Window.isKeyPressed(InputConstants.KEY_W);
+        boolean zurueck = Window.isKeyPressed(InputConstants.KEY_S);
+        boolean links = Window.isKeyPressed(InputConstants.KEY_A);
+        boolean rechts = Window.isKeyPressed(InputConstants.KEY_D);
 
         /* Sprinten fassen wir nicht an — das tat die alte Fassung auch nicht. Der Wert kommt
          * aus Minecrafts eigenem Durchlauf und wird hier nur durchgereicht. */
         input.keyPresses = new Input(vor, zurueck, links, rechts,
-            Window.isKeyPressed(GLFW.GLFW_KEY_SPACE),
-            Window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT),
+            Window.isKeyPressed(InputConstants.KEY_SPACE),
+            Window.isKeyPressed(InputConstants.KEY_LSHIFT),
             input.keyPresses.sprint());
 
         /* Reihenfolge und Normalisierung sind aus KeyboardInput.tick abgelesen (Bytecode):

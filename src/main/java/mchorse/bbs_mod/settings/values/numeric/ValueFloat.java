@@ -27,6 +27,14 @@ public class ValueFloat extends BaseValueNumber<Float>
     }
 
     @Override
+    public ValueFloat live()
+    {
+        super.live();
+
+        return this;
+    }
+
+    @Override
     protected Float clamp(Float value)
     {
         return MathUtils.clamp(value, this.min, this.max);

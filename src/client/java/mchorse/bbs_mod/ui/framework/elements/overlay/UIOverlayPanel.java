@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.overlay;
 
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -13,7 +14,6 @@ import mchorse.bbs_mod.ui.framework.elements.utils.UILabel;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 
@@ -231,20 +231,21 @@ public class UIOverlayPanel extends UIElement
     @Override
     public boolean subKeyPressed(UIContext context)
     {
-        if (!context.isFocused())
+        if (!context.isFocused() && context.isPressed(Keys.CLOSE))
         {
-            if (context.isPressed(Keys.CLOSE))
-            {
-                this.close();
+            this.close();
 
-                return true;
-            }
-            else if (context.isPressed(Keys.CONFIRM))
-            {
-                this.confirm();
+            return true;
+        }
 
-                return true;
-            }
+        /* Enter is not gated on focus, unlike the closing escape: children are offered the key
+         * first, so whoever spends it on itself (a text area, a list) has already taken it, and
+         * what reaches the panel is the Enter of someone done filling the dialog in (BBS FS 748cdca9d) */
+        if (context.isPressed(Keys.CONFIRM) || context.isPressed(InputConstants.KEY_RETURN) || context.isPressed(InputConstants.KEY_NUMPADENTER))
+        {
+            this.confirm();
+
+            return true;
         }
 
         return super.subKeyPressed(context);

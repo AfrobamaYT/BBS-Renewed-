@@ -17,6 +17,12 @@ public class UIListOverlayPanel extends UIOverlayPanel
 
     public UIListOverlayPanel(IKey title, Consumer<String> callback)
     {
+        this(title, callback, UIStringList::new);
+    }
+
+    /** With a list of its own kind, as the particle picker's that shows each type (BBS FS 72705306b) */
+    public UIListOverlayPanel(IKey title, Consumer<String> callback, java.util.function.Function<Consumer<List<String>>, UIStringList> listFactory)
+    {
         super(title);
 
         this.callback((l) ->
@@ -24,7 +30,7 @@ public class UIListOverlayPanel extends UIOverlayPanel
             if (callback != null) callback.accept(l.get(0));
         });
 
-        this.list = new UISearchList<>(new UIStringList((l) ->
+        this.list = new UISearchList<>(listFactory.apply((l) ->
         {
             if (this.callback != null)
             {

@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.mixin.client;
 
-import com.afrobama.blendertransform.ChromaHimmelLogik;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.fog.FogRenderer;
@@ -24,14 +24,6 @@ public class ChromaNebelMixin
     private void bbs$chromaNebel(Camera kamera, float teilbild, ClientLevel welt,
         int sichtweite, float dunkelheit, Vector4f farbe, CallbackInfo info)
     {
-        Integer chroma = ChromaHimmelLogik.farbeOderNull();
-
-        if (chroma != null)
-        {
-            farbe.set(ChromaHimmelLogik.kanal(chroma, 16),
-                ChromaHimmelLogik.kanal(chroma, 8),
-                ChromaHimmelLogik.kanal(chroma, 0),
-                1F);
-        }
+        MixinBruecke.rufe("ChromaHimmelLogik", "nebel", farbe);
     }
 }

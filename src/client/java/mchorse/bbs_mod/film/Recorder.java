@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.film;
 
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
@@ -69,6 +69,8 @@ public class Recorder extends WorldFilmController
 
     public int countdown;
     public final int initialTick;
+    /** Erst ab diesem Tick wird aufgezeichnet; davor laeuft der Film nur (Vorlauf der Regiehilfe). */
+    public int aufnahmeAb;
 
     /** Last value committed to the existing FormProperties model/mobId recording track. */
     private String lastFormTrackValue;
@@ -203,7 +205,7 @@ public class Recorder extends WorldFilmController
             this.captureMobs(player);
         }
 
-        if (this.tick >= 0)
+        if (this.tick >= 0 && this.tick >= this.aufnahmeAb)
         {
             Morph morph = Morph.getMorph(player);
 

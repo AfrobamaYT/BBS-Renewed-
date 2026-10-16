@@ -21,8 +21,8 @@ import mchorse.bbs_mod.utils.colors.Color;
  * {@code MapFactory.getType} ein {@code IllegalStateException("... is not part of this factory!")},
  * und zwar in JEDEM pfad der eine form serialisiert oder kopiert:
  * {@code Film.toData()} (speichern, backup), {@code FormUtils.copy} (actor-entities erzeugen),
- * und jeder import, der LightForm-replays in den offenen film schreibt.
- * Das war ein sicherer crash, sobald lichter importiert wurden.
+ * der Blender-kanal ({@code LightImporter} schreibt LightForm-replays in den offenen film).
+ * Das war ein sicherer crash, sobald der nutzer aus Blender lichter importiert hat.
  * Zweite haelfte derselben registrierung: ein renderer in {@code FormUtilsClient} — BBS ruft an
  * mehreren stellen {@code FormUtilsClient.getRenderer(form).collectMatrices(...)} OHNE null-check
  * (z.b. die gizmo-achsen eines ausgewaehlten actors), eine form ohne renderer ist dort eine NPE.</p>
@@ -38,8 +38,8 @@ import mchorse.bbs_mod.utils.colors.Color;
  * </ul>
  *
  * <h2>STAND — was diese werte HEUTE bewirken (Regel 0: nichts beschoenigen)</h2>
- * <p>{@link #enabled} und {@link #level} lassen sich exportieren und importieren.
- * Die uebrigen felder werden gespeichert,
+ * <p>{@link #enabled} und {@link #level} gehen ueber den Blender-kanal raus/rein
+ * ({@code LightFormExporter}/{@code LightImporter}). Die uebrigen felder werden gespeichert,
  * geladen, sind ueber die form-property-kanaele animierbar und lassen sich von
  * {@code com.mcstudio.light.LightSnapshot} in die GPU-form uebersetzen — aber es gibt noch
  * KEINEN render-pass, der sie im bild sichtbar macht. Das ist der naechste schritt

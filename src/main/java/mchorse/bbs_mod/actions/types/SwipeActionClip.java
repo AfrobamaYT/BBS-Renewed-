@@ -7,6 +7,7 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.utils.clips.Clip;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.component.SwingAnimation;
 
 public class SwipeActionClip extends ActionClip
 {
@@ -29,7 +30,7 @@ public class SwipeActionClip extends ActionClip
 
         if (actor != null)
         {
-            actor.swing(InteractionHand.MAIN_HAND, true);
+            actor.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, true);
         }
     }
 

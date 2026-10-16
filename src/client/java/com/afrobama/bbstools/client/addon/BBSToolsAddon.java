@@ -12,8 +12,8 @@ package com.afrobama.bbstools.client.addon;
 
 import com.afrobama.bbstools.clips.WorldSnapshotClipFactory;
 
-import mchorse.bbs_mod.events.register.RegisterDashboardPanelsEvent;
-import mchorse.bbs_mod.events.register.RegisterL10nEvent;
+import mchorse.bbs_mod.api.client.events.RegisterDashboardPanelsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterL10nEvent;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -34,7 +34,7 @@ public class BBSToolsAddon
 
     /** Re-declared for the same reason as onRegisterL10n — see its comment (EventBus uses
      *  getDeclaredMethods, so inherited @Subscribe dispatchers are invisible to it). */
-    @mchorse.bbs_mod.events.Subscribe
+    @mchorse.bbs_mod.api.Subscribe
     public void onRegisterDashboardPanels(RegisterDashboardPanelsEvent event)
     {
         this.registerDashboardPanels(event);
@@ -48,9 +48,6 @@ public class BBSToolsAddon
          *  registration is performed by BBS via the typed event below
          *  (added once we verify RegisterActionClipsEvent signature). */
         WorldSnapshotClipFactory.tryReflectiveRegister();
-        mchorse.bbs_mod.ui.film.clips.UIClip.register(com.afrobama.bbstools.clips.WorldSnapshotClip.class,
-            com.afrobama.bbstools.client.clip.UIWorldSnapshotClip::new);
-        com.afrobama.bbstools.client.clip.LegacyActionClips.register();
     }
 
     /**
@@ -81,7 +78,7 @@ public class BBSToolsAddon
      * none of this addon's hooks ever fired. Re-declaring the @Subscribe dispatcher on this class
      * puts it in getDeclaredMethods() and the bus picks it up.
      */
-    @mchorse.bbs_mod.events.Subscribe
+    @mchorse.bbs_mod.api.Subscribe
     public void onRegisterL10n(RegisterL10nEvent event)
     {
         this.registerL10n(event);
@@ -105,7 +102,7 @@ public class BBSToolsAddon
      * Action-clip registration hook for WorldSnapshotClip.
      *
      * Uncomment this block AFTER verifying that
-     *   mchorse.bbs_mod.events.register.RegisterActionClipsEvent
+     *   mchorse.bbs_mod.api.events.RegisterActionClipsEvent
      * exists with `getFactory()` returning the
      * MapFactory<Link, ? extends ActionClip> referenced in
      * FRACTURE_PLAN.md line 96. The method name MUST match BBSClientAddon's

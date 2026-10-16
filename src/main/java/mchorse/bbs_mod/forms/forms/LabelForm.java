@@ -29,12 +29,15 @@ public class LabelForm extends Form
     public final ValueFloat offset = new ValueFloat("offset", 3F);
 
     /* Advanced Text Properties */
-    public final ValueString font = new ValueString("font", "");
-    public final ValueFloat fontSize = new ValueFloat("fontSize", 1.0F);
+    /* A TrueType file in the assets' fonts folder, null for Minecraft's own; its layout size; 0 line
+     * height leaves the spacing to the font. These three were stored here unused before, with other
+     * types; a size below 4 is read as the default 9 (BBS FS b0224f806) */
+    public final mchorse.bbs_mod.settings.values.core.ValueLink font = new mchorse.bbs_mod.settings.values.core.ValueLink("font", null);
+    public final ValueInt fontSize = new ValueInt("fontSize", 9);
     public final ValueInt fontWeight = new ValueInt("fontWeight", 400); /* 100-900 */
     public final ValueInt fontStyle = new ValueInt("fontStyle", 0); /* 0: Normal, 1: Italic, 2: Oblique */
     public final ValueFloat letterSpacing = new ValueFloat("letterSpacing", 0F);
-    public final ValueFloat lineHeight = new ValueFloat("lineHeight", 0F);
+    public final ValueInt lineHeight = new ValueInt("lineHeight", 0);
     public final ValueInt textAlign = new ValueInt("textAlign", 0); /* 0: Left, 1: Center, 2: Right, 3: Justify */
     public final ValueFloat opacity = new ValueFloat("opacity", 1.0F);
 

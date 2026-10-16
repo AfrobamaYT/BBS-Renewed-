@@ -43,7 +43,7 @@ public class CubicRenderer
         stack.pushPose();
         renderProcessor.applyGroupTransformations(stack, group);
 
-        if (group.visible)
+        if (group.isVisible())
         {
             if (renderProcessor.renderGroup(builder, stack, group, model))
             {

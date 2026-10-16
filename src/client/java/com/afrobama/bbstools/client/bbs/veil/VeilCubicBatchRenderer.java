@@ -31,6 +31,7 @@
 //   - Silent catch blocks log via SLF4J.
 package com.afrobama.bbstools.client.bbs.veil;
 
+import com.afrobama.bbstools.client.crowd.mass.BBSCrowdAcceleratedRenderer;
 import com.afrobama.bbstools.debug.IFeatureDebugger;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 import com.afrobama.bbstools.perf.BBSPerfHud;
@@ -117,7 +118,7 @@ public final class VeilCubicBatchRenderer implements IFeatureDebugger
         /* Iris shadow-pass: replays cast shadows from the gbuffer depth,
          * no need to re-render in shadow phase. Same gate the skinned
          * renderer uses. */
-        if (mchorse.bbs_mod.client.BBSRendering.isIrisShadowPass())
+        if (BBSCrowdAcceleratedRenderer.isIrisShadowPass())
         {
             ShadowSkipStats.INSTANCE.bump("veil-cubic");
             groups.clear();

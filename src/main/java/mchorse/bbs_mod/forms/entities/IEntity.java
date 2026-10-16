@@ -195,6 +195,22 @@ public interface IEntity
 
     public boolean isFallFlying();
 
+    /* Recorded body states (BBS FS e383f1930): swimming, creative flight, an elytra glide, the lean
+     * into a swim and the glide's roll; replays write them down and hand them back. */
+    public boolean isSwimming();
+
+    public void setSwimming(boolean swimming);
+
+    public boolean isFlying();
+
+    public void setFlying(boolean flying);
+
+    public void setFallFlying(boolean fallFlying);
+
+    public void setLeaningPitch(float leaningPitch);
+
+    public void setRoll(int roll);
+
     public Vec3 getRotationVec(float transition);
 
     public Vec3 lerpVelocity(float transition);

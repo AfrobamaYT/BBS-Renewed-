@@ -31,7 +31,6 @@ public class TextureLayer
         if (this.pixels != null)
         {
             this.pixels.rewindBuffer();
-            this.texture.bind();
             this.texture.updateTexture(this.pixels);
         }
     }

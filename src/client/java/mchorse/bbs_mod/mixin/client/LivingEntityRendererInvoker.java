@@ -22,4 +22,11 @@ public interface LivingEntityRendererInvoker
 {
     @Invoker("getWhiteOverlayProgress")
     public float bbs$getAnimationCounter(LivingEntityRenderState zustand);
+
+    /** For the mob bones' matrices without drawing (BBS FS e341fa733) */
+    @Invoker("setupRotations")
+    public void bbs$setupRotations(LivingEntityRenderState zustand, com.mojang.blaze3d.vertex.PoseStack stack, float bodyRot, float scale);
+
+    @Invoker("scale")
+    public void bbs$scale(LivingEntityRenderState zustand, com.mojang.blaze3d.vertex.PoseStack stack);
 }

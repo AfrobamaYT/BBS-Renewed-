@@ -215,7 +215,7 @@ public class FilmQueueExporter
 
             recorder.startRecording(
                 duration,
-                BBSRendering.getTexture().id,
+                () -> BBSRendering.getTexture().gpu(),
                 BBSRendering.getVideoWidth(),
                 BBSRendering.getVideoHeight()
             );

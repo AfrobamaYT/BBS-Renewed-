@@ -2,7 +2,6 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import mchorse.bbs_mod.settings.values.IValueListener;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -117,16 +116,9 @@ public class KeyframeSelection
         tmpIndices.addAll(this.selected);
         tmpIndices.sort(Comparator.reverseOrder());
 
-        if (!tmpIndices.isEmpty())
+        for (Integer index : tmpIndices)
         {
-            this.channel.preNotify(IValueListener.FLAG_UNMERGEABLE);
-
-            for (Integer index : tmpIndices)
-            {
-                this.channel.remove(index);
-            }
-
-            this.channel.postNotify(IValueListener.FLAG_UNMERGEABLE);
+            this.channel.remove(index);
         }
 
         this.selected.clear();

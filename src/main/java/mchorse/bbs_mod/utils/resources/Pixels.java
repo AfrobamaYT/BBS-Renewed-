@@ -84,7 +84,6 @@ public class Pixels
     public static Pixels fromIntArray(int width, int height, int[] data)
     {
         Pixels pixels = fromSize(width, height);
-        Color color = new Color();
 
         for (int x = 0; x < width; x++)
         {
@@ -92,7 +91,7 @@ public class Pixels
             {
                 int i = x + y * width;
 
-                pixels.setColor(x, y, color.set(data[i]));
+                pixels.setColor(x, y, Colors.COLOR.set(data[i]));
             }
         }
 

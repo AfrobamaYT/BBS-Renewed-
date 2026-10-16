@@ -23,6 +23,9 @@ public class UIFormRenderer extends UIModelRenderer
 
     public Form form;
 
+    /** The model id last framed, so a new model is framed once and the user zooms freely after. */
+    private String gerahmt;
+
     @Override
     protected void renderUserModel(UIContext context)
     {
@@ -37,6 +40,13 @@ public class UIFormRenderer extends UIModelRenderer
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("formrenderer.form-fehlt");
 
             return;
+        }
+
+        if (this.form instanceof mchorse.bbs_mod.forms.forms.ModelForm modell
+            && !modell.model.get().equals(this.gerahmt)
+            && ModellRahmen.rahmen(this, modell))
+        {
+            this.gerahmt = modell.model.get();
         }
 
         /* ⭐ AUFGABE 96: das Modell als Bild im Bild einreihen statt sofort zeichnen.

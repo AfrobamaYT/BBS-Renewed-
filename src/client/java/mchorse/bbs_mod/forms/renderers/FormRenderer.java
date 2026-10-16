@@ -20,7 +20,7 @@ import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.util.LightCoordsUtil;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.world.InteractionHand;
 import org.joml.Vector3f;
 import org.joml.Matrix4f;
@@ -181,53 +181,36 @@ public abstract class FormRenderer <T extends Form>
         }
 
         this.form.applyStates(context.transition);
-
         int light = context.light;
-        boolean visible = this.form.visible.get();
-
-        if (!visible)
+        boolean pushed = false;
+        try
         {
-            return;
+            if (!this.form.visible.get() || (context.isPicking() && !this.form.pickable.get())) return; /* not pickable: left out of the pick buffer (BBS FS d68bc63c7) */
+            context.stack.pushPose();
+            if (context.world != null) context.world.pushPose();
+            pushed = true;
+            this.applyTransforms(context.stack, false, context.getTransition());
+            if (context.world != null) this.applyTransforms(context.world, false, context.getTransition());
+            float lf = 1F - MathUtils.clamp(this.form.lighting.get(), 0F, 1F);
+            int u = (int) Lerps.lerp(context.light & 65535, net.minecraft.util.LightCoordsUtil.pack(15, 0), lf);
+            context.light = u | context.light & 0xFFFF0000;
+            int overlay = context.overlay;
+            context.overlay = mchorse.bbs_mod.forms.renderers.utils.FormUeberlagerung.overlay(this.form, overlay);
+            this.render3D(context);
+            context.overlay = overlay;
+            if (context.isPicking()) this.updateStencilMap(context);
+            this.renderBodyParts(context);
         }
-
-        boolean isPicking = context.stencilMap != null;
-
-        context.stack.pushPose();
-        if (context.world != null)
+        finally
         {
-            context.world.pushPose();
+            if (pushed)
+            {
+                context.stack.popPose();
+                if (context.world != null) context.world.popPose();
+            }
+            context.light = light;
+            this.form.unapplyStates();
         }
-        this.applyTransforms(context.stack, false, context.getTransition());
-        if (context.world != null)
-        {
-            this.applyTransforms(context.world, false, context.getTransition());
-        }
-
-        float lf = 1F - MathUtils.clamp(this.form.lighting.get(), 0F, 1F);
-        int u = context.light & '\uffff';
-        int v = context.light >> 16 & '\uffff';
-
-        u = (int) Lerps.lerp(u, net.minecraft.util.LightCoordsUtil.pack(15, 0), lf);
-        context.light = u | v << 16;
-
-        this.render3D(context);
-
-        if (isPicking)
-        {
-            this.updateStencilMap(context);
-        }
-
-        this.renderBodyParts(context);
-
-        context.stack.popPose();
-        if (context.world != null)
-        {
-            context.world.popPose();
-        }
-
-        context.light = light;
-
-        this.form.unapplyStates();
     }
 
     protected void applyTransforms(PoseStack stack, boolean origin, float transition)
@@ -338,29 +321,26 @@ public abstract class FormRenderer <T extends Form>
 
         context.entity = part.getRenderEntity(oldEntity);
 
-        if (part.getForm() != null)
+        try
         {
-            context.stack.pushPose();
-            if (context.world != null)
+            if (part.getForm() != null)
             {
-                context.world.pushPose();
-            }
-            MatrixStackUtils.applyTransform(context.stack, part.transform.get());
-            if (context.world != null)
-            {
-                MatrixStackUtils.applyTransform(context.world, part.transform.get());
-            }
-
-            FormUtilsClient.render(part.getForm(), context);
-
-            context.stack.popPose();
-            if (context.world != null)
-            {
-                context.world.popPose();
+                context.stack.pushPose();
+                if (context.world != null) context.world.pushPose();
+                try
+                {
+                    MatrixStackUtils.applyTransform(context.stack, part.transform.get());
+                    if (context.world != null) MatrixStackUtils.applyTransform(context.world, part.transform.get());
+                    FormUtilsClient.render(part.getForm(), context);
+                }
+                finally
+                {
+                    context.stack.popPose();
+                    if (context.world != null) context.world.popPose();
+                }
             }
         }
-
-        context.entity = oldEntity;
+        finally { context.entity = oldEntity; }
     }
 
     public MatrixCache collectMatrices(IEntity entity, float transition)

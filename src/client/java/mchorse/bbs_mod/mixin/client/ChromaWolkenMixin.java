@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
-import com.afrobama.blendertransform.ChromaHimmelLogik;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import net.minecraft.client.CloudStatus;
 import net.minecraft.client.renderer.CloudRenderer;
 import net.minecraft.world.phys.Vec3;
@@ -18,11 +19,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(CloudRenderer.class)
 public class ChromaWolkenMixin
 {
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void bbs$chromaWolken(int farbe, CloudStatus art, float hoehe, int abstand,
-        Vec3 kameraPosition, long zeit, float teilbild, CallbackInfo info)
+    @Inject(method = "render(Lnet/minecraft/client/CloudStatus;Lcom/mojang/renderpearl/api/commands/RenderPass;)V", at = @At("HEAD"), cancellable = true)
+    private void bbs$chromaWolken(CloudStatus art, RenderPass pass, CallbackInfo info)
     {
-        if (ChromaHimmelLogik.gelaendeVerbergen())
+        if (MixinBruecke.rufeUndAbbrechen("ChromaHimmelLogik", "gelaendeVerbergen"))
         {
             info.cancel();
         }

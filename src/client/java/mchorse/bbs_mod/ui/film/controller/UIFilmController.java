@@ -14,7 +14,6 @@ import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
-import org.lwjgl.glfw.GLFW;
 import com.mojang.blaze3d.platform.InputConstants;
 /* 26.2: com.mojang.blaze3d.shaders.Uniform ist ersatzlos entfallen -- es gibt keine
  * Einzel-Uniforms mehr, nur noch Uniform-BLOECKE, die ein Zeichendurchgang bindet. Diese
@@ -90,7 +89,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.Options;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 
@@ -187,11 +186,11 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         if (disable)
         {
-            GLFW.glfwSetInputMode(window.handle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+            InputConstants.grabMouse(window, Minecraft.getInstance().mouseHandler.xpos(), Minecraft.getInstance().mouseHandler.ypos());
         }
         else
         {
-            GLFW.glfwSetInputMode(window.handle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+            InputConstants.releaseMouse(window, Minecraft.getInstance().mouseHandler.xpos(), Minecraft.getInstance().mouseHandler.ypos());
         }
     }
 
@@ -292,7 +291,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
     public void setPov(int pov)
     {
-        this.pov = pov;
+        this.pov = Math.floorMod(pov, 6); /* Shift-cycling down from 0 handed -1 to the settings (BBS FS 9dd5335f7) */
         this.orbit.enabled = this.getPovMode() > 1;
 
         BBSSettings.editorCameraMode.set(this.getPovMode());
@@ -502,7 +501,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         this.recordingTick = this.getTick();
         this.recording = true;
-        this.recordingCountdown = Math.max(0, TimeUtils.toTick(BBSSettings.recordingCountdown.get()));
+        this.recordingCountdown = Math.max(1, TimeUtils.toTick(BBSSettings.recordingCountdown.get())); // >= 1: playback starts when it counts down
         this.recordingGroups = groups;
         boolean transformRecording = groups != null && groups.contains(ReplayKeyframes.GROUP_TRANSFORM);
 
@@ -644,14 +643,14 @@ public class UIFilmController extends UIElement implements GizmoViewport
         /* Gizmo-Handles schlagen alles (oben gezeichnet); die Trackball-Kugel kommt
          * zuletzt, sonst schluckt ihre Scheibe fremde Picks. Beides nur bei sichtbarem
          * Gizmo — sonst faengt die Kugel Klicks ohne selektierten Bone. */
-        if (gizmoShown && this.gizmo.mouseClickedHandle(context))
+        if (gizmoShown && this.gizmo.mouseClickedHandle(context) || FormSchluesselGriffe.klick(this, context))
         {
             return true;
         }
 
-        if (context.mouseButton == 0 && this.hoveredReplayIndex >= 0)
+        if (context.mouseButton == 0 && (this.hoveredReplayIndex >= 0 || ZielPipette.aktiv()))
         {
-            this.pickReplay(this.hoveredReplayIndex);
+            if (!ZielPipette.nehmen(this.getEntities(), this.stencil.getPickedOhneWarten())) { this.pickReplay(this.hoveredReplayIndex); ErstKlick.gewaehlt(context); }
 
             return true;
         }
@@ -716,7 +715,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
             return true;
         }
 
-        boolean consumed = this.gizmo.mouseReleased(context);
+        boolean consumed = this.gizmo.mouseReleased(context) | FormSchluesselGriffe.loslassen();
 
         consumed = this.orbitGizmo.mouseReleased(context) || consumed;
 
@@ -738,17 +737,17 @@ public class UIFilmController extends UIElement implements GizmoViewport
     {
         if (this.canControl())
         {
-            if (this.isControlling() && context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+            if (this.isControlling() && context.isPressed(InputConstants.KEY_ESCAPE))
             {
                 this.toggleControl();
                 UIUtils.playClick();
 
                 return true;
             }
-            else if (context.getKeyAction() == KeyAction.PRESSED && context.getKeyCode() >= GLFW.GLFW_KEY_1 && context.getKeyCode() <= GLFW.GLFW_KEY_6)
+            else if (context.getKeyAction() == KeyAction.PRESSED && context.getKeyCode() >= InputConstants.KEY_1 && context.getKeyCode() <= InputConstants.KEY_6)
             {
                 /* Switch mouse input mode */
-                this.setMouseMode(context.getKeyCode() - GLFW.GLFW_KEY_1);
+                this.setMouseMode(context.getKeyCode() - InputConstants.KEY_1);
 
                 return true;
             }
@@ -758,9 +757,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
              * genau das, was die alte Ueberladung tat -- im Bytecode von getKey(KeyEvent)
              * nachgelesen: bei unbekanntem Tastencode (-1) zaehlt der Scancode, sonst der
              * Tastencode. Wer nur KEYSYM nimmt, verliert die Tasten ohne Symbol. */
-            InputConstants.Key utilKey = context.getKeyCode() == GLFW.GLFW_KEY_UNKNOWN
-                ? InputConstants.Type.SCANCODE.getOrCreate(context.getScanCode())
-                : InputConstants.Type.KEYSYM.getOrCreate(context.getKeyCode());
+            InputConstants.Key utilKey = context.getKeyCode() == InputConstants.UNKNOWN.getValue()
+                ? InputConstants.Type.KEYBOARD.getOrCreate(context.getScanCode())
+                : InputConstants.Type.KEYBOARD.getOrCreate(context.getKeyCode());
 
             if (this.canControlWithKeyboard(utilKey))
             {
@@ -995,8 +994,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         UIReplaysEditor.ReplayCategory category = this.panel.replayEditor.getCategory();
 
-        if (this.panel.replayEditor.keyframeEditor.insertSelectedPose(this.getTick(), replay.properties)
-            || category == UIReplaysEditor.ReplayCategory.MODEL)
+        if (category == UIReplaysEditor.ReplayCategory.MODEL)
         {
             return;
         }
@@ -1007,6 +1005,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
             return;
         }
 
+        /* PLAYER */
         if (Window.isCtrlPressed())
         {
             this.toggleMousePointer(false);
@@ -1291,11 +1290,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
          * sphere hover highlights composite on top of it. It moved out of the
          * world pass into the UI pipeline so its translucent parts blend
          * correctly (see Gizmo#renderInterface). */
-        if (this.canShowGizmo())
-        {
-            this.gizmo.renderGizmo(context);
-        }
+        if (this.canShowGizmo()) this.gizmo.renderGizmo(context);
 
+        FormSchluesselGriffe.zeichnen(this, context);
         this.renderPickingPreview(context, area);
 
         this.orbitGizmo.render(context, area);
@@ -1310,7 +1307,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
             return;
         }
 
-        boolean altPressed = Window.isAltPressed();
+        boolean altPressed = Window.isAltPressed() || ZielPipette.aktiv() || ErstKlick.replayDurchgang(this.getCurrentEntity()); /* an armed eyedropper hovers other replays; nothing selected: a plain click finds the actor */
 
         /* 26.2: depthFunc ist entfallen -- der Tiefenvergleich ist kein globaler Schalter
          * mehr, er steht in der Pipeline jedes Zuges. Der Auswahl-Durchgang darunter zeichnet
@@ -1395,7 +1392,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         int index = this.stencil.getIndexOhneWarten();
         Texture texture = this.stencil.getFramebuffer().getMainTexture();
-        Pair<Form, String> pair = this.stencil.getPickedOhneWarten();
+        Pair<Form, String> pair = this.stencil.getPickedOhneWarten(); ErstKlick.nachwahl(this.panel, context, pair);
         int w = texture.width;
         int h = texture.height;
 
@@ -1413,7 +1410,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
          * traegt BlendFunction.TRANSLUCENT. Ein enableBlend davor gibt es in 26.2 nicht mehr. */
         if (!Boolean.getBoolean("bbs.probe.keinStencilBlit")) context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, this.stencil.hervorhebungsbild(), Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
 
-        this.hoveredReplayIndex = StencilAnzeige.beschriftung(context, this.panel, altPressed,
+        this.hoveredReplayIndex = StencilAnzeige.beschriftung(context, this.panel, altPressed && !ZielPipette.aktiv(),
             index, REPLAY_STENCIL_OFFSET, this.getCurrentReplayIndex(), pair);
     }
 
@@ -1446,7 +1443,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
             int povMode = this.panel.getController().getPovMode();
 
-            if (povMode != UIFilmController.CAMERA_MODE_CAMERA && BBSSettings.recordingCameraPreview.get())
+            if (povMode != UIFilmController.CAMERA_MODE_CAMERA && BBSSettings.recordingCameraPreview.get() && FilmControllerContext.sammelDurchgang) /* from the draw phase it lands in the NEXT world render: one frame stale, or offset inside the camera view */
             {
                 Recorder.renderCameraPreview(this.panel.getRunner().getPosition(), context.levelState().cameraRenderState, context.poseStack(), context.submitNodeCollector());
             }
@@ -1518,7 +1515,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
     {
         UIKeyframeEditor keyframeEditor = this.panel.replayEditor.keyframeEditor;
 
-        return keyframeEditor != null ? keyframeEditor.getBone() : null;
+        return keyframeEditor != null && this.panel.getRoot().getChildren(mchorse.bbs_mod.ui.forms.UIFormPalette.class).isEmpty() ? keyframeEditor.getBone() : null;
     }
 
     /** The space the bone gizmo should be drawn in (active transform's space). */
@@ -1540,7 +1537,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
     {
         UIKeyframeEditor keyframeEditor = this.panel.replayEditor.keyframeEditor;
 
-        return keyframeEditor != null && keyframeEditor.isFormAnchorTrack();
+        return keyframeEditor != null && this.panel.getRoot().getChildren(mchorse.bbs_mod.ui.forms.UIFormPalette.class).isEmpty() && keyframeEditor.isFormAnchorTrack();
     }
 
     public boolean getAnchorLocal()
@@ -1564,8 +1561,8 @@ public class UIFilmController extends UIElement implements GizmoViewport
         {
             return false;
         }
-
-        return UIBaseMenu.shouldRenderAxes() && !this.isRecording() && (this.getBone() != null || this.isAnchorGizmo());
+        return UIBaseMenu.shouldRenderAxes() && !this.isRecording() && (this.getBone() != null || this.isAnchorGizmo()
+            || mchorse.bbs_mod.ui.film.replays.UIReplayWurzelTransform.filmTransform(this.panel) instanceof mchorse.bbs_mod.ui.film.replays.UIReplayWurzelTransform); /* placement */
     }
 
     /** Liegt die Maus auf einem Control-WIDGET (Kennung ab widgetBasis), nicht auf dem Koerper? */
@@ -1623,15 +1620,13 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         boolean isPlaying = this.isPlaying();
         Texture mainTexture = this.stencil.getFramebuffer().getMainTexture();
-
         this.stencilMap.setup();
         this.stencil.apply();
 
         if (altPressed)
         {
             List<Replay> replays = this.panel.getData().replays.getList();
-            int selectedReplayIndex = this.getCurrentReplayIndex();
-            Pair<String, Boolean> bone = this.gizmoBone();
+            int selectedReplayIndex = this.getCurrentReplayIndex(); Pair<String, Boolean> bone = this.gizmoBone();
 
             for (Map.Entry<Integer, IEntity> entry : this.getEntities().entrySet())
             {
@@ -1650,7 +1645,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
                     .stencil(this.stencilMap)
                     .relative(replay.relative.get());
 
-                if (entry.getKey() == selectedReplayIndex)
+                /* An armed eyedropper: every other replay by bone, on one running counter, not the edited one */
+                if (ZielPipette.aktiv()) { if (entry.getKey() == selectedReplayIndex) continue; this.stencilMap.setIncrement(true); }
+                else if (entry.getKey() == selectedReplayIndex)
                 {
                     this.stencilMap.objectIndex = replays.size() + REPLAY_STENCIL_OFFSET;
                     this.stencilMap.setIncrement(true);

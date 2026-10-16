@@ -16,7 +16,6 @@ import mchorse.bbs_mod.utils.colors.Colors;
 
 import org.joml.Vector2i;
 
-import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
 import java.util.HashMap;
@@ -273,8 +272,11 @@ public class UIOverlay extends UIElement
 
         if (size != null)
         {
-            flex.w.offset = size.x;
-            flex.h.offset = size.y;
+            /* A remembered size never makes a fixed-size panel smaller than this version asks
+             * for: the voice-over panel was saved at 228 px and later grew to 268, so its
+             * Record button hung below the window (2026-10-12). Relative sizes keep the old way. */
+            flex.w.offset = flex.w.value == 0F ? Math.max(size.x, flex.w.offset) : size.x;
+            flex.h.offset = flex.h.value == 0F ? Math.max(size.y, flex.h.offset) : size.y;
         }
 
         overlay.full(context.menu.overlay);
@@ -512,6 +514,14 @@ public class UIOverlay extends UIElement
 
             return;
         }
+
+        /* Ein Overlay VERDECKT, was darunter liegt: wartende Miniaturen (Filmkacheln, Formlisten)
+         * vorher abgeben, sonst gehen sie am Ende des Durchlaufs raus und heben sich per
+         * nextStratum() UEBER das Overlay -- Filmkachel-Modelle standen 2026-10-14 mitten im
+         * Einstellungsfenster (2069 Modell-Pixel darin). Dieselbe Grenze wie UIFormPalette und
+         * MiniaturGrenze; eine leere Schlange kostet nichts. */
+        mchorse.bbs_mod.ui.framework.elements.utils.vorschau.Miniaturschlange.abgeben(
+            context, context.menu.width, context.menu.height);
 
         if (Colors.getA(this.background) > 0F)
         {

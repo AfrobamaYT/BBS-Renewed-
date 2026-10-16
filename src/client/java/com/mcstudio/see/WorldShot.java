@@ -82,6 +82,15 @@ public final class WorldShot
 		@Override
 		public void endMain(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context)
 		{
+			/* 26.3: bei END_MAIN ist der Welt-Pass noch offen, GpuReadback.outsidePass verbietet
+			 * das Ruecklesen ("Close the render pass before BBS GPU readback", gemessen
+			 * 2026-10-14). Gefangen wird darum erst vor dem GUI-Zeichnen (WeltAbgriffNachPass, aus
+			 * SpielRendererLogik.vorGuiZeichnen, context == null); der Fabric-Aufruf tut nichts. */
+			if (context != null)
+			{
+				return;
+			}
+
 			String pfad = armPfad;
 
 			if (pfad == null)
@@ -92,25 +101,29 @@ public final class WorldShot
 			armPfad = null;
 
 			java.util.concurrent.CompletableFuture<String> f = armErgebnis;
-			String json;
-
 			try
 			{
-				json = Readback.captureFramebuffer(Minecraft.getInstance().gameRenderer.mainRenderTarget(), pfad);
+				/* Der Film-Editor zeichnet die Welt in BBS' eigenen Puffer (Viewport); vor dem
+				 * GUI-Zeichnen liegt das fertige Weltbild dort - dieselbe Quelle, aus der
+				 * BBSRendering.fuellen() die Vorschau fuellt. Das Fensterziel war gemessen leer. */
+				com.mojang.blaze3d.pipeline.RenderTarget ziel = mchorse.bbs_mod.client.BBSRendering.isCustomSize()
+					? mchorse.bbs_mod.client.BBSRendering.getFramebuffer() : null;
+
+				Readback.captureFramebufferAsync(ziel != null ? ziel : Minecraft.getInstance().gameRenderer.mainRenderTarget(), pfad)
+                    .whenComplete((result, error) ->
+                    {
+                        String json = error == null ? result
+                            : "{\"error\":\"capture failed: " + escape(error.toString()) + "\"}";
+                        if (json.endsWith("}"))
+                        {
+                            json = json.substring(0, json.length() - 1) + ",\"world\":true,\"hud\":false}";
+                        }
+                        if (f != null) f.complete(json);
+                    });
 			}
 			catch (Throwable t)
 			{
-				json = "{\"error\":\"capture failed: " + escape(String.valueOf(t)) + "\"}";
-			}
-
-			if (json.endsWith("}"))
-			{
-				json = json.substring(0, json.length() - 1) + ",\"world\":true,\"hud\":false}";
-			}
-
-			if (f != null)
-			{
-				f.complete(json);
+				if (f != null) f.complete("{\"error\":\"capture failed: " + escape(t.toString()) + "\"}");
 			}
 		}
 	}
@@ -123,6 +136,10 @@ public final class WorldShot
 	 * dev-Modul, im SELBEN Paket — diese Sichtbarkeit reicht, public waere zu viel. */
 	static String scharfstellen(String pfad)
 	{
+		if (armErgebnis != null && !armErgebnis.isDone())
+        {
+            return "{\"error\":\"Another world snapshot is still pending\"}";
+        }
 		Minecraft client = Minecraft.getInstance();
 
 		if (client == null || client.gameRenderer == null)
@@ -278,7 +295,7 @@ public final class WorldShot
 			/* 26.2: das Feld Minecraft.mainRenderTarget gibt es nicht mehr. Umgelenkt wird ueber
 			 * RenderSystem.outputColorTextureOverride -- kein Renderziel, sondern dessen
 			 * Farb-Textursicht. Vanilla macht es selbst so (LevelRenderer, im Bytecode). */
-			com.mojang.blaze3d.systems.RenderSystem.outputColorTextureOverride = target.getColorTextureView();
+			mchorse.bbs_mod.client.BBSRendering.outputColorTextureOverride = target.getColorTextureView();
 
 			/* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
 			 * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
@@ -287,7 +304,7 @@ public final class WorldShot
 			/* Render ONLY the world — no HUD (that is drawn later in GameRenderer.render, which we do NOT call).
 			 * Uses the current live render tick counter (same one the game frame uses) for interpolation. */
 			DeltaTracker tickCounter = client.getDeltaTracker();
-			gameRenderer.renderLevel(tickCounter);
+			gameRenderer.renderLevel();
 
 			/* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
 			 * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
@@ -299,7 +316,7 @@ public final class WorldShot
 			/* 26.2: zurueckstellen heisst null, NICHT "das alte Ziel setzen". null ist der
 			 * Normalzustand der Umlenkung; wer stattdessen den Hauptpuffer einsetzt, laesst die
 			 * Umlenkung stehen und zeichnet alles Folgende dort hinein. */
-			com.mojang.blaze3d.systems.RenderSystem.outputColorTextureOverride = null;
+			mchorse.bbs_mod.client.BBSRendering.outputColorTextureOverride = null;
 			/* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
 			 * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
 			 * zeichnen will, gibt das Ziel dort an. */
@@ -313,7 +330,7 @@ public final class WorldShot
 			/* 26.2: zurueckstellen heisst null, NICHT "das alte Ziel setzen". null ist der
 			 * Normalzustand der Umlenkung; wer stattdessen den Hauptpuffer einsetzt, laesst die
 			 * Umlenkung stehen und zeichnet alles Folgende dort hinein. */
-			com.mojang.blaze3d.systems.RenderSystem.outputColorTextureOverride = null;
+			mchorse.bbs_mod.client.BBSRendering.outputColorTextureOverride = null;
 			/* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
 			 * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
 			 * zeichnen will, gibt das Ziel dort an. */
@@ -360,14 +377,14 @@ public final class WorldShot
 
 		try
 		{
-			int nebel = client.level.environmentAttributes()
+			org.joml.Vector3fc nebel = client.level.environmentAttributes()
 				.getValue(net.minecraft.world.attribute.EnvironmentAttributes.FOG_COLOR, wo);
 
 			/* Gegen eine ungesetzte Farbe absichern -- ganz schwarz waere genau das, was wir
 			 * vermeiden wollen. */
-			if ((nebel & 0xFFFFFF) != 0)
+			if (nebel.lengthSquared() != 0F)
 			{
-				return entpacken(nebel);
+				return new float[]{ nebel.x(), nebel.y(), nebel.z() };
 			}
 		}
 		catch (Throwable ignored)
@@ -377,12 +394,12 @@ public final class WorldShot
 
 		try
 		{
-			int himmel = client.level.environmentAttributes()
+			org.joml.Vector3fc himmel = client.level.environmentAttributes()
 				.getValue(net.minecraft.world.attribute.EnvironmentAttributes.SKY_COLOR, wo);
 
-			if ((himmel & 0xFFFFFF) != 0)
+			if (himmel.lengthSquared() != 0F)
 			{
-				return entpacken(himmel);
+				return new float[]{ himmel.x(), himmel.y(), himmel.z() };
 			}
 		}
 		catch (Throwable ignored)
@@ -412,7 +429,7 @@ public final class WorldShot
 	{
 		if (fbo == null)
 		{
-			fbo = new TextureTarget("mcstudio-weltbild", w, h, true, com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
+			fbo = new TextureTarget("mcstudio-weltbild", w, h, com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM, com.mojang.renderpearl.api.GpuFormat.D32_FLOAT);
 		}
 		else if (fbo.width != w || fbo.height != h)
 		{
@@ -429,6 +446,6 @@ public final class WorldShot
 			return "";
 		}
 
-		return s.replace("\\", "\\\\").replace("\"", "\\\"");
+		return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
 	}
 }

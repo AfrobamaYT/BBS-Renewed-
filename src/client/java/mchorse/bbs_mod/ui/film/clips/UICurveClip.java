@@ -65,6 +65,7 @@ public class UICurveClip extends UIClip<CurveClip>
 
         if (!existing.contains(ShaderCurves.BRIGHTNESS)) list.add(new Label<>(UIKeys.CAMERA_PANELS_CURVES_BRIGHTNESS, ShaderCurves.BRIGHTNESS));
         if (!existing.contains(ShaderCurves.SUN_ROTATION)) list.add(new Label<>(UIKeys.CAMERA_PANELS_CURVES_SUN_ROTATION, ShaderCurves.SUN_ROTATION));
+        if (!existing.contains(ShaderCurves.SUN_HORIZONTAL_ROTATION)) list.add(new Label<>(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.camera.panels.curves.sun_horizontal_rotation"), ShaderCurves.SUN_HORIZONTAL_ROTATION));
         if (!existing.contains(ShaderCurves.WEATHER)) list.add(new Label<>(UIKeys.CAMERA_PANELS_CURVES_WEATHER, ShaderCurves.WEATHER));
         if (!existing.contains(CurveClip.CHROMA_SKY_COLOR)) list.add(new Label<>(UIKeys.CAMERA_PANELS_CURVES_CHROMA_SKY_COLOR, CurveClip.CHROMA_SKY_COLOR));
 
@@ -139,7 +140,36 @@ public class UICurveClip extends UIClip<CurveClip>
     {
         int sheetColor = channel.getId().hashCode() & Colors.RGB;
 
-        this.keyframes.view.addSheet(new UIKeyframeSheet(channel.getId(), IKey.constant(channel.getId()), sheetColor, false, channel, null));
+        this.keyframes.view.addSheet(new UIKeyframeSheet(channel.getId(), IKey.constant(channel.getId()), sheetColor, false, channel, null)
+            .seed(() -> startValue(channel.getId())));
+    }
+
+    /**
+     * What a keyframe on an empty track starts from: the value the picture shows now, the film's
+     * curve at the playhead or else the world's, so adding it doesn't make anything jump. A shader
+     * option starts from the pack's default. From BBS FS 4e2c617eb (Wemppy4/bbs-fs, MIT).
+     */
+    private static Object startValue(String id)
+    {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        Map<String, Double> curves = BBSModClient.getCameraController().getCurrent() instanceof mchorse.bbs_mod.camera.controller.CameraWorkCameraController controller ? CurveClip.getValues(controller.getContext()) : null;
+        Double curve = curves == null ? null : curves.get(id);
+
+        if (CurveClip.isColorChannelId(id))
+        {
+            Integer argb = BBSRendering.getChromaSkyColorArgb();
+
+            return new mchorse.bbs_mod.utils.colors.Color().set(argb != null ? argb : mchorse.bbs_mod.BBSSettings.chromaSkyColor.get(), true);
+        }
+
+        if (curve != null) return curve;
+        if (id.equals(ShaderCurves.SUN_ROTATION)) return mc.level == null ? 0D : (mc.level.getDefaultClockTime() % 24000L) / 1000D;
+        if (id.equals(ShaderCurves.WEATHER)) return mc.level == null ? 0D : (double) mc.level.getRainLevel(1F);
+        if (id.equals(ShaderCurves.BRIGHTNESS)) return mc.options.gamma().get();
+
+        ShaderCurves.ShaderVariable option = id.startsWith(CurveClip.SHADER_CURVES_PREFIX) ? ShaderCurves.variableMap.get(id.substring(CurveClip.SHADER_CURVES_PREFIX.length())) : null;
+
+        return option == null ? 0D : (double) option.defaultValue;
     }
 
     @Override

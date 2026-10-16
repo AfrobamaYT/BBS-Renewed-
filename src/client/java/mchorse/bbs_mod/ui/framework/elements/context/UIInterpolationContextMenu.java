@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.context;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -23,7 +24,6 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.interps.Interpolations;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -146,10 +146,6 @@ public class UIInterpolationContextMenu extends UIContextMenu
             }
 
             BaseValue.edit(this.interpolation, (v) -> v.fromData(copy.get("interp")));
-            this.v1.setValue(this.interpolation.getV1());
-            this.v2.setValue(this.interpolation.getV2());
-            this.v3.setValue(this.interpolation.getV3());
-            this.v4.setValue(this.interpolation.getV4());
 
             if (this.callback != null)
             {
@@ -200,11 +196,11 @@ public class UIInterpolationContextMenu extends UIContextMenu
 
         if (key.endsWith("_in"))
         {
-            combo = new KeyCombo(label, interp.getKeyCode(), GLFW.GLFW_KEY_LEFT_SHIFT);
+            combo = new KeyCombo(label, interp.getKeyCode(), InputConstants.KEY_LSHIFT);
         }
         else if (key.endsWith("_out"))
         {
-            combo = new KeyCombo(label, interp.getKeyCode(), GLFW.GLFW_KEY_LEFT_CONTROL);
+            combo = new KeyCombo(label, interp.getKeyCode(), InputConstants.KEY_LCONTROL);
         }
 
         this.keys().register(combo.category(category), icon::clickItself);

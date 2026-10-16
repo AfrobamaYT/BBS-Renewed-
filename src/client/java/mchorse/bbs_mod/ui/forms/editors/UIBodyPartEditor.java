@@ -20,6 +20,8 @@ public class UIBodyPartEditor extends UIScrollView
 {
     public UIButton pick;
     public UIToggle useTarget;
+    /** Which components of the bone's frame the part rides (BBS FS 14f2ef586) */
+    public UIToggle inheritPosition, inheritRotation, inheritScale;
     public UIStringList bone;
     public UIPropTransform transform;
 
@@ -63,6 +65,10 @@ public class UIBodyPartEditor extends UIScrollView
             this.part.useTarget.set(b.getValue());
         });
 
+        this.inheritPosition = new UIToggle(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.inherit.position"), (b) -> this.part.inheritPosition.set(b.getValue()));
+        this.inheritRotation = new UIToggle(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.inherit.rotation"), (b) -> this.part.inheritRotation.set(b.getValue()));
+        this.inheritScale = new UIToggle(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.inherit.scale"), (b) -> this.part.inheritScale.set(b.getValue()));
+
         this.bone = new UIStringList((l) -> this.part.bone.set(l.get(0)));
         this.bone.background().h(UIConstants.LIST_ITEM_HEIGHT * 6);
 
@@ -83,6 +89,9 @@ public class UIBodyPartEditor extends UIScrollView
         this.removeAll();
 
         this.useTarget.setValue(part.useTarget.get());
+        this.inheritPosition.setValue(part.inheritPosition.get());
+        this.inheritRotation.setValue(part.inheritRotation.get());
+        this.inheritScale.setValue(part.inheritScale.get());
         this.bone.clear();
         this.bone.add(FormUtilsClient.getBones(form));
         this.bone.sort();
@@ -90,7 +99,7 @@ public class UIBodyPartEditor extends UIScrollView
 
         if (!this.bone.getList().isEmpty())
         {
-            this.add(this.pick, this.useTarget, UI.label(UIKeys.FORMS_EDITOR_BONE).marginTop(UIConstants.SECTION_GAP), this.bone, this.transform);
+            this.add(this.pick, this.useTarget, UI.label(UIKeys.FORMS_EDITOR_BONE).marginTop(UIConstants.SECTION_GAP), this.bone, this.inheritPosition, this.inheritRotation, this.inheritScale, this.transform);
         }
         else
         {

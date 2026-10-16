@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.forms.renderers.utils;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import mchorse.bbs_mod.utils.colors.Color;
 import net.caffeinemc.mods.sodium.api.vertex.buffer.VertexBufferWriter;
 import org.lwjgl.system.MemoryStack;

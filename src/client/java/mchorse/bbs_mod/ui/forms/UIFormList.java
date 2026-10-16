@@ -60,7 +60,7 @@ public class UIFormList extends UIElement
         this.edit.tooltip(UIKeys.FORMS_LIST_EDIT, Direction.TOP);
         this.close = new UIIcon(Icons.CLOSE, this::close);
 
-        this.forms.full(this);
+        this.forms.relative(this).w(1F).h(1F, -40); /* ends above the search bar (audit #102) */
         this.bar.relative(this).x(10).y(1F, -30).w(1F, -20).h(20).row().height(20);
         this.close.w(20);
 
@@ -69,7 +69,6 @@ public class UIFormList extends UIElement
         this.categoryFilter.w(20);
         this.bar.add(this.categoryFilter, this.search, this.edit, this.close);
 
-        /* Die Leiste verdeckt die Vorschauen, also gehoert eine Grenze davor: MiniaturGrenze. */
         this.add(this.forms, new MiniaturGrenze(), this.bar);
 
         this.search.keys().register(Keys.FORMS_FOCUS, this::focusSearchInput);

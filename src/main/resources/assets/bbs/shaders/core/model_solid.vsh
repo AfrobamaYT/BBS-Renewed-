@@ -1,7 +1,8 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
+#include <minecraft:dynamictransforms.glsl>
+#include <minecraft:projection.glsl>
 
 /* Die SOLID-VORSCHAU von BBS' Modellweg -- Blenders Workbench-Engine im Kleinen.
  *
@@ -36,11 +37,11 @@
  * exakt braucht, muss GRUPPE_MODELL erklaeren und NormalMat lesen, siehe Punkt 1.
  */
 
-in vec3 Position;
-in vec3 Normal;
+layout(location = 0) in vec3 Position;
+layout(location = 1) in vec3 Normal;
 
-out vec3 sichtNormale;
-out vec4 grundfarbe;
+layout(location = 0) out vec3 sichtNormale;
+layout(location = 1) out vec4 grundfarbe;
 
 void main()
 {

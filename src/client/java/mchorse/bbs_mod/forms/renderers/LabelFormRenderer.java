@@ -1,12 +1,12 @@
 package mchorse.bbs_mod.forms.renderers;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
@@ -60,23 +60,55 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         return true;
     }
 
+    /**
+     * The label's own font, or the default one when it has none or it cannot load. {@code scale} is how
+     * many screen pixels a layout unit covers where it is drawn (BBS FS b0224f806).
+     */
+    private mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer getFont(float scale)
+    {
+        mchorse.bbs_mod.resources.Link link = this.form.font.get();
+        int size = this.form.fontSize.get();
+        mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer font = link == null || link.path.isEmpty() ? null : mchorse.bbs_mod.fonts.FontManager.get().get(link, size < mchorse.bbs_mod.fonts.FontManager.MIN_SIZE ? 9 : size, scale);
+
+        return font == null ? mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D.getDefaultTextRenderer() : font;
+    }
+
+    private int getLineHeight(mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer font)
+    {
+        int lineHeight = this.form.lineHeight.get();
+
+        return lineHeight > 0 ? lineHeight : font.getLineHeight();
+    }
+
     @Override
     public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         int color = this.form.color.get().getARGBColor();
         String text = StringUtils.processColoredText(this.form.text.get());
-        List<String> wrap = context.batcher.getFont().wrap(text, x2 - x1 - 4);
+        /* The interface draws a layout unit over as many pixels as it is scaled by */
+        mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer font = this.getFont((float) Minecraft.getInstance().getWindow().getGuiScale());
+        mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer previous = context.batcher.font;
 
-        int th = context.batcher.getFont().getHeight();
-        int lineHeight = th + 4;
-        int h = th + (wrap.size() - 1) * lineHeight;
-        int y = (y2 + y1) / 2 - h / 2;
+        context.batcher.font = font;
 
-        for (String s : wrap)
+        try
         {
-            context.batcher.textShadow(s, x1 + 2, y, color);
+            List<String> wrap = font.wrap(text, x2 - x1 - 4);
+            int th = font.getHeight();
+            int lineHeight = th + 4;
+            int h = th + (wrap.size() - 1) * lineHeight;
+            int y = (y2 + y1) / 2 - h / 2;
 
-            y += lineHeight;
+            for (String s : wrap)
+            {
+                context.batcher.textShadow(s, x1 + 2, y, color);
+
+                y += lineHeight;
+            }
+        }
+        finally
+        {
+            context.batcher.font = previous;
         }
     }
 
@@ -90,7 +122,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             WorldLabelPhases.billboard(context);
         }
 
-        Font renderer = Minecraft.getInstance().font;
+        mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer renderer = this.getFont(mchorse.bbs_mod.fonts.FontManager.MAX_DETAIL);
         float scale = 1F / 16F;
         int light = context.light;
 
@@ -103,7 +135,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         {
             try
             {
-                LabelPickQuad.render(this.form, context, renderer);
+                LabelPickQuad.render(this.form, context, renderer, this.getLineHeight(renderer));
             }
             finally
             {
@@ -148,12 +180,13 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         context.stack.popPose();
     }
 
-    private void renderString(FormRenderingContext context, CustomVertexConsumerProvider consumers, Font renderer, int light)
+    private void renderString(FormRenderingContext context, CustomVertexConsumerProvider consumers, mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer font, int light)
     {
+        Font renderer = font.getRenderer();
         String content = StringUtils.processColoredText(this.form.text.get());
         float transition = context.getTransition();
         int w = renderer.width(content) - 1;
-        int h = renderer.lineHeight - 2;
+        int h = font.getHeight();
         int x = (int) (-w * this.form.anchorX.get());
         int y = (int) (-h * this.form.anchorY.get());
 
@@ -167,29 +200,31 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         {
             context.stack.pushPose();
             context.stack.translate(0F, 0F, -0.1F);
-            text(context, consumers, x + this.form.shadowX.get(), y + this.form.shadowY.get(), content, shadowColor.getARGBColor(), light);
+            text(context.stack, consumers, x + this.form.shadowX.get(), y + this.form.shadowY.get(), content, shadowColor.getARGBColor(), light, font.description);
             context.stack.popPose();
         }
 
         if (WorldLabelPhases.text(context))
         {
-            text(context, consumers, x, y, content, color.getARGBColor(), light);
+            text(context.stack, consumers, x, y, content, color.getARGBColor(), light, font.description);
         }
 
         this.renderShadow(context, x, y, w, h);
     }
 
-    private void renderLimitedString(FormRenderingContext context, CustomVertexConsumerProvider consumers, Font renderer, int light)
+    private void renderLimitedString(FormRenderingContext context, CustomVertexConsumerProvider consumers, mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer font, int light)
     {
+        Font renderer = font.getRenderer();
+        int lineHeight = this.getLineHeight(font);
         float transition = context.getTransition();
         int w = 0;
-        int h = renderer.lineHeight - 2;
+        int h = font.getHeight();
         String content = StringUtils.processColoredText(this.form.text.get());
         List<String> lines = FontRenderer.wrap(renderer, content, this.form.max.get());
 
         if (lines.size() <= 1)
         {
-            this.renderString(context, consumers, renderer, light);
+            this.renderString(context, consumers, font, light);
 
             return;
         }
@@ -202,10 +237,10 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         for (String line : lines)
         {
             w = Math.max(renderer.width(line) - 1, w);
-            h += 12;
+            h += lineHeight;
         }
 
-        h -= 12;
+        h -= lineHeight;
 
         int x = (int) (-w * this.form.anchorX.get());
         int y = (int) (-h * this.form.anchorY.get());
@@ -224,9 +259,9 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             {
                 int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.width(line)) * this.form.anchorX.get()) : 0);
 
-                text(context, consumers, x2 + this.form.shadowX.get(), y2 + this.form.shadowY.get(), line, shadowColor.getARGBColor(), light);
+                text(context.stack, consumers, x2 + this.form.shadowX.get(), y2 + this.form.shadowY.get(), line, shadowColor.getARGBColor(), light, font.description);
 
-                y2 += 12;
+                y2 += lineHeight;
             }
 
             context.stack.popPose();
@@ -246,9 +281,9 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             {
                 int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.width(line)) * this.form.anchorX.get()) : 0);
 
-                text(context, consumers, x2, y2, line, color, light);
+                text(context.stack, consumers, x2, y2, line, color, light, font.description);
 
-                y2 += 12;
+                y2 += lineHeight;
             }
         }
 
@@ -271,22 +306,15 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
      * <p>⚠️ Der Sammler nimmt einen {@code PoseStack}, keine Matrix: er kopiert die oberste
      * Pose beim Einreichen. Der Stapel darf danach weiterwandern.
      *
-     * <p>Use StringDecomposer.iterateFormatted like the original String overload.
-     * FormattedCharSequence.forward iterates literal characters, including formatting codes.
+     * <p>{@code FormattedCharSequence.forward(text, Style.EMPTY)} ist die genaue Entsprechung
+     * der alten String-Ueberladung: beide gehen ueber {@code StringDecomposer.iterateFormatted}
+     * und werten damit die §-Codes aus, die {@code StringUtils.processColoredText} erzeugt.
      */
-    private static void text(FormRenderingContext context, CustomVertexConsumerProvider consumers, float x, float y, String inhalt, int farbe, int licht)
+    private static void text(PoseStack stapel, CustomVertexConsumerProvider consumers, float x, float y, String inhalt, int farbe, int licht, net.minecraft.network.chat.FontDescription schrift)
     {
-        FormattedCharSequence formatted = (sink) -> net.minecraft.util.StringDecomposer.iterateFormatted(inhalt, Style.EMPTY, sink);
-
-        if (context.isPicking())
-        {
-            TexturedFormPicking.text(context, formatted, x, y, farbe);
-            return;
-        }
-
         consumers.sammler().submitText(
-            context.stack, x, y,
-            formatted,
+            stapel, x, y,
+            FormattedCharSequence.forward(inhalt, schrift == null ? Style.EMPTY : Style.EMPTY.withFont(schrift)),
             false,
             Font.DisplayMode.NORMAL,
             licht,
@@ -307,16 +335,6 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         Color color = this.form.background.get().copy();
 
         color.mul(context.color);
-
-        if (context.isPicking())
-        {
-            if (color.a < 0.1F)
-            {
-                return;
-            }
-
-            color.set(TexturedFormPicking.color(context.getPickingIndex(), 255), true);
-        }
 
         if (color.a <= 0)
         {
@@ -342,7 +360,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
                 color.r, color.g, color.b, color.a
             );
 
-            if (!context.isPicking() && FormTranslucentQueue.isGroupOpen())
+            if (FormTranslucentQueue.isGroupOpen())
             {
                 /* 26.2: VertexBuffer ist entfallen, die Aufgabe nicht -- das Netz muss bis zum
                  * Leeren der Warteschlange auf der Karte liegenbleiben. Das macht jetzt
@@ -371,13 +389,11 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
                  * Zweig darueber in die Warteschlange legt — die Ecken tragen die Pose
                  * schon, also bleibt nur die globale Modellansicht. */
                 SofortZeichner.zeichnen(
-                    FormPipelines.holen(PrimitiveTopology.TRIANGLES, !context.isPicking(), true, false),
+                    FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, false),
                     builder.build(),
                     RenderSystem.getModelViewMatrixCopy(),
                     null,
-                    null,
-                    context.isPicking() ? mchorse.bbs_mod.graphics.PickZiel.pflicht() : null,
-                    context.isPicking() ? mchorse.bbs_mod.graphics.PickZiel.tiefe() : null);
+                    null);
                 /* MERGE fs-2.5: ihr translucent-queue-zweig uebernommen, unsere
                  * null-absicherung darueber. builder.end() wirft, wenn nichts gezeichnet
                  * wurde; endNullable() gibt dann null. Beides wird gebraucht. */

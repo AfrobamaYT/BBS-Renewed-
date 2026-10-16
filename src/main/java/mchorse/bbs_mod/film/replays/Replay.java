@@ -49,7 +49,8 @@ public class Replay extends ValueGroup
     /* MERGE 2026-07-27: mob-capture aus dem CML-upstream (RecorderMobCapture). */
     public final ValueBoolean vanillaMobPlayback = new ValueBoolean("vanilla_mob_playback", false);
     public transient boolean vanillaMobPlaybackSerialized = false;
-    /* ⛔ MERGE 2026-07-27: replay-gruppen aus dem CML-fork. */
+    /* ⛔ MERGE 2026-07-27: replay-gruppen aus dem CML-fork. Unsere blenderbridge
+     * (ActorExporter/ActorImporter) nutzt sie, um actors in Blender zu gruppieren. */
     public final ValueString group = new ValueString("group", "");
     public final ValueBoolean isGroup = new ValueBoolean("is_group", false);
     public final ValueString uuid = new ValueString("uuid", "");
@@ -69,6 +70,19 @@ public class Replay extends ValueGroup
 
     public final ValueBoolean axesPreview = new ValueBoolean("axes_preview", false);
     public final ValueString axesPreviewBone = new ValueString("axes_preview_bone", "");
+
+    @Override
+    public void fromData(mchorse.bbs_mod.data.types.BaseType data)
+    {
+        /* BBS FS 2.6+ films address body parts by stable id; read them as index paths. */
+        if (data != null && data.isMap())
+        {
+            data = data.copy();
+            FsSpurListe.koerperteilPfade(data.asMap());
+        }
+
+        super.fromData(data);
+    }
 
     public Replay(String id)
     {
@@ -165,7 +179,13 @@ public class Replay extends ValueGroup
 
         for (Clip clip : clips)
         {
-            ((ActionClip) clip).apply(actor, fakePlayer, film, this, tick);
+            /* An addon's clip played where the addon isn't installed comes back as a stand-in
+             * (UnknownClip) that keeps its data but has nothing to do - casting it took the whole
+             * server tick down. */
+            if (clip instanceof ActionClip actionClip)
+            {
+                actionClip.apply(actor, fakePlayer, film, this, tick);
+            }
         }
     }
 

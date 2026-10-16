@@ -448,7 +448,7 @@ public class CubicCubeRenderer implements ICubicRenderer
         builder.addVertex(x, y, z)
             .setColor(this.r * group.color.r, this.g * group.color.g, this.b * group.color.b, this.a * group.color.a)
             .setUv(u, v)
-            .setOverlay(this.overlay);
+            .setOverlay(this.stencilMap == null ? mchorse.bbs_mod.forms.renderers.utils.FormUeberlagerung.knochen(null, group.overlay, this.overlay) : this.overlay);
 
         if (this.stencilMap != null)
         {

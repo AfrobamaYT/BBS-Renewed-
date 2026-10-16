@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.forms.editors;
 
+import org.lwjgl.sdl.SDLMouse;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -71,7 +72,6 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.presets.PresetManager;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
 import java.util.List;
@@ -158,7 +158,7 @@ public class UIFormEditor extends UIElement implements IUIFormList, ICursor
             return null;
         }
 
-        Supplier<UIForm> supplier = panels.get(form.getClass());
+        Supplier<UIForm> supplier = (Supplier<UIForm>) mchorse.bbs_mod.client.AddonRegister.nachKlasse((java.util.Map) panels, form.getClass());
 
         return supplier == null ? null : supplier.get();
     }
@@ -351,7 +351,7 @@ public class UIFormEditor extends UIElement implements IUIFormList, ICursor
 
             this.forms.w(treeWidth).resize();
         });
-        draggable.cursors(GLFW.GLFW_HRESIZE_CURSOR, GLFW.GLFW_HRESIZE_CURSOR);
+        draggable.cursors(SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE, SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE);
 
         draggable.relative(this.forms).x(1F).y(0.5F).w(6).h(40).anchor(0.5F, 0.5F);
 

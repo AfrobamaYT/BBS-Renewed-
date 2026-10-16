@@ -66,6 +66,12 @@ public class BBSResources
         BBSModClient.getFormCategories().setup();
     }
 
+    /** Builds the palette again, but only once a world has built it: before that the item components are not bound */
+    public static void formulareNeu()
+    {
+        if (formulareStehen) BBSModClient.getFormCategories().setup();
+    }
+
     public static void setupWatchdog()
     {
         File assetsFolder = BBSMod.getAssetsFolder();
@@ -73,6 +79,7 @@ public class BBSResources
         watchDog = new WatchDog(assetsFolder, false, (runnable) -> Minecraft.getInstance().execute(runnable));
         watchDog.getProxy().register(BBSModClient.getTextures());
         watchDog.getProxy().register(BBSModClient.getModels());
+        watchDog.getProxy().register(mchorse.bbs_mod.fonts.FontManager.get());
         watchDog.getProxy().register(BBSModClient.getSounds());
         watchDog.getProxy().register(BBSModClient.getFormCategories());
 

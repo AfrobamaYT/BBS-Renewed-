@@ -50,7 +50,7 @@ public class CurveClip extends CameraClip
 
         for (KeyframeChannel<Double> channel : this.channels.getChannels())
         {
-            if (!channel.isEmpty())
+            if (channel.hasEnabledKeyframes())
             {
                 values.put(channel.getId(), channel.interpolate(context.relativeTick + context.transition));
             }
@@ -60,7 +60,7 @@ public class CurveClip extends CameraClip
 
         for (KeyframeChannel<Color> channel : this.channels.getColorChannels())
         {
-            if (!channel.isEmpty())
+            if (channel.hasEnabledKeyframes())
             {
                 var color = channel.interpolate(context.relativeTick + context.transition, null);
 

@@ -75,6 +75,19 @@ public class UIClipPreviewLayer extends UIElement
     @Override
     public void render(mchorse.bbs_mod.ui.framework.UIContext context)
     {
+        /* Over BBS' DaVinci Resolve tab the clip previews showed as empty black frames (owner,
+         * 2026-10-15): hidden while the tab is on screen, which has the picture itself. */
+        boolean overResolve = com.davincilink.DavinciTabState.shownNow();
+
+        /* Disabled takes no clicks and keys (they are Resolve's); set here, as a body change, so it
+         * swaps into a running game. */
+        this.setEnabled(!overResolve);
+
+        if (overResolve)
+        {
+            return;
+        }
+
         if (!loggedFirstRender)
         {
             loggedFirstRender = true;
@@ -146,8 +159,6 @@ public class UIClipPreviewLayer extends UIElement
             if (!stillActive)
             {
                 this.remove(e.getValue());
-                BoneHoverPickService.releaseClip(e.getKey());
-                AltCamModeOverrides.FREE_POSES.remove(e.getKey());
                 it.remove();
             }
         }
@@ -163,12 +174,7 @@ public class UIClipPreviewLayer extends UIElement
     {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.getWindow() == null) return;
-        mchorse.bbs_mod.ui.film.UIFilmPanel panel = BoneHoverPickRunner.findPanel();
-        if (panel == null)
-        {
-            return;
-        }
-        mchorse.bbs_mod.ui.utils.Area viewport = panel.preview.getViewport();
+        int sw = mc.getWindow().getGuiScaledWidth();
 
         /* Count tiles still under auto-layout. */
         int autoCount = 0;
@@ -178,27 +184,30 @@ public class UIClipPreviewLayer extends UIElement
         }
         if (autoCount == 0) return;
 
-        /* Keep automatic tiles inside the film viewport, leaving menus and timelines usable. */
-        int left = Math.max(viewport.x + MARGIN, panel.preview.werkzeuge.area.ex() + MARGIN);
-        int top = Math.max(viewport.y + MARGIN, panel.preview.hud.area.ey() + MARGIN);
-        int availableW = Math.max(1, viewport.ex() - MARGIN - left);
-        int availableH = Math.max(1, viewport.ey() - MARGIN - top);
-        int columns = Math.min(autoCount, Math.max(1, (availableW + GAP) / (MIN_TILE_W + GAP)));
-        int rows = (autoCount + columns - 1) / columns;
-        int tileW = Math.max(1, Math.min(BASE_TILE_W, Math.min(
-            (availableW - (columns - 1) * GAP) / columns,
-            (availableH - (rows - 1) * GAP) * BASE_TILE_W / (rows * BASE_TILE_H))));
+        /* Available width = full screen minus margins. */
+        int availableW = sw - 2 * MARGIN;
+        int naturalRowW = autoCount * BASE_TILE_W + (autoCount - 1) * GAP;
+
+        float scale = 1F;
+        if (naturalRowW > availableW)
+        {
+            scale = (float) (availableW - (autoCount - 1) * GAP) / (autoCount * BASE_TILE_W);
+        }
+
+        int tileW = Math.max(MIN_TILE_W, (int) (BASE_TILE_W * scale));
         int tileH = (int) (tileW * (BASE_TILE_H / (float) BASE_TILE_W));
 
-        int startX = viewport.ex() - MARGIN - columns * tileW - (columns - 1) * GAP;
-        int startY = viewport.ey() - MARGIN - rows * tileH - (rows - 1) * GAP;
+        /* Anchor row LEFT-edge, top — BBS's main preview is typically
+         *  on the right half of the screen, so we put alt tiles on the
+         *  left to avoid overlap. User can drag from there. */
+        int startX = MARGIN;
+        int y = MARGIN;
 
         int i = 0;
         for (UIClipCameraPreview p : mounted.values())
         {
             if (p.manuallyPositioned) continue;
-            int x = startX + (i % columns) * (tileW + GAP);
-            int y = startY + (i / columns) * (tileH + GAP);
+            int x = startX + i * (tileW + GAP);
             p.xy(x, y);
             p.wh(tileW, tileH);
             p.resize();

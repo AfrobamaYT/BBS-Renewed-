@@ -16,7 +16,9 @@ import org.lwjgl.opengl.GL11;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class TextureManager implements IWatchDogListener
 {
@@ -24,10 +26,20 @@ public class TextureManager implements IWatchDogListener
     public final Map<Link, AnimatedTexture> animatedTextures = new HashMap<>();
     public AssetProvider provider;
 
+    /**
+     * Links whose asset couldn't be read. The error texture stands in for them but is never stored as
+     * their value: it is ONE shared texture, while everything in {@link #textures} is owned there and
+     * deleted with its link. Stored among them, deleting one missing link (Iris closing a PBR wrapper,
+     * the watchdog, a reload) killed the stand-in for every other missing texture (BBS FS dec486b16).
+     */
+    private final Set<Link> failed = new HashSet<>();
+
     private Texture error;
     private TextureExtruder extruder = new TextureExtruder();
     private int tick;
     private Texture lastBound;
+    /** Requested inside an open render pass, where uploads are refused; loaded on the next tick. */
+    private final Map<Link, Integer> aufgeschoben = new java.util.LinkedHashMap<>();
 
     public TextureManager(AssetProvider provider)
     {
@@ -41,7 +53,13 @@ public class TextureManager implements IWatchDogListener
 
     public Texture getError()
     {
-        if (this.error == null)
+        if (this.error != null && !this.error.isValid())
+        {
+            /* Somebody deleted the stand-in: rebuild it instead of handing out a dead GL id */
+            this.error = null;
+        }
+
+        if (this.error == null && !mchorse.bbs_mod.graphics.FramebufferUtils.inPass())
         {
             try
             {
@@ -69,7 +87,6 @@ public class TextureManager implements IWatchDogListener
                 Texture texture = new Texture();
                 texture.setFilter(GL11.GL_NEAREST);
                 texture.uploadTexture(pixels);
-                texture.unbind();
 
                 this.error = texture;
             }
@@ -151,6 +168,8 @@ public class TextureManager implements IWatchDogListener
 
     public void delete(Link link)
     {
+        this.failed.remove(link);
+
         Texture texture = this.textures.remove(link);
 
         if (texture != null)
@@ -175,12 +194,13 @@ public class TextureManager implements IWatchDogListener
     {
         Texture texture = this.textures.get(link);
 
-        if (texture == null || texture == this.getError())
+        if (texture == null)
         {
             texture = new Texture();
             texture.setFilter(filter);
 
             this.textures.put(link, texture);
+            this.failed.remove(link);
         }
 
         return texture;
@@ -228,8 +248,23 @@ public class TextureManager implements IWatchDogListener
     {
         Texture texture = this.get(link);
 
+        if (texture == null && mchorse.bbs_mod.graphics.FramebufferUtils.inPass())
+        {
+            /* 26.3: inside a pass the upload throws, and the error texture could not be made
+             * either -- the next frame tried again with a full stack trace (692 MB of log). */
+            this.aufgeschoben.putIfAbsent(link, filter);
+
+            return this.error;
+        }
+
         if (texture == null)
         {
+            if (this.failed.contains(link))
+            {
+                /* Asked before and the asset wasn't there: don't re-read the file every frame */
+                return this.getError();
+            }
+
             try
             {
                 Pixels pixels = this.getPixels(link);
@@ -262,7 +297,7 @@ public class TextureManager implements IWatchDogListener
                 }
                 else
                 {
-                    this.textures.put(link, this.getError());
+                    this.failed.add(link);
 
                     return this.getError();
                 }
@@ -274,9 +309,9 @@ public class TextureManager implements IWatchDogListener
                     e.printStackTrace();
                 }
 
-                texture = this.getError();
+                this.failed.add(link);
 
-                this.textures.put(link, texture);
+                return this.getError();
             }
         }
 
@@ -289,7 +324,7 @@ public class TextureManager implements IWatchDogListener
         {
             Texture texture = this.animatedTextures.get(link).getTexture(this.tick);
 
-            return texture == null ? this.error : texture;
+            return texture == null ? this.getError() : texture;
         }
 
         return this.textures.get(link);
@@ -309,12 +344,35 @@ public class TextureManager implements IWatchDogListener
 
         this.textures.clear();
         this.animatedTextures.clear();
+        this.failed.clear();
         this.extruder.deleteAll();
+        if (this.error != null)
+        {
+            this.error.delete();
+            this.error = null;
+        }
+        this.lastBound = null;
     }
 
     public void update()
     {
         this.tick += 1;
+    }
+
+    /** Client tick, outside every render pass: load what was requested inside one. */
+    public void ladeAufgeschobene()
+    {
+        this.getError();
+
+        if (this.aufgeschoben.isEmpty())
+        {
+            return;
+        }
+
+        Map<Link, Integer> jetzt = new java.util.LinkedHashMap<>(this.aufgeschoben);
+
+        this.aufgeschoben.clear();
+        jetzt.forEach(this::getTexture);
     }
 
     /**
@@ -335,6 +393,8 @@ public class TextureManager implements IWatchDogListener
         {
             link = new Link(link.source, StringUtils.removeExtension(link.path));
         }
+
+        this.failed.remove(link);
 
         Texture texture = this.textures.remove(link);
 

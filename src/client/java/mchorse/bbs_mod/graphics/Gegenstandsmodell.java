@@ -3,7 +3,6 @@ package mchorse.bbs_mod.graphics;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
-import com.mojang.blaze3d.vertex.SheetedDecalTextureGenerator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.MatrixUtil;
 import net.minecraft.client.Minecraft;
@@ -17,13 +16,14 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.gizmos.DrawableGizmoPrimitives;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.client.renderer.rendertype.OutputTarget;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.QuadParticleRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
+import net.minecraft.client.resources.model.geometry.ItemQuads;
+import net.minecraft.client.renderer.texture.UvMapping;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -113,14 +113,14 @@ public final class Gegenstandsmodell
     private static final QuadInstance VIERECK = new QuadInstance();
 
     /** Leere Toenungsschichten: {@link #farbe} liefert damit immer Weiss. */
-    private static final int[] KEINE_TOENUNG = new int[0];
+
 
     /**
      * Der Abstand, mit dem der Glanz vor die Oberflaeche gelegt wird -- 1/128, wortgleich aus
      * {@code ItemFeatureRenderer.getFoilBuffer}. Kleiner und er verschwindet im Z-Kampf,
      * groesser und er schwebt sichtbar ab.
      */
-    private static final float GLANZ_ABSTAND = 0.0078125F;
+
 
     private Gegenstandsmodell()
     {}
@@ -178,7 +178,7 @@ public final class Gegenstandsmodell
      * <p>1:1 {@code ItemFeatureRenderer.prepareMainSubmit}: Licht und Overlay einmal, Farbe je
      * Viereck aus der Toenungsschicht.
      */
-    private static void schreiben(List<BakedQuad> vierecke, PoseStack.Pose pose, VertexConsumer verbraucher, int[] toenung, int licht, int overlay)
+    private static void schreiben(List<BakedQuad> vierecke, PoseStack.Pose pose, VertexConsumer verbraucher, int[] toenung, int licht, int overlay, PoseStack.Pose glanzPose)
     {
         VIERECK.setLightCoords(licht);
         VIERECK.setOverlayCoords(overlay);
@@ -192,7 +192,14 @@ public final class Gegenstandsmodell
              * Port. */
             VIERECK.setColor(farbe(toenung, viereck.materialInfo()));
 
-            verbraucher.putBakedQuad(pose, viereck, VIERECK);
+            if (glanzPose == null)
+            {
+                verbraucher.putBakedQuad(pose, viereck, VIERECK);
+            }
+            else
+            {
+                verbraucher.putBakedQuadWithGlint(pose, viereck, VIERECK, glanzPose);
+            }
         }
     }
 
@@ -242,7 +249,7 @@ public final class Gegenstandsmodell
         }
 
         @Override
-        public void submitItem(PoseStack pose, ItemDisplayContext kontext, int licht, int overlay, int umriss, int[] toenung, List<BakedQuad> vierecke, ItemStackRenderState.FoilType folie)
+        public void submitItem(PoseStack pose, ItemDisplayContext kontext, int licht, int overlay, int umriss, int[] toenung, ItemQuads vierecke, ItemStackRenderState.FoilType folie)
         {
             /* Umriss-Fall unveraendert an Vanilla: dort zeichnet ItemFeatureRenderer NUR den
              * Umriss und keine Hauptgeometrie (prepareSubmit), und der traegt seine eigene
@@ -255,55 +262,15 @@ public final class Gegenstandsmodell
                 return;
             }
 
-            for (Map.Entry<RenderType, List<BakedQuad>> eintrag : nachEbene(vierecke, null).entrySet())
+            for (Map.Entry<RenderType, List<BakedQuad>> eintrag : nachEbene(vierecke.all(), folie).entrySet())
             {
                 List<BakedQuad> gruppe = eintrag.getValue();
 
                 this.sammler.submitCustomGeometry(pose, eintrag.getKey(), (p, verbraucher) ->
-                    schreiben(gruppe, p, this.umfaerben(verbraucher), toenung, licht, overlay));
+                    schreiben(gruppe, p, this.umfaerben(verbraucher), toenung, licht, overlay,
+                        folie == ItemStackRenderState.FoilType.SPECIAL ? glanzPose(kontext, p) : null));
             }
 
-            this.glanz(pose, kontext, licht, overlay, vierecke, folie);
-        }
-
-        /**
-         * Der Verzauberungsglanz -- 1:1 {@code ItemFeatureRenderer.prepareFoilSubmit}.
-         *
-         * <p>⚠️ Er laeuft ABSICHTLICH ohne Umfaerbung: der Glanz ist eine eigene Zeichenebene
-         * mit eigener Farbe, und Vanilla faerbt ihn ebenfalls nicht mit der Toenung des
-         * Gegenstands.
-         *
-         * <p>⚠️ Abweichung von Vanilla, die eine Verbesserung ist und darum hier steht:
-         * Vanilla setzt fuer den Glanzdurchgang weder Licht noch Overlay noch Farbe, sondern
-         * erbt sie vom zuletzt gezeichneten Haupt-Gegenstand des Bildes (die
-         * {@code QuadInstance} des Zeichners bleibt zwischen den beiden Durchgaengen stehen).
-         * Diese Reihenfolge gibt es hier nicht, also werden sie ausdruecklich gesetzt -- Licht
-         * und Overlay des eigenen Gegenstands, Farbe weiss.
-         */
-        private void glanz(PoseStack pose, ItemDisplayContext kontext, int licht, int overlay, List<BakedQuad> vierecke, ItemStackRenderState.FoilType folie)
-        {
-            if (folie == ItemStackRenderState.FoilType.NONE)
-            {
-                return;
-            }
-
-            /* SPECIAL (Enderauge, Netherstern) legt den Glanz als Abziehbild mit eigener,
-             * verkleinerter Pose auf; STANDARD nimmt die Pose des Gegenstands. */
-            boolean abziehbild = folie == ItemStackRenderState.FoilType.SPECIAL;
-
-            for (Map.Entry<RenderType, List<BakedQuad>> eintrag : nachEbene(vierecke, Gegenstandsmodell::glanzEbene).entrySet())
-            {
-                List<BakedQuad> gruppe = eintrag.getValue();
-
-                this.sammler.submitCustomGeometry(pose, eintrag.getKey(), (p, verbraucher) ->
-                {
-                    VertexConsumer ziel = abziehbild
-                        ? new SheetedDecalTextureGenerator(verbraucher, glanzPose(kontext, p), GLANZ_ABSTAND)
-                        : verbraucher;
-
-                    schreiben(gruppe, p, ziel, KEINE_TOENUNG, licht, overlay);
-                });
-            }
         }
 
         /**
@@ -322,7 +289,7 @@ public final class Gegenstandsmodell
          * @param ebene bildet die Zeichenebene des Vierecks auf die tatsaechlich benutzte ab
          *              (Glanz), oder {@code null} fuer die Ebene des Vierecks selbst.
          */
-        private static Map<RenderType, List<BakedQuad>> nachEbene(List<BakedQuad> vierecke, Function<RenderType, RenderType> ebene)
+        private static Map<RenderType, List<BakedQuad>> nachEbene(List<BakedQuad> vierecke, ItemStackRenderState.FoilType folie)
         {
             /* Reihenfolge erhalten: bei zwei Ebenen im selben Modell entscheidet sie, welche
              * zuerst eingereicht wird. */
@@ -331,9 +298,15 @@ public final class Gegenstandsmodell
             for (int i = 0; i < vierecke.size(); i++)
             {
                 BakedQuad viereck = vierecke.get(i);
-                RenderType eigen = viereck.materialInfo().itemRenderType();
+                BakedQuad.MaterialInfo material = viereck.materialInfo();
+                RenderType eigen = switch (folie)
+                {
+                    case NONE -> material.itemRenderType();
+                    case STANDARD -> material.itemGlintRenderType();
+                    case SPECIAL -> material.itemGlintSpecialRenderType();
+                };
 
-                gruppen.computeIfAbsent(ebene == null ? eigen : ebene.apply(eigen),
+                gruppen.computeIfAbsent(eigen,
                     (e) -> new ArrayList<>()).add(viereck);
             }
 
@@ -378,6 +351,13 @@ public final class Gegenstandsmodell
         }
 
         @Override
+        public void submitTextBackground(PoseStack pose, float x, float y, float breite, float hoehe,
+            int farbe, Font.DisplayMode modus, int licht)
+        {
+            this.sammler.submitTextBackground(pose, x, y, breite, hoehe, farbe, modus, licht);
+        }
+
+        @Override
         public void submitFlame(PoseStack pose, EntityRenderState zustand, Quaternionf drehung)
         {
             this.sammler.submitFlame(pose, zustand, drehung);
@@ -390,9 +370,16 @@ public final class Gegenstandsmodell
         }
 
         @Override
-        public <S> void submitModel(Model<? super S> modell, S zustand, PoseStack pose, RenderType ebene, int licht, int overlay, int umriss, TextureAtlasSprite sprite, int farbe, ModelFeatureRenderer.CrumblingOverlay bruch)
+        public <S> void submitModel(Model<? super S> modell, S zustand, PoseStack pose, RenderType ebene, int licht, int overlay, int umriss, UvMapping sprite, int farbe)
         {
-            this.sammler.submitModel(modell, zustand, pose, ebene, licht, overlay, umriss, sprite, farbe, bruch);
+            this.sammler.submitModel(modell, zustand, pose, ebene, licht, overlay, umriss, sprite, farbe);
+        }
+
+        @Override
+        public <S> void submitCrumblingOverlay(Model<? super S> modell, S zustand, PoseStack pose,
+            RenderType ebene, int licht, int overlay, int umriss, ModelFeatureRenderer.CrumblingOverlay bruch)
+        {
+            this.sammler.submitCrumblingOverlay(modell, zustand, pose, ebene, licht, overlay, umriss, bruch);
         }
 
         @Override
@@ -408,9 +395,9 @@ public final class Gegenstandsmodell
         }
 
         @Override
-        public void submitBreakingBlockModel(PoseStack pose, List<BlockStateModelPart> teile, int stufe)
+        public void submitBreakingBlockModel(PoseStack pose, List<BlockStateModelPart> teile, int stufe, boolean multiTexture)
         {
-            this.sammler.submitBreakingBlockModel(pose, teile, stufe);
+            this.sammler.submitBreakingBlockModel(pose, teile, stufe, multiTexture);
         }
 
         @Override
@@ -436,21 +423,6 @@ public final class Gegenstandsmodell
         {
             this.sammler.submitGizmoPrimitives(gruppe, kamera, durchWaende);
         }
-    }
-
-    /**
-     * Welche Glanzebene ein Gegenstand bekommt -- 1:1
-     * {@code ItemFeatureRenderer.useTransparentGlint}.
-     *
-     * <p>Nur wenn der Shader-Durchsichtigkeitspfad laeuft UND die Ebene des Gegenstands ins
-     * Item-Entity-Ziel schreibt, kommt der durchsichtige Glanz; sonst der normale.
-     */
-    private static RenderType glanzEbene(RenderType gegenstandsEbene)
-    {
-        boolean durchsichtig = Minecraft.getInstance().gameRenderer.gameRenderState().useShaderTransparency()
-            && gegenstandsEbene.outputTarget() == OutputTarget.ITEM_ENTITY_TARGET;
-
-        return durchsichtig ? RenderTypes.glintTranslucent() : RenderTypes.glint();
     }
 
     /**

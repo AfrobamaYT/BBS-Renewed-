@@ -1,11 +1,11 @@
 package mchorse.bbs_mod.ui.framework.elements.context;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.EventPropagation;
 import mchorse.bbs_mod.utils.colors.Colors;
-import org.lwjgl.glfw.GLFW;
 
 public abstract class UIContextMenu extends UIElement
 {
@@ -23,6 +23,10 @@ public abstract class UIContextMenu extends UIElement
      *
      * In this method for subclasses, you should setup the resizer
      */
+    /** Runs on every menu once it is placed: Help moves it off the guide's mini-player, which
+     * nothing may cover (YouTube's embed rules). */
+    public static java.util.function.Consumer<UIContextMenu> platz = (menu) -> {};
+
     public abstract void setMouse(UIContext context);
 
     @Override
@@ -39,7 +43,7 @@ public abstract class UIContextMenu extends UIElement
     @Override
     public boolean subKeyPressed(UIContext context)
     {
-        if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+        if (context.isPressed(InputConstants.KEY_ESCAPE))
         {
             this.removeFromParent();
 
@@ -52,6 +56,11 @@ public abstract class UIContextMenu extends UIElement
     @Override
     public void render(UIContext context)
     {
+        /* A menu covers what lies under it: hand the waiting miniatures (film tiles) in first, as
+         * UIOverlay does -- otherwise they go out at the end of the pass and land on top of the
+         * menu (Help menu over the film tiles, 2026-10-14). An empty queue costs nothing. */
+        mchorse.bbs_mod.ui.framework.elements.utils.vorschau.Miniaturschlange.abgeben(
+            context, context.menu.width, context.menu.height);
         this.renderBackground(context);
 
         super.render(context);

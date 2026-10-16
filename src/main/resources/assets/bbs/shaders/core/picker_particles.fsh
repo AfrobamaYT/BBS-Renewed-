@@ -1,4 +1,8 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
+
+/* ColorModulator lives in the vanilla DynamicTransforms block since 26.2 (same fix as picker_models.fsh). */
+#include <minecraft:dynamictransforms.glsl>
 
 /* Derselbe Block wie im Vertexshader -- Reihenfolge und Groesse muessen mit
  * ModelVAORenderer.schreibeBlock uebereinstimmen, kein Compiler prueft das. */
@@ -13,9 +17,9 @@ layout(std140) uniform ModelInfo {
 
 uniform sampler2D Sampler0;
 
-in vec2 texCoord0;
+layout(location = 0) in vec2 texCoord0;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 void main()
 {

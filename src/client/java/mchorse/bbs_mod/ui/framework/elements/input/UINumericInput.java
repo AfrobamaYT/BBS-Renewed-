@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements.input;
 
+import org.lwjgl.sdl.SDLScancode;
+import com.mojang.blaze3d.platform.InputConstants;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -9,7 +11,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.lwjgl.glfw.GLFW;
 
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -310,6 +311,23 @@ public abstract class UINumericInput <T extends UINumericInput<T>> extends UIBas
         this.accept(value, oldValue);
     }
 
+    /**
+     * Set the value from one of this field's own gestures (scroll wheel, negate) that can happen while
+     * the field is typed into: unlike an outside update, it respells the focused text box, otherwise the
+     * number visibly stays put until the field is left (BBS FS b20030537). Not named applyValue:
+     * UISliderTrackpad has one for its drag that would silently override it (BBS FS 73b8b3e4d).
+     */
+    protected void setValueFromGesture(double value)
+    {
+        this.setValueAndNotify(value);
+
+        if (this.textbox.isFocused())
+        {
+            this.updateTextField();
+            this.textbox.moveCursorToEnd();
+        }
+    }
+
     protected void setValueInternal(double value)
     {
         this.value = this.normalize(value);
@@ -549,31 +567,31 @@ public abstract class UINumericInput <T extends UINumericInput<T>> extends UIBas
     {
         if (this.isFocused())
         {
-            if (context.isHeld(GLFW.GLFW_KEY_UP))
+            if (context.isHeld(InputConstants.KEY_UP))
             {
                 this.setValueAndNotify(this.value + this.getValueModifier());
 
                 return true;
             }
-            else if (context.isHeld(GLFW.GLFW_KEY_DOWN))
+            else if (context.isHeld(InputConstants.KEY_DOWN))
             {
                 this.setValueAndNotify(this.value - this.getValueModifier());
 
                 return true;
             }
-            else if (context.isPressed(GLFW.GLFW_KEY_TAB))
+            else if (context.isPressed(InputConstants.KEY_TAB))
             {
                 context.focus(this, Window.isShiftPressed() ? -1 : 1);
 
                 return true;
             }
-            else if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+            else if (context.isPressed(InputConstants.KEY_ESCAPE))
             {
                 context.unfocus();
 
                 return true;
             }
-            else if (context.isPressed(GLFW.GLFW_KEY_ENTER))
+            else if (context.isPressed(InputConstants.KEY_RETURN))
             {
                 context.focus(null);
             }
@@ -581,7 +599,7 @@ public abstract class UINumericInput <T extends UINumericInput<T>> extends UIBas
         else if (this.area.isInside(context))
         {
             /* Not with ctrl — Ctrl+minus is the global GUI scale shortcut */
-            if (!context.isFocused() && !Window.isCtrlPressed() && (context.isPressed(GLFW.GLFW_KEY_MINUS) || context.isPressed(GLFW.GLFW_KEY_KP_SUBTRACT)))
+            if (!context.isFocused() && !Window.isCtrlPressed() && (context.isPressed(InputConstants.KEY_MINUS) || context.isPressed(SDLScancode.SDL_SCANCODE_KP_MINUS)))
             {
                 this.setValueAndNotify(-this.value);
 

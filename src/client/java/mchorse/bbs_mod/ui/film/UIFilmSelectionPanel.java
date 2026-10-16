@@ -34,6 +34,7 @@ public class UIFilmSelectionPanel extends UISelectionScreen<Film>
             /* Ein Ausschnitt aus dem Film sagt mehr als die Figur darin. Liegt ein Standbild
              * vor, gewinnt es; sonst greift die Form des ersten Replays darunter. */
             kachel.bild((pfad) -> standbildLink(pfad.toString()));
+            kachel.streifen(FilmStreifen.FELDER, (pfad) -> FilmStreifen.link(pfad.toString()));
 
             kachel.nachlader((pfad, fertig) -> panel.getType().getRepository().load(pfad.toString(), (daten) ->
             {

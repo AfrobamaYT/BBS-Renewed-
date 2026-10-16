@@ -59,6 +59,17 @@ public class ModelFormSection extends SubFormSection
     @Override
     protected FormCategory createCategory(IKey uiKey, String id)
     {
+        String folder = this.getKey(id);
+
+        /* The folder a resource pack's models sit in is an id, not a word - it is written into saved
+         * forms - so the palette shows what it means; a pack's subfolder keeps its name after it (BBS FS d1034f8d7) */
+        if (folder.equals(mchorse.bbs_mod.utils.resources.CemSourcePack.NAME) || folder.startsWith(mchorse.bbs_mod.utils.resources.CemSourcePack.NAME + "/"))
+        {
+            String rest = folder.substring(mchorse.bbs_mod.utils.resources.CemSourcePack.NAME.length());
+
+            uiKey = IKey.comp(java.util.Arrays.asList(this.getTitle(), IKey.constant(" ("), mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.categories.models_packs"), IKey.constant(rest + ")")));
+        }
+
         return new ModelFormCategory(uiKey, this.parent.visibility.get("models_" + id));
     }
 

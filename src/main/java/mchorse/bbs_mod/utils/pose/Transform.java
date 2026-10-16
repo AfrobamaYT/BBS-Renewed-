@@ -21,7 +21,8 @@ public class Transform implements IMapSerializable
     public final Vector3f translate = new Vector3f();
     /** Dreh-/skalier-mittelpunkt.
      *
-     *  MERGE 2026-07-27: aus dem CML-fork. */
+     *  MERGE 2026-07-27: aus dem CML-fork — unsere blenderbridge (ActorExporter) exportiert
+     *  ihn nach Blender, damit rotationen dort um denselben punkt laufen. */
     public final Vector3f pivot = new Vector3f();
     public final Vector3f scale = new Vector3f(DEFAULT_SCALE);
 
@@ -322,6 +323,37 @@ public class Transform implements IMapSerializable
     public Matrix3f createRotationMatrix()
     {
         return new Matrix3f().rotation(this.createRotation());
+    }
+
+    /**
+     * The inverse of setting up a matrix from these channels: read a translate·rotation·scale matrix
+     * back. A mirrored matrix puts the sign on X; in euler mode the angles land on the branch nearest
+     * the current ones (BBS FS a220e30c5).
+     */
+    public void fromMatrix(Matrix4f matrix)
+    {
+        Matrix3f basis = matrix.get3x3(new Matrix3f());
+        Vector3f axis = new Vector3f();
+
+        this.translate.set(matrix.m30(), matrix.m31(), matrix.m32());
+        this.scale.set(basis.getColumn(0, axis).length(), basis.getColumn(1, axis).length(), basis.getColumn(2, axis).length());
+
+        if (basis.determinant() < 0F) this.scale.x = -this.scale.x;
+
+        for (int i = 0; i < 3; i++)
+        {
+            float length = i == 0 ? this.scale.x : (i == 1 ? this.scale.y : this.scale.z);
+
+            if (Math.abs(length) < 1E-6F) axis.set(i == 0 ? 1F : 0F, i == 1 ? 1F : 0F, i == 2 ? 1F : 0F);
+            else basis.getColumn(i, axis).div(length);
+
+            basis.setColumn(i, axis);
+        }
+
+        Quaternionf rotation = new Quaternionf().setFromNormalized(basis);
+
+        if (this.rotationMode == RotationMode.QUATERNION) this.quat.set(rotation);
+        else Matrices.toCompatibleEulerZYXRadians(rotation, this.rotate, this.rotate);
     }
 
     public Matrix4f createMatrix()

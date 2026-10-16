@@ -1,8 +1,10 @@
 package mchorse.bbs_mod.ui.framework;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSModClient;
+import com.blenderbridge.actors.ActorLeaseAccess;
 import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.client.Erweiterungen;
+import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.importers.IImportPathProvider;
 import mchorse.bbs_mod.importers.ImporterContext;
 import mchorse.bbs_mod.importers.Importers;
@@ -22,7 +24,6 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -74,7 +75,7 @@ public class UIScreen extends Screen implements IFileDropListener
 
     public void update()
     {
-        Erweiterungen.eingabe(() ->
+        ActorLeaseAccess.ui(() ->
         {
             this.menu.update();
             return true;
@@ -121,6 +122,9 @@ public class UIScreen extends Screen implements IFileDropListener
     @Override
     public void removed()
     {
+        mchorse.bbs_mod.ui.utils.keys.MausTastenWiederholung.stoppen(this.menu.context);
+        this.menu.context.unfocus();
+
         BBSModClient.setCustomGUIScale(false);
         Minecraft.getInstance().resizeGui();
 
@@ -161,7 +165,7 @@ public class UIScreen extends Screen implements IFileDropListener
     {
         super.init();
 
-        this.menu.resize(this.width, this.height);
+        this.menu.resize(UISkala.groesse(this.width), UISkala.groesse(this.height));
     }
 
     @Override
@@ -169,37 +173,37 @@ public class UIScreen extends Screen implements IFileDropListener
     {
         super.resize(width, height);
 
-        this.menu.resize(width, height);
+        this.menu.resize(UISkala.groesse(width), UISkala.groesse(height));
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
-        return Erweiterungen.eingabe(() -> this.menu.mouseClicked((int) event.x(), (int) event.y(), event.button()));
+        return ActorLeaseAccess.ui(() -> this.menu.mouseClicked(UISkala.nachBbs(event.x()), UISkala.nachBbs(event.y()), Window.legacyMouseButton(event.button())));
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount)
     {
-        return Erweiterungen.eingabe(() -> this.menu.mouseScrolled((int) mouseX, (int) mouseY, horizontalAmount, verticalAmount));
+        return ActorLeaseAccess.ui(() -> this.menu.mouseScrolled(UISkala.nachBbs(mouseX), UISkala.nachBbs(mouseY), horizontalAmount, verticalAmount));
     }
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event)
     {
-        return Erweiterungen.eingabe(() -> this.menu.mouseReleased((int) event.x(), (int) event.y(), event.button()));
+        return ActorLeaseAccess.ui(() -> this.menu.mouseReleased(UISkala.nachBbs(event.x()), UISkala.nachBbs(event.y()), Window.legacyMouseButton(event.button())));
     }
 
     @Override
     public boolean keyPressed(KeyEvent event)
     {
-        return Erweiterungen.eingabe(() -> this.menu.handleKey(event.key(), event.scancode(), BBSRendering.lastAction, event.modifiers()));
+        return ActorLeaseAccess.ui(() -> this.menu.handleKey(event.key(), event.keycode(), BBSRendering.lastAction, event.modifiers()));
     }
 
     @Override
     public boolean keyReleased(KeyEvent event)
     {
-        return Erweiterungen.eingabe(() -> this.menu.handleKey(event.key(), event.scancode(), GLFW.GLFW_RELEASE, event.modifiers()));
+        return ActorLeaseAccess.ui(() -> this.menu.handleKey(event.key(), event.keycode(), InputConstants.RELEASE, event.modifiers()));
     }
 
     @Override
@@ -207,7 +211,7 @@ public class UIScreen extends Screen implements IFileDropListener
     {
         /* 26.2 delivers a codepoint instead of a char; BBS' text input is char based, so
          * anything outside the BMP (surrogate pairs) is not representable here. */
-        Erweiterungen.eingabe(() ->
+        ActorLeaseAccess.ui(() ->
         {
             this.menu.handleTextInput((char) event.codepoint());
             return true;
@@ -241,14 +245,24 @@ public class UIScreen extends Screen implements IFileDropListener
          * (ein volatile-read). Nur waehrend eines programmatischen zuges liefern sie die
          * gesetzte position — ohne das koennte kein test etwas ZIEHEN, weil ziehende elemente
          * die maus pro frame hier neu lesen. Siehe VirtuelleMaus. */
-        Erweiterungen.eingabe(() ->
+        /* Zwischenwerte beim UI-Scale: Minecraft rechnet mit der naechsthoeheren ganzen Zahl,
+         * BBS verkleinert sich hier um den Rest (UISkala). Vanilla rechnet die Matrix selbst
+         * in seine Ausschnitte ein. */
+        float rest = UISkala.rest();
+
+        context.pose().pushMatrix();
+        context.pose().scale(rest, rest);
+
+        ActorLeaseAccess.ui(() ->
         {
             this.menu.renderMenu(this.context,
-                mchorse.bbs_mod.sonden.Sonden.eingabe.mausX(mouseX),
-                mchorse.bbs_mod.sonden.Sonden.eingabe.mausY(mouseY));
+                mchorse.bbs_mod.sonden.Sonden.eingabe.mausX(UISkala.nachBbs(mouseX)),
+                mchorse.bbs_mod.sonden.Sonden.eingabe.mausY(UISkala.nachBbs(mouseY)));
             this.menu.context.render.executeRunnables();
             return true;
         });
+
+        context.pose().popMatrix();
     }
 
     @Override

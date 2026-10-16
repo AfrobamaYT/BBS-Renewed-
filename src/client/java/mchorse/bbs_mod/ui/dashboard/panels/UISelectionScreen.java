@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.dashboard.panels;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.data.types.MapType;
@@ -29,7 +30,6 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.colors.Colors;
-import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -153,9 +153,9 @@ public class UISelectionScreen<T extends ValueGroup> extends UIElement
         });
 
         this.namesList.keys().register(Keys.DELETE, this::removeSelected).active(this::canUseListKeybinds);
-        this.namesList.keys().register(new KeyCombo(UIKeys.GENERAL_RENAME, GLFW.GLFW_KEY_F2), this::renameSelected).active(this::canUseListKeybinds);
-        this.namesList.keys().register(new KeyCombo(UIKeys.PANELS_CONTEXT_OPEN, GLFW.GLFW_KEY_ENTER), this.namesList::activateSelection).active(this::canUseListKeybinds);
-        this.namesList.keys().register(new KeyCombo(UIKeys.KEYFRAMES_CONTEXT_SELECT_ALL, GLFW.GLFW_KEY_A, GLFW.GLFW_KEY_LEFT_CONTROL), this.namesList::selectAll).active(this::canUseListKeybinds);
+        this.namesList.keys().register(new KeyCombo(UIKeys.GENERAL_RENAME, InputConstants.KEY_F2), this::renameSelected).active(this::canUseListKeybinds);
+        this.namesList.keys().register(new KeyCombo(UIKeys.PANELS_CONTEXT_OPEN, InputConstants.KEY_RETURN), this.namesList::activateSelection).active(this::canUseListKeybinds);
+        this.namesList.keys().register(new KeyCombo(UIKeys.KEYFRAMES_CONTEXT_SELECT_ALL, InputConstants.KEY_A, InputConstants.KEY_LCONTROL), this.namesList::selectAll).active(this::canUseListKeybinds);
 
         this.header.add(this.title, iconRow);
         this.listWrap.add(new UIRenderable((ctx) -> this.renderListBackground(ctx, this.listWrap.area)), this.names);

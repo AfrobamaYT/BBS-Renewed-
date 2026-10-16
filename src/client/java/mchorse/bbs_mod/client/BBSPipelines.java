@@ -1,14 +1,14 @@
 package mchorse.bbs_mod.client;
 
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.pipeline.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.client.renderer.BindGroupLayouts;
-import com.mojang.blaze3d.pipeline.BindGroupLayout;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import mchorse.bbs_mod.BBSMod;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
@@ -71,7 +71,7 @@ public final class BBSPipelines
      */
     private static final BindGroupLayout GRUPPE_FILTER = BindGroupLayout.builder()
         .withUniform(FILTER_BLOCK, UniformType.UNIFORM_BUFFER)
-        .withSampler("Sampler0")
+        .withUniform("Sampler0", UniformType.COMBINED_IMAGE_SAMPLER)
         .build();
 
     /**
@@ -83,8 +83,8 @@ public final class BBSPipelines
      */
     private static final BindGroupLayout GRUPPE_FILTER2 = BindGroupLayout.builder()
         .withUniform(FILTER_BLOCK, UniformType.UNIFORM_BUFFER)
-        .withSampler("Sampler0")
-        .withSampler("Sampler1")
+        .withUniform("Sampler0", UniformType.COMBINED_IMAGE_SAMPLER)
+        .withUniform("Sampler1", UniformType.COMBINED_IMAGE_SAMPLER)
         .build();
 
     private static final RenderPipeline PICKER_PREVIEW = filterPipeline("picker_preview", GRUPPE_FILTER);
@@ -209,9 +209,18 @@ public final class BBSPipelines
             bauer.withDepthStencilState(vorlage.getDepthStencilState());
         }
 
-        if (vorlage.getColorTargetState() != null)
+        for (int i = 0; i < vorlage.getColorTargetStates().size(); i++)
         {
-            bauer.withColorTargetState(vorlage.getColorTargetState());
+            ColorTargetState state = vorlage.getColorTargetStates().get(i);
+
+            if (state == null)
+            {
+                bauer.withUnusedColorTargetState(i);
+            }
+            else
+            {
+                bauer.withColorTargetState(i, state);
+            }
         }
 
         /* Die Bindegruppen bestimmen, welche Uniform-Bloecke und Sampler der Shader

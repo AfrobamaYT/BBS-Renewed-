@@ -43,7 +43,7 @@ public class FFMpegUtils
                 return bin;
             }
 
-            bin = new File(file, "bin" + File.separator + subpath);
+            bin = new File(file, "bin" + File.pathSeparator + subpath);
 
             if (bin.isFile())
             {
@@ -63,6 +63,8 @@ public class FFMpegUtils
         return file;
     }
 
+    private static boolean missingEncoderReported;
+
     public static String getFFMPEG()
     {
         String encoder = BBSSettings.videoEncoderPath.get();
@@ -70,7 +72,21 @@ public class FFMpegUtils
 
         if (encoderPath.isFile())
         {
-            encoder = encoderPath.getAbsolutePath();
+            return encoderPath.getAbsolutePath();
+        }
+
+        if (encoder.contains("/") || encoder.contains("\\"))
+        {
+            /* A path that is not there -- e.g. a Windows ffmpeg.exe in a config copied to Linux
+             * (2026-10-12: the owner's 26.3 instance; the Resolve tab and video export failed with
+             * "Exec failed"). The ffmpeg on the PATH is the default; say so once, loudly. */
+            if (!missingEncoderReported)
+            {
+                missingEncoderReported = true;
+                System.err.println("[BBS] video encoder_path '" + encoder + "' does not exist; using 'ffmpeg' from the PATH");
+            }
+
+            return "ffmpeg";
         }
 
         return encoder;

@@ -102,12 +102,12 @@ public class WorldRendererMixin
      */
     @Inject(method = "render", at = @At("HEAD"))
     private void onSetupFrustum(com.mojang.blaze3d.resource.GraphicsResourceAllocator zuteiler,
-        net.minecraft.client.DeltaTracker takt, boolean bloecke, CameraRenderState kamera,
-        org.joml.Matrix4fc projektion, com.mojang.blaze3d.buffers.GpuBufferSlice nebel,
-        org.joml.Vector4f nebelFarbe, boolean himmel, CallbackInfo info)
+        boolean bloecke, CameraRenderState kamera,
+        com.mojang.renderpearl.api.buffers.GpuBufferSlice nebel,
+        org.joml.Vector4f nebelFarbe, boolean himmel, boolean drahtgitter, CallbackInfo info)
     {
         MixinBruecke.rufe("WeltRendererLogik", "projektionStempeln",
-            zuteiler, takt, bloecke, kamera, projektion, nebel, nebelFarbe, himmel);
+            bloecke, kamera, nebel, nebelFarbe, himmel);
     }
 
     @Inject(at = @At("RETURN"), method = "resize")

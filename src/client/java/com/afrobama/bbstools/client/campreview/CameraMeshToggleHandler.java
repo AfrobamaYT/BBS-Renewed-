@@ -6,7 +6,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +39,7 @@ public final class CameraMeshToggleHandler
             if (mc == null || mc.getWindow() == null) return;
             if (mc.gui.screen() != null) return;
 
-            boolean down = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_K);
+            boolean down = InputConstants.isKeyDown(InputConstants.KEY_K);
             if (down && !wasPressed)
             {
                 CameraFrustumVisibility.toggle();

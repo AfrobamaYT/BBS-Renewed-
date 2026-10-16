@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.graphics.line;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import net.minecraft.client.gui.navigation.ScreenRectangle;

@@ -86,7 +86,7 @@ public abstract class ActionClip extends Clip
         player.setYHeadRot(keyframes.headYaw.interpolate(tick).floatValue());
         player.setYBodyRot(keyframes.bodyYaw.interpolate(tick).floatValue());
         player.setXRot(keyframes.pitch.interpolate(tick).floatValue());
-        player.setItemInHand(InteractionHand.MAIN_HAND, keyframes.mainHand.interpolate(tick, ItemStack.EMPTY).copy());
+        player.setItemInHand(InteractionHand.MAIN_HAND, mchorse.bbs_mod.film.replays.HandAusHotbar.hand(keyframes, tick).copy());
         player.setItemInHand(InteractionHand.OFF_HAND, keyframes.offHand.interpolate(tick, ItemStack.EMPTY).copy());
     }
 }

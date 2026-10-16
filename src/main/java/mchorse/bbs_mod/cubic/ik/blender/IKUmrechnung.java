@@ -1,9 +1,9 @@
 /* Bruecke zwischen BBS' JOML-Matrizen und dem Port von Blenders intern/iksolver.
- * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileCopyrightText: 2001-2002 NaN Holding BV. All rights reserved.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  * Direct-Blender-Port: https://projects.blender.org/blender/blender/src/commit/67807e1800cc48cc7bff3c793525e1179a4d64ca/intern/iksolver/intern/IK_Solver.cpp
- * BBS-Modification: 2026-10-10 - Re-audited against pinned Blender; original revision unknown.
- * See docs/BLENDER-IK-PROVENANCE-2026-10-10.md for scope and parity evidence. */
+ * BBS-Modification: 2026-10-15 - Revalidated and corrected stiffness epsilon; original revision unknown.
+ * See docs/BLENDER-IK-PROVENANCE-2026-10-15.md for scope and parity. */
 package mchorse.bbs_mod.cubic.ik.blender;
 
 import org.joml.Matrix4f;
@@ -19,7 +19,7 @@ import org.joml.Vector3f;
 public final class IKUmrechnung
 {
     /** Constants from Blender's intern/iksolver/extern/IK_solver.h.
-     * The stiffness epsilon is 0.01, distinct from the translation limit 0.001. */
+     * The stiffness epsilon is 0.01F, distinct from the translation limit 0.001F. */
     private static final double DEHN_EPS = (double) 0.01F;
     public static final double DEHN_MIN = 0.001D;
     public static final double DEHN_MAX = 1e10D;

@@ -1,5 +1,12 @@
 package com.afrobama.bbstools.client.tracker;
 
+import mchorse.bbs_mod.camera.clips.misc.TrackedHandExtraction;
+import net.minecraft.world.item.component.SwingAnimation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
+import mchorse.bbs_mod.forms.entities.MCEntity;
+import net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;
+import net.minecraft.client.renderer.state.level.PlayerRenderState;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -90,37 +97,17 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
     private static ItemStack savedOffHandItem;
     private static int savedSelectedSlot;
     private static int savedHurtTime;
-    private static float savedSwingProgress;
-    private static float savedLastSwingProgress;
-    private static boolean savedHandSwinging;
     private static float savedHealth;
     private static int savedFoodLevel;
     private static boolean entityStateSwapped;
 
     /* === Hand swap state === */
     private static boolean handStateSwapped;
-    private static int handSavedSelectedSlot;
-    private static int handSwappedSlotIndex = -1;
-    private static ItemStack handSavedSlotItem;
-    private static ItemStack handSavedOffHandItem;
+    private static TrackedHandExtraction handExtraction;
     private static ItemStack[] lastTrackedHotbar;
     private static int[] hotbarChangeTick;
 
     /* === Held-item-renderer reflection === */
-    private static Object cachedHeldItemRenderer;
-    private static Field heldMainHandField;
-    private static Field heldOffHandField;
-    private static Field heldEquipMainField;
-    private static Field heldPrevEquipMainField;
-    private static Field heldEquipOffField;
-    private static Field heldPrevEquipOffField;
-    private static boolean heldItemReflectionInit;
-    private static ItemStack savedHeldMainHand;
-    private static ItemStack savedHeldOffHand;
-    private static float savedEquipMain;
-    private static float savedPrevEquipMain;
-    private static float savedEquipOff;
-    private static float savedPrevEquipOff;
 
     /* === HUD tooltip reflection === */
     private static Field hudTooltipFadeField;
@@ -140,7 +127,6 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
     private static int lastEquipTick = -1;
 
     /* === Level/HUD lifecycle === */
-    private static CameraType savedPerspectiveForLevel;
     private static boolean savedHudHidden;
     private static boolean savedHudHiddenForLevel;
     private static boolean levelRenderingActive;
@@ -234,9 +220,9 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
             (float) (-Math.abs(Math.cos((double) g * Math.PI) * (double) h)),
             0F
         );
-        matrices.mulPose(Axis.ZP.rotationDegrees(
+        matrices.rotate(Axis.ZP.rotationDegrees(
             (float) (Math.sin((double) g * Math.PI) * (double) h * 3D)));
-        matrices.mulPose(Axis.XP.rotationDegrees(
+        matrices.rotate(Axis.XP.rotationDegrees(
             (float) (Math.abs(Math.cos((double) g * Math.PI - 0.2D) * (double) h) * 5D)));
     }
 
@@ -441,121 +427,17 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
 
     private static void swapHandState()
     {
-        if (handStateSwapped) return;
-
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (player == null || currentEntity == null) return;
-
-        int entitySlot = currentEntity.getSelectedSlot();
-        ItemStack entityMain = currentEntity.getHotbarItem(entitySlot);
-        boolean entityHasMainItem = entityMain != null && !entityMain.isEmpty();
-
-        handSavedSelectedSlot = player.getInventory().getSelectedSlot();
-
-        if (entityHasMainItem)
-        {
-            player.getInventory().setSelectedSlot(entitySlot);
-            handSwappedSlotIndex = entitySlot;
-            handSavedSlotItem = player.getInventory().getItem(entitySlot).copy();
-            player.getInventory().setItem(entitySlot, entityMain.copy());
-        }
-        else
-        {
-            handSwappedSlotIndex = -1;
-        }
-
-        ItemStack entityOff = currentEntity.getEquipmentStack(EquipmentSlot.OFFHAND);
-        boolean entityHasOffItem = entityOff != null && !entityOff.isEmpty();
-        handSavedOffHandItem = player.getInventory().getItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND).copy();
-        if (entityHasOffItem)
-        {
-            player.getInventory().setItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND, entityOff.copy());
-        }
-
-        savedHurtTime = player.hurtTime;
-        player.hurtTime = currentEntity.getHurtTimer();
-
-        savedSwingProgress = player.attackAnim;
-        savedLastSwingProgress = player.oAttackAnim;
-        savedHandSwinging = player.swinging;
-
-        float entitySwing = currentEntity.getHandSwingProgress(currentTickDelta);
-        player.attackAnim = Math.max(player.attackAnim, entitySwing);
-        player.oAttackAnim = Math.max(player.oAttackAnim, entitySwing);
-
-        if (player.attackAnim > 0F || entitySwing > 0F) player.swinging = true;
-
-        savedHealth = player.getHealth();
-        player.setHealth(currentEntity.getHealth());
-
+        if (handStateSwapped) throw new IllegalStateException("Tracked hand extraction scopes cannot overlap");
         updateEquipProgress();
-        initHeldItemReflection();
-
-        if (cachedHeldItemRenderer != null && heldMainHandField != null)
-        {
-            try
-            {
-                savedHeldMainHand = (ItemStack) heldMainHandField.get(cachedHeldItemRenderer);
-                savedHeldOffHand = (ItemStack) heldOffHandField.get(cachedHeldItemRenderer);
-                heldMainHandField.set(cachedHeldItemRenderer, player.getMainHandItem());
-                heldOffHandField.set(cachedHeldItemRenderer, player.getOffhandItem());
-
-                if (heldEquipMainField != null)
-                {
-                    savedEquipMain = heldEquipMainField.getFloat(cachedHeldItemRenderer);
-                    savedPrevEquipMain = heldPrevEquipMainField.getFloat(cachedHeldItemRenderer);
-                    savedEquipOff = heldEquipOffField.getFloat(cachedHeldItemRenderer);
-                    savedPrevEquipOff = heldPrevEquipOffField.getFloat(cachedHeldItemRenderer);
-
-                    heldEquipMainField.setFloat(cachedHeldItemRenderer, entityEquipMain * handShowProgress);
-                    heldPrevEquipMainField.setFloat(cachedHeldItemRenderer, entityPrevEquipMain * prevHandShowProgress);
-                    heldEquipOffField.setFloat(cachedHeldItemRenderer, entityEquipOff * handShowProgress);
-                    heldPrevEquipOffField.setFloat(cachedHeldItemRenderer, entityPrevEquipOff * prevHandShowProgress);
-                }
-            }
-            catch (Exception ignore) {}
-        }
-
+        handExtraction = TrackedHandExtraction.open(currentEntity);
         handStateSwapped = true;
     }
 
     private static void restoreHandState()
     {
         if (!handStateSwapped) return;
-
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (player != null)
-        {
-            if (handSwappedSlotIndex >= 0)
-            {
-                player.getInventory().setItem(handSwappedSlotIndex, handSavedSlotItem);
-            }
-            player.getInventory().setItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND, handSavedOffHandItem);
-            player.getInventory().setSelectedSlot(handSavedSelectedSlot);
-            player.hurtTime = savedHurtTime;
-            player.attackAnim = savedSwingProgress;
-            player.oAttackAnim = savedLastSwingProgress;
-            player.swinging = savedHandSwinging;
-            player.setHealth(savedHealth);
-
-            if (cachedHeldItemRenderer != null && heldMainHandField != null)
-            {
-                try
-                {
-                    heldMainHandField.set(cachedHeldItemRenderer, savedHeldMainHand);
-                    heldOffHandField.set(cachedHeldItemRenderer, savedHeldOffHand);
-                    if (heldEquipMainField != null)
-                    {
-                        heldEquipMainField.setFloat(cachedHeldItemRenderer, savedEquipMain);
-                        heldPrevEquipMainField.setFloat(cachedHeldItemRenderer, savedPrevEquipMain);
-                        heldEquipOffField.setFloat(cachedHeldItemRenderer, savedEquipOff);
-                        heldPrevEquipOffField.setFloat(cachedHeldItemRenderer, savedPrevEquipOff);
-                    }
-                }
-                catch (Exception ignore) {}
-            }
-        }
-
+        handExtraction.close();
+        handExtraction = null;
         handStateSwapped = false;
     }
 
@@ -656,58 +538,7 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         catch (Exception ignore) {}
     }
 
-    private static void initHeldItemReflection()
-    {
-        if (heldItemReflectionInit) return;
-        heldItemReflectionInit = true;
 
-        try
-        {
-            GameRenderer gr = Minecraft.getInstance().gameRenderer;
-
-            for (Field f : gr.getClass().getDeclaredFields())
-            {
-                Class<?> type = f.getType();
-                if (type.isPrimitive() || type == String.class || type.isInterface()) continue;
-
-                int itemStackCount = 0;
-                for (Field tf : type.getDeclaredFields())
-                {
-                    if (Modifier.isStatic(tf.getModifiers()) || tf.getType() != ItemStack.class) continue;
-                    itemStackCount++;
-                }
-                if (itemStackCount < 2) continue;
-
-                f.setAccessible(true);
-                cachedHeldItemRenderer = f.get(gr);
-
-                int itemIdx = 0;
-                int floatIdx = 0;
-                for (Field tf : type.getDeclaredFields())
-                {
-                    if (Modifier.isStatic(tf.getModifiers())) continue;
-                    tf.setAccessible(true);
-
-                    if (tf.getType() == ItemStack.class)
-                    {
-                        if (itemIdx == 0) heldMainHandField = tf;
-                        else if (itemIdx == 1) heldOffHandField = tf;
-                        itemIdx++;
-                        continue;
-                    }
-
-                    if (tf.getType() != Float.TYPE) continue;
-                    if (floatIdx == 0) heldEquipMainField = tf;
-                    else if (floatIdx == 1) heldPrevEquipMainField = tf;
-                    else if (floatIdx == 2) heldEquipOffField = tf;
-                    else if (floatIdx == 3) heldPrevEquipOffField = tf;
-                    floatIdx++;
-                }
-                break;
-            }
-        }
-        catch (Exception ignore) {}
-    }
 
     private static void initWindowReflection(Window window)
     {
@@ -748,6 +579,66 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
      * Level/HUD/hand render lifecycle
      * ======================================================== */
 
+    public static boolean beginPlayerStateExtraction()
+    {
+        if (!controllerRanThisFrame || currentEntity == null || !shouldRenderHand())
+        {
+            return false;
+        }
+
+        advanceShowTransitions();
+
+        try
+        {
+            swapHandState();
+            return handStateSwapped;
+        }
+        catch (RuntimeException error)
+        {
+            restoreHandState();
+            throw error;
+        }
+    }
+
+    public static void endPlayerStateExtraction()
+    {
+        restoreHandState();
+    }
+
+    public static void applyExtractedHandState(PlayerRenderState state)
+    {
+        if (!state.hasPlayer || state.avatarRenderState == null)
+        {
+            throw new IllegalStateException("Tracked hands require an extracted player render state");
+        }
+
+        FirstPersonHandsAndItemsRenderState hands = state.firstPersonHandsAndItems;
+        hands.mainHandHeight = entityEquipMain * handShowProgress;
+        hands.oldMainHandHeight = entityPrevEquipMain * prevHandShowProgress;
+        hands.offHandHeight = entityEquipOff * handShowProgress;
+        hands.oldOffHandHeight = entityPrevEquipOff * prevHandShowProgress;
+
+        float entitySwing = currentEntity.getHandSwingProgress(currentTickDelta);
+        state.avatarRenderState.swingAnimation = Math.max(state.avatarRenderState.swingAnimation, entitySwing);
+
+        if (entitySwing > 0F)
+        {
+            LivingEntity.SwingDescription swing = currentEntity instanceof MCEntity mcEntity
+                && mcEntity.getMcEntity() instanceof LivingEntity living ? living.getCurrentSwing() : null;
+
+            if (swing == null)
+            {
+                swing = new LivingEntity.SwingDescription(InteractionHand.MAIN_HAND,
+                    SwingAnimation.DEFAULT, SwingAnimation.DEFAULT.duration());
+            }
+
+            state.avatarRenderState.currentSwing = swing;
+            hands.attackHand = swing.hand();
+        }
+
+        Minecraft.getInstance().gameRenderer.gameRenderState().optionsRenderState.cameraType = CameraType.FIRST_PERSON;
+    }
+
     public static void beginLevelRendering()
     {
         if (!controllerRanThisFrame)
@@ -771,9 +662,6 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         if (handNeeded)
         {
             mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(false);
-            swapHandState();
-            savedPerspectiveForLevel = mc.options.getCameraType();
-            mc.options.setCameraType(CameraType.FIRST_PERSON);
         }
 
         levelRenderingActive = true;
@@ -784,13 +672,6 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         if (!levelRenderingActive) return;
         levelRenderingActive = false;
 
-        if (handStateSwapped) restoreHandState();
-
-        if (savedPerspectiveForLevel != null)
-        {
-            Minecraft.getInstance().options.setCameraType(savedPerspectiveForLevel);
-            savedPerspectiveForLevel = null;
-        }
 
         Minecraft mc = Minecraft.getInstance();
         mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(shouldRenderHud() ? false : savedHudHiddenForLevel);
@@ -805,7 +686,6 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         {
             savedHudHidden = mchorse.bbs_mod.client.HudSichtbarkeit.istVersteckt();
             mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(false);
-            swapHandState();
         }
 
         float smoothed = lastSprintFovFactor + (sprintFovFactor - lastSprintFovFactor) * currentTickDelta;
@@ -832,7 +712,6 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
     {
         if (!levelRenderingActive)
         {
-            restoreHandState();
             mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(savedHudHidden);
         }
         if (handProjectionSwapped)

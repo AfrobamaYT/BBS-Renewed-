@@ -74,7 +74,7 @@ public final class VeilReplayBatchRenderer
         /* Tier 2f: skip the entire render path during Iris shadow passes.
          * Replays cast shadows from the gbuffer depth, no need to re-
          * render in shadow phase. */
-        if (mchorse.bbs_mod.client.BBSRendering.isIrisShadowPass())
+        if (com.afrobama.bbstools.client.crowd.mass.BBSCrowdAcceleratedRenderer.isIrisShadowPass())
         {
             com.afrobama.bbstools.perf.ShadowSkipStats.INSTANCE.bump("veil-replay");
             return;

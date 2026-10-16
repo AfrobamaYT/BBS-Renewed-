@@ -45,6 +45,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 	private float sichtVon;
 	private float sichtBis;
 	/** 0 Dope Sheet · 1 Animated only · 2 Camera clips — Boot zeigt den Kamera-Schnitt. */
+	/* 0 Dope Sheet, 1 Animated only, 2 Camera clips, 3 Action clips (gewaehltes Replay). */
 	public int modus = 2;
 
 	private final List<ZeitleisteSpuren.Zeile> spuren = new ArrayList<>();
@@ -53,7 +54,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 	 * hinzugefuegtes Instanzfeld steht nach einem Hotswap auf null.
 	 */
 	private java.util.Map<String, Boolean> offen;
-	private final ZeitleisteZweig.LoopInput loopInput = new ZeitleisteZweig.LoopInput();
 
 	public static UIElement neu()
 	{
@@ -92,13 +92,23 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 			this.offen = new java.util.HashMap<>();
 		}
 
-		this.spuren.addAll(ZeitleisteSpuren.bauen(film, gewaehlt, this.offen, this.modus == 1, this.modus == 2));
+		this.spuren.addAll(ZeitleisteSpuren.bauen(film, gewaehlt, this.offen, this.modus == 1, this.modus >= 2));
 
-		StringBuilder kennung = new StringBuilder(film.getId()).append('d').append(film.camera.calculateDuration());
+		StringBuilder kennung = new StringBuilder(film.getId());
 
 		for (ZeitleisteSpuren.Zeile z : this.spuren)
 		{
 			kennung.append('|').append(z.ebene).append(z.name).append(z.zaehler).append(z.auf ? '+' : '-');
+		}
+
+		if (this.modus == 3 && gewaehlt != null)
+		{
+			kennung.append("|r").append(gewaehlt.uuid.get());
+
+			for (mchorse.bbs_mod.utils.clips.Clip c : gewaehlt.actions.get())
+			{
+				kennung.append(',').append(c.layer.get());
+			}
 		}
 
         return kennung.append('@').append(panel.getCursor()).append('m').append(this.modus).append('a').append(FilmAutoKey.isEnabled()).toString();
@@ -144,10 +154,10 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		return this.sichtBis > this.sichtVon ? this.sichtBis - this.sichtVon : Math.max(1, dauer);
 	}
 
+	public float[] sichtSetzen(float von, float bis) /* visible range in ticks, returns the old one (export, BBS FS 2d54428ca) */ { float[] alt = {this.sichtVon, this.sichtBis}; this.sichtVon = von; this.sichtBis = bis; this.stand = ""; this.flaeche.neuMalen(); return alt; }
 	/** Waagerecht schwenken (MMB) und zoomen (Rad) — beides in Ticks, nicht in Pixeln. */
 	public void zeitSchwenken(float ticks, int dauer)
 	{
-
 		float breite = this.spanne(dauer);
 		float neu = this.von(dauer) + ticks;
 
@@ -179,110 +189,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		this.flaeche.neuMalen();
 	}
 
-	/**
-	 * Kanalspalte links — die Namen zu den Ebenen, die UIClips daneben zeichnet.
-	 *
-	 * <p>Sie gehoert hierher und nicht in UIClips: dort waere sie eine zweite Layout-Logik in
-	 * einer Klasse, die schon 89 Methoden traegt. Hier ist sie reine Zier ueber einer Flaeche,
-	 * die ihre Zeilenhoehe selbst kennt.</p>
-	 */
-	private void kanalspalte(long vg, NanoFlaeche f, int b, int h, float k)
-	{
-		UIFilmPanel oben_panel = filmPanel();
-
-		/* ⛔ Im REPLAY-ZWEIG nicht zeichnen. Dort fuehrt `UIKeyframeDopeSheet` seine eigenen
-		 * Kanalnamen (transform, pose, …) mit eigenem Spaltengrund — diese Spalte lag
-		 * darueber und stellte ihren Kopf „CHANNELS" (abgeschnitten „CH") ueber fremde
-		 * Zeilen. Zwei Kanalspalten uebereinander, eine davon leer. */
-		if (oben_panel != null && oben_panel.replayEditor != null
-			&& oben_panel.replayEditor.isVisible())
-		{
-			return;
-		}
-
-		float oben = NanoDesign.H_KOPF * k;
-		float breite = 105F * k;
-		float linealH = 20F * k;
-
-		NanoStifte.flaeche(vg, 0, oben, breite, h - oben, 0F, 0x191919);
-		NanoStifte.linie(vg, breite, oben, breite, h, 1F * k, 0x0D0D0D);
-		NanoStifte.text(vg, NanoDesign.SANS, 9.5F * k, 8F * k, oben + 13F * k,
-			NanoDesign.TXT_OFF, "CHANNELS", null);
-
-		UIFilmPanel panel = filmPanel();
-
-		if (panel == null || panel.getData() == null)
-		{
-			return;
-		}
-
-		/* ⛔ GEOMETRIE NICHT SELBST NACHRECHNEN — VON UIClips HOLEN. Diese Spalte zaehlte
-		 * ihre Zeilen von OBEN nach unten mit fester Hoehe; UIClips legt die Spuren von UNTEN
-		 * nach oben, zeichnet eine mehr und rechnet den Scroll ein. Gemessen bei k=2: Zeile 0
-		 * der Spalte lag auf y=399, dort liegt aber Ebene 3 — die Namen standen exakt
-		 * spiegelverkehrt zu den Clips. Nutzer: „die channel liste hat immernoch das
-		 * verschiebe problem was umgekehrt ist." */
-		UIClips spuren = panel.cameraEditor.clips;
-		int ebenen = spuren.layers;
-
-		/* Wie viele Ebenen tragen ueberhaupt Clips? Danach richtet sich die Nummerierung. */
-		int belegteEbenen = 0;
-
-		for (int e = 0; e < ebenen; e++)
-		{
-			for (mchorse.bbs_mod.utils.clips.Clip c : panel.getData().camera.get())
-			{
-				if (c.layer.get() == e)
-				{
-					belegteEbenen++;
-
-					break;
-				}
-			}
-		}
-
-		float zeileH = spuren.getLayerHeight() * k;
-		int belegt = 0;
-
-		for (int e = 0; e < ebenen; e++)
-		{
-			int n = 0;
-
-			for (mchorse.bbs_mod.utils.clips.Clip c : panel.getData().camera.get())
-			{
-				if (c.layer.get() == e)
-				{
-					n++;
-				}
-			}
-
-			/* ⛔ EINE LEERE EBENE IST KEINE KAMERA — sonst standen sechs „Camera N" in der
-			 * Liste, fuenf davon leer („man sieht immer mehr kameras je hoeher der camera
-			 * clip"). Die ZEILEN bleiben, ihre Zahl muss zu UIClips passen; beschriftet wird
-			 * nur Belegtes, und die Nummer zaehlt belegte Ebenen, nicht den Ebenenindex. */
-			if (n > 0) belegt++;
-
-			/* Dieselbe y-Position, die UIClips fuer diese Ebene benutzt — mitsamt Scroll, in
-			 * Flaechen-Koordinaten umgerechnet. Was ausserhalb liegt, wird nicht gezeichnet. */
-			float y = (spuren.toLayerY(e) - this.area.y) * k;
-
-			if (y < oben + linealH || y + zeileH > h) continue;
-
-			if (n > 0)
-			{
-				NanoSymbole.symbol(vg, "kamera", 12F * k, y + zeileH / 2F, NanoDesign.GRUEN, k * 0.7F);
-				NanoStifte.textInBox(vg, NanoDesign.SANS, 10F * k, 22F * k, y + zeileH / 2F,
-					NanoDesign.GRUEN, belegteEbenen == 1 ? "Camera" : "Camera " + belegt);
-				NanoStifte.textInBox(vg, NanoDesign.SANS, 9F * k, breite - 8F * k,
-					y + zeileH / 2F, NanoDesign.TXT_OFF, n + "");
-			}
-			else
-			{
-				NanoStifte.textInBox(vg, NanoDesign.SANS, 10F * k, 22F * k, y + zeileH / 2F,
-					NanoDesign.TXT_OFF, "—");
-			}
-		}
-	}
 
 	/**
 	 * Editor-Wahl als KONTEXTMENUE statt als in die Textur gezeichnete Klappe.
@@ -298,7 +204,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		{
 			menu.gruppe(mchorse.bbs_mod.l10n.keys.IKey.raw("Editor"));
 
-			String[][] eintraege = {{"Dope Sheet", "0"}, {"Animated only", "1"}, {"Camera clips", "2"}};
+			String[][] eintraege = {{"Dope Sheet", "0"}, {"Animated only", "1"}, {"Camera clips", "2"}, {"Action clips", "3"}};
 
 			for (String[] e : eintraege)
 			{
@@ -428,9 +334,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		NanoStifte.flaeche(vg, 0, 0, b, NanoDesign.H_KOPF * k, NanoDesign.R_AREA * k,
 			NanoDesign.REGION);
 
-		float nachKopf = NanoBausteine.kopfzeile(vg, b, k, "dopesheet");
-
-		f.zone("etyp", 8F * k, (NanoDesign.H_KOPF - 22F) * k / 2F, 37F * k, 22F * k, this::modusMenue, "Editor type", "");
+        float nachKopf = EditorTypAuswahl.kopf(vg, b, k, "dopesheet", f, this, "main");
 
 		UIFilmPanel panel = filmPanel();
 		Film film = panel == null ? null : panel.getData();
@@ -500,7 +404,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 		if (titelPlatz > 40F * k)
 		{
-			String[] modi = {"Dope Sheet", "Animated only", "Camera clips"};
+			String[] modi = {"Dope Sheet", "Animated only", "Camera clips", "Action clips"};
 			String titel = modi[Math.min(this.modus, modi.length - 1)];
 			float tw = NanoDesign.breite(titel, 11F * k) + 26F * k;
 
@@ -572,13 +476,13 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 		/* ⛔ HIER ENDET diese Flaeche: alles darunter zeichnet UIClips mit seinen 89 Methoden —
 		 * der Neubau hatte das nachgebaut und 88 davon verloren (jede Nutzermeldung ein Stueck davon). */
-		this.kanalspalte(vg, f, b, h, k);
+		ZeitleisteKanalspalte.zeichnen(vg, h, k, this.modus, this.area.y, filmPanel());
 
 		/* ⛔ Eingaben NUR im Kopf: die volle Flaeche schluckte sonst die komplette Bedienung
 		 * des Koerper-Editors darunter; die Kanalspalte bleibt bewusst draussen (Beschriftung). */
 		f.eingabeFeld(0F, 0F, this.area.w, NanoDesign.H_KOPF);
 		/* Hoehe = NUR Kopf: unterhalb uebermalt das Dope Sheet — der Rand-Kipp klappt den Tooltip so nach OBEN (gemessen). */
-		NanoBausteine.tooltip(vg, b, Math.round(NanoDesign.H_KOPF * k), k, f.tooltipFaellig());
+		NanoBausteine.tooltip(vg, b, Math.round(NanoDesign.H_KOPF * k), k, f);
 	}
 	/**
 	 * Abspielsteuerung im Flaechenkopf, von rechts nach links gesetzt: Anfang, Schritt zurueck,
@@ -736,7 +640,22 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 		f.zone("schleife", x, y, bw, bh, () ->
 		{
-			this.loopInput.klick(panel, cursor);
+			/* Drei Zustaende im Ring: Anfang setzen -> Ende setzen -> aufheben.
+			 * Erkennbar an loopMax: 0 heisst „Anfang steht, Ende fehlt noch". */
+			if (clips.loopMin != clips.loopMax && clips.loopMax != 0)
+			{
+				clips.loopMin = 0;
+				clips.loopMax = 0;
+			}
+			else if (clips.loopMin != 0 && clips.loopMax == 0 && cursor > clips.loopMin)
+			{
+				clips.setLoopMax();
+			}
+			else
+			{
+				clips.setLoopMin();
+				clips.loopMax = 0;
+			}
 
 			this.stand = "";
 			this.flaeche.neuMalen();

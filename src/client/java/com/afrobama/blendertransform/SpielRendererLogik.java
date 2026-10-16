@@ -36,11 +36,54 @@ public final class SpielRendererLogik
      */
     public static RenderTarget filmpuffer()
     {
-        if (mchorse.bbs_mod.client.Erweiterungen.vorschauRendert())
-            return mchorse.bbs_mod.client.Erweiterungen.vorschau.ziel();
+        if (mchorse.bbs_mod.client.ExportHud.aktiv())
+            return BBSRendering.getFramebuffer();
+        if (com.blenderbridge.camera.RenderCameraPreview.isRendering())
+            return com.blenderbridge.camera.RenderCameraPreview.target();
         return BBSRendering.canReplaceFramebuffer() && BBSRendering.getFramebuffer() != null
             ? BBSRendering.getFramebuffer()
             : null;
+    }
+
+    /** 26.3's sky renderer and hand pass keep a fixed target; BBS world passes use a dynamic target. */
+    public static RenderTarget himmelsziel(RenderTarget original)
+    {
+        RenderTarget active = filmpuffer();
+
+        if (active != null)
+        {
+            return active;
+        }
+
+        /* Not the target the sky renderer remembers: LevelRenderer.addSkyPass creates it with
+         * mainRenderTarget(), which is the film buffer while the film redirect is on (opening the
+         * dashboard right after world load). It kept that buffer for good, and after the film the
+         * sky drew with the film's 1452x546 depth beside the pack's window-sized colour: audit
+         * #103, measured "Vitrail sky" depth = "bbs-film / Depth". The window target, unredirected, read from GameRenderer's field (a
+         * reflective read rather than an accessor mixin, so the fix hotswaps into a running game). */
+        RenderTarget fenster = (RenderTarget) com.afrobama.bbstools.client.blender.MixinBruecke
+            .feldLesen(Minecraft.getInstance().gameRenderer, "mainRenderTarget");
+
+        return fenster != null ? fenster : original;
+    }
+
+    /** The GUI samples this texture after the current world's shaderpack/post passes finished. */
+    public static void vorGuiZeichnen()
+    {
+        if (Minecraft.getInstance().level != null && BBSRendering.isCustomSize())
+        {
+            BBSRendering.fuellen();
+        }
+
+        /* Welt-Abgriff fuer den Hybrid-Render: hier ist die Welt fertig und kein Pass offen. */
+        com.mcstudio.see.WeltAbgriffNachPass.vorGui();
+    }
+
+    /** The GUI pass is closed here; a redirected Minecraft HUD has also reached the film target. */
+    public static void nachGuiZeichnen()
+    {
+        mchorse.bbs_mod.client.ExportHud.zeichnen();
+        BBSModClient.captureFinishedFrame();
     }
 
     /**
@@ -76,9 +119,9 @@ public final class SpielRendererLogik
      */
     public static boolean trefferneigung(PoseStack matrizen)
     {
-        if (mchorse.bbs_mod.client.Erweiterungen.vorschauRendert())
+        if (com.blenderbridge.camera.RenderCameraPreview.isRendering())
         {
-            matrizen.mulPose(Axis.ZP.rotationDegrees(mchorse.bbs_mod.client.Erweiterungen.vorschau.rollen()));
+            matrizen.rotate(Axis.ZP.rotationDegrees(com.blenderbridge.camera.RenderCameraPreview.roll()));
             return true;
         }
         CameraController regler = BBSModClient.getCameraController();
@@ -88,7 +131,7 @@ public final class SpielRendererLogik
             return false;
         }
 
-        matrizen.mulPose(Axis.ZP.rotationDegrees(regler.getRoll()));
+        matrizen.rotate(Axis.ZP.rotationDegrees(regler.getRoll()));
 
         return true;
     }
@@ -129,6 +172,14 @@ public final class SpielRendererLogik
     /** {@code renderLevel} @HEAD. */
     public static void weltAnfang()
     {
+        /* The preview camera's second world pass is not the film's frame: it must not switch the
+         * film redirect on (models then drew into bbs-film inside the preview's native pass, audit
+         * 2026-10-14) nor start the film's and the menu's frame a second time. */
+        if (ZweitKamera.aktiv())
+        {
+            return;
+        }
+
         mchorse.bbs_mod.cubic.render.RigOverlayPass.clear();
         if (BBSModClient.getCameraController().getCurrent() != null)
         {
@@ -151,18 +202,21 @@ public final class SpielRendererLogik
      */
     public static void weltEnde()
     {
-        mchorse.bbs_mod.cubic.render.RigOverlayPass.flush();
-        TrackerClientClip.endLevelRendering();
-
-        if (BBSModClient.getVideoRecorder().isRecording() && BBSRendering.canRender)
+        if (ZweitKamera.aktiv())
         {
-            BBSModClient.getMinecraftSoundCapture().captureFrame();
-            BBSModClient.getVideoRecorder().recordFrame();
+            return;
         }
 
+        mchorse.bbs_mod.cubic.render.RigOverlayPass.flush();
+        TrackerClientClip.endLevelRendering();
         BBSRendering.onWorldRenderEnd();
-        mchorse.bbs_mod.client.ExportFrameCallbacks.completeFrame();
         Stapelwache.abschnitt("level:ende");
+    }
+
+    /** {@code render3dHud} @HEAD — Welt samt Shaderpack-Composite fertig, Tiefe noch die der Welt. */
+    public static void nachDerWelt(net.minecraft.client.renderer.state.level.CameraRenderState kamera)
+    {
+        mchorse.bbs_mod.film.regie.RegieWelt.zeichnen(kamera);
     }
 
     /**
@@ -173,6 +227,13 @@ public final class SpielRendererLogik
      */
     public static void vorDemBildschirm()
     {
+        /* GameRenderer.render HEAD precedes world collection and also runs for menu/UI frames. */
+        mchorse.bbs_mod.forms.renderers.FramebufferFormPreparation.beginFrame();
+        /* Outside every render pass: textures requested inside one are uploaded here. */
+        BBSModClient.getTextures().ladeAufgeschobene();
+        /* Video-Formen fordern Bilder beim Zeichnen nur an; hochgeladen wird hier, ausserhalb. */
+        mchorse.bbs_mod.video.VideoTextures.uploadAll();
+
         if (HudSichtbarkeit.istVersteckt() && BBSModClient.getCameraController().getCurrent() == null)
         {
             BBSRendering.onRenderBeforeScreen();

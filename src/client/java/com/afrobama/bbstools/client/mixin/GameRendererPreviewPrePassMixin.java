@@ -3,6 +3,7 @@ package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -33,15 +34,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GameRenderer.class)
 public abstract class GameRendererPreviewPrePassMixin
 {
-    @Inject(method = "renderLevel", at = @At("HEAD"), require = 0)
-    private void bbstools$renderClipViewportsBeforeMain(DeltaTracker tickCounter, CallbackInfo ci)
+    /* After the main level, before the screenshot hook -- SecurityCraft's point for frame feeds.
+     * Before the main level (the old HEAD of renderLevel) a second extract overwrote the main
+     * frame's state. require = 1: losing this hook would bring back the black window silently. */
+    @Inject(method = "render", require = 1, at = @At(value = "INVOKE",
+        target = "Lnet/minecraft/client/renderer/GameRenderer;tryTakeScreenshotIfNeeded()V"))
+    private void bbstools$renderClipViewportsBeforeMain(CallbackInfo ci)
     {
         /* BRÜCKEN-MUSTER (2026-07-26): dieser handler wird beim klassenladen in GameRenderer
          * gewoben und liegt damit im KnotClassLoader — vom kernel-swap unerreichbar. Die
          * gesamte Phase-15-v3-logik (world-skip alt-camera preview) liegt jetzt in
          * `com.afrobama.blendertransform.GameRendererPreviewPrePassLogik` und wird bei jedem
          * swap mitgetauscht. */
-        MixinBruecke.rufe("GameRendererPreviewPrePassLogik", "render", tickCounter);
+        MixinBruecke.rufe("GameRendererPreviewPrePassLogik", "render", Minecraft.getInstance().getDeltaTracker());
     }
 
 }

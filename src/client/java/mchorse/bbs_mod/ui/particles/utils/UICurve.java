@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.particles.utils;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.graphics.line.LineBuilder;

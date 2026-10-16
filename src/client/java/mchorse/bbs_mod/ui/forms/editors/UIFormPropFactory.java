@@ -49,28 +49,33 @@ public class UIFormPropFactory
     public UITextbox text(Supplier<ValueString> quelle)
     {
         UITextbox textbox = new UITextbox(10000, (t) -> quelle.get().set(t));
+        Runnable sync = () -> textbox.setText(quelle.get().get());
 
-        this.syncs.add(() -> textbox.setText(quelle.get().get()));
+        this.syncs.add(sync);
 
-        return textbox;
+        return mchorse.bbs_mod.ui.utils.values.UIValues.resettable(textbox, quelle, sync);
     }
 
     public UIToggle toggle(IKey label, Supplier<ValueBoolean> quelle)
     {
         UIToggle toggle = new UIToggle(label, (b) -> quelle.get().set(b.getValue()));
 
-        this.syncs.add(() -> toggle.setValue(quelle.get().get()));
+        Runnable sync = () -> toggle.setValue(quelle.get().get());
 
-        return toggle;
+        this.syncs.add(sync);
+
+        return mchorse.bbs_mod.ui.utils.values.UIValues.resettable(toggle, quelle, sync);
     }
 
     public UIColor color(Supplier<ValueColor> quelle)
     {
         UIColor color = new UIColor((c) -> quelle.get().set(Color.rgba(c))).withAlpha();
 
-        this.syncs.add(() -> color.setColor(quelle.get().get().getARGBColor()));
+        Runnable sync = () -> color.setColor(quelle.get().get().getARGBColor());
 
-        return color;
+        this.syncs.add(sync);
+
+        return mchorse.bbs_mod.ui.utils.values.UIValues.resettable(color, quelle, sync);
     }
 
     /** Zahlenfeld; Range/Drag-Feinheit/Increment liefert die Value-Definition. */
@@ -78,15 +83,17 @@ public class UIFormPropFactory
     {
         UITrackpad trackpad = new UITrackpad((v) -> setzeZahl(quelle.get(), v));
 
-        this.syncs.add(() ->
+        Runnable sync = () ->
         {
             BaseValueNumber<? extends Number> wert = quelle.get();
 
             metaAnwenden(trackpad, wert);
             trackpad.setValue(wert.get().doubleValue());
-        });
+        };
 
-        return trackpad;
+        this.syncs.add(sync);
+
+        return mchorse.bbs_mod.ui.utils.values.UIValues.resettable(trackpad, quelle, sync);
     }
 
     /** Schieberegler fuer Values, deren Definition slider() traegt (Range Pflicht). */
@@ -95,15 +102,17 @@ public class UIFormPropFactory
         mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad regler =
             new mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad((v) -> setzeZahl(quelle.get(), v));
 
-        this.syncs.add(() ->
+        Runnable sync = () ->
         {
             BaseValueNumber<? extends Number> wert = quelle.get();
 
             metaAnwenden(regler, wert);
             regler.setValue(wert.get().doubleValue());
-        });
+        };
 
-        return regler;
+        this.syncs.add(sync);
+
+        return mchorse.bbs_mod.ui.utils.values.UIValues.resettable(regler, quelle, sync);
     }
 
     private static void setzeZahl(BaseValueNumber<? extends Number> wert, double v)

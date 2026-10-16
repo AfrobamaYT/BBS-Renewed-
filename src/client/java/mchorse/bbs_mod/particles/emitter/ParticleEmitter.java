@@ -1,12 +1,12 @@
 package mchorse.bbs_mod.particles.emitter;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.client.FormPipelines;
@@ -26,7 +26,7 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.renderer.GameRenderer;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import org.joml.Matrix3f;
@@ -552,6 +552,16 @@ public class ParticleEmitter
 
     public void render(VertexFormat format, Supplier<RenderPipeline> program, PoseStack stack, int overlay, float transition)
     {
+        this.render(format, program, stack, overlay, transition, -1);
+    }
+
+    public void render(VertexFormat format, Supplier<RenderPipeline> program, PoseStack stack, int overlay, float transition, int picking)
+    {
+        this.render(format, program, stack, overlay, transition, picking, false);
+    }
+
+    public void render(VertexFormat format, Supplier<RenderPipeline> program, PoseStack stack, int overlay, float transition, int picking, boolean nativeWorld)
+    {
         if (this.scheme == null)
         {
             return;
@@ -566,45 +576,72 @@ public class ParticleEmitter
 
         if (!this.particles.isEmpty())
         {
-            Matrix4f matrix = stack.last().pose();
+            Matrix4f matrix = new Matrix4f(stack.last().pose());
+            Matrix4f view = new Matrix4f(RenderSystem.getModelViewMatrixCopy());
+            if (nativeWorld)
+            {
+                if (!mchorse.bbs_mod.forms.FormTranslucentQueue.isActive() && !mchorse.bbs_mod.integrations.vitrail.VitrailActorFrame.earlyWorld()
+                    && !mchorse.bbs_mod.client.renderer.NativeMorphCapture.capturingParticles())
+                    throw new IllegalStateException("Native emitter draw arrived outside the retained world queue");
+                Matrix4f nativeView = mchorse.bbs_mod.integrations.vitrail.VitrailRetainedParticles.view();
+                /* The stock particle family applies its frame view. Re-express the baked
+                 * vertices so that nativeView * matrix equals the original view * matrix. */
+                matrix = new Matrix4f(nativeView).invert().mul(view).mul(matrix);
+                view = nativeView;
+            }
 
             Texture textur = this.bindTexture();
             /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
              * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
-            ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
-            BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, format);
-
-            for (Particle particle : this.particles)
+            RenderPipeline selected = program.get();
+            VertexFormat actual = selected.getVertexFormatBinding(0);
+            if (selected.getVertexFormatBindings().stream().filter(java.util.Objects::nonNull).count() != 1
+                || actual == null || (!format.equals(actual) && (format != DefaultVertexFormat.ENTITY
+                    || actual.getStepRate() != format.getStepRate() || actual.getElements().size() < format.getElements().size()
+                    || !actual.getElements().subList(0, format.getElements().size()).equals(format.getElements()))))
+                throw new IllegalArgumentException("Particle pipeline does not carry the requested vertex format or its entity extension");
+            format = actual;
+            try (ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096))
             {
-                this.setEmitterVariables(transition);
-                this.setParticleVariables(particle, transition);
+                BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, format);
 
-                for (IComponentParticleRender component : renders)
+                for (Particle particle : this.particles)
                 {
-                    component.render(this, format, particle, builder, matrix, overlay, transition);
+                    this.setEmitterVariables(transition);
+                    this.setParticleVariables(particle, transition);
+
+                    for (IComponentParticleRender component : renders)
+                    {
+                        component.render(this, format, particle, builder, matrix, overlay, transition);
+                    }
+                }
+
+                /* Components already bake the pose into their vertices. Keep their real format,
+                 * texture and view together through picking, immediate or retained submission. */
+                com.mojang.blaze3d.vertex.MeshData mesh = builder.build();
+                if (mesh != null)
+                {
+                    if (nativeWorld)
+                    {
+                        Vector3f origin = new Vector3f((float) (this.lastGlobal.x - this.cX),
+                            (float) (this.lastGlobal.y - this.cY), (float) (this.lastGlobal.z - this.cZ));
+                        view.transformPosition(origin);
+                        mchorse.bbs_mod.forms.FormTranslucentQueue.NetzBefehl command = new mchorse.bbs_mod.forms.FormTranslucentQueue.NetzBefehl(
+                            new mchorse.bbs_mod.graphics.GehaltenesNetz(mesh), () -> selected, textur,
+                            new Matrix4f(view), null, origin, false, null, null);
+                        try
+                        {
+                            if (!mchorse.bbs_mod.integrations.vitrail.VitrailActorFrame.retainParticle(command))
+                                mchorse.bbs_mod.forms.FormTranslucentQueue.add(command);
+                        }
+                        catch (RuntimeException | Error error) { command.release(); throw error; }
+                    }
+                    else if (picking >= 0)
+                        mchorse.bbs_mod.forms.renderers.utils.TexturedFormPicking.draw(mesh, textur, view, picking);
+                    else SofortZeichner.zeichnen(selected, mesh, view,
+                        null, textur == null ? null : SofortZeichner.modellTextur(textur));
                 }
             }
-
-            /* 26.2: BufferUploader ist entfallen. Format UND Pipeline kommen hier von aussen
-             * (Parameter format/program) -- die Aufrufer sind inzwischen umgestellt und reichen
-             * echte RenderPipelines durch (UIParticleSchemeRenderer:
-             * RenderPipelines.TRANSLUCENT_PARTICLE). Damit ist hier nichts mehr zu waehlen:
-             * die uebergebene Pipeline traegt Shader, Blend, Tiefe und Cull, also entfallen
-             * setShader, disableBlend und das disableCull/enableCull-Paar ersatzlos.
-             *
-             * Die Ecken tragen die Pose schon (die Komponenten schreiben addVertex(matrix, ...)),
-             * darum gehoert als Modellansicht nur die globale Ansicht hierher -- genau die, die
-             * drawWithShader frueher selbst setzte. Gleiche Rechnung wie im UI-Zweig oben.
-             *
-             * ⚠️ Die Textur ist kein globaler Zustand mehr: bindTexture() allein erreicht den
-             * Durchgang nicht, sie muss als Sampler-Bindung mitgegeben werden. entityTextur
-             * legt Modelltextur, Overlay und Lichtkarte zusammen. */
-            SofortZeichner.zeichnen(
-                program.get(),
-                builder.build(),
-                RenderSystem.getModelViewMatrixCopy(),
-                null,
-                textur == null ? null : SofortZeichner.entityTextur(textur));
         }
 
         for (IComponentParticleRender component : renders)

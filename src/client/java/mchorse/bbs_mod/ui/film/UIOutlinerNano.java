@@ -191,6 +191,24 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 				panel.replayEditor.replaysList.replays.scrollToReplay(ziel);
 				panel.replayEditor.replaysList.replays.removeReplay();
 			}
+		}).inside(); /* only over the outliner: elsewhere Delete removes keys, and it took the whole actor (2026-10-15) */
+		/* J turns the picked replays off while any of them is on, otherwise all on (BBS FS 28227dfae). */
+		this.keys().register(mchorse.bbs_mod.ui.Keys.REPLAYS_ENABLE, () ->
+		{
+			UIFilmPanel panel = filmPanel();
+			List<Replay> replays = panel == null ? List.of() : panel.replayEditor.replaysList.replays.getSelectedReplays();
+
+			if (replays.isEmpty() && this.gewaehlt >= 0 && this.gewaehlt < this.zeilen.size() && this.zeilen.get(this.gewaehlt).replay != null)
+			{
+				replays = List.of(this.zeilen.get(this.gewaehlt).replay);
+			}
+
+			boolean an = replays.stream().anyMatch((replay) -> replay.enabled.get());
+
+			replays.forEach((replay) -> replay.enabled.set(!an));
+			this.stand = "";
+			this.auffrischen();
+			this.flaeche.neuMalen();
 		}).inside();
 		this.flaeche.relative(this).x(0).y(0).w(1F).h(1F);
 		this.add(this.flaeche);
@@ -212,7 +230,7 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 				this.suche = this.suche.substring(0, this.suche.length() - 1);
 			}
 		}
-		else
+		else if (c != '\n')
 		{
 			this.suche += c;
 		}
@@ -365,7 +383,8 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 		NanoStifte.flaeche(vg, 0, kopfH - 7F * k, b, 7F * k, 0F, C_HEADER);
 
 		/* Editor-Typ-Waehler links im Kopf — Signatur jeder Flaeche, jetzt bedienbar */
-		float ex = 6F * k, ey = (kopfH - 20F * k) / 2F;
+        EditorTypAuswahl.nano(vg, f, this, "replaysList", "outliner", k);
+        float ex = 44F * k, ey = (kopfH - 20F * k) / 2F;
 		NanoStifte.flaeche(vg, ex, ey, 30F * k, 20F * k, 4F * k,
 			this.klappeOffen ? NanoDesign.WIDGET_HI : C_WIDGET);
 		zeichneSymbol(vg, "outliner", ex + 9F * k, ey + 10F * k, C_TXT, k);
@@ -375,7 +394,7 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 		{
 			this.klappeOffen = !this.klappeOffen;
 			this.flaeche.neuMalen();
-		}, "Editor type", "");
+        }, "Display mode", "");
 
 		/* Suchfeld — echte Texteingabe mit Fokus; bei enger Flaeche weggelassen */
 		if (!NanoDesign.eng(b, k))
@@ -581,7 +600,7 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 				{"dopesheet", "Channels only"},
 			};
 
-			NanoBausteine.editorKlappe(vg, f, 6F * k, kopfH + 2F * k, k, eintraege, this.modus, (wahl) ->
+            NanoBausteine.editorKlappe(vg, f, 44F * k, kopfH + 2F * k, k, eintraege, this.modus, (wahl) ->
 			{
 				this.modus = wahl;
 				this.klappeOffen = false;

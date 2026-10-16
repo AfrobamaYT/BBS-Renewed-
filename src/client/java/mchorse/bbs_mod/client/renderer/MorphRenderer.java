@@ -89,7 +89,9 @@ public class MorphRenderer
                 int overlay = OverlayTexture.pack(0F, player.hurtTime > 0 || player.deathTime > 0);
 
                 matrixStack.pushPose();
-                matrixStack.mulPose(Axis.YP.rotationDegrees(-bodyYaw));
+                try
+                {
+                matrixStack.rotate(Axis.YP.rotationDegrees(-bodyYaw));
 
                 /* ⛔ OHNE mitSammler STIRBT DAS SPIEL — derselbe Fehler wie beim Actor
                  * (ActorEntityRenderer, 2026-08-10), hier auf dem SPIELER-Weg. Vanilla
@@ -104,10 +106,11 @@ public class MorphRenderer
                  * crash-2026-08-11_01.14.00-client.txt nennt die Kette
                  * MorphRenderer.renderPlayer -> FormUtilsClient.render ->
                  * FormRenderer.render -> FormSammler.pflicht. */
-                FormSammler.mitSammler(vertexConsumerProvider, () ->
-                    FormUtilsClient.render(morph.getForm(), new FormRenderingContext()
-                        .set(FormRenderType.ENTITY, morph.entity, matrixStack, i, overlay, g)
-                        .camera(Minecraft.getInstance().gameRenderer.mainCamera())));
+                FormRenderingContext formContext = new FormRenderingContext()
+                    .set(FormRenderType.ENTITY, morph.entity, matrixStack, i, overlay, g)
+                    .camera(Minecraft.getInstance().gameRenderer.mainCamera());
+                FormSammler.mitSammler(vertexConsumerProvider, () -> NativeMorphCapture.original(morph.getForm(), formContext,
+                    () -> FormUtilsClient.render(morph.getForm(), formContext)));
 
                 /* ⛔ ZWEITRENDER ZUR ZEICHEN-ZEIT — ohne ihn sind MODELL-Morphs in der Welt
                  * unsichtbar. Der Aufruf darueber laeuft in der SAMMELphase: sein
@@ -118,7 +121,8 @@ public class MorphRenderer
                  * des Zweitrenders fallen in einen Wegwerf-Speicher (sonst doppelt). */
                 MorphAufschub.einreichen(morph.getForm(), morph.entity, matrixStack, i, overlay, g);
 
-                matrixStack.popPose();
+                }
+                finally { matrixStack.popPose(); }
             }
 
             return true;
@@ -166,17 +170,21 @@ public class MorphRenderer
             float bodyYaw = Lerps.lerp(livingEntity.yBodyRotO, livingEntity.yBodyRot, g);
 
             matrixStack.pushPose();
-            matrixStack.mulPose(Axis.YP.rotationDegrees(-bodyYaw));
+            try
+            {
+            matrixStack.rotate(Axis.YP.rotationDegrees(-bodyYaw));
 
-            FormUtilsClient.render(form, new FormRenderingContext()
+            FormRenderingContext formContext = new FormRenderingContext()
                 .set(FormRenderType.ENTITY, owner.entity, matrixStack, i, o, g)
-                .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
+                .camera(Minecraft.getInstance().gameRenderer.mainCamera());
+            NativeMorphCapture.original(form, formContext, () -> FormUtilsClient.render(form, formContext));
 
             /* Zweitrender wie in renderPlayer: der Aufruf darueber liegt in der
              * Sammelphase, sein Modell-Sofortzug wird uebermalt. */
             MorphAufschub.einreichen(form, owner.entity, matrixStack, i, o, g);
 
-            matrixStack.popPose();
+            }
+            finally { matrixStack.popPose(); }
 
             return true;
         }

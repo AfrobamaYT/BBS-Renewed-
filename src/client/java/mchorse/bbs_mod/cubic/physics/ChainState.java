@@ -24,4 +24,9 @@ class ChainState
 
     /** The animated pose the chain springs toward, stored relative to the live anchor frame. */
     public Vector3f[] poseLocal;
+
+    /** Where the {@link PhysicsCarrier} stood at the tick {@code carrierAge}; MIN_VALUE without one. */
+    public int carrierAge = Integer.MIN_VALUE;
+    public Vector3f carrierPosition = new Vector3f();
+    public Quaternionf carrierRotation = new Quaternionf();
 }

@@ -106,26 +106,28 @@ public final class MobFormPose
             return;
         }
 
-        Map<String, ModelPart> parts = MobFormRenderer.getParts().get(entity.getClass());
+        /* Bones by vanilla's names, per model (BBS FS e341fa733) */
+        mchorse.bbs_mod.forms.renderers.mob.MobKnochen rig = mchorse.bbs_mod.forms.renderers.mob.MobKnochen.von(entity);
 
-        if (parts == null)
+        if (rig == null)
         {
             return;
         }
 
-        for (Map.Entry<String, ModelPart> entry : parts.entrySet())
+        for (Map.Entry<String, ModelPart> entry : rig.teile.entrySet())
         {
-            String key = entry.getKey();
             ModelPart value = entry.getValue();
-            PoseTransform poseTransform = pose.transforms.get(key);
+            PoseTransform poseTransform = rig.wert(pose.transforms, entry.getKey());
 
             if (poseTransform == null)
             {
                 continue;
             }
 
-            Transform transform = new Transform();
+            Gemerkt transform = new Gemerkt();
 
+            transform.sichtbar = value.visible;
+            value.visible &= poseTransform.visible; /* a pose can hide a mob's part (BBS FS fce301787) */
             transform.translate.x = value.x;
             transform.translate.y = value.y;
             transform.translate.z = value.z;
@@ -186,6 +188,7 @@ public final class MobFormPose
             value.xScale = transform.scale.x;
             value.yScale = transform.scale.y;
             value.zScale = transform.scale.z;
+            if (transform instanceof Gemerkt gemerkt) value.visible = gemerkt.sichtbar;
         }
 
         cache.clear();
@@ -218,25 +221,17 @@ public final class MobFormPose
             return pose;
         }
 
-        for (Map.Entry<String, PoseTransform> transformEntry : ueberlagerung.transforms.entrySet())
-        {
-            PoseTransform poseTransform = pose.get(transformEntry.getKey());
-            PoseTransform value = transformEntry.getValue();
+        /* Then the extra pose tracks, in order, as a model form stacks them (BBS FS 8ce6f0238). */
+        pose.ueberlagern(ueberlagerung);
 
-            if (value.fix != 0)
-            {
-                poseTransform.translate.lerp(value.translate, value.fix);
-                poseTransform.scale.lerp(value.scale, value.fix);
-                poseTransform.lerpRotation(value, value.fix);
-            }
-            else
-            {
-                poseTransform.translate.add(value.translate);
-                poseTransform.scale.add(value.scale).sub(1, 1, 1);
-                poseTransform.addRotation(value);
-            }
-        }
+        for (mchorse.bbs_mod.settings.values.core.ValuePose weitere : MobFormRenderer.getCurrentOverlays()) pose.ueberlagern(weitere.get());
 
         return pose;
+    }
+
+    /** A part's own values before the pose, its visibility included. */
+    private static class Gemerkt extends Transform
+    {
+        boolean sichtbar;
     }
 }

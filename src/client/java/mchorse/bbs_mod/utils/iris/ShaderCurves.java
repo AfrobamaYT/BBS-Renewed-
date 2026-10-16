@@ -17,13 +17,15 @@ import java.util.regex.Pattern;
 
 public class ShaderCurves
 {
-    public static Map<String, ShaderVariable> variableMap = new HashMap<>();
+    public static Map<String, ShaderVariable> variableMap = new java.util.concurrent.ConcurrentHashMap<>();
 
     private static Set<String> prohibitedVariables = new HashSet<>();
     private static Set<String> prohibitedConstIdentifiers = new HashSet<>();
 
     public static final String BRIGHTNESS = "brightness";
     public static final String SUN_ROTATION = "sun_rotation";
+    /** Degrees the sun's path turns around the vertical axis (BBS FS f60b3a7a5). */
+    public static final String SUN_HORIZONTAL_ROTATION = "sun_horizontal_rotation";
     public static final String WEATHER = "weather";
 
     public static final String UNIFORM_IDENTIFIER = "bbs_";
@@ -136,7 +138,7 @@ public class ShaderCurves
     private static Map<String, ShaderVariable> parseVariables(String source)
     {
         Map<String, ShaderVariable> variables = new HashMap<>();
-        Pattern definePattern = Pattern.compile("^\\s*(?!//)\\s*#define +([\\w_]+) +([\\d.]+) *// *(\\[|OptionAnnotatedSource)");
+        Pattern definePattern = Pattern.compile("^\\s*(?!//)\\s*#define[ \\t]+([\\w_]+)[ \\t]+([-+]?(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][-+]?\\d+)?)[ \\t]*//[ \\t]*(\\[|OptionAnnotatedSource)");
         int index = 0;
 
         while ((index = source.indexOf("#define", index)) != -1)
@@ -156,7 +158,7 @@ public class ShaderCurves
             {
                 String name = matcher.group(1);
                 String defaultValue = matcher.group(2);
-                boolean integer = !defaultValue.contains(".");
+                boolean integer = !defaultValue.contains(".") && !defaultValue.contains("e") && !defaultValue.contains("E");
                 ShaderVariable variable = new ShaderVariable(name, defaultValue, integer);
 
                 variables.putIfAbsent(variable.name, variable);
@@ -362,5 +364,17 @@ public class ShaderCurves
 
             return v;
         }
+    }
+
+    /** The current camera work's sun horizontal rotation, 0 when there is none or off the render thread. */
+    public static float sonnenrichtung()
+    {
+        if (!net.minecraft.client.Minecraft.getInstance().isSameThread()
+            || !(mchorse.bbs_mod.BBSModClient.getCameraController().getCurrent() instanceof mchorse.bbs_mod.camera.controller.CameraWorkCameraController controller)) return 0F;
+
+        java.util.Map<String, Double> values = mchorse.bbs_mod.camera.clips.misc.CurveClip.getValues(controller.getContext());
+        Double value = values == null ? null : values.get(SUN_HORIZONTAL_ROTATION);
+
+        return value == null ? 0F : value.floatValue();
     }
 }

@@ -43,6 +43,63 @@ public class UIFilmKeyframes extends UIKeyframes implements com.mcstudio.nano.Zo
         super(callback);
 
         this.editor = delegate;
+        this.keys().register(mchorse.bbs_mod.ui.film.replays.KeyframeGreifen.TASTE, () -> mchorse.bbs_mod.ui.film.replays.KeyframeGreifen.starten(this, false))
+            .inside().category(mchorse.bbs_mod.ui.UIKeys.KEYFRAMES_KEYS_CATEGORY);
+        this.keys().register(mchorse.bbs_mod.ui.film.replays.KeyframeGreifen.STRECKEN, () -> mchorse.bbs_mod.ui.film.replays.KeyframeGreifen.starten(this, true))
+            .inside().category(mchorse.bbs_mod.ui.UIKeys.KEYFRAMES_KEYS_CATEGORY);
+        this.keys().register(mchorse.bbs_mod.ui.film.replays.KeyframeGreifen.DUPLIZIEREN, () -> mchorse.bbs_mod.ui.film.replays.KeyframeGreifen.starten(this, false, true))
+            .inside().category(mchorse.bbs_mod.ui.UIKeys.KEYFRAMES_KEYS_CATEGORY);
+        this.keys().register(mchorse.bbs_mod.ui.film.replays.KeyframeMischen.TASTE, () -> mchorse.bbs_mod.ui.film.replays.KeyframeMischen.starten(this))
+            .inside().category(mchorse.bbs_mod.ui.UIKeys.KEYFRAMES_KEYS_CATEGORY);
+    }
+
+    /** Edited position or rotation keys move the actor now, not at the next 20 Hz tick (BBS FS cea01fe06). */
+    @Override
+    public void triggerChange()
+    {
+        super.triggerChange();
+
+        mchorse.bbs_mod.ui.film.UIFilmPanel panel = this.getParent(mchorse.bbs_mod.ui.film.UIFilmPanel.class);
+        if (panel == null || panel.getController().isControlling()) return;
+        mchorse.bbs_mod.film.replays.Replay replay = panel.replayEditor.getReplay();
+        mchorse.bbs_mod.forms.entities.IEntity entity = panel.getController().getCurrentEntity();
+        if (replay == null || entity == null) return;
+
+        var channels = replay.keyframes;
+        boolean position = false;
+        boolean rotation = false;
+        for (var sheet : this.getGraph().getSheets())
+        {
+            if (!sheet.selection.hasAny()) continue;
+            position |= sheet.channel == channels.x || sheet.channel == channels.y || sheet.channel == channels.z;
+            rotation |= sheet.channel == channels.yaw || sheet.channel == channels.pitch
+                || sheet.channel == channels.headYaw || sheet.channel == channels.bodyYaw;
+        }
+        if (!position && !rotation) return;
+
+        float cursor = this.getTick();
+        float tick = replay.getTick((int) cursor) + (cursor - (int) cursor);
+        if (position)
+        {
+            double x = channels.x.interpolate(tick), y = channels.y.interpolate(tick), z = channels.z.interpolate(tick);
+            entity.setPosition(x, y, z);
+            entity.setPrevX(x);
+            entity.setPrevY(y);
+            entity.setPrevZ(z);
+        }
+        if (rotation)
+        {
+            float yaw = channels.yaw.interpolate(tick).floatValue(), pitch = channels.pitch.interpolate(tick).floatValue();
+            float headYaw = channels.headYaw.interpolate(tick).floatValue(), bodyYaw = channels.bodyYaw.interpolate(tick).floatValue();
+            entity.setYaw(yaw);
+            entity.setPitch(pitch);
+            entity.setHeadYaw(headYaw);
+            entity.setBodyYaw(bodyYaw);
+            entity.setPrevYaw(yaw);
+            entity.setPrevPitch(pitch);
+            entity.setPrevHeadYaw(headYaw);
+            entity.setPrevBodyYaw(bodyYaw);
+        }
     }
 
     public UIFilmKeyframes absolute()
@@ -112,7 +169,7 @@ public class UIFilmKeyframes extends UIKeyframes implements com.mcstudio.nano.Zo
                 tick = this.getDopeSheet().magnetTick(tick, context, true);
             }
 
-            this.editor.setCursor(Math.max(0, (int) (Math.round(tick) + offset)));
+            this.editor.setCursor(Math.max(0F, mchorse.bbs_mod.ui.film.ICursor.einrasten(tick) + offset));
         }
     }
 
@@ -132,9 +189,10 @@ public class UIFilmKeyframes extends UIKeyframes implements com.mcstudio.nano.Zo
 
         if (this.editor != null)
         {
-            int cx = this.toGraphX(this.getOffset());
+            float cursor = this.editor.getCursor(0F) - this.getClipOffset();
+            int cx = this.toGraphX(cursor);
             /* Nur die Zahl — die Gesamtdauer steht im Kopf der Zeitleiste, wie in UIClips. */
-            String label = TimeUtils.formatTime(this.getOffset());
+            String label = TimeUtils.formatCursorTime(cursor);
 
             context.batcher.clip(this.graphArea, context);
             UIClips.renderCursor(context, label, this.graphArea, cx - 1);

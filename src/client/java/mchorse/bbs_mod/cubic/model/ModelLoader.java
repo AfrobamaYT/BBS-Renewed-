@@ -8,14 +8,16 @@ public class ModelLoader implements Runnable
     private ModelManager manager;
     private Thread thread;
     private Queue<String> queue = new LinkedList<>();
+    private boolean closed;
 
     public ModelLoader(ModelManager manager)
     {
         this.manager = manager;
     }
 
-    public void add(String key)
+    public synchronized void add(String key)
     {
+        if (this.closed) throw new IllegalStateException("Model loader is closed");
         this.queue.offer(key);
 
         if (this.thread == null)
@@ -25,12 +27,23 @@ public class ModelLoader implements Runnable
         }
     }
 
+    public synchronized void close()
+    {
+        this.closed = true;
+        this.queue.clear();
+    }
+
     @Override
     public void run()
     {
-        while (!this.queue.isEmpty())
+        while (true)
         {
-            String model = this.queue.poll();
+            String model;
+            synchronized (this)
+            {
+                model = this.closed ? null : this.queue.poll();
+                if (model == null) { this.thread = null; return; }
+            }
 
             try
             {
@@ -42,6 +55,5 @@ public class ModelLoader implements Runnable
             }
         }
 
-        this.thread = null;
     }
 }

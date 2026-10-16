@@ -83,6 +83,12 @@ public class FilmManager extends BaseManager<Film>
     }
 
     @Override
+    protected boolean herunterrechnen(MapType data, int version)
+    {
+        return FsFilmRueckweg.herunter(data, version);
+    }
+
+    @Override
     protected Film createData(String id, MapType mapType)
     {
         Film film = new Film();

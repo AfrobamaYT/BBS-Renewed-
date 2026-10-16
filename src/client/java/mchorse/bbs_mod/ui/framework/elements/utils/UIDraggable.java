@@ -1,11 +1,11 @@
 package mchorse.bbs_mod.ui.framework.elements.utils;
 
+import org.lwjgl.sdl.SDLMouse;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.utils.colors.Colors;
 import org.joml.Vector2i;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -20,8 +20,8 @@ public class UIDraggable extends UIElement
     private boolean hover;
     private boolean referenceX = true;
     private boolean referenceY = true;
-    private int hoverCursor = GLFW.GLFW_HAND_CURSOR;
-    private int dragCursor = GLFW.GLFW_HAND_CURSOR;
+    private int hoverCursor = SDLMouse.SDL_SYSTEM_CURSOR_POINTER;
+    private int dragCursor = SDLMouse.SDL_SYSTEM_CURSOR_POINTER;
     private Supplier<Boolean> enabled = () -> true;
 
     private int mouseX;

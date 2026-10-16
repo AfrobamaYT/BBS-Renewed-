@@ -150,6 +150,7 @@ public class GizmoInteraction
     {
         this.promotePendingPick(context);
         this.updateSphereHover(context);
+        GizmoHover.setzen(this.viewport.getGizmoStencil());
     }
 
     /**

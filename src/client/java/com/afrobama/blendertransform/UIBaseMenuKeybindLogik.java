@@ -47,10 +47,6 @@ public final class UIBaseMenuKeybindLogik
         {
             com.afrobama.bbstools.client.ui.undo.UIBBSToolsUndoOverlay.open();
         });
-        holder.keys().register(BBSToolsKeys.REPLAY_DOCK_OPEN, () ->
-        {
-            com.afrobama.bbstools.client.ui.replays.UIBBSReplayDock.open();
-        });
         holder.keys().register(BBSToolsKeys.UNDO_STEP, () ->
         {
             com.afrobama.bbstools.client.ui.undo.BBSToolsUndoStack.undo();

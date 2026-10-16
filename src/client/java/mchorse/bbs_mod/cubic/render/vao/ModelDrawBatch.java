@@ -1,12 +1,12 @@
 package mchorse.bbs_mod.cubic.render.vao;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.graphics.UiLicht;
 import mchorse.bbs_mod.graphics.texture.Texture;
@@ -69,7 +69,7 @@ public final class ModelDrawBatch implements AutoCloseable
 
     static boolean collect(Supplier<String> label, GpuTextureView color, GpuTextureView depth,
         RenderPass.RenderArea area, RenderPipeline pipeline, IModelVAO vao,
-        GpuBufferSlice transforms, GpuBuffer model, GpuBuffer skin, Texture texture)
+        GpuBufferSlice transforms, GpuBufferSlice model, GpuBuffer skin, Texture texture)
     {
         if (active == null || !active.enabled)
         {
@@ -83,12 +83,12 @@ public final class ModelDrawBatch implements AutoCloseable
 
         net.minecraft.client.renderer.GameRenderer renderer = Minecraft.getInstance().gameRenderer;
         GpuSampler smooth = RenderSystem.getSamplerCache()
-            .getClampToEdge(com.mojang.blaze3d.textures.FilterMode.LINEAR);
+            .getClampToEdge(com.mojang.renderpearl.api.textures.FilterMode.LINEAR);
         active.draws.add(new Draw(label, color, depth, area, pipeline, vao, transforms, model, skin,
             RenderSystem.getProjectionMatrixBuffer(), RenderSystem.getShaderFog(),
             RenderSystem.getGlobalSettingsUniform(), BBSRendering.isRenderingWorld()
                 ? RenderSystem.getShaderLights() : UiLicht.scheibe(),
-            texture.view(), texture.sampler(), renderer.overlayTexture().getTextureView(),
+            texture.view(), texture.sampler(), mchorse.bbs_mod.forms.renderers.utils.FormUeberlagerung.view(),
             renderer.lightmap(), smooth));
         return true;
     }
@@ -103,7 +103,7 @@ public final class ModelDrawBatch implements AutoCloseable
 
     private void flush()
     {
-        RenderPass pass = null;
+        mchorse.bbs_mod.graphics.DrawPassLease lease = null;
         Draw previous = null;
         try
         {
@@ -111,27 +111,24 @@ public final class ModelDrawBatch implements AutoCloseable
             {
                 if (previous == null || !previous.compatible(draw))
                 {
-                    if (pass != null)
+                    if (lease != null)
                     {
-                        pass.close();
-                        pass = null;
+                        lease.close();
+                        lease = null;
                     }
-                    pass = draw.area == null
-                        ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                            draw.label, draw.color, Optional.empty(), draw.depth, OptionalDouble.empty())
-                        : RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                            draw.label, draw.color, Optional.empty(), draw.depth, OptionalDouble.empty(), draw.area);
+                    lease = mchorse.bbs_mod.graphics.DrawPassLease.open(
+                        RenderSystem.getDevice().createCommandEncoder(), draw.label, draw.color, draw.depth, draw.area);
                 }
-                draw.render(pass);
+                draw.render(lease);
                 previous = draw;
             }
         }
         finally
         {
             this.draws.clear();
-            if (pass != null)
+            if (lease != null)
             {
-                pass.close();
+                lease.close();
             }
         }
     }
@@ -160,7 +157,7 @@ public final class ModelDrawBatch implements AutoCloseable
 
     private record Draw(Supplier<String> label, GpuTextureView color, GpuTextureView depth,
         RenderPass.RenderArea area, RenderPipeline pipeline, IModelVAO vao,
-        GpuBufferSlice transforms, GpuBuffer model, GpuBuffer skin,
+        GpuBufferSlice transforms, GpuBufferSlice model, GpuBuffer skin,
         GpuBufferSlice projection, GpuBufferSlice fog, GpuBuffer globals, GpuBufferSlice lighting,
         GpuTextureView texture, GpuSampler sampler, GpuTextureView overlay,
         GpuTextureView lightmap, GpuSampler smooth)
@@ -175,9 +172,10 @@ public final class ModelDrawBatch implements AutoCloseable
                 && (this.skin == null) == (other.skin == null);
         }
 
-        private void render(RenderPass pass)
+        private void render(mchorse.bbs_mod.graphics.DrawPassLease lease)
         {
-            pass.setPipeline(this.pipeline);
+            RenderPass pass = lease.pass();
+            pass.setPipeline(RenderSystem.getCompiledPipeline(lease.pipeline(this.pipeline)));
             if (this.projection != null) pass.setUniform("Projection", this.projection);
             if (this.fog != null) pass.setUniform("Fog", this.fog);
             if (this.globals != null) pass.setUniform("Globals", this.globals);
@@ -185,9 +183,9 @@ public final class ModelDrawBatch implements AutoCloseable
             pass.setUniform("DynamicTransforms", this.transforms);
             pass.setUniform(ModelVAOPipeline.MODELL_BLOCK, this.model);
             if (this.skin != null) pass.setUniform("SkinMatrices", this.skin);
-            pass.bindTexture("Sampler0", this.texture, this.sampler);
-            pass.bindTexture("Sampler1", this.overlay, this.smooth);
-            pass.bindTexture("Sampler2", this.lightmap, this.smooth);
+            pass.setUniform("Sampler0", this.texture, this.sampler);
+            pass.setUniform("Sampler1", this.overlay, this.smooth);
+            pass.setUniform("Sampler2", this.lightmap, this.smooth);
             this.vao.zeichnen(pass);
         }
     }

@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.client;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAOPipeline;
 
 /**

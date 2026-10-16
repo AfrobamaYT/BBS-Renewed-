@@ -66,7 +66,7 @@ public class BBSSettings {
 	public static ValueBoolean gizmos;
 	public static ValueBoolean defaultLocalTransform;
 	public static ValueInt transformSpace;
-	public static ValueBoolean transformHotkeys3dRay;
+	public static ValueBoolean transformHotkeys3dRay, simpleKeyboardTransform;
 	public static ValueBoolean transformHotkeysWhileControlling;
 	public static ValueBoolean transformMiddleClickAxis;
 	/** Blenders Transform-Rueckmeldung (Akte 07): Cursor, Straehne, Achslinien, MMB-Voransicht. */
@@ -101,8 +101,7 @@ public class BBSSettings {
 	public static ValueFloat chromaSkyBillboard;
 
 	public static ValueInt scrollbarWidth;
-	public static ValueFloat scrollingSensitivity;
-	public static ValueFloat scrollingSensitivityHorizontal;
+	public static ValueFloat scrollingSensitivity, scrollingSensitivityHorizontal, scrollingSmoothnessIntensity;
 	public static ValueBoolean scrollingSmoothness;
 	public static ValueBoolean scrollingDisableSmoothnessInEditors;
 
@@ -116,6 +115,7 @@ public class BBSSettings {
 	public static ValueInt videoFrameRate;
 	/** P7a: Export rendert mit Faktor N und ffmpeg skaliert per Lanczos zurueck. */
 	public static ValueInt videoSupersampling;
+	public static ValueInt videoMaxSide;
 	public static ValueBoolean videoLimitFrameRate;
 	public static ValueString videoExportPath;
 	public static ValueString videoExportFilenameFormat;
@@ -146,11 +146,9 @@ public class BBSSettings {
 	public static ValueBoolean editorLoop;
 	public static ValueInt editorJump;
 	public static ValueInt editorGuidesColor;
-	public static ValueBoolean editorRuleOfThirds;
-	public static ValueBoolean editorCenterLines;
-	public static ValueBoolean editorCrosshair;
-	public static ValueBoolean editorSeconds;
-	public static ValueBoolean editorTimelineGrid;
+	public static ValueBoolean editorRuleOfThirds, editorCenterLines, editorCrosshair;
+	public static ValueBoolean editorSeconds, editorSnapToTicks, anchorKeepTransform;
+	public static ValueBoolean editorTimelineGrid, editorSteppedPreview; /* stepped preview: KeyframeStufen */
 	public static ValueInt editorPeriodicSave;
 	/* Persistentes Undo (ueberlebt Neustart/Absturz) — gelesen von bbstools UndoPersistence. */
 	public static ValueBoolean editorPersistentUndo;
@@ -220,7 +218,7 @@ public class BBSSettings {
 	public static ValueFloat recordingCountdown;
 	public static ValueBoolean recordingSwipeDamage;
 	public static ValueBoolean recordingOverlays;
-	public static ValueInt recordingPoseTransformOverlays;
+	public static ValueInt recordingPoseOverlays, recordingTransformOverlays;
 	public static ValueBoolean recordingCameraPreview;
 
 	public static ValueBoolean renderAllModelBlocks;
@@ -236,7 +234,7 @@ public class BBSSettings {
 	public static ValueBoolean shaderCurvesEnabled;
 
 	public static ValueBoolean audioWaveformVisibleInPreview;
-	public static ValueBoolean audioWaveformVisibleInKeyframes;
+	public static ValueBoolean audioWaveformVisibleInKeyframes, audioWaveformDetailed;
 	public static ValueInt audioWaveformDensity;
 	public static ValueFloat audioWaveformWidth;
 	public static ValueInt audioWaveformHeight;
@@ -284,13 +282,6 @@ public class BBSSettings {
 	public static ValueBoolean jfrAutoRecord;
 	public static ValueBoolean debuggerStartAllesAn;
 	public static ValueBoolean startupKeepFocus;
-
-	/* AUTONOMIE 2026-07-27: schluessel fuer die AI-hintergrundentfernung in com/afrobama
-	 * (AIBackgroundRemover = replicate.com, AIOpenAIBackgroundRemover = OpenAI). Leer =
-	 * feature bleibt still aus, es wird nichts nach draussen geschickt. */
-	public static ValueString aiApiKey;
-	public static ValueString aiBgRemoveModel;
-	public static ValueString aiOpenaiKey;
 
 	public static ValueString cdnUrl;
 	public static ValueString cdnToken;
@@ -511,7 +502,6 @@ public class BBSSettings {
 	{
 		HashSet<String> defaultFilters = new HashSet<>();
 
-		defaultFilters.add("item_off_hand");
 		defaultFilters.add("item_head");
 		defaultFilters.add("item_chest");
 		defaultFilters.add("item_legs");
@@ -533,7 +523,7 @@ public class BBSSettings {
 		builder.register(language = new ValueLanguage("language"));
 		enableTrackpadIncrements = builder.getBoolean("trackpad_increments", false);
 		enableTrackpadScrolling = builder.getBoolean("trackpad_scrolling", false);
-		userIntefaceScale = builder.getFloat("ui_scale", 2F, 0F, 4F).slider();
+		userIntefaceScale = builder.getFloat("ui_scale", 2F, 0F, 4F).slider().live();
 		fov = builder.getFloat("fov", 40, 0, 180).slider();
 		hsvColorPicker = builder.getBoolean("hsv_color_picker", true);
 		forceQwerty = builder.getBoolean("force_qwerty", false);
@@ -561,6 +551,7 @@ public class BBSSettings {
 		disabledMorphFormCategories = new ValueStringKeys("disabled_morph_form_categories");
 		disabledMorphFormCategories.invisible();
 		builder.register(disabledMorphFormCategories);
+		mchorse.bbs_mod.settings.EditorZustaende.register(builder);
 		editorClipAutoName = builder.getBoolean("clip_auto_name", true);
 		editorGroupHandHudTracks = builder.getBoolean("group_hand_hud_tracks", true);
 		editorCameraClipsInReplays = builder.getBoolean("camera_clips_in_replays", true);
@@ -595,7 +586,7 @@ public class BBSSettings {
 		defaultLocalTransform = builder.getBoolean("default_local", false);
 		transformSpace = builder.getInt("transform_space", defaultLocalTransform.get() ? 0 : 3);
 		transformSpace.invisible();
-		transformHotkeys3dRay = builder.getBoolean("hotkeys_3d_ray", true);
+		transformHotkeys3dRay = builder.getBoolean("hotkeys_3d_ray", true); simpleKeyboardTransform = builder.getBoolean("simple_keyboard_transform", false); /* BBS FS b89d70e0b */
 		transformHotkeysWhileControlling = builder.getBoolean("hotkeys_while_controlling", true);
 		transformMiddleClickAxis = builder.getBoolean("middle_click_axis", true);
 		transformBlenderFeedback = builder.getBoolean("blender_feedback", true);
@@ -609,16 +600,14 @@ public class BBSSettings {
 		poseAlternateInvert = builder.getBoolean("pose_alternate_invert", false);
 		poseAlternateInvert.invisible();
 		poseShowDisabledBones = builder.getBoolean("pose_show_disabled_bones", false);
-		/* ⛔ Blenders Zyklus, nicht unserer. Dort schaltet wiederholtes R nur zwischen
-		 * Ansichtsdrehung und Trackball hin und her; G und S zykeln GAR NICHT. Die
-		 * Achsen holt man in Blender ueber X/Y/Z — die Tasten gibt es hier auch
-		 * (TRANSFORMATIONS_X/Y/Z), es geht also keine Bedienung verloren. Wer den
-		 * alten Durchlauf will, haengt "x","y","z" in der Einstellung wieder an. */
-		translateHotkeyOrder = new ValueOrder("translate_hotkey_order", "screen");
+		/* BBS' own cycle again (owner 2026-10-14): R = view -> trackball -> X -> Y -> Z,
+		 * G = screen -> X -> Y -> Z, S = all -> X -> Y -> Z, and X/Y/Z keys on top. The
+		 * Blender-only cut of 2026-08-15 (bb0a8c0fd) dropped the axis steps. */
+		translateHotkeyOrder = new ValueOrder("translate_hotkey_order", "screen", "x", "y", "z");
 		builder.register(translateHotkeyOrder);
-		scaleHotkeyOrder = new ValueOrder("scale_hotkey_order", "all");
+		scaleHotkeyOrder = new ValueOrder("scale_hotkey_order", "all", "x", "y", "z");
 		builder.register(scaleHotkeyOrder);
-		rotateHotkeyOrder = new ValueOrder("rotate_hotkey_order", "view", "sphere");
+		rotateHotkeyOrder = new ValueOrder("rotate_hotkey_order", "view", "sphere", "x", "y", "z");
 		builder.register(rotateHotkeyOrder);
 		trackballSensitivity = builder.getFloat("trackball_sensitivity", 1F, 0.05F, 2F).slider();
 
@@ -644,6 +633,7 @@ public class BBSSettings {
 		scrollingSensitivity = builder.getFloat("sensitivity", 3F, 0F, 10F).slider();
 		scrollingSensitivityHorizontal = builder.getFloat("sensitivity_horizontal", 3F, 0F, 10F).slider();
 		scrollingSmoothness = builder.getBoolean("smoothness", true);
+		scrollingSmoothnessIntensity = builder.getFloat("smoothness_intensity", 0.75F, 0F, 2F).slider();
 		scrollingDisableSmoothnessInEditors = builder.getBoolean("disable_smoothness_in_editors", false);
 
 		builder.category("multiskin", Icons.USER);
@@ -671,6 +661,8 @@ public class BBSSettings {
 		videoArguments = builder.getString("arguments", DEFAULT_FFMPEG_ARGUMENTS);
 		videoArgumentsAudio = builder.getString("arguments_audio", DEFAULT_AUDIO_FFMPEG_ARGUMENTS);
 		videoArgumentsMux = builder.getString("arguments_mux", DEFAULT_MUX_FFMPEG_ARGUMENTS);
+		videoMaxSide = builder.getInt("video_form_max_side", 1280, 64, 4096);
+		mchorse.bbs_mod.settings.VideoSettings.register(builder);
 
 		/* Camera editor */
 		builder.category("editor", Icons.EDITOR);
@@ -692,7 +684,8 @@ public class BBSSettings {
 		editorCenterLines = builder.getBoolean("center_lines", false);
 		editorCrosshair = builder.getBoolean("crosshair", false);
 		editorSeconds = builder.getBoolean("seconds", false);
-		editorTimelineGrid = builder.getBoolean("timeline_grid", false);
+		editorSnapToTicks = builder.getBoolean("snap_to_ticks", true); anchorKeepTransform = builder.getBoolean("anchor_keep_transform", true); /* BBS FS a220e30c5 */
+		editorTimelineGrid = builder.getBoolean("timeline_grid", false); editorSteppedPreview = builder.getBoolean("stepped_preview", false);
 		keyframeDefaultInterpolation = builder.getString("keyframe_default_interpolation", Interpolations.LINEAR.getKey());
 		editorPeriodicSave = builder.getInt("periodic_save", 60, 0, 3600);
 		editorPersistentUndo = builder.getBoolean("persistent_undo", true);
@@ -717,7 +710,7 @@ public class BBSSettings {
 		editorCameraSmoothness = builder.getFloat("camera_smoothness", 0.1F, 0F, 0.95F).slider();
 		editorCameraMode = builder.getInt("camera_mode", 0, 0, 5);
 		editorCameraMode.invisible();
-		/* P7 Render-Reiter: 0=BBS, 1-2 = Engines einer Begleit-Mod — bedient im Seitenpanel, nicht hier. */
+		/* P7 Render-Reiter: 0=BBS, 1=Eevee, 2=Cycles — bedient im Seitenpanel, nicht hier. */
 		(renderEngine = builder.getInt("render_engine", 0, 0, 2)).invisible();
 		editorPlayerFollowsCamera = builder.getBoolean("player_follows_camera", false);
 		/* Dock-layout: durch panel-verschieben geschrieben, nicht in den settings eingestellt. */
@@ -754,7 +747,8 @@ public class BBSSettings {
 		recordingCountdown = builder.getFloat("countdown", 1.5F, 0F, 30F);
 		recordingSwipeDamage = builder.getBoolean("swipe_damage", false);
 		recordingOverlays = builder.getBoolean("overlays", true);
-		recordingPoseTransformOverlays = builder.getInt("pose_transform_overlays", 0, 0, 42);
+		recordingPoseOverlays = builder.getInt("pose_overlays", 0, 0, 42);
+		recordingTransformOverlays = builder.getInt("transform_overlays", 0, 0, 42);
 		recordingCameraPreview = builder.getBoolean("camera_preview", true);
 
 		builder.category("model_blocks", Icons.BLOCK);
@@ -772,7 +766,7 @@ public class BBSSettings {
 
 		builder.category("audio", Icons.SOUND);
 		audioWaveformVisibleInPreview = builder.getBoolean("waveform_visible_preview", true);
-		audioWaveformVisibleInKeyframes = builder.getBoolean("waveform_visible_keyframes", true);
+		audioWaveformVisibleInKeyframes = builder.getBoolean("waveform_visible_keyframes", true); audioWaveformDetailed = builder.getBoolean("waveform_detailed", true); /* BBS FS 07159d44d */
 		audioWaveformDensity = builder.getInt("waveform_density", 20, 10, 100).slider();
 		audioWaveformWidth = builder.getFloat("waveform_width", 0.8F, 0F, 1F).slider();
 		audioWaveformHeight = builder.getInt("waveform_height", 24, 10, 40).slider();
@@ -796,11 +790,6 @@ public class BBSSettings {
 		jfrAutoRecord = builder.getBoolean("jfr_auto_record", false);
 		debuggerStartAllesAn = builder.getBoolean("debugger_start_alles_an", false);
 		startupKeepFocus = builder.getBoolean("startup_keep_focus", true);
-
-		builder.category("ai", Icons.SERVER);
-		aiApiKey = builder.getString("api_key", "");
-		aiBgRemoveModel = builder.getString("bg_remove_model", "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc");
-		aiOpenaiKey = builder.getString("openai_key", "");
 
 		builder.category("cdn", Icons.SERVER);
 		cdnUrl = builder.getString("url", "");

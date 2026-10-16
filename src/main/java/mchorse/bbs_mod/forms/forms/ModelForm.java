@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ModelForm extends Form
+public class ModelForm extends Form implements IPosedForm
 {
     public final ValueLink texture = new ValueLink("texture", null);
     public final ValueLinks materialTextures = new ValueLinks("material_textures");
@@ -40,7 +40,21 @@ public class ModelForm extends Form
     public final ValueData physics = new ValueData("physics");
     public final ValueData constraints = new ValueData("constraints");
 
-    public final List<ValuePose> additionalOverlays = new ArrayList<>();
+    /**
+     * The entity states an OptiFine CEM model asks about and a form cannot know (see
+     * {@link mchorse.bbs_mod.cubic.jem.CemStatus}). Each lies over what the entity says, so the
+     * defaults change nothing; tracks only for a model with a CEM program (BBS FS f5a344a38, 807ee6105).
+     */
+    public final ValueBoolean cemSitting = new ValueBoolean("cem_sitting", false);
+    public final ValueBoolean cemTamed = new ValueBoolean("cem_tamed", false);
+    public final ValueBoolean cemAggressive = new ValueBoolean("cem_aggressive", false);
+    public final ValueBoolean cemOnShoulder = new ValueBoolean("cem_on_shoulder", false);
+    public final ValueBoolean cemBurning = new ValueBoolean("cem_burning", false);
+    public final ValueBoolean cemInLava = new ValueBoolean("cem_in_lava", false);
+    public final ValueBoolean cemClimbing = new ValueBoolean("cem_climbing", false);
+    public final ValueBoolean cemCrawling = new ValueBoolean("cem_crawling", false);
+    public final mchorse.bbs_mod.settings.values.numeric.ValueFloat cemHealth = new mchorse.bbs_mod.settings.values.numeric.ValueFloat("cem_health", 1F);
+
 
     /**
      * Runtime per-material texture overrides driven by the per-material animation tracks
@@ -71,14 +85,7 @@ public class ModelForm extends Form
         this.add(this.model);
         this.add(this.pose);
         this.add(this.poseOverlay);
-
-        for (int i = 0; i < BBSSettings.recordingPoseTransformOverlays.get(); i++)
-        {
-            ValuePose valuePose = new ValuePose("pose_overlay" + i, new Pose());
-
-            this.additionalOverlays.add(valuePose);
-            this.add(valuePose);
-        }
+        this.syncOverlayTracks();
 
         this.add(this.actions);
         this.add(this.color);
@@ -92,11 +99,28 @@ public class ModelForm extends Form
         this.add(this.ik);
         this.add(this.physics);
         this.add(this.constraints);
+
+        /* Visible, so each is a track of its own: a cat that sits down mid-take is a keyframe */
+        for (ValueBoolean state : new ValueBoolean[] {this.cemSitting, this.cemTamed, this.cemAggressive, this.cemOnShoulder, this.cemBurning, this.cemInLava, this.cemClimbing, this.cemCrawling}) this.add(state);
+
+        this.add(this.cemHealth);
     }
 
     @Override
     public String getDefaultDisplayName()
     {
         return this.model.get();
+    }
+
+    @Override
+    public mchorse.bbs_mod.settings.values.core.ValuePose getPose()
+    {
+        return this.pose;
+    }
+
+    @Override
+    public ValueBoolean getBoneTracks()
+    {
+        return this.boneTracks;
     }
 }

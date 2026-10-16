@@ -190,7 +190,7 @@ public final class RagdollSwap
                 if (e instanceof LivingEntity living && living.isAlive())
                 {
                     living.setDeltaMovement(pk.vx(), pk.vy(), pk.vz());
-                    living.hurtMarked = true;
+                    living.syncVelocity = true;
                     LOG.info("Killing {} after delay", living.getType());
                     living.kill((ServerLevel) living.level());
                 }
@@ -508,7 +508,7 @@ public final class RagdollSwap
         clone.setYHeadRot(player.getYHeadRot());
         clone.setYBodyRot(player.yBodyRot);
         clone.setDeltaMovement(vx, vy, vz);
-        clone.hurtMarked = true;
+        clone.syncVelocity = true;
 
         if (!world.addFreshEntity(clone))
         {
@@ -857,7 +857,7 @@ public final class RagdollSwap
              *  void, etc.) from killing the mob before PhysicsMod sees
              *  our outOfWorld kill. {@code kill()} uses outOfWorld damage
              *  which bypasses invulnerability flags. */
-            spawned.setInvulnerable(true);
+            spawned.setPermanentlyInvulnerable(true);
         }
 
         spawned.setDeltaMovement(finalVx, finalVy, finalVz);
@@ -907,7 +907,7 @@ public final class RagdollSwap
             if (KILL_DELAY_TICKS <= 0)
             {
                 living.setDeltaMovement(finalVx, finalVy, finalVz);
-                living.hurtMarked = true;
+                living.syncVelocity = true;
                 LOG.info("Killing {} immediately (same tick)", living.getType());
                 living.kill((ServerLevel) living.level());
             }

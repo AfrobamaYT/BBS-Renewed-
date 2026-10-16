@@ -2,6 +2,7 @@ package mchorse.bbs_mod.cubic.model;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.cubic.ModelInstance;
+import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
 import mchorse.bbs_mod.cubic.MolangHelper;
 import mchorse.bbs_mod.cubic.model.config.ModelConfig;
 import mchorse.bbs_mod.cubic.constraints.ModelConstraintsRuntime;
@@ -29,13 +30,15 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ModelManager implements IWatchDogListener
+public class ModelManager implements IWatchDogListener, AutoCloseable
 {
     public static final String MODELS_PREFIX = "models/";
 
@@ -45,6 +48,7 @@ public class ModelManager implements IWatchDogListener
     public final MolangParser parser;
 
     private ModelLoader loader = new ModelLoader(this);
+    private volatile boolean closed;
 
     public ModelManager(AssetProvider provider)
     {
@@ -63,6 +67,20 @@ public class ModelManager implements IWatchDogListener
         this.loaders.add(new CubicModelLoader());
         this.loaders.add(new GeoCubicModelLoader());
         this.loaders.add(new VoxModelLoader());
+        this.loaders.add(new mchorse.bbs_mod.cubic.model.loaders.JemModelLoader());
+
+        if (EXTRA_LOADERS.isEmpty() && !extraGefragt) { extraGefragt = true; mchorse.bbs_mod.BBSMod.events.post(new mchorse.bbs_mod.api.client.events.RegisterModelLoadersEvent()); }
+
+        for (java.util.function.Supplier<IModelLoader> extra : EXTRA_LOADERS) this.loaders.add(extra.get());
+    }
+
+    /** Model formats of addons: suppliers, because the list is rebuilt on every asset reload (BBS FS 669329b8b) */
+    private static final List<java.util.function.Supplier<IModelLoader>> EXTRA_LOADERS = new ArrayList<>();
+    private static boolean extraGefragt;
+
+    public static void registerLoader(java.util.function.Supplier<IModelLoader> loader)
+    {
+        EXTRA_LOADERS.add(loader);
     }
 
     /**
@@ -98,6 +116,7 @@ public class ModelManager implements IWatchDogListener
 
     public ModelInstance getModel(String id)
     {
+        if (this.closed) throw new IllegalStateException("Model manager is closed");
         if (this.models.containsKey(id))
         {
             return this.models.get(id);
@@ -111,6 +130,7 @@ public class ModelManager implements IWatchDogListener
 
     public ModelInstance loadModel(String id)
     {
+        if (this.closed) return null;
         ModelInstance model = null;
         Link modelLink = Link.assets(MODELS_PREFIX + id);
         Collection<Link> links = this.provider.getLinksFromPath(modelLink, true);
@@ -134,10 +154,18 @@ public class ModelManager implements IWatchDogListener
         {
             System.out.println("Model \"" + id + "\" was loaded!");
 
-            model.setup();
         }
 
-        this.models.put(id, model);
+        synchronized (this)
+        {
+            if (this.closed) return null;
+            this.models.put(id, model);
+            ModelInstance loaded = model;
+            if (loaded != null) net.minecraft.client.Minecraft.getInstance().execute(() ->
+            {
+                if (!this.closed && this.models.get(id) == loaded) loaded.setup();
+            });
+        }
 
         return model;
     }
@@ -203,6 +231,24 @@ public class ModelManager implements IWatchDogListener
         this.setupLoaders();
     }
 
+    /** Final render-thread release of manager-owned roots shared by actor copies. */
+    @Override
+    public synchronized void close()
+    {
+        com.mojang.blaze3d.systems.RenderSystem.assertOnRenderThread();
+        this.closed = true;
+        this.loader.close();
+        Set<BOBJModel> roots = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (ModelInstance model : this.models.values())
+        {
+            if (model == null) continue;
+            model.delete();
+            if (model.getModel() instanceof BOBJModel root) roots.add(root);
+        }
+        for (BOBJModel root : roots) root.delete();
+        this.models.clear();
+    }
+
     public boolean isRelodable(Link link)
     {
         if (!link.path.startsWith(MODELS_PREFIX))
@@ -221,7 +267,26 @@ public class ModelManager implements IWatchDogListener
             || link.path.endsWith(".obj")
             || link.path.endsWith(".animation.json")
             || link.path.endsWith(".vox")
+            || link.path.endsWith(".jem")
+            || link.path.endsWith(".jpm")
             || link.path.endsWith("/config.json");
+    }
+
+    /**
+     * Drop every model of a folder, so the next request loads it again, from BBS FS e9d4a885f
+     * (Wemppy4/bbs-fs, MIT): for the models a resource pack serves, which no watchdog sees. A model
+     * that failed to load sits in the map as null and is never asked for again, so it goes too.
+     */
+    public void forgetFolder(String prefix)
+    {
+        for (String key : new ArrayList<>(this.models.keySet()))
+        {
+            if (!key.startsWith(prefix)) continue;
+
+            ModelInstance model = this.models.remove(key);
+
+            if (model != null) model.delete();
+        }
     }
 
     /**

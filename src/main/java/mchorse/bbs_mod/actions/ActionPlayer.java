@@ -177,7 +177,7 @@ public class ActionPlayer
         actor.setYHeadRot(yawHead);
         actor.setXRot(pitch);
         actor.setYBodyRot(yawBody);
-        actor.setShiftKeyDown(replay.keyframes.sneaking.interpolate(tick) > 0);
+        mchorse.bbs_mod.film.replays.ReplayZustaende.aufFigur(replay.keyframes, actor, tick, replay.keyframes.sneaking.interpolate(tick) > 0);
         actor.setOnGround(replay.keyframes.grounded.interpolate(tick) > 0);
         actor.setItemSlot(EquipmentSlot.OFFHAND, replay.keyframes.offHand.interpolate(tick, ItemStack.EMPTY));
         actor.setItemSlot(EquipmentSlot.HEAD, replay.keyframes.armorHead.interpolate(tick, ItemStack.EMPTY));
@@ -188,18 +188,18 @@ public class ActionPlayer
         if (actor instanceof ServerPlayer player)
         {
             int selectedSlot = player.getInventory().getSelectedSlot();
-            int slot = MathUtils.clamp(replay.keyframes.selectedSlot.interpolate(this.tick), 0, 8);
+            int slot = mchorse.bbs_mod.film.replays.HandAusHotbar.slot(replay.keyframes, this.tick);
 
             if (selectedSlot != slot)
             {
                 ServerNetwork.sendSelectedSlot(player, slot);
             }
 
-            actor.setItemSlot(EquipmentSlot.MAINHAND, replay.keyframes.mainHand.interpolate(tick, ItemStack.EMPTY));
+            actor.setItemSlot(EquipmentSlot.MAINHAND, mchorse.bbs_mod.film.replays.HandAusHotbar.hand(replay.keyframes, tick));
         }
         else
         {
-            actor.setItemSlot(EquipmentSlot.MAINHAND, replay.keyframes.mainHand.interpolate(tick, ItemStack.EMPTY));
+            actor.setItemSlot(EquipmentSlot.MAINHAND, mchorse.bbs_mod.film.replays.HandAusHotbar.hand(replay.keyframes, tick));
         }
 
         double vx = x - replay.keyframes.x.interpolate(tick - 1);

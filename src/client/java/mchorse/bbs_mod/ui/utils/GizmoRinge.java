@@ -1,8 +1,8 @@
 package mchorse.bbs_mod.ui.utils;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.ProjectionType;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
@@ -201,12 +201,12 @@ public class GizmoRinge
 
         if (achse == Axis.X)
         {
-            stapel.mulPose(com.mojang.math.Axis.ZP.rotation(MathUtils.PI / 2F));
+            stapel.rotate(com.mojang.math.Axis.ZP.rotation(MathUtils.PI / 2F));
         }
 
         if (achse == Axis.Z)
         {
-            stapel.mulPose(com.mojang.math.Axis.XP.rotation(MathUtils.PI / 2F));
+            stapel.rotate(com.mojang.math.Axis.XP.rotation(MathUtils.PI / 2F));
         }
 
         zeichnen(this.ring, stapel, r, g, b, a, null);
@@ -309,7 +309,7 @@ public class GizmoRinge
         if (zurKamera.lengthSquared() > 1.0E-8F)
         {
             zurKamera.normalize();
-            stapel.mulPose(new Quaternionf().rotationTo(0F, 1F, 0F, zurKamera.x, zurKamera.y, zurKamera.z));
+            stapel.rotate(new Quaternionf().rotationTo(0F, 1F, 0F, zurKamera.x, zurKamera.y, zurKamera.z));
         }
 
         stapel.scale(skalierung, skalierung, skalierung);
@@ -336,7 +336,7 @@ public class GizmoRinge
         if (zurKamera.lengthSquared() > 1.0E-8F)
         {
             zurKamera.normalize();
-            stapel.mulPose(new Quaternionf().rotationTo(
+            stapel.rotate(new Quaternionf().rotationTo(
                 0F, 1F, 0F, zurKamera.x, zurKamera.y, zurKamera.z));
         }
 
@@ -344,7 +344,7 @@ public class GizmoRinge
 
         float groesse = BBSSettings.axesScale.get();
         float radius = 0.22F * groesse;
-        float dicke = 0.02F * groesse * BBSSettings.axesThickness.get();
+        float dicke = 0.02F * groesse * BBSSettings.axesThickness.get() * GizmoHover.LINIE; /* visible only; the pick takes billboardZeichnen */
         GehaltenesNetz netz = this.bogen(Axis.Y, radius, dicke, 0F, 360F, r, g, b);
         Matrix4f modellAnsicht = modellAnsicht(stapel);
         org.joml.Vector4f alpha = new org.joml.Vector4f(1F, 1F, 1F, a);
@@ -464,7 +464,7 @@ public class GizmoRinge
      * Mischen an, Tiefentest an, kein Culling -- die Ringe sind duenne Roehren und werden
      * von beiden Seiten gesehen.
      */
-    private static com.mojang.blaze3d.pipeline.RenderPipeline pipeline()
+    private static com.mojang.renderpearl.api.pipeline.RenderPipeline pipeline()
     {
         return FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, false);
     }

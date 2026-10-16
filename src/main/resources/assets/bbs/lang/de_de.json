@@ -1,4 +1,5 @@
 {
+    "block.bbs.model.tooltip.convert": "Alt + Rechtsklick auf einen Block — macht ihn zum Modellblock",
     "block.bbs.model": "Modell-Block",
     "block.bbs.chroma_red": "Rotes Chroma",
     "block.bbs.chroma_green": "Grünes Chroma",

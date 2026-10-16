@@ -1,7 +1,9 @@
 package mchorse.bbs_mod.ui.forms.editors.panels.widgets;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.brigadier.StringReader;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -593,8 +595,11 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
                 if (!stack.isEmpty())
                 {
+                    PoseStack matrices = context.batcher.pose();
+                    matrices.pushPose();
                     context.batcher.getContext().item(stack, x + 2, y + 2);
                     context.batcher.getContext().itemDecorations(context.batcher.getFont().getRenderer(), stack, x + 2, y + 2);
+                    matrices.popPose();
                 }
 
             }
@@ -644,8 +649,11 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
             if (!stack.isEmpty())
             {
+                PoseStack matrices = context.batcher.pose();
+                matrices.pushPose();
                 context.batcher.getContext().item(stack, iconLeft + 1, iconTop + 1);
                 context.batcher.getContext().itemDecorations(context.batcher.getFont().getRenderer(), stack, iconLeft + 1, iconTop + 1);
+                matrices.popPose();
             }
 
             int textX = iconLeft + LIST_ICON_SLOT + LIST_ICON_GAP;

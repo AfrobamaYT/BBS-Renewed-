@@ -43,7 +43,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.cubic.ModelInstance;
@@ -278,7 +278,7 @@ public final class Tier2cParallelSkin
          * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
         ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
         BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, 
-            com.mojang.blaze3d.PrimitiveTopology.TRIANGLES,
+            com.mojang.renderpearl.api.pipeline.PrimitiveTopology.TRIANGLES,
             DefaultVertexFormat.ENTITY);
 
         int written = 0;
@@ -348,7 +348,7 @@ public final class Tier2cParallelSkin
 
         PoseStack stack = new PoseStack();
         stack.mulPose(s.worldMatrix);
-        stack.mulPose(Axis.YP.rotation((float) MathUtils.PI));
+        stack.rotate(Axis.YP.rotation((float) MathUtils.PI));
 
         /* Always allocate a fresh CubicMatrixRenderer — its
          * ArrayList<Matrix4f> sizing depends on model.getAllGroupKeys.size(),

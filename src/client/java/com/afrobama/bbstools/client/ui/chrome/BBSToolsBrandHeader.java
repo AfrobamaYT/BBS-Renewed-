@@ -13,8 +13,8 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
  *
  * <p>24 px tall, Adobe-compact density. Three regions:
  * brand mark (left), project name (center, in TEXT_DIM), and an icon row
- * (right) for the three most-used overlays — Settings (Ctrl+,), Undo
- * History (Ctrl+H), and Replay Dock (Ctrl+Shift+R). Each icon is
+ * (right) for the two most-used overlays — Settings (Ctrl+,) and Undo
+ * History (Ctrl+H). Each icon is
  * 16×16 px and click-opens its associated overlay so users discover
  * features even without learning the shortcuts.</p>
  *
@@ -51,7 +51,7 @@ public class BBSToolsBrandHeader extends UIElement
          * math mirrors the render loop. */
         int rightEdge = this.area.x + this.area.w - RIGHT_PAD;
         int iconY = this.area.y + (HEIGHT - ICON_SIZE) / 2;
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 2; i++)
         {
             int iconX = rightEdge - (i + 1) * ICON_SIZE - i * ICON_GAP;
             if (context.mouseX >= iconX && context.mouseX < iconX + ICON_SIZE
@@ -71,7 +71,6 @@ public class BBSToolsBrandHeader extends UIElement
         {
             case 0 -> com.afrobama.bbstools.client.ui.settings.UIBBSToolsSettingsOverlay.open();
             case 1 -> com.afrobama.bbstools.client.ui.undo.UIBBSToolsUndoOverlay.open();
-            case 2 -> com.afrobama.bbstools.client.ui.replays.UIBBSReplayDock.open();
             default -> { /* unreachable */ }
         }
     }
@@ -102,11 +101,11 @@ public class BBSToolsBrandHeader extends UIElement
             context.batcher.text(project, center - textW / 2, textY, BBSToolsTheme.TEXT_DIM);
         }
 
-        /* Right: 3 icons (Settings / Undo / Replay Dock). */
+        /* Right: 2 icons (Settings / Undo). */
         int rightEdge = x2 - RIGHT_PAD;
         int iconY = y + (HEIGHT - ICON_SIZE) / 2;
         this.hoveredIcon = -1;
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 2; i++)
         {
             int iconX = rightEdge - (i + 1) * ICON_SIZE - i * ICON_GAP;
             boolean hover = context.mouseX >= iconX && context.mouseX < iconX + ICON_SIZE
@@ -143,14 +142,13 @@ public class BBSToolsBrandHeader extends UIElement
     }
 
     /** Tiny pictograms drawn as 1-px rectangles. Index matches the icon
-     *  row order from right (0) to left (2). */
+     *  row order from right (0) to left (1). */
     private static void drawChromeIcon(UIContext context, int x, int y, int index, int color)
     {
         switch (index)
         {
             case 0 -> drawGearIcon(context, x, y, color);       /* settings */
             case 1 -> drawUndoIcon(context, x, y, color);       /* undo */
-            case 2 -> drawReplayDockIcon(context, x, y, color); /* replay dock */
             default -> { /* unreachable */ }
         }
     }
@@ -181,17 +179,6 @@ public class BBSToolsBrandHeader extends UIElement
         context.batcher.box(x + 2, y + 5, x + 7, y + 11, color);
         /* Curl up tail (right side) */
         context.batcher.box(x + 11, y + 4, x + 13, y + 7, color);
-    }
-
-    /** Replay dock — stacked-rows icon. */
-    private static void drawReplayDockIcon(UIContext context, int x, int y, int color)
-    {
-        /* Three horizontal lines */
-        context.batcher.box(x + 3, y + 4, x + 13, y + 5, color);
-        context.batcher.box(x + 3, y + 8, x + 13, y + 9, color);
-        context.batcher.box(x + 3, y + 12, x + 13, y + 13, color);
-        /* Mark first line as "current" with a left edge dot */
-        context.batcher.box(x + 2, y + 3, x + 4, y + 6, BBSToolsTheme.ACCENT_CAMERA);
     }
 
 }

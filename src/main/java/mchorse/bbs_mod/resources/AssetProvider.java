@@ -32,7 +32,7 @@ public class AssetProvider
         return this.sourcePacks.keySet();
     }
 
-    private List<ISourcePack> getPacks(String source)
+    public List<ISourcePack> getPacks(String source)
     {
         List<ISourcePack> sourcePacks = this.sourcePacks.get(source);
 

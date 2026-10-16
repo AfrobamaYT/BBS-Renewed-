@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.cubic.physics;
 
 import mchorse.bbs_mod.graphics.SofortZeichner;
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -100,7 +100,7 @@ public final class ModelPhysicsDebug
 
         if (model instanceof BOBJModel)
         {
-            stack.mulPose(Axis.YP.rotation(MathUtils.PI));
+            stack.rotate(Axis.YP.rotation(MathUtils.PI));
         }
 
         /* The wind is one field for the whole model: resolve its world direction and base magnitude once,
@@ -189,7 +189,7 @@ public final class ModelPhysicsDebug
 
         if (model instanceof BOBJModel)
         {
-            stack.mulPose(Axis.YP.rotation(MathUtils.PI));
+            stack.rotate(Axis.YP.rotation(MathUtils.PI));
         }
 
         /* Pick-Pass wie in ModelIKDebug: kein Blend (eine gemischte ID waere eine falsche

@@ -15,6 +15,17 @@ public interface IFactory <T, D>
 
     public T create(Link type);
 
+    /**
+     * A stand-in for a type this factory doesn't know, or null to let the failure through.
+     *
+     * <p>Whoever implements this is promising that the stand-in writes the data back out
+     * unchanged — see {@link IUnknownType} for why that matters.</p>
+     */
+    public default T createUnknown(Link type, MapType data)
+    {
+        return null;
+    }
+
     public default MapType toData(T object)
     {
         MapType data = new MapType();
@@ -47,7 +58,29 @@ public interface IFactory <T, D>
         }
 
         Link type = Link.create(data.getString(this.getTypeKey()));
-        T object = this.create(type);
+        T object;
+
+        try
+        {
+            object = this.create(type);
+        }
+        catch (IllegalStateException e)
+        {
+            /* No type at all is "nothing here", not an unknown type: an optional form's empty map,
+             * or a stand-in's own empty id written back as "assets:". A stand-in for it rendered
+             * nothing in place of a model block's per-view forms (measured 2026-10-15: held block
+             * invisible in hand, hotbar and third person) and wrote {id:"assets:"} into saves. */
+            /* Returned, not thrown: FormUtils logs a throw, and a held model block reads its empty
+             * per-view forms every frame (measured 2026-10-15: 508,000 lines, 1.8 GB in two hours) */
+            if (type.path.isEmpty()) return null;
+
+            object = this.createUnknown(type, data);
+
+            if (object == null)
+            {
+                throw e;
+            }
+        }
 
         if (object instanceof IDataSerializable)
         {

@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.film.controller;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -304,86 +304,50 @@ public class OrbitViewGizmo
 
     /* Drawing primitives (winding matches Batcher2D's quads) */
 
+    /* Drawn through the anti-aliased vector path (VektorZeichner) like Blender's navigation
+     * gizmo; the hard triangle fans before left stair-stepped edges on every ball and ring
+     * (owner, 2026-10-14: "Minecraft-Render-Look ... pixelig"). */
     private void fillCircle(Batcher2D batcher, float x, float y, float radius, int color)
     {
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo.fillCircle");
+        /* The vector path adds an anti-aliasing seam outside the shape; take it off so the
+         * balls keep their size (measured: lines went 4 -> 8 px wide with it left on). */
+        float r = Math.max(0.5F, radius - saum() * 0.5F);
 
-        Matrix4f matrix = new Matrix4f(batcher.pose().last().pose());
+        mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.rundeck(batcher, x - r, y - r, r * 2F, r * 2F, r, color);
+    }
 
-        batcher.netz(FormPipelines.holen(PrimitiveTopology.TRIANGLE_FAN, true, false, false), (builder) ->
-        {
-            builder.addVertex(matrix, x, y, 0F).setColor(color);
-
-            for (int i = 0; i <= SEGMENTS; i++)
-            {
-                double a = i / (double) SEGMENTS * Math.PI * 2D;
-
-                builder.addVertex(matrix, (float) (x - Math.cos(a) * radius), (float) (y + Math.sin(a) * radius), 0F).setColor(color);
-            }
-        }, kasten(x, y, radius));
+    private static float saum()
+    {
+        return 1F / mchorse.bbs_mod.BBSModClient.getGUIScale();
     }
 
     private void annulus(Batcher2D batcher, float x, float y, float inner, float outer, int color)
     {
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo.annulus");
+        float mitte = (inner + outer) * 0.5F;
+        /* Two segments past the start: an open polyline closed on itself left a notch where
+         * its caps met. */
+        float[] punkte = new float[(SEGMENTS + 3) * 2];
 
-        Matrix4f matrix = new Matrix4f(batcher.pose().last().pose());
-
-        /* SEGMENTS * 6 Ecken a 16 Byte (POSITION_COLOR) — gross genug angelegt,
-         * damit der Puffer waehrend des Aufbaus nicht nachwaechst. */
-        batcher.netz(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, false), (builder) ->
+        for (int i = 0; i <= SEGMENTS + 2; i++)
         {
+            double a = i / (double) SEGMENTS * Math.PI * 2D;
 
-            for (int i = 0; i < SEGMENTS; i++)
-            {
-                double a1 = i / (double) SEGMENTS * Math.PI * 2D;
-                double a2 = (i + 1) / (double) SEGMENTS * Math.PI * 2D;
-                float ix1 = (float) (x - Math.cos(a1) * inner);
-                float iy1 = (float) (y + Math.sin(a1) * inner);
-                float ix2 = (float) (x - Math.cos(a2) * inner);
-                float iy2 = (float) (y + Math.sin(a2) * inner);
-                float ox1 = (float) (x - Math.cos(a1) * outer);
-                float oy1 = (float) (y + Math.sin(a1) * outer);
-                float ox2 = (float) (x - Math.cos(a2) * outer);
-                float oy2 = (float) (y + Math.sin(a2) * outer);
+            punkte[i * 2] = (float) (x - Math.cos(a) * mitte);
+            punkte[i * 2 + 1] = (float) (y + Math.sin(a) * mitte);
+        }
 
-                builder.addVertex(matrix, ix2, iy2, 0F).setColor(color);
-                builder.addVertex(matrix, ix1, iy1, 0F).setColor(color);
-                builder.addVertex(matrix, ox1, oy1, 0F).setColor(color);
-                builder.addVertex(matrix, ix2, iy2, 0F).setColor(color);
-                builder.addVertex(matrix, ox1, oy1, 0F).setColor(color);
-                builder.addVertex(matrix, ox2, oy2, 0F).setColor(color);
-            }
-
-        }, kasten(x, y, outer));
+        mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.linie(batcher, punkte, outer - inner, color, kasten(x, y, outer + 1F));
     }
 
     private void line(Batcher2D batcher, float x1, float y1, float x2, float y2, float width, int color)
     {
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo.line");
-
-        float dx = x2 - x1;
-        float dy = y2 - y1;
-        float length = (float) Math.sqrt(dx * dx + dy * dy);
-
-        if (length <= 0.0001F)
+        if ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) <= 1E-8F)
         {
             return;
         }
 
-        float nx = -dy / length * width / 2F;
-        float ny = dx / length * width / 2F;
-
-        Matrix4f matrix = new Matrix4f(batcher.pose().last().pose());
-
-        batcher.netz(FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false), (builder) ->
-        {
-            builder.addVertex(matrix, x1 - nx, y1 - ny, 0F).setColor(color);
-            builder.addVertex(matrix, x1 + nx, y1 + ny, 0F).setColor(color);
-            builder.addVertex(matrix, x2 + nx, y2 + ny, 0F).setColor(color);
-            builder.addVertex(matrix, x2 - nx, y2 - ny, 0F).setColor(color);
-        }, kasten(Math.min(x1, x2) - width, Math.min(y1, y2) - width,
-            Math.max(x1, x2) + width, Math.max(y1, y2) + width));
+        mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.linie(batcher, new float[] {x1, y1, x2, y2}, width, color,
+            kasten(Math.min(x1, x2) - width, Math.min(y1, y2) - width, Math.max(x1, x2) + width, Math.max(y1, y2) + width));
     }
 
     /**

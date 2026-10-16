@@ -1,16 +1,28 @@
 package mchorse.bbs_mod.mixin.client;
 
 import com.afrobama.blendertransform.FensterGroesseLogik;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.mojang.blaze3d.platform.Window;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Window.class)
 public class WindowMixin
 {
+    @Inject(method = "handleEvent(Lorg/lwjgl/sdl/SDL_Event;)V", at = @At("HEAD"), cancellable = true, require = 1)
+    private void bbs$onlyOwnWindow(org.lwjgl.sdl.SDL_Event event, CallbackInfo info) throws Throwable
+    {
+        if ((Boolean) MixinBruecke.rufePflicht("SdlWindowEventLogik", "foreign", (Window) (Object) this, event))
+        {
+            info.cancel();
+        }
+    }
+
     @Shadow
     private int width;
 

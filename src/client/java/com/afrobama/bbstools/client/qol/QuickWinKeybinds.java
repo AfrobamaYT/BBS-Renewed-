@@ -8,10 +8,11 @@
 //        by flipping the same four BBSPerfConfig knobs the slash command
 //        toggles, using BBSPerfConfig.ENABLE_LOD to detect current state)
 //        are present, otherwise logs a hint)
-//   F2 — dev-only A/B toggle (no renderer behind it in 26.2)
+//   F2 — toggle CrowdMassVeilRenderer.ENABLE_VEIL_CROWD for crowd A/B tests
 //   F7 — Tier 4c: trigger Iris shaderpack hot-reload via ShaderHotReload
-//        (reflectively calls Iris.reload() so shader edits land without
-//        a game restart)
+//        (reflectively calls Iris.reload(); after reload the iris-fork's
+//        CrowdShaderOverride re-loads crowd_entities.vsh from classpath
+//        so shader edits land without a game restart)
 //
 // Pattern mirrors RecordFromCursorHandler: a single ClientTickEvents.
 // END_CLIENT_TICK consumer polls each KeyBinding's wasPressed() so the
@@ -34,7 +35,6 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.afrobama.bbstools.client.keybinds.BBSKeyCategories;
@@ -67,7 +67,7 @@ public final class QuickWinKeybinds
 
     /** F5 — pin a marker at the current scrub cursor. */
 
-    /** F2 — dev-only A/B toggle. */
+    /** F2 — flip CrowdMassVeilRenderer.ENABLE_VEIL_CROWD. */
     private static KeyMapping veilCrowdToggle;
 
     /** F7 — Tier 4c: trigger Iris shaderpack hot-reload. Chosen over F5
@@ -91,31 +91,27 @@ public final class QuickWinKeybinds
     {
         cinematicToggle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.cinematic_toggle",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_F4,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_F4,
             BBSKeyCategories.BBSTOOLS
         ));
 
         /* Coded by Afrobama/Claude — UNBOUND default (was F2 which collides
          * with MC's vanilla screenshot key → 10s freeze on press). User can
-         * rebind in MC Controls if desired. Only in development: the Veil crowd
-         * renderer is not part of the public build. */
-        if (DEV_ENV)
-        {
-            veilCrowdToggle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.bbstools.veil_crowd_toggle",
-                InputConstants.Type.KEYSYM,
-                -1, /* GLFW_KEY_UNKNOWN — unbound default */
-                BBSKeyCategories.BBSTOOLS
-            ));
-        }
+         * rebind in MC Controls if desired. */
+        veilCrowdToggle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.bbstools.veil_crowd_toggle",
+            InputConstants.Type.KEYBOARD,
+            InputConstants.UNKNOWN.getValue(), /* SDL keyboard unknown is 0 in 26.3. */
+            BBSKeyCategories.BBSTOOLS
+        ));
 
         /* F8 — BBS-core + instancing GLSL live-reload + Iris pack reload. (F7 collides with the
          * record-from-cursor hotkey, which swallowed the press → shader reload never fired.) */
         shaderReload = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.shader_reload",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_F8,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_F8,
             BBSKeyCategories.BBSTOOLS
         ));
 
@@ -123,8 +119,9 @@ public final class QuickWinKeybinds
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick(client));
 
-        LOG.info("Quick-win keybinds registered: F4 cinematic toggle, F8 shader reload"
-            + (DEV_ENV ? ", Veil-crowd toggle (unbound)." : "."));
+        LOG.info("Quick-win keybinds registered: F4 cinematic toggle, "
+            + "F5 marker-at-cursor, F2 Veil-crowd toggle, "
+            + "F7 Iris shader hot-reload.");
     }
 
     private static void tick(Minecraft client)
@@ -188,10 +185,12 @@ public final class QuickWinKeybinds
     }
 
 
-    /** F2: dev-only A/B toggle; the renderer it switched needs Veil. */
+    /** F2: A/B toggle for the Veil-instanced crowd renderer. Flipping
+     *  to false routes /crowdmass through the legacy CrowdBOBJGL raw-
+     *  GL fallback; flipping true puts it back on the Veil path. */
     private static void handleVeilCrowd(Minecraft client)
     {
-        /* ⛔ P3-26.2-AUS: der renderer haengt an Veil, das keinen 26.2-bau hat.
+        /* ⛔ P3-26.2-AUS: CrowdMassVeilRenderer haengt an Veil, das keinen 26.2-bau hat.
          * Die taste bleibt belegt und sagt es -- stiller nichtstuer waere schlimmer als
          * eine klare meldung, weil der nutzer sonst den renderer fuer kaputt haelt. */
         actionBar(client, "§b[bbstools] §fVeil-crowd renderer: §cnicht verfuegbar (Veil fehlt fuer 26.2)");
@@ -201,7 +200,8 @@ public final class QuickWinKeybinds
     /** F7 (Tier 4c): trigger an Iris shaderpack hot-reload. Routes through
      *  ShaderHotReload.INSTANCE.reload() which reflectively invokes
      *  net.irisshaders.iris.Iris.reload() — after the reload completes
-     *  edited shader files land without restarting. */
+     *  the fork's CrowdShaderOverride re-pulls crowd_entities.vsh from
+     *  the JAR so edited shader files land without restarting. */
     private static void handleShaderReload(Minecraft client)
     {
         actionBar(client, "§a[BBSTools] Reloading shaders (Iris pack + BBS core/instancing)…");

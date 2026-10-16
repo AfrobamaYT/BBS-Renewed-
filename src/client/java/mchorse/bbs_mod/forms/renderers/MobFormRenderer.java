@@ -1,9 +1,7 @@
 package mchorse.bbs_mod.forms.renderers;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.brigadier.StringReader;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -13,67 +11,41 @@ import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.ITickable;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.MobForm;
-import mchorse.bbs_mod.mixin.LimbAnimatorAccessor;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
-import mchorse.bbs_mod.utils.PlayerUtils;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.util.LightCoordsUtil;
-import net.minecraft.util.ProblemReporter;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.TagParser;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntitySpawnRequest;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.storage.TagValueInput;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 {
-    private static final Map<Class, Map<String, ModelPart>> parts = new HashMap<>();
     private static final Map<ModelPart, Transform> cache = new HashMap<>();
     private static Pose currentPose;
     private static Pose currentPoseOverlay;
+    private static MobForm currentForm;
 
-    public static final GameProfile WIDE = new GameProfile(UUID.fromString("b99a2400-28a8-4288-92dc-924beafbf756"), "McHorseYT");
-    public static final GameProfile SLIM = new GameProfile(UUID.fromString("5477bd28-e672-4f87-a209-c03cf75f3606"), "osmiq");
-
+    /** The vanilla entity this form renders through, kept in step with the actor (BBS FS 0a6aeef93) */
+    private final mchorse.bbs_mod.forms.renderers.mob.MobStandIn standIn = new mchorse.bbs_mod.forms.renderers.mob.MobStandIn();
     private Entity entity;
-
-    private String lastId = "";
-    private String lastNBT = "";
-    private boolean lastSlim;
-
-    public float prevHandSwing;
-    private float prevYawHead;
-    private float prevPitch;
+    private final mchorse.bbs_mod.forms.renderers.mob.MobPickNetz pickNetz = new mchorse.bbs_mod.forms.renderers.mob.MobPickNetz();
 
     public static Pose getCurrentPose()
     {
@@ -85,9 +57,10 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
         return currentPoseOverlay;
     }
 
-    public static Map<Class, Map<String, ModelPart>> getParts()
+    /** The form's extra pose tracks while it submits; none otherwise. */
+    public static List<mchorse.bbs_mod.settings.values.core.ValuePose> getCurrentOverlays()
     {
-        return parts;
+        return currentPose == null || currentForm == null ? List.of() : currentForm.additionalOverlays;
     }
 
     public static Map<ModelPart, Transform> getCache()
@@ -105,57 +78,88 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
     {
         this.ensureEntity();
 
-        if (this.entity != null)
+        mchorse.bbs_mod.forms.renderers.mob.MobKnochen rig = mchorse.bbs_mod.forms.renderers.mob.MobKnochen.von(this.entity);
+
+        if (rig != null)
         {
-            Map<String, ModelPart> stringModelPartMap = parts.get(this.entity.getClass());
-
-            if (stringModelPartMap == null)
-            {
-                stringModelPartMap = new HashMap<>();
-
-                if (Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(this.entity) instanceof LivingEntityRenderer renderer)
-                {
-                    EntityModel model = renderer.getModel();
-                    Set<Field> fields = new HashSet<>();
-                    Class aClass = model.getClass();
-
-                    while (aClass != Object.class)
-                    {
-                        for (Field field : aClass.getDeclaredFields())
-                        {
-                            fields.add(field);
-                        }
-
-                        aClass = aClass.getSuperclass();
-                    }
-
-                    for (Field declaredField : fields)
-                    {
-                        if (declaredField.getType().equals(ModelPart.class))
-                        {
-                            try
-                            {
-                                declaredField.setAccessible(true);
-
-                                ModelPart part = (ModelPart) declaredField.get(model);
-
-                                stringModelPartMap.put(declaredField.getName(), part);
-                            }
-                            catch (Exception e)
-                            {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-
-                parts.put(this.entity.getClass(), stringModelPartMap);
-            }
-
-            return new ArrayList<>(stringModelPartMap.keySet());
+            return new ArrayList<>(rig.teile.keySet());
         }
 
         return super.getBones();
+    }
+
+    /** A body part with a bone rides that bone of the mob; one without stays where it was (BBS FS e341fa733) */
+    @Override
+    public void renderBodyParts(mchorse.bbs_mod.forms.renderers.FormRenderingContext context)
+    {
+        mchorse.bbs_mod.forms.renderers.utils.MatrixCache knochen = null;
+
+        for (mchorse.bbs_mod.forms.forms.BodyPart part : this.form.parts.getAllTyped())
+        {
+            if (part.bone.get().isEmpty())
+            {
+                this.renderBodyPart(part, context);
+
+                continue;
+            }
+
+            if (knochen == null)
+            {
+                knochen = new mchorse.bbs_mod.forms.renderers.utils.MatrixCache();
+                this.ensureEntity();
+                mchorse.bbs_mod.forms.renderers.mob.MobMatrizen.sammeln(this.entity, this.zusammen(), context.getTransition(), new PoseStack(), knochen, "");
+            }
+
+            var eintrag = knochen.get(part.bone.get());
+            Matrix4f matrix = eintrag == null ? null : eintrag.matrix();
+
+            context.stack.pushPose();
+            if (context.world != null) context.world.pushPose();
+
+            if (matrix != null)
+            {
+                mchorse.bbs_mod.utils.MatrixStackUtils.multiply(context.stack, matrix);
+                if (context.world != null) mchorse.bbs_mod.utils.MatrixStackUtils.multiply(context.world, matrix);
+            }
+
+            this.renderBodyPart(part, context);
+            context.stack.popPose();
+            if (context.world != null) context.world.popPose();
+        }
+    }
+
+    /** The form's pose with its overlays */
+    private Pose zusammen()
+    {
+        Pose pose = this.form.pose.get().copy().ueberlagern(this.form.poseOverlay.get());
+
+        for (mchorse.bbs_mod.settings.values.core.ValuePose weitere : this.form.additionalOverlays) pose.ueberlagern(weitere.get());
+
+        return pose;
+    }
+
+    /** The mob's bones too, so anchors, trackers and the gizmo can sit on them (BBS FS e341fa733) */
+    @Override
+    public void collectMatrices(mchorse.bbs_mod.forms.entities.IEntity entity, PoseStack stack, mchorse.bbs_mod.forms.renderers.utils.MatrixCache matrices, String prefix, float transition)
+    {
+        super.collectMatrices(entity, stack, matrices, prefix, transition);
+        this.ensureEntity();
+
+        stack.pushPose();
+        this.applyTransforms(stack, false, transition);
+        mchorse.bbs_mod.forms.renderers.mob.MobMatrizen.sammeln(this.entity, this.zusammen(), transition, stack, matrices, prefix);
+        stack.popPose();
+    }
+
+    /** The form, then each bone in rig order: the pick mesh's ids are those places (BBS FS e341fa733) */
+    @Override
+    protected void updateStencilMap(mchorse.bbs_mod.forms.renderers.FormRenderingContext context)
+    {
+        mchorse.bbs_mod.forms.renderers.mob.MobKnochen rig = mchorse.bbs_mod.forms.renderers.mob.MobKnochen.von(this.entity);
+
+        context.stencilMap.addPicking(this.form);
+
+        if (rig != null) rig.teile.keySet().forEach((name) -> context.stencilMap.addPicking(this.form, name));
     }
 
     private void bindTexture()
@@ -170,72 +174,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
     private void ensureEntity()
     {
-        String id = this.form.mobID.get();
-        String nbt = this.form.mobNBT.get();
-        boolean slim = this.form.slim.get();
-
-        if (!this.lastId.equals(id) || !this.lastNBT.equals(nbt) || slim != this.lastSlim)
-        {
-            this.lastId = id;
-            this.lastNBT = nbt;
-            this.lastSlim = slim;
-            this.entity = null;
-        }
-
-        if (this.entity != null)
-        {
-            return;
-        }
-
-        CompoundTag compound = new CompoundTag();
-
-        try
-        {
-            /* ⚠️ 26.2: TagParser ist generisch (TagParser<T>) und hat keinen oeffentlichen
-             * Konstruktor mehr. parseCompoundAsArgument ist das exakte Gegenstueck zum alten
-             * readStruct(): es liest EIN Compound aus dem Reader und meckert NICHT ueber
-             * Resttext dahinter. (parseCompoundFully waere strenger und wuerde bei Resttext
-             * werfen — das waere hier eine stille Verhaltensaenderung.) */
-            compound = TagParser.parseCompoundAsArgument(new StringReader(nbt));
-        }
-        catch (Exception e)
-        {}
-
-        /* ⚠️ 26.2: create(Level) gibt es nicht mehr. ignoreChecks=TRUE ist Absicht und kein
-         * Bequemlichkeits-Flag: die kurze Variante create(Level, EntitySpawnReason) laeuft
-         * intern durch canSpawn(level), und canSpawn prueft jetzt ZUSAETZLICH die
-         * Schwierigkeit — ein nicht-friedlicher Mob liefert auf FRIEDLICH still null, ein
-         * Zombie-MobForm waere also in Vorschau und Welt einfach verschwunden. Preis: die
-         * Feature-Flag-Pruefung faellt damit weg, eine abgeschaltete Entity-Art ist
-         * konstruierbar statt null — fuer ein reines Anzeige-Objekt folgenlos. Der
-         * EntitySpawnReason selbst hat keine Wirkung (er erreicht die Factory nie).
-         *
-         * ⚠️ MUSS IDENTISCH BLEIBEN zu den anderen Wegwerf-Entity-Pfaden (siehe
-         * AnzeigeEntity). */
-        this.entity = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(id))
-            .create(Minecraft.getInstance().level, new EntitySpawnRequest(EntitySpawnReason.MOB_SUMMONED, true));
-
-        if (this.entity == null && this.form.isPlayer())
-        {
-            this.entity = new RemotePlayer(Minecraft.getInstance().level, slim ? SLIM : WIDE);
-            this.entity.getEntityData().set(PlayerUtils.ProtectedAccess.getModelParts(), (byte) 0b1111111);
-        }
-
-        /* 26.2: ohne Kennung stirbt der Zeichenweg mit "Tried to access entity ID before
-         * ID assignment" -- siehe AnzeigeEntity. */
-        AnzeigeEntity.kennungGeben(this.entity);
-
-        if (this.entity != null)
-        {
-            compound.putString("id", id);
-
-            /* ⚠️ 26.2: load() nimmt keinen CompoundTag mehr, sondern einen ValueInput — die
-             * Lese-Schicht, die Fehler an einen ProblemReporter meldet. DISCARDING verwirft
-             * sie, also genau das Verhalten, das die alte Signatur hatte. */
-            this.entity.load(TagValueInput.create(ProblemReporter.DISCARDING, this.entity.registryAccess(), compound));
-
-            this.entity.noPhysics = true;
-        }
+        this.entity = this.standIn.ensure(this.form.mobID.get(), this.form.mobNBT.get(), this.form.slim.get(), this.form.isPlayer());
     }
 
     /**
@@ -299,7 +238,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
             if (!this.form.mobID.get().equals("minecraft:ender_dragon"))
             {
-                stack.mulPose(Axis.YP.rotation(MathUtils.PI));
+                stack.rotate(Axis.YP.rotation(MathUtils.PI));
             }
 
             stack.last().normal().getScale(Vectors.EMPTY_3F);
@@ -337,29 +276,22 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
     {
         this.ensureEntity();
 
-        if (this.entity != null)
+        /* The pick pass runs in the UI phase, where no world collector exists to submit to */
+        if (this.entity != null && context.isPicking())
+        {
+            context.stack.pushPose();
+
+            if (this.form.mobID.get().equals("minecraft:ender_dragon")) context.stack.rotate(Axis.YP.rotation(MathUtils.PI));
+
+            this.pickNetz.zeichnen(this.entity, this.zusammen(), context.getTransition(), this.form.texture.get(), context.stack, context.stencilMap.objectIndex, context.stencilMap.increment);
+            context.stack.popPose();
+        }
+        else if (this.entity != null)
         {
             CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
             int light = context.light;
             BooleanHolder first = new BooleanHolder();
             Matrix4f cached = new Matrix4f(RenderSystem.getModelViewMatrixCopy());
-
-            if (context.isPicking())
-            {
-                /* ⛔ 26.2: der Hijack ist ersatzlos entfallen. Er setzte beim Zeichnen JEDER Ebene
-                 * einen anderen Shader -- ein Haken in Vanillas Sofort-Zeichnung, die es nicht
-                 * mehr gibt. Der Shader steht jetzt in der Pipeline des jeweiligen Zuges; fuer
-                 * den Auswahl-Durchgang waehlt ihn die Pipeline dort, nicht ein Rueckruf hier. */
-
-                light = 0;
-            }
-            else
-            {
-                /* ⛔ 26.2: der Hijack ist ersatzlos entfallen. Er setzte beim Zeichnen JEDER Ebene
-                 * einen anderen Shader -- ein Haken in Vanillas Sofort-Zeichnung, die es nicht
-                 * mehr gibt. Der Shader steht jetzt in der Pipeline des jeweiligen Zuges; fuer
-                 * den Auswahl-Durchgang waehlt ihn die Pipeline dort, nicht ein Rueckruf hier. */
-            }
 
             context.stack.pushPose();
             if (context.world != null)
@@ -369,10 +301,10 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
             if (this.form.mobID.get().equals("minecraft:ender_dragon"))
             {
-                context.stack.mulPose(Axis.YP.rotation(MathUtils.PI));
+                context.stack.rotate(Axis.YP.rotation(MathUtils.PI));
                 if (context.world != null)
                 {
-                    context.world.mulPose(Axis.YP.rotation(MathUtils.PI));
+                    context.world.rotate(Axis.YP.rotation(MathUtils.PI));
                 }
             }
 
@@ -386,10 +318,10 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
             currentPose = this.form.pose.get();
             currentPoseOverlay = this.form.poseOverlay.get();
+            currentForm = this.form;
 
             /* Publishing the form's camera-space origin opts its translucent layers (slime
              * bodies, ghost textures) into the deferred sorted pass. */
-            if (!context.isPicking())
             {
                 Vector3f origin = context.stack.last().pose().getTranslation(new Vector3f());
 
@@ -399,6 +331,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             this.entityEinreichen(context.stack, consumers, context.getTransition(), light);
 
             currentPose = currentPoseOverlay = null;
+            currentForm = null;
 
             consumers.draw();
             FormTranslucentQueue.setSortOrigin(null);
@@ -440,68 +373,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
     public void tick(IEntity entity)
     {
         this.ensureEntity();
-
-        if (this.entity != null)
-        {
-            this.entity.tick();
-
-            this.entity.xRotO = this.prevPitch;
-            this.entity.yRotO = 0F;
-
-            if (this.entity instanceof LivingEntity livingEntity)
-            {
-                livingEntity.yHeadRotO = this.prevYawHead;
-                livingEntity.yBodyRotO = 0F;
-
-                /* Limb swing is so ugly */
-                if (livingEntity.walkAnimation instanceof LimbAnimatorAccessor a && entity.getLimbAnimator() instanceof LimbAnimatorAccessor b)
-                {
-                    a.setSpeedOld(b.getSpeedOld());
-                    a.setSpeed(b.getSpeed());
-                    a.setPosition(b.getPosition());
-                }
-
-                /* Arm swing */
-                float handSwingProgress = entity.getHandSwingProgress(0F);
-
-                if (handSwingProgress < this.prevHandSwing)
-                {
-                    this.prevHandSwing = 0;
-                }
-
-                if (handSwingProgress > 0 && this.prevHandSwing == 0)
-                {
-                    livingEntity.swing(InteractionHand.MAIN_HAND);
-                }
-
-                this.prevHandSwing = handSwingProgress;
-            }
-
-            this.entity.setYRot(0F);
-            this.entity.setYHeadRot(entity.getHeadYaw() - entity.getBodyYaw());
-            this.entity.setXRot(entity.getPitch());
-            this.entity.setYBodyRot(0F);
-
-            this.entity.setPosRaw(entity.getX(), entity.getY(), entity.getZ());
-            this.entity.setOnGround(entity.isOnGround());
-            this.entity.setShiftKeyDown(entity.isSneaking());
-            this.entity.setSprinting(entity.isSprinting());
-            this.entity.setPose(entity.isSneaking() ? net.minecraft.world.entity.Pose.CROUCHING : net.minecraft.world.entity.Pose.STANDING);
-            if (this.entity instanceof LivingEntity living)
-            {
-                living.setItemSlot(EquipmentSlot.MAINHAND, entity.getEquipmentStack(EquipmentSlot.MAINHAND));
-                living.setItemSlot(EquipmentSlot.OFFHAND, entity.getEquipmentStack(EquipmentSlot.OFFHAND));
-                living.setItemSlot(EquipmentSlot.HEAD, entity.getEquipmentStack(EquipmentSlot.HEAD));
-                living.setItemSlot(EquipmentSlot.CHEST, entity.getEquipmentStack(EquipmentSlot.CHEST));
-                living.setItemSlot(EquipmentSlot.LEGS, entity.getEquipmentStack(EquipmentSlot.LEGS));
-                living.setItemSlot(EquipmentSlot.FEET, entity.getEquipmentStack(EquipmentSlot.FEET));
-            }
-            this.entity.tickCount = entity.getAge();
-            this.entity.noPhysics = true;
-
-            this.prevYawHead = entity.getHeadYaw() - entity.getBodyYaw();
-            this.prevPitch = entity.getPitch();
-        }
+        this.standIn.tick(entity);
     }
 
     private static class BooleanHolder

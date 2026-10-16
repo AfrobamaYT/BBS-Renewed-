@@ -29,7 +29,7 @@ public final class ReplayScaleKeyframes extends ReplayKeyframes
     }
 
     @Override
-    public void apply(int tick, IEntity entity, List<String> groups)
+    public void apply(float tick, IEntity entity, List<String> groups)
     {
         super.apply(tick, entity, groups);
 
@@ -69,7 +69,7 @@ public final class ReplayScaleKeyframes extends ReplayKeyframes
         return matrix;
     }
 
-    private record Sample(ReplayScaleKeyframes frames, int tick)
+    private record Sample(ReplayScaleKeyframes frames, float tick)
     {
         float x(float partialTick)
         {

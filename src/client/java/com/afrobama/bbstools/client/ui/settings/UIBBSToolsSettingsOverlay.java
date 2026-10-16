@@ -30,7 +30,6 @@ public class UIBBSToolsSettingsOverlay extends UIOverlayPanel
     public final BBSToolsButton resetTransparencyBtn;
     public final BBSToolsButton openKeybindsBtn;
     public final BBSToolsButton openUndoBtn;
-    public final BBSToolsButton openReplayDockBtn;
 
     public static void open()
     {
@@ -86,14 +85,6 @@ public class UIBBSToolsSettingsOverlay extends UIOverlayPanel
                 com.afrobama.bbstools.client.ui.undo.UIBBSToolsUndoOverlay.open();
             });
         this.openUndoBtn.relative(shortcuts).x(6).y(18).w(1F, -12).h(18);
-
-        this.openReplayDockBtn = new BBSToolsButton("Replay Dock  (Ctrl+Shift+R)")
-            .onClick(() ->
-            {
-                this.close();
-                com.afrobama.bbstools.client.ui.replays.UIBBSReplayDock.open();
-            });
-        this.openReplayDockBtn.relative(shortcuts).x(6).y(40).w(1F, -12).h(18);
 
         this.openKeybindsBtn = new BBSToolsButton("Keybind Editor  (Shift+F9)")
             .onClick(() ->

@@ -1,10 +1,10 @@
 package mchorse.bbs_mod.graphics;
 
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -180,7 +180,7 @@ public final class Bildfilter
             /* ⚗️ FRAME-DEBUGGER AN DIESEN ZEICHENAUFRUF (2026-08-03).
              *
              * BBSGpuDebug ist gebaut und laeuft, aber sein beforeDraw-Haken sitzt an FUENF
-             * Stellen — alle in stillgelegten Veil-Pfaden, keine im Film-Editor. Deshalb wartet
+             * Stellen — alle im CrowdMass/Veil-Bereich, keine im Film-Editor. Deshalb wartet
              * autoCapture im Editor ewig und der Debugger schweigt, obwohl er eingeschaltet
              * ist. Der dokumentierte F11-Keybind existiert nirgends, auch nicht im
              * Vorgaengerbaum — nur in Kommentaren.

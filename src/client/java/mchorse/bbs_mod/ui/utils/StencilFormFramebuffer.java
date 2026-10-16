@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.utils;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.graphics.Framebuffer;
+import mchorse.bbs_mod.graphics.GpuBackend;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.texture.TextureFormat;
 import mchorse.bbs_mod.resources.Link;
@@ -156,7 +157,7 @@ public class StencilFormFramebuffer
 
         if (ziel.width != quelle.width || ziel.height != quelle.height)
         {
-            ziel.bind();
+            if (GpuBackend.isOpenGl()) ziel.bind();
             ziel.setSize(quelle.width, quelle.height);
         }
 
@@ -269,11 +270,11 @@ public class StencilFormFramebuffer
      * keine. Dann ist {@code null} richtig und der Durchgang zeichnet ohne Verdeckung --
      * eine Warnung je Zeichenaufruf, kein Absturz.
      */
-    private com.mojang.blaze3d.textures.GpuTextureView tiefenAnsicht()
+    private com.mojang.renderpearl.api.textures.GpuTextureView tiefenAnsicht()
     {
         Texture tiefe = this.tiefenTextur();
 
-        return tiefe == null ? null : tiefe.view();
+        return tiefe == null ? null : tiefe.attachmentView();
     }
 
     /** Dieselbe Suche wie {@link #tiefenAnsicht()}, nur die Textur selbst — zum Leeren. */
@@ -314,7 +315,7 @@ public class StencilFormFramebuffer
          * weil apply()/unbind() die Klammer um den Durchgang sind: eine Aufrufstelle statt
          * vieler, und der Name kann nicht vergessen werden. Kosten: ein GL-Aufruf je
          * Durchgang. Warum die Marker vorher nie feuerten: ApiTraceBridge#pushGroup. */
-        mchorse.bbs_mod.sonden.Sonden.gpu.gruppeAuf(
+        if (GpuBackend.isOpenGl()) mchorse.bbs_mod.sonden.Sonden.gpu.gruppeAuf(
             "BBS Auswahlpuffer (Stencil)");
 
         /* ⭐ DERSELBE ABSCHNITT FUER NSIGHT (2026-08-03). Zwei Zeilen statt einer, weil die
@@ -334,7 +335,12 @@ public class StencilFormFramebuffer
 
         int[] sichtfeld = new int[4];
 
-        org.lwjgl.opengl.GL11.glGetIntegerv(org.lwjgl.opengl.GL11.GL_VIEWPORT, sichtfeld);
+        if (GpuBackend.isOpenGl()) org.lwjgl.opengl.GL11.glGetIntegerv(org.lwjgl.opengl.GL11.GL_VIEWPORT, sichtfeld);
+        else
+        {
+            sichtfeld[2] = this.framebuffer.getMainTexture().width;
+            sichtfeld[3] = this.framebuffer.getMainTexture().height;
+        }
 
         Texture ziel = this.framebuffer.getMainTexture();
 
@@ -348,7 +354,7 @@ public class StencilFormFramebuffer
          * Farbe UND Tiefe: ohne Tiefe gewinnt beim Picken der zuletzt gezeichnete Knochen
          * statt des vordersten. */
         mchorse.bbs_mod.graphics.PickZiel.anmelden(
-            this.framebuffer.getMainTexture().view(), this.tiefenAnsicht());
+            this.framebuffer.getMainTexture().attachmentView(), this.tiefenAnsicht());
     }
 
     /**
@@ -386,7 +392,7 @@ public class StencilFormFramebuffer
             return;
         }
 
-        com.mojang.blaze3d.systems.CommandEncoder schreiber =
+        com.mojang.renderpearl.api.commands.CommandEncoder schreiber =
             com.mojang.blaze3d.systems.RenderSystem.getDevice().createCommandEncoder();
 
         /* Tiefe 0, nicht 1: 26.2 rechnet den Tiefenbereich umgekehrt (naeher = groesserer
@@ -583,7 +589,7 @@ public class StencilFormFramebuffer
          * UI-Durchlauf trifft den gefuellten Zustand also fast nie und meldet "leer", obwohl
          * sie nur den falschen Augenblick erwischt hat. Genau hinter der Fuellung ist der
          * einzige Ort, an dem die Antwort etwas wert ist. */
-        mchorse.bbs_mod.graphics.Pufferprobe.vielleichtFarbeZaehlen(
+        if (GpuBackend.isOpenGl()) mchorse.bbs_mod.graphics.Pufferprobe.vielleichtFarbeZaehlen(
             this.framebuffer.getMainTexture().id,
             this.framebuffer.getMainTexture().width, this.framebuffer.getMainTexture().height,
             255, 255, 255, 255, "stencil DIREKT nach der fuellung");
@@ -593,7 +599,7 @@ public class StencilFormFramebuffer
 
         /* Gegenstueck zum pushGroup in apply() — ohne das Paar verschachtelt sich der Event
          * Browser falsch, was schlimmer ist als gar kein Marker. */
-        mchorse.bbs_mod.sonden.Sonden.gpu.gruppeZu();
+        if (GpuBackend.isOpenGl()) mchorse.bbs_mod.sonden.Sonden.gpu.gruppeZu();
 
         /* Gegenstueck zum rangePush in apply(). Muss auf JEDEM Weg aus dem Durchgang
          * laufen, sonst wandert der Bereich in Nsight bis ans Ende der Aufzeichnung und

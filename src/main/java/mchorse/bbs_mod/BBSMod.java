@@ -44,10 +44,10 @@ import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.camera.clips.overwrite.PathClip;
 import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.entity.GunProjectileEntity;
-import mchorse.bbs_mod.events.BBSAddonMod;
-import mchorse.bbs_mod.events.EventBus;
-import mchorse.bbs_mod.events.register.RegisterSettingsEvent;
-import mchorse.bbs_mod.events.register.RegisterSourcePacksEvent;
+import mchorse.bbs_mod.api.BBSAddonMod;
+import mchorse.bbs_mod.api.EventBus;
+import mchorse.bbs_mod.api.events.RegisterSettingsEvent;
+import mchorse.bbs_mod.api.events.RegisterSourcePacksEvent;
 import mchorse.bbs_mod.film.FilmManager;
 import mchorse.bbs_mod.forms.FormArchitect;
 import mchorse.bbs_mod.forms.forms.AnchorForm;
@@ -78,6 +78,7 @@ import mchorse.bbs_mod.settings.SettingsManager;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.clips.Clip;
+import mchorse.bbs_mod.utils.clips.ClipFactory;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.factory.MapFactory;
 import net.fabricmc.api.ModInitializer;
@@ -172,7 +173,10 @@ public class BBSMod implements ModInitializer
         .noCollision()
         .noOcclusion()
         .forceSolidOff()
-        .strength(0F));
+        .strength(0F)
+        /* The hitbox comes from the block entity, so the state's shape cache stays off (BBS FS 996eb0adc) */
+        .dynamicShape()
+        .lightLevel((state) -> state.getValue(ModelBlock.LIGHT_LEVEL)));
     public static final Block CHROMA_RED_BLOCK = createChromaBlock("chroma_red");
     public static final Block CHROMA_GREEN_BLOCK = createChromaBlock("chroma_green");
     public static final Block CHROMA_BLUE_BLOCK = createChromaBlock("chroma_blue");
@@ -444,6 +448,7 @@ public class BBSMod implements ModInitializer
         forms = new FormArchitect();
         forms
             .register(Link.bbs("billboard"), BillboardForm.class, null)
+            .register(Link.bbs("video"), mchorse.bbs_mod.forms.forms.VideoForm.class, null)
             .register(Link.bbs("label"), LabelForm.class, null)
             .register(Link.bbs("model"), ModelForm.class, null)
             .register(Link.bbs("particle"), ParticleForm.class, null)
@@ -456,15 +461,20 @@ public class BBSMod implements ModInitializer
             .register(Link.bbs("trail"), TrailForm.class, null)
             .register(Link.bbs("framebuffer"), FramebufferForm.class, null)
             /* PFLICHT, kein optionaler eintrag: eine nicht registrierte form kann nicht serialisiert
-             * und nicht kopiert werden (MapFactory.getType wirft). LightForm-actors entstehen ueber
-             * importe — ohne diese zeile crasht dort das erste speichern bzw. das
+             * und nicht kopiert werden (MapFactory.getType wirft). LightForm-actors entstehen ueber den
+             * Blender-kanal (LightImporter) — ohne diese zeile crasht dort das erste speichern bzw. das
              * erzeugen der actor-entities. Siehe klassendoc von LightForm. */
             .register(Link.bbs("light"), LightForm.class, null);
+
+        /* Addons register after BBS, in a fixed order: value types before forms that animate them (BBS FS 83a15831a) */
+        events.post(new mchorse.bbs_mod.api.events.RegisterKeyframeFactoriesEvent());
+        events.post(new mchorse.bbs_mod.api.events.RegisterFormsEvent(forms));
+        events.post(new mchorse.bbs_mod.api.events.RegisterFormModifiersEvent());
 
         films = new FilmManager(() -> new File(worldFolder, "bbs/films"));
 
         /* Register camera clips */
-        factoryCameraClips = new MapFactory<Clip, ClipFactoryData>()
+        factoryCameraClips = new ClipFactory()
             .register(Link.bbs("idle"), IdleClip.class, new ClipFactoryData(Icons.FRUSTUM, 0x159e64)
                 .withConverter(Link.bbs("dolly"), new IdleToDollyConverter())
                 .withConverter(Link.bbs("path"), new IdleToPathConverter())
@@ -489,11 +499,15 @@ public class BBSMod implements ModInitializer
             .register(Link.bbs("remapper"), RemapperClip.class, new ClipFactoryData(Icons.TIME, 0x222222))
             .register(Link.bbs("audio"), AudioClip.class, new ClipFactoryData(Icons.SOUND, 0xffc825))
             .register(Link.bbs("subtitle"), SubtitleClip.class, new ClipFactoryData(Icons.FONT, 0x888899))
+            .register(Link.bbs("image"), mchorse.bbs_mod.camera.clips.misc.ImageClip.class, new ClipFactoryData(Icons.IMAGE, 0x2d4fd2))
+            .register(Link.bbs("video"), mchorse.bbs_mod.camera.clips.misc.VideoClip.class, new ClipFactoryData(Icons.VIDEO_CAMERA, 0xd21f3c))
             .register(Link.bbs("curve"), CurveClip.class, new ClipFactoryData(Icons.ARC, 0xff1493))
             .register(Link.bbs("tracker"), TrackerClip.class, new ClipFactoryData(Icons.USER, 0xffffff))
             .register(Link.bbs("dolly_zoom"), DollyZoomClip.class, new ClipFactoryData(Icons.FILTER, 0x7d56c9));
 
-        factoryActionClips = new MapFactory<Clip, ClipFactoryData>()
+        events.post(new mchorse.bbs_mod.api.events.RegisterCameraClipsEvent(factoryCameraClips));
+
+        factoryActionClips = new ClipFactory()
             .register(Link.bbs("chat"), ChatActionClip.class, new ClipFactoryData(Icons.BUBBLE, Colors.YELLOW))
             .register(Link.bbs("command"), CommandActionClip.class, new ClipFactoryData(Icons.PROPERTIES, Colors.ACTIVE))
             .register(Link.bbs("place_block"), PlaceBlockActionClip.class, new ClipFactoryData(Icons.BLOCK, Colors.INACTIVE))
@@ -510,7 +524,7 @@ public class BBSMod implements ModInitializer
          * Erweiterung einen Action-Clip anmelden — WorldSnapshotClip fehlte deshalb im
          * Editor, still und ohne Fehlerbild. Feuerstelle wie in unserer 1.21.1: direkt
          * nachdem die Fabrik steht und bevor irgendjemand sie liest. */
-        events.post(new mchorse.bbs_mod.events.register.RegisterActionClipsEvent(factoryActionClips));
+        events.post(new mchorse.bbs_mod.api.events.RegisterActionClipsEvent(factoryActionClips));
 
         setupConfig(Icons.SETTINGS, "bbs", new File(settingsFolder, "bbs.json"), BBSSettings::register);
 
@@ -518,6 +532,7 @@ public class BBSMod implements ModInitializer
 
         /* Networking */
         ServerNetwork.setup();
+        mchorse.bbs_mod.blocks.ModelBlockUmwandlung.setup();
 
         /* Commands */
         CommandRegistrationCallback.EVENT.register(BBSCommands::register);
@@ -551,6 +566,8 @@ public class BBSMod implements ModInitializer
         Registry.register(BuiltInRegistries.ITEM, Identifier.fromNamespaceAndPath(MOD_ID, "chroma_white"), CHROMA_WHITE_BLOCK_ITEM);
 
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, Identifier.fromNamespaceAndPath(MOD_ID, "main"), ITEM_GROUP);
+
+        events.post(new mchorse.bbs_mod.api.events.BBSReadyEvent());
     }
 
     private void registerEvents()

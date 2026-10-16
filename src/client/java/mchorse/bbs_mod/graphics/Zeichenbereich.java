@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.graphics;
 
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass;
 
 /**
  * Auf welchen Ausschnitt des Bildes BBS gerade zeichnet.

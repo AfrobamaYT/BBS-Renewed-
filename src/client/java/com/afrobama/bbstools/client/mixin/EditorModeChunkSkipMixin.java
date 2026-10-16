@@ -37,8 +37,9 @@ public abstract class EditorModeChunkSkipMixin
 {
     @Inject(method = "renderGroup", at = @At("HEAD"), cancellable = true, require = 0)
     public void bbstools$skipChunksInEditorMode(ChunkSectionLayerGroup gruppe,
-                                                 com.mojang.blaze3d.textures.GpuSampler abtaster,
-                                                 CallbackInfo ci)
+        com.mojang.renderpearl.api.commands.RenderPass pass,
+        com.mojang.renderpearl.api.textures.GpuSampler abtaster,
+        com.mojang.renderpearl.api.textures.GpuTextureView textur, boolean tiefenpass, CallbackInfo ci)
     {
         /* BRÜCKEN-MUSTER (2026-07-26): logik liegt in
          * com.afrobama.blendertransform.EditorModeChunkSkipLogik und ist damit

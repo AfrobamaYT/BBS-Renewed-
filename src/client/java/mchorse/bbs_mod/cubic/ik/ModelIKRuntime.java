@@ -127,6 +127,28 @@ public final class ModelIKRuntime
         return false;
     }
 
+    /**
+     * The target of the enabled chain {@code bone} belongs to, when that target is a bone of the model
+     * (a control the pose keys); else null. G on a chain bone grabs it (IKGriff).
+     */
+    public static String zielFuer(IModel model, ModelForm form, String bone)
+    {
+        ModelIKCache.Compiled compiled = model == null || form == null || bone == null || !(form.ik.get() instanceof MapType map) ? null : ModelIKCache.getFromData(model, map);
+
+        for (ModelIKCache.CompiledChain chain : compiled == null || compiled.chains() == null ? List.<ModelIKCache.CompiledChain>of() : compiled.chains())
+        {
+            IKControl override = chain == null || form.ikControlOverrides == null ? null : form.ikControlOverrides.get(chain.tip());
+            boolean an = chain != null && chain.weight() > 0F && (override == null || (override.enabled && override.weight > 0F));
+
+            if (an && chain.chainRootToEffector() != null && chain.chainRootToEffector().contains(bone) && model.getAllGroupKeys().contains(chain.target()))
+            {
+                return chain.target();
+            }
+        }
+
+        return null;
+    }
+
     public static List<String> getControllers(ModelInstance instance)
     {
         if (instance == null || instance.model == null)

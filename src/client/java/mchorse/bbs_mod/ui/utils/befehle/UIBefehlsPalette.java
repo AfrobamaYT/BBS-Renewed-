@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.utils.befehle;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.IUIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -246,16 +247,16 @@ public class UIBefehlsPalette extends UIOverlayPanel
             {
                 UIBefehlsPalette palette = UIBefehlsPalette.this;
 
-                if (context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER))
+                if (context.isPressed(InputConstants.KEY_RETURN))
                 {
                     palette.ausfuehren(Math.max(0, palette.liste.getIndex()));
 
                     return true;
                 }
 
-                if (context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_UP) || context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_DOWN))
+                if (context.isPressed(InputConstants.KEY_UP) || context.isPressed(InputConstants.KEY_DOWN))
                 {
-                    int schritt = context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_UP) ? -1 : 1;
+                    int schritt = context.isPressed(InputConstants.KEY_UP) ? -1 : 1;
                     int max = palette.gefiltert.size() - 1;
 
                     palette.liste.setIndex(Math.max(0, Math.min(palette.liste.getIndex() + schritt, max)));

@@ -60,7 +60,7 @@ public class FilmGizmoDrag
             return false;
         }
 
-        UIPropTransform transform = UIReplaysEditorUtils.getEditableTransform(panel.replayEditor.keyframeEditor);
+        UIPropTransform transform = UIReplayWurzelTransform.filmTransform(panel);
 
         return transform != null && transform.isEditing();
     }
@@ -109,7 +109,7 @@ public class FilmGizmoDrag
             return false;
         }
 
-        UIPropTransform transform = UIReplaysEditorUtils.getEditableTransform(panel.replayEditor.keyframeEditor);
+        UIPropTransform transform = UIReplayWurzelTransform.filmTransform(panel);
         GizmoDrag drag = buildFilmGizmoDrag(
             panel,
             panel.getCamera(),
@@ -123,7 +123,7 @@ public class FilmGizmoDrag
 
     public static void configureFilmHotkeyDrag(UIFilmPanel panel, UIContext context)
     {
-        UIPropTransform transform = UIReplaysEditorUtils.getEditableTransform(panel.replayEditor.keyframeEditor);
+        UIPropTransform transform = UIReplayWurzelTransform.filmTransform(panel);
 
         if (transform == null)
         {

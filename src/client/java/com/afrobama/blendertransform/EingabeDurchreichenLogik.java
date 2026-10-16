@@ -37,12 +37,23 @@ public final class EingabeDurchreichenLogik
     public static void tasteBeginn(int aktion)
     {
         BBSRendering.lastAction = aktion;
+        /* Whether a screen was open BEFORE the key: one that opens a screen (the dashboard, pause) is still a world key */
+        ohneBildschirm = net.minecraft.client.Minecraft.getInstance().gui.screen() == null;
     }
+
+    private static boolean ohneBildschirm;
 
     /** {@code KeyboardHandler.keyPress} @TAIL */
     public static void tasteEnde(long fenster, KeyEvent ereignis, int aktion, CallbackInfo info)
     {
-        BBSModClient.onEndKey(fenster, ereignis.key(), ereignis.scancode(), aktion,
+        /* Tutorial settings: a key pressed with no screen open is not seen by any BBS screen */
+        if (aktion == 1 && ohneBildschirm)
+        {
+            mchorse.bbs_mod.ui.utils.renderers.InputRenderer.INSTANCE.keyPressedWorld(ereignis.key(),
+                net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledWidth());
+        }
+
+        BBSModClient.onEndKey(fenster, ereignis.key(), ereignis.keycode(), aktion,
             ereignis.modifiers(), info);
     }
 }

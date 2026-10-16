@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.particles.components;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import mchorse.bbs_mod.particles.emitter.Particle;
 import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
 import org.joml.Matrix4f;

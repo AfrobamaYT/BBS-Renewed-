@@ -19,6 +19,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
@@ -117,8 +118,10 @@ public class SuperFakePlayer extends ServerPlayer
     }
 
     @Override
-    public void startSleeping(BlockPos pos)
-    {}
+    public boolean startSleeping(BlockPos pos)
+    {
+        return false;
+    }
 
     @Override
     public boolean startRiding(Entity entity, boolean force, boolean stopRiding)
@@ -127,7 +130,7 @@ public class SuperFakePlayer extends ServerPlayer
     }
 
     @Override
-    public void openTextEdit(SignBlockEntity sign, boolean front)
+    public void openTextEdit(SignBlockEntity sign, SignTextSlot textSlot)
     {}
 
     @Override

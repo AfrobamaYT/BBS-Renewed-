@@ -2,13 +2,10 @@ package com.mcstudio.see;
 
 import com.mcstudio.util.RenderThread;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.graphics.GpuReadback;
+import org.lwjgl.system.MemoryUtil;
 
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL30;
 
 import javax.imageio.ImageIO;
 import net.minecraft.client.Minecraft;
@@ -93,7 +90,8 @@ public final class Readback
 		}
 
 		mchorse.bbs_mod.utils.resources.Pixels pixels =
-			mchorse.bbs_mod.graphics.texture.Texture.pixelsFromTexture(textur);
+			new mchorse.bbs_mod.utils.resources.Pixels(
+                GpuReadback.readRgba8(textur.gpu(), GpuReadback.Origin.NATIVE), textur.width, textur.height);
 
 		if (pixels == null)
 		{
@@ -166,132 +164,89 @@ public final class Readback
 		return captureFramebuffer(fb, path);
 	}
 
-	/**
-	 * Capture ANY Framebuffer's color attachment to a PNG. Shared by the main-shot path and by Inspector's
-	 * offscreen FBO. MUST run on the render thread.
-	 *
-	 * FLOW: bind the FBO for reading -> glReadPixels(GL_BGRA, UNSIGNED_BYTE) -> pack into an INT_ARGB
-	 * BufferedImage with a Y-FLIP (OpenGL origin is bottom-left, PNG/BufferedImage is top-left) -> ImageIO.
-	 * Timed with System.nanoTime around the whole capture+encode.
-	 */
-	public static String captureFramebuffer(RenderTarget fb, String path)
-	{
-		RenderSystem.assertOnRenderThread();
+    /** Capture this exact GPU target; the framebuffer convention is an explicit row flip. */
+    public static String captureFramebuffer(RenderTarget target, String path)
+    {
+        RenderSystem.assertOnRenderThread();
+        long started = System.nanoTime();
 
-		int width = fb.width;
-		int height = fb.height;
+        try
+        {
+            verifyTarget(target);
+            return writeSnapshot(GpuReadback.readRaw(target.getColorTexture()), path, started);
+        }
+        catch (Throwable error)
+        {
+            return "{\"error\":\"capture failed: " + escape(error.toString()) + "\"}";
+        }
+    }
 
-		if (width <= 0 || height <= 0)
-		{
-			return "{\"error\":\"framebuffer has zero size " + width + "x" + height + "\"}";
-		}
+    /** Queue the current frame's GPU snapshot and complete after the actual PNG write. */
+    public static java.util.concurrent.CompletableFuture<String> captureFramebufferAsync(RenderTarget target, String path)
+    {
+        RenderSystem.assertOnRenderThread();
+        verifyTarget(target);
+        long started = System.nanoTime();
+        java.util.concurrent.CompletableFuture<String> result = new java.util.concurrent.CompletableFuture<>();
+        GpuReadback.requestRaw(target.getColorTexture(), new GpuReadback.Region(0, 0, target.width, target.height)).whenReady(
+            raw -> new Thread(() ->
+            {
+                try { result.complete(writeSnapshot(raw, path, started)); }
+                catch (Throwable error) { result.completeExceptionally(error); }
+            }, "bbs-world-snapshot-writer").start(), result::completeExceptionally);
+        return result;
+    }
 
-		long t0 = System.nanoTime();
+    private static void verifyTarget(RenderTarget target)
+    {
+        if (target == null || target.getColorTexture() == null || target.getColorTexture().isClosed()
+            || target.width <= 0 || target.height <= 0
+            || target.width != target.getColorTexture().getWidth(0)
+            || target.height != target.getColorTexture().getHeight(0))
+        {
+            throw new IllegalArgumentException("Capture target is incomplete, closed or has stale dimensions");
+        }
+        GpuReadback.requireRgba8Convertible(target.getColorTexture().getFormat());
+    }
 
-		/* Bind THIS framebuffer as the read source. beginRead() binds the color texture; we need the FBO
-		 * itself bound as GL_READ_FRAMEBUFFER so glReadPixels(0,0,...) reads its attachment, not the screen. */
-		/* 26.2: RenderTarget.frameBufferId ist entfallen -- 26.2 gibt nur noch GpuTexture heraus,
-		 * keine rohen GL-Kennungen (der Renderer soll auf Vulkan umziehen). glReadPixels braucht
-		 * aber einen gebundenen Lese-Rahmenpuffer. Also haengen wir die Farbtextur des Ziels an
-		 * einen eigenen, einmal angelegten Rahmenpuffer.
-		 *
-		 * ⛔ BEWUSST ROHES GL MIT ABLAUFDATUM -- unter Vulkan gibt es keine glId mehr; dann muss
-		 * das Auslesen ueber den Befehlsgeber laufen. Siehe docs/26.2-UMSTIEG-SPICKZETTEL.md. */
-		GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFboFuer(fb));
+    private static String writeSnapshot(GpuReadback.Raw raw, String path, long started) throws java.io.IOException
+    {
+        int width = raw.width(), height = raw.height();
+        ByteBuffer rgba = null;
+        boolean allZero = true;
 
-		ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * 4);
+        try (raw)
+        {
+            rgba = raw.rgba8(GpuReadback.Origin.TOP_LEFT);
+            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
-		/* Tight packing so rows are width*4 bytes with no padding — matters for non-4-aligned widths. */
-		int[] pack = {GL11.GL_PACK_ALIGNMENT, GL12.GL_PACK_ROW_LENGTH, GL11.GL_PACK_SKIP_ROWS, GL11.GL_PACK_SKIP_PIXELS};
-		int[] previousPack = new int[pack.length];
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int index = (y * width + x) * 4;
+                    int r = rgba.get(index) & 0xFF, g = rgba.get(index + 1) & 0xFF;
+                    int b = rgba.get(index + 2) & 0xFF, a = rgba.get(index + 3) & 0xFF;
+                    allZero &= (r | g | b | a) == 0;
+                    /* Preserve the existing opaque world/diagnostic PNG contract. */
+                    image.setRGB(x, y, 0xFF000000 | r << 16 | g << 8 | b);
+                }
+            }
 
-		for (int i = 0; i < pack.length; i++)
-		{
-			previousPack[i] = GL11.glGetInteger(pack[i]);
-			GL11.glPixelStorei(pack[i], i == 0 ? 1 : 0);
-		}
+            File file = new File(path);
+            if (file.getParentFile() != null) file.getParentFile().mkdirs();
+            if (!ImageIO.write(image, "png", file)) throw new java.io.IOException("No PNG writer available");
+        }
+        finally
+        {
+            if (rgba != null) MemoryUtil.memFree(rgba);
+        }
 
-		try
-		{
-			GL11.glReadPixels(0, 0, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, buffer);
-		}
-		finally
-		{
-			for (int i = 0; i < pack.length; i++)
-			{
-				GL11.glPixelStorei(pack[i], previousPack[i]);
-			}
-		}
-
-		/* Restore the default framebuffer binding so we do not leave the read-FBO bound. */
-		GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, 0);
-
-		boolean allZero = true;
-		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
-		for (int y = 0; y < height; ++y)
-		{
-			for (int x = 0; x < width; ++x)
-			{
-				int i = (y * width + x) * 4;
-
-				/* GL_BGRA byte order in memory: B, G, R, A. Pack into INT_ARGB (0xAARRGGBB). */
-				int b = buffer.get(i) & 0xFF;
-				int g = buffer.get(i + 1) & 0xFF;
-				int r = buffer.get(i + 2) & 0xFF;
-				int a = buffer.get(i + 3) & 0xFF;
-
-				if (allZero && (r != 0 || g != 0 || b != 0 || a != 0))
-				{
-					allZero = false;
-				}
-
-				/* ⛔ ALPHA UNDURCHSICHTIG SCHREIBEN (2026-08-11, hat einen Befund erfunden).
-				 *
-				 * Hier stand `a << 24`, also landete das Rest-Alpha des Bildpuffers im PNG. RGB
-				 * ist da laengst zusammengerechnet -- das Alpha ist Rauschen. Unser Puffer fuehrt
-				 * zufaellig 255, der von 1.21.1 nicht; im A/B las sich das als 17,8 % Bildunter-
-				 * schied und als "aktive Werkzeugtaste rot statt blau". Ohne Alpha: Werkzeugleiste
-				 * 0 von 34160 Punkten verschieden. Beide Baeume schreiben jetzt opak wie Vanilla. */
-				int argb = 0xFF000000 | (r << 16) | (g << 8) | b;
-
-				/* Y-FLIP: GL row 0 is the BOTTOM of the image; BufferedImage row 0 is the TOP. */
-				image.setRGB(x, (height - 1) - y, argb);
-			}
-		}
-
-		try
-		{
-			File file = new File(path);
-
-			if (file.getParentFile() != null)
-			{
-				file.getParentFile().mkdirs();
-			}
-
-			ImageIO.write(image, "png", file);
-		}
-		catch (Exception e)
-		{
-			return "{\"error\":\"" + escape(String.valueOf(e.getMessage())) + "\"}";
-		}
-
-		long ms = (System.nanoTime() - t0) / 1_000_000L;
-
-		String json = "{\"w\":" + width + ",\"h\":" + height + ",\"ms\":" + ms
-			+ ",\"path\":\"" + escape(path) + "\"";
-
-		if (allZero)
-		{
-			/* FAIL-LOUD: an all-zero buffer means we read nothing (wrong FBO bound, or GL not current) —
-			 * NOT a legitimately black scene reported as success. */
-			json += ",\"warning\":\"framebuffer all-zero\"";
-		}
-
-		json += "}";
-
-		return json;
-	}
+        long ms = (System.nanoTime() - started) / 1_000_000L;
+        return "{\"w\":" + width + ",\"h\":" + height + ",\"ms\":" + ms
+            + ",\"path\":\"" + escape(path) + "\""
+            + (allZero ? ",\"warning\":\"framebuffer all-zero\"" : "") + "}";
+    }
 
 	/**
 	 * The mcstudio-shots output folder, created on demand. Anchored to MC's canonical run directory
@@ -315,50 +270,7 @@ public final class Readback
 			return "";
 		}
 
-		return s.replace("\\", "\\\\").replace("\"", "\\\"");
+		return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
 	}
 
-	/* Eigener Lese-Rahmenpuffer, an den die Farbtextur des jeweiligen Ziels gehaengt wird.
-	 * Einmal angelegt, VOR JEDEM LESEN neu behaengt. Siehe Kommentar oben. */
-	private static int leseFbo = 0;
-
-	/**
-	 * ⛔ HIER WIRD DIE TEXTURNUMMER NICHT GEMERKT -- das war ein Fehler, kein Verzicht auf
-	 * eine Optimierung.
-	 *
-	 * <p>Bis 2026-07-31 stand hier ein Zwischenspeicher (`leseFboTextur`), der das Behaengen
-	 * uebersprang, solange die GL-Nummer der Farbtextur gleich blieb. Die Annahme dahinter --
-	 * gleiche Nummer heisst gleiche Textur -- gilt in 26.2 nicht mehr: {@code RenderTarget.resize()}
-	 * schliesst die alte GpuTexture, und GL vergibt die freigewordene Nummer sofort wieder.
-	 * Nach einem Groessenwechsel zeigte der Anhang also auf ein totes Objekt, waehrend die
-	 * Nummer unveraendert aussah.
-	 *
-	 * <p>⚠️ Das Fatale daran ist nicht der Absturz, sondern dass es keinen gibt: glReadPixels
-	 * auf einen toten Anhang liefert lauter Nullen und keinen GL-Fehler. Das Werkzeug meldet
-	 * dann ein schwarzes Bild -- und man sucht den Fehler im Produkt statt im Messgeraet.
-	 * Genau das kostete in Aufgabe 91 eine Runde: derselbe Zwischenspeicher steckte in
-	 * {@code BBSRendering.leseFboFuer} und liess einen bereits wirksamen Fix wirkungslos
-	 * aussehen (dieselbe Textur: direkt gelesen Helligkeit 198, ueber den Puffer 0).
-	 *
-	 * <p>Das Behaengen kostet einen GL-Aufruf je Lesen. Ein Lesen kopiert ohnehin das ganze
-	 * Bild in den Hauptspeicher -- daneben faellt das nicht ins Gewicht.
-	 */
-	private static int leseFboFuer(RenderTarget ziel)
-	{
-		int textur = ((com.mojang.blaze3d.opengl.GlTexture) ziel.getColorTexture()).glId();
-
-		if (leseFbo == 0)
-		{
-			leseFbo = GL30.glGenFramebuffers();
-		}
-
-		int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
-
-		GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFbo);
-		GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
-			GL11.GL_TEXTURE_2D, textur, 0);
-		GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
-
-		return leseFbo;
-	}
 }

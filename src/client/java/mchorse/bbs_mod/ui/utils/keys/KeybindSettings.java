@@ -41,6 +41,18 @@ public class KeybindSettings
     {
         classes.add(Keys.class);
         classes.add(MarkerKeys.class);
+        mchorse.bbs_mod.BBSMod.events.post(new mchorse.bbs_mod.api.client.events.RegisterKeybindsEvent());
+    }
+
+    /** An addon's class of KeyCombo fields, read like Keys (BBS FS 669329b8b) */
+    public static void register(Class clazz)
+    {
+        classes.add(clazz);
+    }
+
+    public static void registerCategoryIcon(String category, mchorse.bbs_mod.ui.utils.icons.Icon icon)
+    {
+        CATEGORY_ICONS.put(category, icon);
     }
 
     public static void register(SettingsBuilder builder)

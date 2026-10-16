@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.forms.editors.utils;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 /* 26.2: com.mojang.blaze3d.shaders.Uniform ist ersatzlos entfallen -- es gibt keine
  * Einzel-Uniforms mehr, die man am Shader setzen koennte, nur noch Uniform-BLOECKE, die ein
  * Zeichendurchgang bindet. Diese Datei hat das schon hinter sich; nur der Import stand noch. */
@@ -31,7 +31,7 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.LightCoordsUtil;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import org.joml.Matrix4f;
 
@@ -260,7 +260,10 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
              * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
              * zeichnen will, gibt das Ziel dort an. */
 
-            GlStateManager._enableScissorTest();
+            if (mchorse.bbs_mod.graphics.GpuBackend.isOpenGl())
+            {
+                GlStateManager._enableScissorTest();
+            }
         }
         else
         {

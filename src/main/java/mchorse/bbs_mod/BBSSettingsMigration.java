@@ -28,6 +28,18 @@ public final class BBSSettingsMigration
 			root.put("personalization", personalization);
 		}
 
+		/* One count for both overlay kinds became two (BBS FS 8ce6f0238); both start from the old one. */
+		MapType recording = root.getMap("recording");
+		boolean overlays = migrateLegacyValue(recording, recording, "pose_transform_overlays", "pose_overlays");
+
+		overlays |= migrateLegacyValue(recording, recording, "pose_transform_overlays", "transform_overlays");
+
+		if (overlays)
+		{
+			root.put("recording", recording);
+			migrated = true;
+		}
+
 		return migrated;
 	}
 

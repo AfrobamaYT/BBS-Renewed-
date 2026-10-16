@@ -332,7 +332,7 @@ public class Pufferprobe
             return stelle + ": ziel ist null";
         }
 
-        int textur = ((com.mojang.blaze3d.opengl.GlTexture) ziel.getColorTexture()).glId();
+        int textur = ((com.mojang.renderpearl.backend.opengl.GlTexture) ziel.getColorTexture()).glId();
         int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
         int fbo = GL30.glGenFramebuffers();
 

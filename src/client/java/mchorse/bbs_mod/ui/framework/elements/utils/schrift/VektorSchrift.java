@@ -109,7 +109,30 @@ public final class VektorSchrift
 
     private float skala()
     {
-        return (float) Minecraft.getInstance().getWindow().getGuiScale();
+        return mchorse.bbs_mod.BBSModClient.getGUIScale();
+    }
+
+    public static void schliessen()
+    {
+        com.mojang.blaze3d.systems.RenderSystem.assertOnRenderThread();
+        kaputt = true;
+        VektorSchrift current = instanz;
+        instanz = null;
+        if (current == null) return;
+        try
+        {
+            for (VektorGlyphAtlas atlas : current.atlanten.values()) atlas.schliessen();
+            current.atlanten.clear();
+        }
+        finally
+        {
+            try { if (current.gesicht != null) FreeType.FT_Done_Face(current.gesicht); }
+            finally
+            {
+                try { if (current.bibliothek != 0) FreeType.FT_Done_FreeType(current.bibliothek); }
+                finally { if (current.schriftBytes != null) MemoryUtil.memFree(current.schriftBytes); }
+            }
+        }
     }
 
     private VektorGlyphAtlas atlas()

@@ -7,10 +7,6 @@ import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.settings.values.IValueListener;
-import mchorse.bbs_mod.settings.values.base.BaseValue;
-import mchorse.bbs_mod.ui.film.replays.UIReplaysEditorUtils;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.IUIKeyframeGraph;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIAnchorKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIKeyframeFactory;
@@ -161,69 +157,6 @@ public class UIKeyframeEditor extends UIElement
     {
         this.timelineVisible = visible;
         this.view.setVisible(visible);
-    }
-
-    /** Record the active pose selection as one undo operation, including All mode. */
-    public boolean insertSelectedPose(float tick, BaseValue parent)
-    {
-        if (!(this.editor instanceof UIPoseKeyframeFactory) && !(this.editor instanceof UIPoseTransformKeyframeFactory))
-        {
-            return false;
-        }
-
-        IUIKeyframeGraph graph = this.view.getGraph();
-        UIKeyframeSheet active = graph.getSheet(this.editor.getKeyframe());
-
-        if (active == null)
-        {
-            return false;
-        }
-
-        Pair<String, Boolean> bone = this.getBone();
-        Keyframe[] recorded = new Keyframe[1];
-        boolean missing = graph.getSheets().stream().anyMatch(sheet ->
-            sheet.channel.getFactory() == active.channel.getFactory()
-                && (sheet == active || sheet.selection.hasAny())
-                && sheet.channel.getKeyframes().stream().noneMatch(keyframe -> ((Keyframe) keyframe).getTick() == tick));
-
-        Runnable record = () ->
-        {
-            for (UIKeyframeSheet sheet : graph.getSheets())
-            {
-                if (sheet.channel.getFactory() != active.channel.getFactory()
-                    || (sheet != active && !sheet.selection.hasAny()))
-                {
-                    continue;
-                }
-
-                Keyframe keyframe = UIReplaysEditorUtils.ensureKeyframe(sheet, tick);
-                sheet.selection.clear();
-                sheet.selection.add(keyframe);
-
-                if (sheet == active)
-                {
-                    recorded[0] = keyframe;
-                }
-            }
-        };
-
-        if (missing)
-        {
-            BaseValue.edit(parent, IValueListener.FLAG_UNMERGEABLE, (value) -> record.run());
-        }
-        else
-        {
-            record.run();
-        }
-
-        graph.pickKeyframe(recorded[0]);
-
-        if (bone != null && this.editor instanceof UIPoseKeyframeFactory pose)
-        {
-            pose.poseEditor.selectBone(bone.a);
-        }
-
-        return true;
     }
 
     public void setPropertiesVisible(boolean visible)

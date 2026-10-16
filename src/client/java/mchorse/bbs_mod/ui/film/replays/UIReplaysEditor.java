@@ -103,9 +103,6 @@ public class UIReplaysEditor extends UIElement
     public UIKeyframeEditor keyframeEditor;
 
     /* Action clips share the timeline area; the toggle below the categories switches to them. */
-    private UIClipsPanel actionTimeline;
-    private UIIcon actionsToggle;
-    private boolean actionsMode;
     /* «All tracks», default AN: der Entwurf zeigt alle Gruppen in einer Liste; Kategorien bleiben Filter. */
     private UIIcon allToggle;
     private boolean allMode = true;
@@ -257,7 +254,7 @@ public class UIReplaysEditor extends UIElement
             return;
         }
 
-        context.batcher.clip(area.x, area.y, area.ex(), rulerBottom, context);
+        context.batcher.clip(area.x, area.y, area.w, rulerBottom - area.y, context);
 
         renderRulerAudio(context, keyframes, camera, clipOffset, area, rulerBottom);
         renderRulerClipGradient(context, keyframes, clipsPanel, clipOffset, area, rulerBottom);
@@ -364,8 +361,8 @@ public class UIReplaysEditor extends UIElement
 
             context.batcher.box(area.x, area.y, area.ex(), area.ey(), BBSSettings.chromeSurface());
 
-            /* Highlight the active category on the left edge (the actions toggle when in actions mode). */
-            UIIcon activeIcon = this.actionsMode ? this.actionsToggle : (this.allMode ? this.allToggle : this.tabButtons.get(this.category));
+            /* Highlight the active category on the left edge. */
+            UIIcon activeIcon = this.allMode ? this.allToggle : this.tabButtons.get(this.category);
 
             if (activeIcon != null && activeIcon.getParent() != null)
             {
@@ -382,12 +379,10 @@ public class UIReplaysEditor extends UIElement
             this.tabButtons.put(category, button);
         }
 
-        /* «All tracks» + actions toggles, pinned to the bottom of the category bar. */
+        /* «All tracks» toggle, pinned to the bottom of the category bar. */
         this.allToggle = new UIIcon(Icons.LIST, b -> this.setAllTracks());
         this.allToggle.tooltip(UIKeys.FILM_REPLAY_ALL_TRACKS, Direction.RIGHT);
 
-        this.actionsToggle = new UIIcon(Icons.ACTION, b -> this.toggleActionsMode());
-        this.actionsToggle.tooltip(UIKeys.FILM_REPLAY_ACTIONS_TIMELINE, Direction.RIGHT);
         this.layoutBottomToggles();
 
         /* Kein setCategory() hier: das schaltete allMode (alle Gruppen, Entwurf) gleich wieder aus. */
@@ -402,16 +397,15 @@ public class UIReplaysEditor extends UIElement
         this.keys().register(Keys.REPLAYS_TAB_5, () -> this.setCategoryByPosition(4))
             .category(UIKeys.FILM_REPLAY_TITLE);
 
-        this.add(this.iconBar, this.allToggle, this.actionsToggle);
+        this.add(this.iconBar, this.allToggle);
 
         /* ⛔ Die vertikale Icon-Spalte bleibt GELADEN, wird aber nicht mehr gezeichnet: die
          * Filter sitzen jetzt im Kopf der Zeitleiste (Blenders Ort dafuer). Nicht geloescht,
          * weil an den Knoepfen die Tooltips und die Tastenkuerzel REPLAYS_TAB_1..4 haengen —
-         * und weil `setCategory`/`setAllTracks`/`toggleActionsMode` weiterhin ueber sie
+         * und weil `setCategory`/`setAllTracks` weiterhin ueber sie
          * laufen. Sichtbar hat sie den Kanalnamen 20 px Breite weggenommen. */
         this.iconBar.setVisible(false);
         this.allToggle.setVisible(false);
-        this.actionsToggle.setVisible(false);
         this.markContainer();
     }
 
@@ -425,11 +419,6 @@ public class UIReplaysEditor extends UIElement
      */
     public String aktiverFilter()
     {
-        if (this.actionsMode)
-        {
-            return "actions";
-        }
-
         if (this.allMode)
         {
             return "all";
@@ -443,7 +432,7 @@ public class UIReplaysEditor extends UIElement
     {
         if ("actions".equals(id))
         {
-            this.toggleActionsMode();
+            mchorse.bbs_mod.ui.film.ZeitleisteZweig.aktionenModus(this.filmPanel);
 
             return;
         }
@@ -468,7 +457,6 @@ public class UIReplaysEditor extends UIElement
 
     private void setCategory(ReplayCategory c)
     {
-        this.actionsMode = false;
         this.allMode = false;
         this.category = c;
         this.updateChannelsList();
@@ -477,8 +465,6 @@ public class UIReplaysEditor extends UIElement
     /** Show every category's tracks at once, bypassing the category filter. */
     private void setAllTracks()
     {
-        this.actionsMode = false;
-
         /* ⛔ TOGGLE, nicht Einbahnstrasse. Vorher stand hier `allMode = true` — ein zweiter
          * Klick tat nichts (gemessen ueber einen Feld-Logpoint: `allMode true -> true`).
          * In der alten Icon-Spalte fiel das kaum auf, weil man ueber eine Kategorie
@@ -643,13 +629,10 @@ public class UIReplaysEditor extends UIElement
 
         Set<String> disabled = BBSSettings.disabledSheets.get();
 
+        sheets.removeIf((v) -> !this.allMode && categoryOf(v) != this.category);
+        boolean hadTracks = !sheets.isEmpty(); /* if the track filter empties the tab, keep the timeline: the filter lives in its menu (BBS FS a86b0688e) */
         sheets.removeIf((v) ->
         {
-            if (!this.allMode && categoryOf(v) != this.category)
-            {
-                return true;
-            }
-
             String filterKey = getSheetFilterKey(v);
 
             for (String s : disabled)
@@ -691,7 +674,7 @@ public class UIReplaysEditor extends UIElement
             lastForm = form;
         }
 
-        if (!sheets.isEmpty())
+        if (!sheets.isEmpty() || hadTracks)
         {
             this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.filmPanel.cameraEditor, consumer).absolute())
                 .target(mchorse.bbs_mod.ui.film.ZeitleisteZweig.keyframeHost(this.filmPanel))
@@ -700,12 +683,6 @@ public class UIReplaysEditor extends UIElement
             this.keyframeEditor.setUndoId("replay_keyframe_editor");
 
             this.layoutBottomToggles();
-
-            /* Reset */
-            if (lastEditor != null)
-            {
-                this.keyframeEditor.view.copyViewport(lastEditor);
-            }
 
             /* Kamera-Clips als Balken unter den Spuren (4.54); Klicks nur, wenn kein Keyframe sie nahm. */
             this.keyframeEditor.view.spuren = new KameraSpuren(this.keyframeEditor.view, this.filmPanel.cameraEditor).dock(this.keyframeEditor, this);
@@ -716,8 +693,7 @@ public class UIReplaysEditor extends UIElement
             {
                 if (this.replay.form.get() instanceof ModelForm modelForm)
                 {
-                    int mouseY = this.getContext().mouseY;
-                    UIKeyframeSheet sheet = this.keyframeEditor.view.getGraph().getSheet(mouseY);
+                    UIKeyframeSheet sheet = this.keyframeEditor.view.getGraph().getSheet(this.getContext().mouseY);
 
                     if (sheet != null && sheet.channel.getFactory() == KeyframeFactories.POSE && sheet.id.equals("pose"))
                     {
@@ -775,6 +751,7 @@ public class UIReplaysEditor extends UIElement
                     }
                 }
 
+                SpurGruppen.overlayAnbieten(menu, this.keyframeEditor.view.getGraph().getSheet(this.getContext().mouseY), this::updateChannelsList);
                 if (this.keyframeEditor.view.getGraph() instanceof UIKeyframeDopeSheet)
                 {
                     menu.action(Icons.FILTER, UIKeys.FILM_REPLAY_FILTER_SHEETS, () ->
@@ -819,10 +796,14 @@ public class UIReplaysEditor extends UIElement
 
         this.resize();
 
-        if (this.keyframeEditor != null && lastEditor == null)
+        /* Restore after inserting and laying out every row: an empty list clamps the saved scroll. */
+        if (this.keyframeEditor != null && lastEditor != null)
         {
-            this.keyframeEditor.view.resetView();
+            this.keyframeEditor.view.copyViewport(lastEditor);
         }
+
+        if (this.keyframeEditor != null && lastEditor == null) this.keyframeEditor.view.resetView();
+        else if (this.keyframeEditor != null) mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.MehrspurGraph.uebernehmen(lastEditor, this.keyframeEditor.view);
     }
 
     private void collectCuratedSheets(List<UIKeyframeSheet> sheets)
@@ -978,15 +959,15 @@ public class UIReplaysEditor extends UIElement
         List<UIKeyframeSheet> orderedFormSheets = new ArrayList<>(formSheets);
         formSheets.clear();
 
-        if (form instanceof ModelForm modelForm)
+        if (form instanceof mchorse.bbs_mod.forms.forms.IPosedForm)
         {
             List<UIKeyframeSheet> materialSheets = new ArrayList<>();
-            UIReplaysEditorUtils.addMaterialTextureSheets(modelForm, this.replay.properties, materialSheets);
+            if (form instanceof ModelForm modelForm) UIReplaysEditorUtils.addMaterialTextureSheets(modelForm, this.replay.properties, materialSheets);
             orderedFormSheets.addAll(materialSheets);
 
             List<UIKeyframeSheet> boneSheets = new ArrayList<>();
             Map<String, Integer> depthBySheetId = new HashMap<>();
-            UIReplaysEditorUtils.addBoneTrackSheets(modelForm, this.replay.properties, boneSheets, depthBySheetId);
+            if (form instanceof ModelForm modelForm) UIReplaysEditorUtils.addBoneTrackSheets(modelForm, this.replay.properties, boneSheets, depthBySheetId); else MobKnochenSpuren.hinzufuegen(form, this.replay.properties, boneSheets, depthBySheetId);
 
             for (UIKeyframeSheet boneSheet : boneSheets)
             {
@@ -1059,57 +1040,17 @@ public class UIReplaysEditor extends UIElement
         this.updateTimelineModeVisibility();
     }
 
-    /** The action-clips timeline shares this editor's timeline area; the actions toggle switches to it. */
-    public void attachActionTimeline(UIClipsPanel actionTimeline)
-    {
-        this.actionTimeline = actionTimeline;
-        actionTimeline.relative(this).x(CATEGORY_BAR_WIDTH).y(0).w(1F, -CATEGORY_BAR_WIDTH).h(1F);
-        this.add(actionTimeline);
-        this.bringBarToFront();
-        this.updateTimelineModeVisibility();
-    }
-
-    public boolean isActionsMode()
-    {
-        return this.actionsMode;
-    }
-
-    private void toggleActionsMode()
-    {
-        this.setActionsMode(!this.actionsMode);
-    }
-
-    public void setActionsMode(boolean actionsMode)
-    {
-        if (this.actionsMode == actionsMode)
-        {
-            return;
-        }
-
-        this.actionsMode = actionsMode;
-        this.updateTimelineModeVisibility();
-    }
-
-    /** Keyframe- ODER Action-Timeline im selben editArea — nur der aktive Modus ist sichtbar. */
+    /** The action clips are a timeline mode of their own (ZeitleisteZweig.aktionenModus). */
     private void updateTimelineModeVisibility()
     {
-        boolean keyframes = !this.actionsMode;
-
         if (this.keyframeEditor != null)
         {
-            this.keyframeEditor.setTimelineVisible(this.timelineVisible && keyframes);
-            this.keyframeEditor.setPropertiesVisible(this.propertiesVisible && keyframes);
-        }
-
-        if (this.actionTimeline != null)
-        {
-            this.actionTimeline.setVisible((this.timelineVisible || this.propertiesVisible) && this.actionsMode);
-            this.actionTimeline.setTimelineVisible(this.timelineVisible && this.actionsMode);
-            this.actionTimeline.setPropertiesVisible(this.propertiesVisible && this.actionsMode);
+            this.keyframeEditor.setTimelineVisible(this.timelineVisible);
+            this.keyframeEditor.setPropertiesVisible(this.propertiesVisible);
         }
     }
 
-    /** Keep the category bar and the actions toggle above the timelines. */
+    /** Keep the category bar above the timelines. */
     private void bringBarToFront()
     {
         if (this.iconBar.getParent() != null)
@@ -1122,19 +1063,13 @@ public class UIReplaysEditor extends UIElement
             this.allToggle.removeFromParent();
         }
 
-        if (this.actionsToggle.getParent() != null)
-        {
-            this.actionsToggle.removeFromParent();
-        }
-
-        this.add(this.iconBar, this.allToggle, this.actionsToggle);
+        this.add(this.iconBar, this.allToggle);
     }
 
     /** Toggles an die Spurnamen-Spalte pinnen (iconBar schrumpft auf ihre Icons — Anker per Labelbreite). */
     private void layoutBottomToggles()
     {
-        this.allToggle.relative(this).x(0).y(1F, -40).wh(CATEGORY_BAR_WIDTH, 20);
-        this.actionsToggle.relative(this).x(0).y(1F, -20).wh(CATEGORY_BAR_WIDTH, 20);
+        this.allToggle.relative(this).x(0).y(1F, -20).wh(CATEGORY_BAR_WIDTH, 20);
     }
 
     public void pickForm(Form form, String bone)
@@ -1153,11 +1088,7 @@ public class UIReplaysEditor extends UIElement
     {
         if (form instanceof ModelForm && bone != null && !bone.isEmpty())
         {
-            if (this.allMode)
-            {
-                this.setActionsMode(false);
-            }
-            else if (this.category != ReplayCategory.POSE || this.actionsMode)
+            if (!this.allMode && this.category != ReplayCategory.POSE)
             {
                 this.setCategory(ReplayCategory.POSE);
             }
@@ -1175,14 +1106,7 @@ public class UIReplaysEditor extends UIElement
 
     public boolean clickViewport(UIContext context, Area area)
     {
-        /* Maustaste 4: auf das Replay zufahren — VOR allen Zweigen (gilt im Flug UND ueber Formen). */
-        if (area.isInside(context) && context.mouseButton == 3 && this.filmPanel.getController().orbit.enabled)
-        {
-            this.filmPanel.getController().orbit.starteZoomZumReplay();
-
-            return true;
-        }
-
+        /* Auf das Replay zufahren ist der Keybind FILM_CONTROLLER_ZOOM_TO_REPLAY (Vorgabe Maus 4). */
         if (this.filmPanel.isFlying() && area.isInside(context))
         {
             if (context.mouseButton == 0 && this.filmPanel.getController().orbit.enabled)
@@ -1212,7 +1136,7 @@ public class UIReplaysEditor extends UIElement
         }
 
         StencilFormFramebuffer stencil = this.filmPanel.getController().getStencil();
-
+        if (area.isInside(context) && mchorse.bbs_mod.cubic.render.RigFremd.klick(this.filmPanel, context, area, stencil.hasPicked())) return true;
         /* Orbit: Links-Drag rotiert auch ueber Formen — Auswahl erst beim Release (Klick waehlt, Drag orbitet). */
         if (area.isInside(context) && context.mouseButton == 0 && this.filmPanel.getController().orbit.enabled)
         {
@@ -1361,7 +1285,6 @@ public class UIReplaysEditor extends UIElement
          * auf dem Schirm weiter da. Geladen bleibt sie, weil an ihren Knoepfen die Tooltips
          * und die Tastenkuerzel REPLAYS_TAB_1..4 haengen. */
         this.iconBar.setVisible(false);
-        this.actionsToggle.setVisible(false);
         this.allToggle.setVisible(false);
 
         FilmGizmoDrag.configureFilmHotkeyDrag(this.filmPanel, context);

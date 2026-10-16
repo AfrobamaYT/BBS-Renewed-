@@ -1,10 +1,13 @@
 package mchorse.bbs_mod.ui.framework.elements.input.drag;
 
+import org.lwjgl.sdl.SDLMouse;
 import mchorse.bbs_mod.graphics.window.Window;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWImage;
+import org.lwjgl.sdl.SDLError;
+import org.lwjgl.sdl.SDLPixels;
+import org.lwjgl.sdl.SDLSurface;
+import org.lwjgl.sdl.SDL_Surface;
 
 import java.nio.ByteBuffer;
 
@@ -66,10 +69,13 @@ public final class TransformZeiger
             case MOVE -> moveCursor();
             case SCALE -> scaleCursor();
             case ROTATE -> rotateCursor();
-            default -> 0L;
+            default -> SDLMouse.SDL_GetDefaultCursor();
         };
 
-        GLFW.glfwSetCursor(Window.getWindow(), cursor);
+        if (cursor == 0L || !SDLMouse.SDL_SetCursor(cursor))
+        {
+            throw new IllegalStateException("Cannot set transform cursor: " + SDLError.SDL_GetError());
+        }
     }
 
     public static void zuruecksetzen()
@@ -81,7 +87,7 @@ public final class TransformZeiger
     {
         if (moveCursor == 0L)
         {
-            moveCursor = GLFW.glfwCreateStandardCursor(GLFW.GLFW_RESIZE_ALL_CURSOR);
+            moveCursor = SDLMouse.SDL_CreateSystemCursor(SDLMouse.SDL_SYSTEM_CURSOR_MOVE);
         }
 
         return moveCursor;
@@ -91,7 +97,7 @@ public final class TransformZeiger
     {
         if (scaleCursor == 0L)
         {
-            scaleCursor = GLFW.glfwCreateStandardCursor(GLFW.GLFW_RESIZE_EW_CURSOR);
+            scaleCursor = SDLMouse.SDL_CreateSystemCursor(SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE);
         }
 
         return scaleCursor;
@@ -147,10 +153,27 @@ public final class TransformZeiger
 
         pixel.flip();
 
-        GLFWImage abbild = GLFWImage.create();
+        SDL_Surface abbild = SDLSurface.SDL_CreateSurfaceFrom(groesse, groesse,
+            SDLPixels.SDL_PIXELFORMAT_RGBA32, pixel, groesse * 4);
 
-        abbild.set(groesse, groesse, pixel);
-        rotateCursor = GLFW.glfwCreateCursor(abbild, groesse / 2, groesse / 2);
+        if (abbild == null)
+        {
+            throw new IllegalStateException("Cannot create transform cursor image: " + SDLError.SDL_GetError());
+        }
+
+        try
+        {
+            rotateCursor = SDLMouse.SDL_CreateColorCursor(abbild, groesse / 2, groesse / 2);
+        }
+        finally
+        {
+            SDLSurface.SDL_DestroySurface(abbild);
+        }
+
+        if (rotateCursor == 0L)
+        {
+            throw new IllegalStateException("Cannot create transform cursor: " + SDLError.SDL_GetError());
+        }
 
         return rotateCursor;
     }

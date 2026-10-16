@@ -44,13 +44,13 @@ public class UITransformKeyframeFactory extends UIKeyframeFactory<Transform>
         }
 
         @Override
-        protected void applyDuringRecording(int tick, Consumer<Transform> consumer)
+        protected void applyDuringRecording(float tick, Consumer<Transform> consumer)
         {
             applyRecording(this.editor.editor, this.editor.keyframe, tick, consumer);
         }
 
         @Override
-        protected Transform getRecordedTransform(int tick)
+        protected Transform getRecordedTransform(float tick)
         {
             UIKeyframeSheet sheet = this.editor.editor.getGraph().getSheet(this.editor.keyframe);
             Keyframe<Transform> recorded = UIReplaysEditorUtils.ensureKeyframe(sheet, tick);
@@ -58,7 +58,7 @@ public class UITransformKeyframeFactory extends UIKeyframeFactory<Transform>
             return recorded == null ? null : recorded.getValue();
         }
 
-        public static void applyRecording(UIKeyframes editor, Keyframe keyframe, int tick, Consumer<Transform> consumer)
+        public static void applyRecording(UIKeyframes editor, Keyframe keyframe, float tick, Consumer<Transform> consumer)
         {
             UIReplaysEditorUtils.forEachRecordedKeyframe(editor, keyframe, tick, (recorded) ->
             {

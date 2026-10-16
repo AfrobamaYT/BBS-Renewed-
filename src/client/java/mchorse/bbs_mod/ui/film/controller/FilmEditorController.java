@@ -115,13 +115,37 @@ public class FilmEditorController extends BaseFilmController
         }
     }
 
+    /** Paused between two ticks, actors stand where their keys put them at that moment, once more after it (BBS FS 096836ac2) */
     @Override
     public void startRenderFrame(float transition)
     {
+        float bruch = this.controller.panel.getRunner().getBruch();
+
+        if ((bruch != 0F || this.zwischen) && !this.controller.isPlaying() && this.film != null)
+        {
+            for (java.util.Map.Entry<Integer, IEntity> entry : this.entities.entrySet())
+            {
+                IEntity entity = entry.getValue();
+                Replay replay = this.film.replays.getList().get(entry.getKey());
+
+                if (entity == this.controller.getControlled() || !this.canUpdate(entry.getKey(), replay, entity, UpdateMode.PROPERTIES)) continue;
+
+                replay.keyframes.apply(replay.getTick(this.getTick()) + bruch, entity);
+                entity.setPrevX(entity.getX());
+                entity.setPrevY(entity.getY());
+                entity.setPrevZ(entity.getZ());
+                entity.setPrevYaw(entity.getYaw());
+                entity.setPrevHeadYaw(entity.getHeadYaw());
+                entity.setPrevBodyYaw(entity.getBodyYaw());
+                entity.setPrevPitch(entity.getPitch());
+            }
+        }
+
+        this.zwischen = bruch != 0F;
         super.startRenderFrame(transition);
-        mchorse.bbs_mod.film.markers.TimerCuePreview.apply(this.film, this.entities, this.getTick(),
-            this.controller.isRecording() ? this.controller.getRecordingCountdown() : 0);
     }
+
+    private boolean zwischen;
 
     @Override
     protected float getTransition(IEntity entity, float transition)
@@ -131,7 +155,7 @@ public class FilmEditorController extends BaseFilmController
          * com.mcstudio.see.SubTick): dann werden die Actor-Eigenschaften (Pose) zum selben
          * Zwischen-Tick ausgewertet wie die Kamera. Ohne Fahrt bleibt es die alte Null. */
         boolean playing = this.controller.panel.isRunning() && this.controller.isPlaying();
-        float delta = !playing && !current ? com.mcstudio.see.SubTick.oder(0F) : transition;
+        float delta = !playing && !current ? com.mcstudio.see.SubTick.oder(this.controller.panel.getRunner().getBruch()) : transition;
 
         return delta;
     }
@@ -290,8 +314,31 @@ public class FilmEditorController extends BaseFilmController
      */
     public void renderStencilEntity(FilmControllerContext context, IEntity entity)
     {
-        mchorse.bbs_mod.forms.FormSammler.mitEigenemSammler(
-            () -> BaseFilmController.renderEntity(context.gizmoOnly(this.hidesBody(entity))));
+        BaseFilmController.renderEntity(context.gizmoOnly(this.hidesBody(entity)));
+    }
+
+    /**
+     * The actors as the film shows them, for the camera view's second world pass (FilmKameraAnsicht):
+     * no gizmo, no onion skin, and no body hidden by first person. Not {@link #render}: its bone gizmo
+     * pass captures the frame the main viewport's drag works from (Gizmo#captureVisual).
+     */
+    public void renderPlain(LevelRenderContext context)
+    {
+        List<Replay> replays = this.film.replays.getList();
+        float partial = net.minecraft.client.Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+
+        for (Map.Entry<Integer, IEntity> entry : this.entities.entrySet())
+        {
+            int i = entry.getKey();
+            IEntity entity = entry.getValue();
+
+            if (i >= replays.size() || replays.get(i).actor.get() || !this.canUpdate(i, replays.get(i), entity, UpdateMode.RENDER))
+            {
+                continue;
+            }
+
+            renderEntity(super.getFilmControllerContext(context, replays.get(i), entity).transition(this.getTransition(entity, partial)));
+        }
     }
 
     /**

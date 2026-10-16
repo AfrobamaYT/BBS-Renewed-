@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.ui.utils;
 
+import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
@@ -9,6 +11,18 @@ import mchorse.bbs_mod.utils.interps.Lerps;
  */
 public class Scale
 {
+    private static final long ZOOM_DURATION_NS = 130_000_000L;
+
+    private boolean zoomAnimating;
+    private long zoomStarted;
+    private long zoomDuration;
+    private double zoomStart;
+    private double zoomTarget;
+    private float zoomAnchor;
+    private double zoomDirection;
+    private int zoomAreaPosition;
+    private int zoomAreaSize;
+
     protected double shift = 0;
     protected double zoom = 1;
     protected int mult = 1;
@@ -48,6 +62,7 @@ public class Scale
 
     public Scale inverse()
     {
+        this.stopZoom();
         this.inverse = true;
 
         return this;
@@ -55,6 +70,7 @@ public class Scale
 
     public void copy(Scale scale)
     {
+        this.stopZoom();
         this.shift = scale.shift;
         this.zoom = scale.zoom;
         this.mult = scale.mult;
@@ -71,11 +87,13 @@ public class Scale
 
     public void anchor(float anchor)
     {
+        this.stopZoom();
         this.anchor = anchor;
     }
 
     public void lock(double min, double max)
     {
+        this.stopZoom();
         this.lockViewport = true;
         this.lockMin = Math.min(min, max);
         this.lockMax = Math.max(min, max);
@@ -83,6 +101,7 @@ public class Scale
 
     public void unlock()
     {
+        this.stopZoom();
         this.lockViewport = false;
     }
 
@@ -125,6 +144,7 @@ public class Scale
 
     public void setShift(double shift)
     {
+        this.stopZoom();
         if (this.lockViewport)
         {
             double distance = this.getMaxValue() - this.getMinValue();
@@ -167,6 +187,7 @@ public class Scale
 
     public void setZoom(double zoom)
     {
+        this.stopZoom();
         if (this.lockViewport)
         {
             this.zoom = zoom;
@@ -272,6 +293,7 @@ public class Scale
 
     public void viewOffset(double min, double max, double length, double offset)
     {
+        this.stopZoom();
         if (length <= 0)
         {
             return;
@@ -299,6 +321,7 @@ public class Scale
 
     public void shift(double min, double max)
     {
+        this.stopZoom();
         this.shift = Lerps.lerp(min, max, this.inverse ? 1 - this.anchor : this.anchor);
     }
 
@@ -345,6 +368,7 @@ public class Scale
 
     public void zoomAnchor(float newAnchor, double amount, double min, double max)
     {
+        this.stopZoom();
         if (this.area != null)
         {
             if (this.inverse)
@@ -369,6 +393,92 @@ public class Scale
 
         this.shift -= diff;
         this.anchor = 0F;
+    }
+
+    /** Queue a wheel step from the last displayed scale, keeping its point under the cursor. */
+    public void animateZoom(float anchor, double wheel)
+    {
+        this.animateZoom(anchor, wheel, 1D);
+    }
+
+    public void animateZoom(float anchor, double wheel, double speed)
+    {
+        if (wheel == 0 || this.area == null || this.direction.getSide(this.area) <= 0)
+        {
+            return;
+        }
+
+        double direction = Math.signum(wheel);
+        /* Repeated steps accumulate; reversing the wheel responds immediately instead of
+         * first finishing the queued movement in the opposite direction. */
+        double base = this.zoomAnimating && this.zoomDirection == direction && this.hasZoomArea()
+            ? this.zoomTarget : this.getZoom();
+        this.zoomStart = this.getZoom();
+        this.zoomTarget = MathUtils.clamp(base + Math.copySign(this.getZoomFactor(base) * speed, wheel), 0.01D, 1000D);
+        this.zoomAnchor = anchor;
+        this.zoomDirection = direction;
+        this.zoomStarted = this.zoomTime();
+        this.zoomAreaPosition = this.direction.getPosition(this.area, 0F);
+        this.zoomAreaSize = this.direction.getSide(this.area);
+        this.zoomDuration = (long) (ZOOM_DURATION_NS * (double) glaettung());
+
+        if (this.zoomDuration <= 0L)
+        {
+            this.zoomAnchor(anchor, this.zoomTarget - this.getZoom());
+            return;
+        }
+
+        this.zoomAnimating = this.zoomStart > 0 && this.zoomTarget != this.zoomStart;
+    }
+
+    /** Advance once before rendering and hit testing; direct viewport changes cancel the animation. */
+    public void updateZoom()
+    {
+        if (!this.zoomAnimating) return;
+        if (!this.hasZoomArea())
+        {
+            this.stopZoom();
+            return;
+        }
+
+        double progress = glaettung() <= 0F ? 1D
+            : MathUtils.clamp((this.zoomTime() - this.zoomStarted) / (double) this.zoomDuration, 0D, 1D);
+        double eased = 1D - Math.pow(1D - progress, 3D);
+        double zoom = progress == 1D ? this.zoomTarget
+            : Math.exp(Math.log(this.zoomStart) + (Math.log(this.zoomTarget) - Math.log(this.zoomStart)) * eased);
+
+        this.zoomAnchor(this.zoomAnchor, zoom - this.getZoom());
+        /* zoomAnchor uses the immediate setters, which cancel pending animation. */
+        this.zoomAnimating = progress < 1D;
+    }
+
+    /** Freeze at the displayed scale so a new gesture starts exactly where the user clicked. */
+    public void stopZoom()
+    {
+        this.zoomAnimating = false;
+    }
+
+    /** Wheel zoom speed: Ctrl+Shift zooms three times as fast (BBS FS 3810a7ff5). */
+    public static double radTempo()
+    {
+        return Window.isShiftPressed() && Window.isCtrlPressed() ? 3D : 1D;
+    }
+
+    /** Shared strength for smooth scrolling and timeline zoom (BBS FS d67b7091a); 0 is immediate. */
+    static float glaettung()
+    {
+        return BBSSettings.scrollingSmoothness.get() ? BBSSettings.scrollingSmoothnessIntensity.get() : 0F;
+    }
+
+    protected long zoomTime()
+    {
+        return System.nanoTime();
+    }
+
+    private boolean hasZoomArea()
+    {
+        return this.area != null && this.direction.getPosition(this.area, 0F) == this.zoomAreaPosition
+            && this.direction.getSide(this.area) == this.zoomAreaSize;
     }
 
     public double getZoomFactor()

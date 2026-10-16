@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.mixin.client.sodium;
 
-import com.afrobama.blendertransform.ChromaHimmelLogik;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.caffeinemc.mods.sodium.client.render.chunk.DefaultChunkRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,7 +29,7 @@ public class ChromaSodiumGelaendeMixin
     @Inject(method = "render", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
     private void bbs$gelaendeVerbergen(CallbackInfo info)
     {
-        if (ChromaHimmelLogik.gelaendeVerbergen())
+        if (MixinBruecke.rufeUndAbbrechen("ChromaHimmelLogik", "gelaendeVerbergen"))
         {
             info.cancel();
         }

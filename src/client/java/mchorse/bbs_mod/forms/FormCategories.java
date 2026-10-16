@@ -35,6 +35,10 @@ public class FormCategories implements IWatchDogListener
         this.sections.add(new ParticleFormSection(this));
         this.sections.add(new ExtraFormSection(this));
 
+        if (!extraGefragt) { extraGefragt = true; mchorse.bbs_mod.BBSMod.events.post(new mchorse.bbs_mod.api.client.events.RegisterFormSectionsEvent()); }
+
+        for (java.util.function.Function<FormCategories, FormSection> extra : EXTRA_SECTIONS) this.sections.add(extra.apply(this));
+
         for (FormSection section : this.sections)
         {
             section.initiate();
@@ -42,6 +46,15 @@ public class FormCategories implements IWatchDogListener
 
         this.markDirty();
         this.visibility.read();
+    }
+
+    /** Palette tabs of addons: factories, because setup() rebuilds the list on every asset reload (BBS FS 669329b8b) */
+    private static final List<java.util.function.Function<FormCategories, FormSection>> EXTRA_SECTIONS = new ArrayList<>();
+    private static boolean extraGefragt;
+
+    public static void registerSection(java.util.function.Function<FormCategories, FormSection> factory)
+    {
+        EXTRA_SECTIONS.add(factory);
     }
 
     public long getLastUpdate()

@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.forms;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
@@ -8,7 +9,6 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.EventPropagation;
 import mchorse.bbs_mod.BBSSettings;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 
@@ -158,7 +158,7 @@ public class UIFormPalette extends UIElement implements IUIFormList
         {
             Form form = this.editor.finish();
 
-            if (this.canModify && this.lastSelected.category.canModify(form))
+            if (this.canModify && this.lastSelected != null && this.lastSelected.category.canModify(form))
             {
                 int index = this.lastSelected.category.getForms().indexOf(this.lastSelected.selected);
 
@@ -196,7 +196,7 @@ public class UIFormPalette extends UIElement implements IUIFormList
     @Override
     public boolean subKeyPressed(UIContext context)
     {
-        if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+        if (context.isPressed(InputConstants.KEY_ESCAPE))
         {
             boolean wasEditing = this.editor.isEditing();
 

@@ -33,7 +33,7 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.cubic.ModelInstance;
@@ -225,7 +225,7 @@ public final class Tier2eMergedDraw
                 {
                     alloc = new ByteBufferBuilder(initialCapacity);
                     b = new BufferBuilder(alloc,
-                        com.mojang.blaze3d.PrimitiveTopology.TRIANGLES,
+                        com.mojang.renderpearl.api.pipeline.PrimitiveTopology.TRIANGLES,
                         DefaultVertexFormat.ENTITY);
                 }
                 catch (Throwable t)
@@ -451,7 +451,7 @@ public final class Tier2eMergedDraw
 
         PoseStack stack = new PoseStack();
         stack.mulPose(s.worldMatrix);
-        stack.mulPose(Axis.YP.rotation((float) MathUtils.PI));
+        stack.rotate(Axis.YP.rotation((float) MathUtils.PI));
 
         CubicMatrixRenderer ex = new CubicMatrixRenderer(cubic);
         CubicRenderer.processRenderModel(ex, null, stack, cubic);

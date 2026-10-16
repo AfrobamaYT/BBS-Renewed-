@@ -58,26 +58,36 @@ public final class WeltRendererLogik
             "hauptziel" + (haupt == BBSRendering.getFramebuffer() ? "(BBS)" : "(vanilla)"));
     }
 
-    /** Copy the native projection and view rotation at LevelRenderer.render HEAD. */
-    public static void projektionStempeln(Object zuteiler, Object takt, boolean bloecke,
-        CameraRenderState kamera, Matrix4fc sichtrotation, Object nebel, Vector4f nebelFarbe, boolean himmel)
+    /**
+     * {@code render} @HEAD mit voller Argumentliste — die Projektion dieses Bildes festhalten.
+     *
+     * <p>⛔ HIER HING EIN ZWEI-TAGE-FEHLER. Der Auswahlpuffer zeichnete mit
+     * {@code BBSRendering.camera}, gemessen wurde aber gegen {@code mainCamera()} — zwei
+     * gleichnamige Werte, die im selben Bild verschieden sind. Deshalb wird die Kameramatrix
+     * GENAU HIER gestempelt, an der Stelle, die der Renderer wirklich benutzt.</p>
+     */
+    public static void projektionStempeln(boolean bloecke,
+        CameraRenderState kamera, Object nebel, Vector4f nebelFarbe, boolean himmel)
     {
+        /* 26.3's LevelRenderer consumes the projection from the extracted camera. */
+        Matrix4fc projektion = kamera.projectionMatrix;
+
         Messpunkt.zaehle("welt.himmel-" + himmel,
             "nebelfarbe=" + (nebelFarbe == null
                 ? "null"
                 : nebelFarbe.x + "," + nebelFarbe.y + "," + nebelFarbe.z + "," + nebelFarbe.w)
             + " | nebelpuffer=" + (nebel != null)
             + " | bloecke=" + bloecke
-            + " | sichtrotation=" + (sichtrotation == null ? "null" : String.valueOf(sichtrotation.m00())));
+            + " | projektion=" + (projektion == null ? "null" : String.valueOf(projektion.m00())));
 
         Messpunkt.zaehle("projektion.paar",
-            "sichtrotation=" + (sichtrotation == null ? "null" : sichtrotation.m00() + "/" + sichtrotation.m11())
-            + " | projektion=" + (kamera == null || kamera.projectionMatrix == null ? "null"
+            "gezeichnet=" + (projektion == null ? "null" : projektion.m00() + "/" + projektion.m11())
+            + " | kamerazustand=" + (kamera == null || kamera.projectionMatrix == null ? "null"
                 : kamera.projectionMatrix.m00() + "/" + kamera.projectionMatrix.m11())
-            + " | sichtrotationGleich=" + (sichtrotation != null && kamera != null
-                && sichtrotation.equals(kamera.viewRotationMatrix)));
+            + " | gleich=" + (projektion != null && kamera != null
+                && projektion.equals(kamera.projectionMatrix)));
 
-        BBSRendering.zeichenProjektionStempeln(kamera.projectionMatrix);
+        BBSRendering.zeichenProjektionStempeln(projektion);
         BBSRendering.camera.set(kamera.viewRotationMatrix);
     }
 

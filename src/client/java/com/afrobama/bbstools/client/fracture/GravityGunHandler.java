@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.joml.Vector3f;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -80,8 +79,8 @@ public final class GravityGunHandler
     {
         keyGrab = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.gravity_grab",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_G,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_G,
             BBSKeyCategories.FRACTURE));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick(client));

@@ -9,8 +9,6 @@ import io.netty.util.collection.IntObjectMap;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformSpace;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.camera.data.Point;
-import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.cubic.physics.ModelPhysicsRuntime;
 import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.replays.FormControlKeys;
@@ -18,7 +16,6 @@ import mchorse.bbs_mod.film.replays.PerLimbService;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
-import mchorse.bbs_mod.forms.renderers.FormRenderer;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
@@ -46,7 +43,6 @@ import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.Pair;
-import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
@@ -69,7 +65,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
@@ -166,7 +161,6 @@ public abstract class BaseFilmController
         }
 
         Matrix4f targetWorld;
-
         if (relative)
         {
             targetWorld = new Matrix4f(target);
@@ -178,6 +172,7 @@ public abstract class BaseFilmController
 
             targetWorld = pairWorld.a != null ? pairWorld.a : defaultWorldMatrix;
         }
+        mchorse.bbs_mod.cubic.physics.PhysicsCarrier.setzen(form, relative ? null : mchorse.bbs_mod.cubic.physics.PhysicsCarrier.fuer(entities, form.anchor.get(), getMatrixForRenderWithRotation(entity, 0D, 0D, 0D, transition), transition, anchorFrame));
 
         BlockPos pos = BlockPos.containing(position.x, position.y + 0.5D, position.z);
         int sky = entity.getWorld().getBrightness(LightLayer.SKY, pos);
@@ -230,9 +225,9 @@ public abstract class BaseFilmController
         /* Im SAMMEL-Durchgang wird nichts gezeichnet, nur eingereicht (Schatten, Namensschild
          * weiter unten) — siehe FilmControllerContext#sammelDurchgang. Das Modell geht einen
          * anderen Weg (ModelVAORenderer zeichnet sofort) und darf hier nicht doppelt laufen. */
-        if (!context.gizmoOnly && (!FilmControllerContext.sammelDurchgang || formContext.worldLabel))
+        if (!context.gizmoOnly)
         {
-            FormUtilsClient.render(form, formContext);
+            mchorse.bbs_mod.forms.renderers.NativeCrowdPreparation.renderOrCollect(form, formContext);
         }
 
         /* A second, post-render span: the gizmo, the axes preview and the anchor gizmo are adjacent and all
@@ -252,11 +247,11 @@ public abstract class BaseFilmController
 
         stack.popPose();
 
-        if (UIBaseMenu.shouldRenderAxes() && context.anchorGizmo && !FilmControllerContext.sammelDurchgang)
+        if (UIBaseMenu.shouldRenderAxes() && !FilmControllerContext.sammelDurchgang)
         {
-            renderAnchorGizmo(entities, entity, target, defaultMatrix, cx, cy, cz, transition, context.anchorLocal, context.space, context.gizmoView, context.map, stack, gizmoFrame);
+            if (context.anchorGizmo) renderAnchorGizmo(entities, entity, target, defaultMatrix, cx, cy, cz, transition, context.anchorLocal, context.space, context.gizmoView, context.map, stack, gizmoFrame);
+            mchorse.bbs_mod.ui.film.replays.UIReplayWurzelTransform.gizmo(entity, cx, cy, cz, transition, context.space, context.gizmoView, context.map, stack); /* the replay placement (BBS FS) */
         }
-
         /* Schatten und Namensschild werden EINGEREICHT, nicht gezeichnet — sie laufen
          * deshalb in einer eigenen Phase und stehen in einer eigenen Datei.
          * Siehe SchattenUndSchild und FilmControllerContext#sammelDurchgang. */
@@ -275,7 +270,7 @@ public abstract class BaseFilmController
         String mapKey = bone != null && bone.contains(PerLimbService.POSE_BONES) ? bone.replace(PerLimbService.POSE_BONES, "") : bone;
         Form root = FormUtils.getRoot(form);
         MatrixCache map = FormFrameCache.collect(frame, root, entity, transition);
-        Matrix4f matrix = local ? map.get(mapKey).matrix() : map.get(mapKey).origin();
+        Matrix4f matrix = mchorse.bbs_mod.ui.utils.GizmoGimbal.merken(local, map.get(mapKey)); /* also the channel axes for the GIMBAL rings */
 
         if (matrix != null)
         {
@@ -383,7 +378,7 @@ public abstract class BaseFilmController
         {
             Matrix4f parent = getEntityMatrix(entities, cx, cy, cz, form.anchor.get(), defaultMatrix, transition, 0, true, frame);
 
-            matrix = MatrixStackUtils.stripScale(parent);
+            matrix = mchorse.bbs_mod.ui.utils.GizmoGimbal.anker(space, parent, full, form.anchor.get().transform);
             matrix.setTranslation(full.getTranslation(new Vector3f()));
         }
 
@@ -521,25 +516,11 @@ public abstract class BaseFilmController
                 {
                     basic.mul(matrix);
 
-                    if (!fullMatrix && anchor.scale)
+                    /* The full matrix is the target's frame as it is (gizmo parent, drag space); the
+                     * rendered one keeps only what the anchor inherits (BBS FS 14f2ef586) */
+                    if (!fullMatrix)
                     {
-                        Matrix3f mat = new Matrix3f();
-                        Vector3f v = new Vector3f();
-                        basic.get3x3(mat);
-
-                        mat.getColumn(0, v); v.normalize(); mat.setColumn(0, v);
-                        mat.getColumn(1, v); v.normalize(); mat.setColumn(1, v);
-                        mat.getColumn(2, v); v.normalize(); mat.setColumn(2, v);
-
-                        basic.set3x3(mat);
-                    }
-
-                    if (!fullMatrix && anchor.translate)
-                    {
-                        Vector3f t = new Vector3f();
-                        basic.getTranslation(t);
-                        basic.set(defaultMatrix);
-                        basic.setTranslation(t);
+                        basic = anchor.filterMatrix(basic, defaultMatrix);
                     }
                 }
 
@@ -775,7 +756,7 @@ public abstract class BaseFilmController
 
         matrices.pushPose();
         matrices.translate(0F, hitboxH, 0F);
-        matrices.mulPose(cameraOrientation);
+        matrices.rotate(cameraOrientation);
         matrices.scale(0.025F, -0.025F, 0.025F);
 
         Font textRenderer = Minecraft.getInstance().font;
@@ -842,8 +823,7 @@ public abstract class BaseFilmController
         {
             if (replay.enabled.get())
             {
-                Level world = Minecraft.getInstance().level;
-                IEntity entity = new StubEntity(world);
+                IEntity entity = new StubEntity(Minecraft.getInstance().level);
                 int ticks = replay.getTick(this.getTick());
 
                 entity.setForm(FormUtils.copy(replay.form.get()));
@@ -851,7 +831,6 @@ public abstract class BaseFilmController
                 entity.setPrevX(entity.getX());
                 entity.setPrevY(entity.getY());
                 entity.setPrevZ(entity.getZ());
-
                 entity.setPrevYaw(entity.getYaw());
                 entity.setPrevHeadYaw(entity.getHeadYaw());
                 entity.setPrevPitch(entity.getPitch());
@@ -862,6 +841,7 @@ public abstract class BaseFilmController
 
             i += 1;
         }
+        mchorse.bbs_mod.api.client.events.FilmEvents.CREATED.invoker().onFilmCreated(this);
     }
 
     public abstract Map<String, Integer> getActors();
@@ -880,6 +860,7 @@ public abstract class BaseFilmController
 
     protected void updateEntities(int ticks)
     {
+        mchorse.bbs_mod.api.client.events.FilmEvents.TICK_BEFORE.invoker().onFilmTick(this, ticks);
         for (Map.Entry<Integer, IEntity> entry : this.entities.entrySet())
         {
             int i = entry.getKey();
@@ -935,6 +916,7 @@ public abstract class BaseFilmController
                 }
             }
         }
+        mchorse.bbs_mod.api.client.events.FilmEvents.TICK_AFTER.invoker().onFilmTick(this, ticks);
     }
 
     public void updateEndWorld()
@@ -980,7 +962,7 @@ public abstract class BaseFilmController
                             player.move(MoverType.SELF, new Vec3(x - pos.x, y - pos.y, z - pos.z));
                             player.setPos(x, y, z);
 
-                            player.setShiftKeyDown(sneaking);
+                            mchorse.bbs_mod.film.replays.ReplayZustaende.aufFigur(replay.keyframes, player, ticks, sneaking);
                             player.setOnGround(grounded);
 
                             /* First person teleports the player from keyframes instead of walking it, so vanilla's
@@ -1494,6 +1476,7 @@ public abstract class BaseFilmController
 
             this.renderEntity(context, replay, entity);
         }
+        mchorse.bbs_mod.api.client.events.FilmEvents.RENDER_AFTER.invoker().onFilmRender(this, context);
     }
 
     protected void renderEntity(LevelRenderContext context, Replay replay, IEntity entity)
@@ -1518,7 +1501,9 @@ public abstract class BaseFilmController
     }
 
     public void shutdown()
-    {}
+    {
+        mchorse.bbs_mod.api.client.events.FilmEvents.SHUTDOWN.invoker().onFilmShutdown(this);
+    }
 
     public static enum UpdateMode
     {

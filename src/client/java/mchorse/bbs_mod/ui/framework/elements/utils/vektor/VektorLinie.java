@@ -70,8 +70,11 @@ public final class VektorLinie
                 continue;
             }
 
-            /* Miter-Laenge 1/cos(θ/2), fuer spitze Winkel auf 2 begrenzt. */
-            float miter = Math.min(2F / l, 2F);
+            /* Miter-Laenge 1/cos(θ/2), fuer spitze Winkel auf 2 begrenzt — nur zwischen ZWEI
+             * Segmenten. Ein Endpunkt hat eine Normale (l = 1) und bekam trotzdem den Faktor 2:
+             * jede Linie aus zwei Punkten war doppelt so breit, ein geschlossener Ring hatte eine
+             * Kerbe am Anfang (gemessen 2026-10-14 an der Orbit-Achse, 4 -> 8 px). */
+            float miter = i > 0 && i < n - 1 ? Math.min(2F / l, 2F) : 1F;
 
             nx[i] = sx / l * miter;
             ny[i] = sy / l * miter;

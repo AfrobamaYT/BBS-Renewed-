@@ -33,8 +33,6 @@ public class CommandSourceUtils
             entity.getRotationVector(),
             level,
             permissions,
-            entity.getPlainTextName(),
-            entity.getDisplayName(),
             level.getServer(),
             entity
         );

@@ -4,6 +4,9 @@ Dieses Repository enthält Teile unter **verschiedenen** Lizenzen. Diese Datei s
 Teil unter welcher steht. Der Kurzschluss „alles im Repo ist GPL" wäre **falsch** — siehe
 besonders den Abschnitt zu den Assets.
 
+Der oeffentliche 26.3-Schnitt, die Herkunft der geerbten Modelle und die mitgelieferten
+Lizenztexte sind in [docs/RELEASE-26.3.md](docs/RELEASE-26.3.md) dokumentiert.
+
 ---
 
 ## 1 · Komponentenlizenzen und Lizenz des Gesamtpakets
@@ -55,7 +58,7 @@ Konkret im Baum:
 | Was | Herkunft | Anmerkung |
 |---|---|---|
 | Spielermodelle, Emoticon-Modelle, Banner- und Block-Texturen, Klänge (111 Dateien) | aus dem BBS mod geerbt | Rechte bei den ursprünglichen Urhebern, nicht bei diesem Fork. |
-| `*_by_michaelcreeper_.bbmodel` (Alex/Steve Bends) | Dritt-Autor, im Dateinamen genannt | Eigener Urheber. Vor einer Weitergabe gesondert zu klären. |
+| `*_by_michaelcreeper_.bbmodel` (Alex/Steve Bends) | MichaelCreeper_, ueber McHorse und Wemppy | Unveraendert aus dem unter MIT verteilten BBS-FS-Stand; gepinnte Herkunft und Dateihashes in [docs/RELEASE-26.3.md](docs/RELEASE-26.3.md). |
 | 216 SVG-Icons unter `icons/svg`, Nano- und Design-Icons | in diesem Fork erzeugt | |
 | Screenshots unter `docs/`, `probleme/`, `design/` | in diesem Fork erzeugt | Zeigen Minecraft-Inhalte. |
 | `inter-variable.ttf` | Inter | SIL Open Font License, Text liegt bei: `assets/fonts/LICENSE-Inter-OFL.txt` |
@@ -113,7 +116,9 @@ Damit nachvollziehbar bleibt, was woher stammt:
 | Constraint-Auswertung und Rig-Mechanik | `mchorse/bbs_mod/cubic/ik/Rig*.java` | Eigenentwicklung nach gemessener Blender-Constraint-Semantik aus `constraint.cc`, `armature.cc` | Im Gesamtpaket **GPL-2.0-or-later** |
 | Transform-Verhalten (Griff, Strähne, Achsenrasten, Präzision) | `ui/framework/elements/input/drag/`, `UITransformHandler` | Eigenentwicklung nach gemessenem Blender-Verhalten | Im Gesamtpaket **GPL-2.0-or-later** |
 | BBS-Kern, UI-Grundgerüst, Formen, Film, Export | `mchorse/bbs_mod/…` (der Rest) | McHorse, Wemppy | MIT, siehe oben |
-| Werkzeuge, Perf, Nano-Schicht | `com/afrobama/…`, `com/mcstudio/…` | in diesem Fork geschrieben | GPL-2.0-or-later |
+| Werkzeuge, Brücke, Perf, Crowd, Nano-Schicht, Studio-Server | `com/afrobama/…`, `com/blenderbridge/…`, `com/mcstudio/…` | Eigenentwicklung, außer gesondert aufgeführten Ports | GPL-2.0-or-later |
+| Blender-Addon der Render-Brücke | `blender/addon/blender_bbs_bridge` | in diesem Fork geschrieben; läuft **in** Blender | GPL-2.0-or-later |
+| NanoVG Vulkan | `native/nanovg-vulkan/` | SubiyaCryolite/nanovg_vulkan und Mikko Mononen; BBS-Anpassungen markiert | Zlib, siehe [UPSTREAM.md](native/nanovg-vulkan/UPSTREAM.md) und den Lizenztext unter `upstream/LICENSE.txt`. |
 
 ## 5 · Mitgelieferte Fremdbestandteile
 
@@ -141,6 +146,6 @@ fällt `NvtxBridge` still auf No-Op zurück — es bricht nichts.
 
 ## 6 · Stand
 
-Diese Datei beschreibt den Stand vom **2026-08-24**. Seit 2026-10-11 ist das Repository
-öffentlich; offene Punkte zur Weitergabe stehen im [Changelog](CHANGELOG.md). Dies ist keine
-Rechtsberatung, sondern die Dokumentation der Herkunft durch die Entwicklung.
+Diese Datei wurde fuer den oeffentlichen 26.3-Schnitt am **2026-10-16** aktualisiert.
+Die privaten Entwicklungswerkzeuge und deren OpenJDK-JShell-Port sind nicht Bestandteil
+dieses Quellpakets oder des Produkt-JARs. Die urspruenglichen Copyright-Vermerke bleiben erhalten.

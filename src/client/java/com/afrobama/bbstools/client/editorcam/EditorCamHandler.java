@@ -2,17 +2,15 @@
 package com.afrobama.bbstools.client.editorcam;
 
 import com.afrobama.bbstools.client.keybinds.BBSToolsKeys;
-import com.mojang.blaze3d.platform.InputConstants;
+import com.afrobama.bbstools.client.keybinds.KeybindOverrides;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
-import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,24 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Owns the editor-cam state + F8 hotkey loop.
- *
- * <p>F8 cycles forward through ALL replays of the most recent BBS film
- * controller. Each press swaps the player's view camera (via
- * {@link EditorCamController} added to BBS's camera-controller stack)
- * to the next replay in the list. After the last replay the cycle
- * returns to the player's normal view. Shift+F8 cycles BACKWARDS
- * through the same list.</p>
- *
- * <p>The controller reads the chosen replay's keyframes at the current
- * film scrub-tick — so as the user scrubs / plays / edits keyframes,
- * the editor cam follows that motion automatically.</p>
- *
- * <p>Why this is workflow-critical: animating an actor (e.g. Herobrine)
- * placed far from the user's position is painful when the camera is
- * the player. This lets the user pick any replay placed near the
- * subject and instantly view from that replay's perspective without
- * flying or interrupting their session.</p>
+ * Retires the removed BBSTools replay-camera override. Existing tick callbacks and diagnostic
+ * callers remain compatible during a live update; no entry point can activate the camera.
+ * The old fields remain unchanged for a field-compatible hotswap.
  */
 public final class EditorCamHandler
 {
@@ -67,137 +50,30 @@ public final class EditorCamHandler
 
     public static void register()
     {
-        /* Force-load BBSToolsKeys so the EDITOR_CAM_CYCLE / _ALL combos
-         *  exist in BBS's keybind editor + KeybindOverrides system. */
         BBSToolsKeys.touch();
-
+        disable();
+        /* Preserve the callback's lambda signature for already-running clients. */
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick());
-        LOG.info("Editor-cam handler registered (F8 cycles forward through all replays; Shift+F8 cycles backward). Rebindable in BBS keybind editor.");
+        LOG.info("Legacy editor camera removed; use Editor type > Camera View for the film camera.");
     }
 
     private static void tick()
     {
-        try
+        if (controllerAdded)
         {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc == null || mc.getWindow() == null) return;
-
-            /* Keep lastEditedFilm fresh while a dashboard screen is open
-             *  so in-world F8 (no playback) still has a film to cycle. */
-            if (mc.gui.screen() != null)
-            {
-                captureEditedFilm();
-            }
-
-            long handle = mc.getWindow().handle();
-
-            /* Check the SHIFT-modifier combo first — its key list
-             *  contains the F8-equivalent main key + Shift. If both
-             *  combo's keys are down, treat as Shift+F8. */
-            boolean shiftCurrentlyDown = comboCurrentlyHeld(handle, BBSToolsKeys.EDITOR_CAM_CYCLE_ALL);
-            boolean baseCurrentlyDown = comboCurrentlyHeld(handle, BBSToolsKeys.EDITOR_CAM_CYCLE);
-
-            /* Edge-detect: fire on the off→on transition only.
-             *  Shift+F8 reverses cycle direction; plain F8 advances. */
-            if (shiftCurrentlyDown && !wasPressedCycleAll)
-            {
-                cycleStep(-1);
-            }
-            else if (baseCurrentlyDown && !wasPressedCycleOnly && !shiftCurrentlyDown)
-            {
-                /* Base combo press only fires when the all-replays
-                 *  combo is NOT pressed simultaneously — otherwise both
-                 *  fire on the same Shift+F8 press. */
-                cycleStep(+1);
-            }
-
-            wasPressedCycleAll = shiftCurrentlyDown;
-            wasPressedCycleOnly = baseCurrentlyDown;
-        }
-        catch (Throwable t)
-        {
-            LOG.debug("editor-cam tick failed: {}", t.toString());
+            disable();
         }
     }
 
-    /** True when every key in the combo's key list is currently held
-     *  down on the GLFW window. */
-    private static boolean comboCurrentlyHeld(long windowHandle, KeyCombo combo)
+    /** Release an already active override and retire its shortcuts without editing saved presets. */
+    public static void disable()
     {
-        if (combo == null || combo.keys == null || combo.keys.isEmpty()) return false;
-        for (Integer k : combo.keys)
-        {
-            if (k == null) return false;
-            if (!InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), k)) return false;
-        }
-        return true;
-    }
-
-    private static void cycleStep(int direction)
-    {
-        /* Film identity: switching films invalidates the saved
-         *  cycleIndex (it now refers to a different list). */
-        int filmId = currentFilmIdentity();
-        if (filmId != lastFilmIdentity)
-        {
-            lastFilmIdentity = filmId;
-            cycleIndex = -1;
-            /* Also drop the active controller — its captured Replay
-             *  pointer is from the OLD film and would crash on
-             *  keyframes lookup. */
-            removeController();
-        }
-
-        List<Replay> replays = collectReplays();
-
-        if (replays.isEmpty())
-        {
-            chat("§e[BBSTools] §cNo replays in current film — open a film with at least one replay first.");
-            return;
-        }
-
-        /* Cycle states: -1 (player view) ↔ 0 ↔ 1 ↔ ... ↔ size-1.
-         *  Forward wraps size-1 → -1 → 0. Backward wraps -1 → size-1.
-         *  At either boundary, drop back to player view (cycleIndex = -1). */
-        if (direction > 0)
-        {
-            cycleIndex = (cycleIndex >= replays.size() - 1) ? -1 : cycleIndex + 1;
-        }
-        else
-        {
-            cycleIndex = (cycleIndex <= -1) ? replays.size() - 1 : cycleIndex - 1;
-        }
-
-        if (cycleIndex == -1)
-        {
-            removeController();
-            chat("§6[BBSTools] §fEditor-cam: §a→ player view §7(F8 next, Shift+F8 prev)");
-            com.afrobama.bbstools.sonden.Meldesonde.HALTER.aktiv.aktion("editor-cam", 
-                "cycle → player view");
-            return;
-        }
-
-        Replay r = replays.get(cycleIndex);
-        CONTROLLER.setReplay(r);
-        addController();
-        chat("§6[BBSTools] §fEditor-cam: §a→ replay '" + safeName(r) + "' §7("
-            + (cycleIndex + 1) + "/" + replays.size() + ", F8 next, Shift+F8 prev)");
-        com.afrobama.bbstools.sonden.Meldesonde.HALTER.aktiv.aktion("editor-cam", 
-            "cycle → replay '" + safeName(r) + "' (" + (cycleIndex + 1) + "/" + replays.size() + ")");
-    }
-
-    private static void addController()
-    {
-        try
-        {
-            if (controllerAdded) return;
-            BBSModClient.getCameraController().add(CONTROLLER);
-            controllerAdded = true;
-        }
-        catch (Throwable t)
-        {
-            LOG.warn("addController failed: {}", t.toString());
-        }
+        removeController();
+        cycleIndex = -1;
+        CONTROLLER.setReplay(null);
+        lastEditedFilm = null;
+        KeybindOverrides.unregister("bbstools.editor_cam_cycle");
+        KeybindOverrides.unregister("bbstools.editor_cam_cycle_all");
     }
 
     private static void removeController()
@@ -398,34 +274,14 @@ public final class EditorCamHandler
     public static int getCycleIndex() { return cycleIndex; }
     public static EditorCamController getController() { return CONTROLLER; }
 
-    /** Focus editor-cam on a specific {@link Replay} — used by the
-     *  Phase 10 Replay Dock so the user can jump straight to a clip
-     *  without F8-cycling. Falls back to player view when the target
-     *  is null or not in the current film. */
+    /** Compatibility for old callers: release the override and explicitly report its removal. */
     public static void cycleTo(Replay target)
     {
-        if (target == null) { removeController(); return; }
-        try
+        disable();
+
+        if (target != null)
         {
-            List<Replay> replays = collectReplays();
-            int idx = -1;
-            for (int i = 0; i < replays.size(); i++)
-            {
-                if (replays.get(i) == target) { idx = i; break; }
-            }
-            if (idx < 0) { removeController(); return; }
-            cycleIndex = idx;
-            /* Refresh the film-identity tracker so the next cycleStep
-             *  doesn't see this jump as a film switch and wipe the
-             *  cycleIndex back to -1 (bug C6 from the Phase 10 review). */
-            lastFilmIdentity = currentFilmIdentity();
-            CONTROLLER.setReplay(target);
-            addController();
-            chat("§6[BBSTools] §fEditor-cam: §a→ replay '" + safeName(target) + "'");
-        }
-        catch (Throwable t)
-        {
-            LOG.warn("cycleTo failed", t);
+            chat("§6[BBSTools] §fReplay camera removed. Film camera: Editor type > Camera View.");
         }
     }
 

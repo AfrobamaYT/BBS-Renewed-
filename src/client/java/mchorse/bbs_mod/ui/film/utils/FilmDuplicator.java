@@ -49,12 +49,6 @@ public final class FilmDuplicator
 
         for (Replay replay : source.replays.getList())
         {
-            /* A frozen scene has a new timeline: do not turn its old timing helpers into actors. */
-            if (mchorse.bbs_mod.film.markers.TimerCueActions.isEndpoint(source, replay))
-            {
-                continue;
-            }
-
             data.replays.add(freezeReplay(replay, tick));
         }
 

@@ -67,6 +67,7 @@ public class ExtraFormSection extends FormSection
 
         extra.addForm(anchor);
         extra.addForm(billboard);
+        extra.addForm(new mchorse.bbs_mod.forms.forms.VideoForm());
         extra.addForm(label);
         extra.addForm(extruded);
         extra.addForm(block);

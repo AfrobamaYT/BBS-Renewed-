@@ -1,0 +1,61 @@
+import groovy.json.JsonSlurper
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+import java.util.zip.ZipFile
+
+/* Frozen six-platform ABI2 capacity fix from CI38072232588. No release/download step. */
+def nanoArchive = file('native/nanovg-vulkan/prebuilt/abi2-b64a986c.zip')
+def nanoArchiveHash = 'e5aa18ef3489474a432a4f3df8ea82df12416285b69554e2f8519e5e5412d888'
+def nativeSources = [file('native/nanovg-vulkan/bbs_nanovg_vk.c'), file('native/nanovg-vulkan/vulkan_dispatch.h')]
+nativeSources.addAll(fileTree('native/nanovg-vulkan/upstream').files.sort { it.path.replace('\\', '/') })
+nativeSources.addAll(fileTree('src/client/java/com/mcstudio/nano') {
+    include 'NanoVk*.java'
+}.files.sort { it.path.replace('\\', '/') })
+
+def verifyNatives = tasks.register('verifyNanoVulkanNatives') {
+    inputs.file(nanoArchive)
+    inputs.files(nativeSources)
+    doLast {
+        def sha = { byte[] data -> MessageDigest.getInstance('SHA-256').digest(data).encodeHex().toString() }
+        if (sha(nanoArchive.bytes) != nanoArchiveHash) {
+            throw new GradleException('NanoVG frozen native archive SHA256 mismatch')
+        }
+        def sourceDigest = MessageDigest.getInstance('SHA-256')
+        nativeSources.each { source ->
+            String relative = projectDir.toPath().relativize(source.toPath()).toString().replace('\\', '/')
+            sourceDigest.update(relative.getBytes(StandardCharsets.UTF_8))
+            sourceDigest.update((byte) 0)
+            String text = source.getText('UTF-8').replace('\r\n', '\n').replace('\r', '\n')
+            sourceDigest.update(text.getBytes(StandardCharsets.UTF_8))
+        }
+        String fingerprint = sourceDigest.digest().encodeHex().toString()
+        def expected = ['linux-x64', 'linux-arm64', 'windows-x64', 'windows-arm64', 'macos-x64', 'macos-arm64'] as Set
+        new ZipFile(nanoArchive).withCloseable { zip ->
+            def entry = zip.getEntry('native-manifest.json')
+            if (entry == null) throw new GradleException('NanoVG archive is missing its native manifest')
+            def records = new JsonSlurper().parse(zip.getInputStream(entry), 'UTF-8')
+            if (records.size() != 6 || records.collect { it.target }.toSet() != expected) {
+                throw new GradleException('NanoVG requires exactly the six supported native classifiers')
+            }
+            records.each { record ->
+                if (record.abi_version != 2 || record.source_tree_dirty || record.source_sha256 != fingerprint) {
+                    throw new GradleException("NanoVG native source/ABI mismatch for ${record.target}; rebuild all platform natives")
+                }
+                String path = "assets/bbs/natives/${record.target}/${record.file}"
+                def binary = zip.getEntry(path)
+                if (binary == null || sha(zip.getInputStream(binary).bytes) != record.sha256) {
+                    throw new GradleException("NanoVG native binary missing or checksum mismatch: ${path}")
+                }
+            }
+        }
+        logger.lifecycle('NanoVG ABI2: all six frozen classifiers and current source fingerprints verified')
+    }
+}
+
+tasks.named('processClientResources') {
+    dependsOn(verifyNatives)
+    from(zipTree(nanoArchive)) { include 'assets/bbs/natives/**' }
+    into('META-INF') {
+        from(zipTree(nanoArchive)) { include 'native-manifest.json'; rename { 'bbs-nanovg-vulkan-manifest.json' } }
+    }
+}

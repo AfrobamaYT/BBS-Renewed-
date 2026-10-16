@@ -25,6 +25,11 @@ public class ModelProperties implements IMapSerializable
     private boolean shadow;
     private boolean lookAt;
 
+    /** The block's physical side: hitbox, collision, light, sound, hardness (BBS FS 996eb0adc) */
+    private final ModelBody body = new ModelBody();
+    /** Six vanilla slots the block's form wears and holds (BBS FS 996eb0adc) */
+    private final ModelEquipment equipment = new ModelEquipment();
+
     public Form getForm()
     {
         return this.form;
@@ -73,6 +78,16 @@ public class ModelProperties implements IMapSerializable
     public void setFormFirstPerson(Form form)
     {
         this.formFirstPerson = this.processForm(form);
+    }
+
+    public ModelBody getBody()
+    {
+        return this.body;
+    }
+
+    public ModelEquipment getEquipment()
+    {
+        return this.equipment;
     }
 
     public Transform getTransform()
@@ -192,6 +207,8 @@ public class ModelProperties implements IMapSerializable
         this.shadow = data.getBool("shadow");
         this.global = data.getBool("global");
         this.lookAt = data.getBool("look_at");
+        this.body.fromData(data.getMap("body"));
+        this.equipment.fromData(data.getMap("equipment"));
     }
 
     @Override
@@ -211,6 +228,8 @@ public class ModelProperties implements IMapSerializable
         data.putBool("shadow", this.shadow);
         data.putBool("global", this.global);
         data.putBool("look_at", this.lookAt);
+        data.put("body", this.body.toData());
+        data.put("equipment", this.equipment.toData());
     }
 
     public void update(IEntity entity)

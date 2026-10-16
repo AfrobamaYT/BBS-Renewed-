@@ -47,6 +47,24 @@ import java.util.Stack;
 
 public class FormUtilsClient
 {
+    private record PoseSnapshot(com.mojang.blaze3d.vertex.PoseStack stack,
+        com.mojang.blaze3d.vertex.PoseStack.Pose entry, org.joml.Matrix4f pose, org.joml.Matrix3f normal)
+    {
+        static PoseSnapshot capture(com.mojang.blaze3d.vertex.PoseStack stack)
+        {
+            return stack == null ? null : new PoseSnapshot(stack, stack.last(),
+                new org.joml.Matrix4f(stack.last().pose()), new org.joml.Matrix3f(stack.last().normal()));
+        }
+        void restore()
+        {
+            while (this.stack.last() != this.entry)
+            {
+                if (this.stack.isEmpty()) throw new IllegalStateException("Native renderer popped its caller's pose");
+                this.stack.popPose();
+            }
+            this.entry.pose().set(this.pose); this.entry.normal().set(this.normal);
+        }
+    }
     private static Map<Class, IFormRendererFactory> map = new HashMap<>();
     private static CustomVertexConsumerProvider customVertexConsumerProvider;
     private static Stack<Form> currentForm = new Stack<>();
@@ -88,6 +106,7 @@ public class FormUtilsClient
     static
     {
         register(BillboardForm.class, BillboardFormRenderer::new);
+        mchorse.bbs_mod.video.VideoForms.register();
         register(ExtrudedForm.class, ExtrudedFormRenderer::new);
         register(LabelForm.class, LabelFormRenderer::new);
         register(ModelForm.class, ModelFormRenderer::new);
@@ -103,8 +122,6 @@ public class FormUtilsClient
          * getRenderer(form).collectMatrices(...) ohne null-check (gizmo-achsen des ausgewaehlten
          * actors) — eine registrierte form ohne renderer ist dort eine NPE. */
         register(mchorse.bbs_mod.forms.forms.LightForm.class, mchorse.bbs_mod.forms.renderers.LightFormRenderer::new);
-        mchorse.bbs_mod.ui.forms.editors.UIFormEditor.register(mchorse.bbs_mod.forms.forms.LightForm.class,
-            mchorse.bbs_mod.ui.forms.editors.forms.UILightForm::new);
     }
 
     /**
@@ -157,7 +174,7 @@ public class FormUtilsClient
             return renderer;
         }
 
-        IFormRendererFactory factory = map.get(form.getClass());
+        IFormRendererFactory factory = (IFormRendererFactory) mchorse.bbs_mod.client.AddonRegister.nachKlasse((java.util.Map) map, form.getClass());
 
         if (factory != null)
         {
@@ -187,18 +204,35 @@ public class FormUtilsClient
 
     public static void render(Form form, FormRenderingContext context)
     {
+        if (FormRenderLast.postpone(form, context)) return;
+
         FormRenderer renderer = getRenderer(form);
+        boolean nativeTraversal = mchorse.bbs_mod.integrations.vitrail.VitrailAttachmentCapture.traversing();
+        if (renderer == null && nativeTraversal)
+            throw new IllegalStateException("Native attachment has no renderer: " + form.getClass());
 
         if (renderer != null)
         {
+            PoseSnapshot pose = nativeTraversal ? PoseSnapshot.capture(context.stack) : null;
+            PoseSnapshot world = nativeTraversal ? PoseSnapshot.capture(context.world) : null;
+            mchorse.bbs_mod.forms.entities.IEntity entity = context.entity;
+            int light = context.light;
+            org.joml.Vector3f sortOrigin = nativeTraversal ? FormTranslucentQueue.getSortOrigin() : null;
             com.mojang.blaze3d.vertex.PoseStack.Pose oben = context.stack == null ? null : context.stack.last();
             currentForm.push(form);
-
+            boolean entered = false, completed = false;
+            mchorse.bbs_mod.api.client.events.FormRenderEvents.BEFORE.invoker().onFormRender(form, context);
             try
             {
+                if (nativeTraversal)
+                {
+                    mchorse.bbs_mod.integrations.vitrail.VitrailAttachmentCapture.enter(form, context);
+                    entered = true;
+                }
                 renderer.render(context);
+                completed = true;
             }
-            catch (Exception fehler)
+            catch (Throwable fehler)
             {
                 /* ⛔ HIER STAND `catch (Exception e) {}` — EIN LEERER BLOCK (2026-08-10, halbe
                  * nacht). Was er verschluckte, kam eine bildaufnahme spaeter als etwas ganz
@@ -220,16 +254,28 @@ public class FormUtilsClient
                  * und eine ungebremste ausgabe das log unbrauchbar macht (gemessen: 50 treffer
                  * in wenigen sekunden). */
                 bbsMeldeRenderFehler(form, fehler);
-                /* Jetzt auch repariert (2026-10-12, Absturzbericht aus der Community): ein offener
-                 * push riss das ganze Spiel mit "Pose stack not empty". PoseStack haelt je Ebene
-                 * dasselbe Pose-Objekt, also bis zur Ebene vor dem Aufruf zurueckpoppen. */
+                if (nativeTraversal)
+                {
+                    try { pose.restore(); if (world != null) world.restore(); }
+                    catch (RuntimeException cleanup) { fehler.addSuppressed(cleanup); }
+                    context.entity = entity; context.light = light;
+                    FormTranslucentQueue.setSortOrigin(sortOrigin);
+                    throw new IllegalStateException("Native form traversal failed: " + form.getClass(), fehler);
+                }
+                /* Jetzt auch repariert (2026-10-12, Absturzbericht aus der Community, 26.2): ein
+                 * offener push riss das ganze Spiel mit "Pose stack not empty". PoseStack haelt je
+                 * Ebene dasselbe Pose-Objekt, also bis zur Ebene vor dem Aufruf zurueckpoppen. */
                 while (oben != null && context.stack.last() != oben && !context.stack.isEmpty()) context.stack.popPose();
+                if (fehler instanceof Error error) throw error;
             }
             finally
             {
                 /* Auch das lief vorher nur, WEIL das catch alles schluckte. Ohne finally haette
                  * die erste durchgereichte exception den formen-stapel dauerhaft verschoben. */
                 currentForm.pop();
+                if (entered) mchorse.bbs_mod.integrations.vitrail.VitrailAttachmentCapture.leave(completed);
+                /* After the catch: whoever pushed something in BEFORE gets to pop it even when the renderer threw */
+                mchorse.bbs_mod.api.client.events.FormRenderEvents.AFTER.invoker().onFormRender(form, context);
             }
         }
     }

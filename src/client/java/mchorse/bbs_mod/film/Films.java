@@ -136,7 +136,8 @@ public class Films
 
     /** Alle aktiven film-controller.
      *
-     *  MERGE 2026-07-27: getter aus dem CML-fork. Das feld gibt es hier bereits. */
+     *  MERGE 2026-07-27: getter aus dem CML-fork — unsere blenderbridge (ActorExporter/
+     *  ActorImporter) liest darueber die laufenden replays. Das feld gibt es hier bereits. */
     public List<BaseFilmController> getControllers()
     {
         return this.controllers;
@@ -150,8 +151,21 @@ public class Films
     public void startRecording(Film film, int replayId, int tick)
     {
         Morph morph = Morph.getMorph(Minecraft.getInstance().player);
+        int ab = tick;
+
+        /* Regiehilfe: mit Startpunkt zaehlt die Aufnahme ab dem Anfang des Abschnitts, die
+         * Figuren laufen schon den Vorlauf davor, und jeder Versuch beginnt am Startpunkt. */
+        if (film.regie.startGesetzt.get())
+        {
+            ab = film.regie.anfang.get();
+            tick = ab - film.regie.vorlauf.get();
+            mchorse.bbs_mod.utils.PlayerUtils.teleport(film.regie.startX.get(), film.regie.startY.get(), film.regie.startZ.get(),
+                film.regie.startYaw.get(), Minecraft.getInstance().player.getXRot());
+        }
 
         this.recorder = new Recorder(film, morph == null ? null : morph.getForm(), replayId, tick);
+        this.recorder.aufnahmeAb = ab;
+        mchorse.bbs_mod.ui.film.audio.VoiceoverBeiReplay.start(film);
 
         if (ClientNetwork.isIsBBSModOnServer())
         {
@@ -174,6 +188,8 @@ public class Films
 
         if (recorder != null)
         {
+            mchorse.bbs_mod.ui.film.audio.VoiceoverBeiReplay.stopp();
+
             for (KeyframeChannel<?> channel : recorder.keyframes.getChannels())
             {
                 channel.simplify();
@@ -285,8 +301,11 @@ public class Films
 
         if (this.recorder != null)
         {
+            mchorse.bbs_mod.ui.film.audio.VoiceoverBeiReplay.vorDemTick(this.recorder);
             this.recorder.update();
         }
+
+        mchorse.bbs_mod.ui.film.audio.VoiceoverBeiReplay.update();
     }
 
     public void updateEndWorld()
@@ -299,6 +318,10 @@ public class Films
 
     public void render(LevelRenderContext context)
     {
+        /* Placed model blocks first: kept from their submit, drawn in the same pass as the
+         * film actors (see ModelBlockEntityRenderer.WELTZUEGE). */
+        mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer.weltzuegeZeichnen();
+
         /* Hier stand frueher Tiefentest AN vor den Controllern und AUS danach — globaler
          * GL-Zustand fuer Zeichenaufrufe, die diese Methode gar nicht selbst macht,
          * sondern an die Controller delegiert. In 26.2 ist der Tiefentest kein Schalter
@@ -321,10 +344,11 @@ public class Films
     public void renderHud(Batcher2D batcher2D, float tickDelta)
     {
         Recorder recorder = BBSModClient.getFilms().getRecorder();
-        mchorse.bbs_mod.film.markers.TimerCuePreview.renderErrors(batcher2D, recorder);
 
         if (recorder != null && BBSSettings.recordingOverlays.get())
         {
+            mchorse.bbs_mod.film.regie.RegieHud.aufnahme(batcher2D, recorder, tickDelta);
+
             String label = recorder.hasNotStarted() ?
                 String.valueOf(TimeUtils.toSeconds(recorder.countdown)) :
                 UIKeys.FILM_RECORDING.format(recorder.getTick()).get();

@@ -1,11 +1,11 @@
 package mchorse.bbs_mod.ui.framework.elements.input.drag;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.GizmoDrag;
 import mchorse.bbs_mod.utils.Axis;
 import org.joml.Matrix3f;
 import org.joml.Vector3f;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Shared machinery of the rotate sphere's free-rotation modes (trackball and
@@ -106,9 +106,9 @@ public abstract class SphereDrag extends DragStrategy
     @Override
     public boolean handleNumericAxisKey(int key)
     {
-        if (key == GLFW.GLFW_KEY_X || key == GLFW.GLFW_KEY_Y)
+        if (key == InputConstants.KEY_X || key == InputConstants.KEY_Y)
         {
-            this.numericAxis = key == GLFW.GLFW_KEY_Y ? Axis.Y : Axis.X;
+            this.numericAxis = key == InputConstants.KEY_Y ? Axis.Y : Axis.X;
 
             return true;
         }

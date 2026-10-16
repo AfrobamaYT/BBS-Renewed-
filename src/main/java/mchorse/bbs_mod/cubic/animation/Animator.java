@@ -34,6 +34,8 @@ public class Animator implements IAnimator
     public ActionPlayback land;
     public ActionPlayback shoot;
     public ActionPlayback consume;
+    /* Swimming, riding and flying replace walking outright (BBS FS e383f1930) */
+    public ActionPlayback swimming, swimmingIdle, riding, ridingIdle, flying, flyingIdle;
 
     public ActionPlayback basePre;
     public ActionPlayback basePost;
@@ -59,7 +61,8 @@ public class Animator implements IAnimator
     {
         return Arrays.asList(
             "idle", "running", "sprinting", "crouching", "crouching_idle", "dying", "falling",
-            "swipe", "jump", "hurt", "land", "shoot", "consume", "base_pre", "base_post"
+            "swipe", "jump", "hurt", "land", "shoot", "consume", "base_pre", "base_post",
+            "swimming", "swimming_idle", "riding", "riding_idle", "flying", "flying_idle"
         );
     }
 
@@ -75,6 +78,12 @@ public class Animator implements IAnimator
         this.crouchingIdle = this.createAction(this.crouchingIdle, actions.getConfig("crouching_idle"), true);
         this.dying = this.createAction(this.dying, actions.getConfig("dying"), false);
         this.falling = this.createAction(this.falling, actions.getConfig("falling"), true);
+        this.swimming = this.createAction(this.swimming, actions.getConfig("swimming"), true);
+        this.swimmingIdle = this.createAction(this.swimmingIdle, actions.getConfig("swimming_idle"), true);
+        this.riding = this.createAction(this.riding, actions.getConfig("riding"), true);
+        this.ridingIdle = this.createAction(this.ridingIdle, actions.getConfig("riding_idle"), true);
+        this.flying = this.createAction(this.flying, actions.getConfig("flying"), true);
+        this.flyingIdle = this.createAction(this.flyingIdle, actions.getConfig("flying_idle"), true);
 
         this.swipe = this.createAction(this.swipe, actions.getConfig("swipe"), false);
         this.jump1 = this.createAction(this.jump1, actions.getConfig("jump"), false, 2);
@@ -200,6 +209,24 @@ public class Animator implements IAnimator
      * code (i.e. the ones that is responsible for switching between 
      * actions).
      */
+    /**
+     * The action for a body that rides, swims or flies, or null when the model has none, so the
+     * walk chain gets it. A model with only one half of a pair uses it for both (BBS FS e383f1930).
+     */
+    protected ActionPlayback pickState(IEntity target, boolean moves)
+    {
+        if (target.getMountTarget() != null || target.isSitting()) return either(moves ? this.riding : this.ridingIdle, moves ? this.ridingIdle : this.riding);
+        if (target.isSwimming()) return either(moves ? this.swimming : this.swimmingIdle, moves ? this.swimmingIdle : this.swimming);
+        if (target.isFlying() || target.isFallFlying()) return either(moves ? this.flying : this.flyingIdle, moves ? this.flyingIdle : this.flying);
+
+        return null;
+    }
+
+    private static ActionPlayback either(ActionPlayback preferred, ActionPlayback fallback)
+    {
+        return preferred == null ? fallback : preferred;
+    }
+
     protected void controlActions(IEntity target)
     {
         Vec3 velocity = target.getVelocity();
@@ -208,34 +235,11 @@ public class Animator implements IAnimator
         final float threshold = 0.01F;
         boolean moves = Math.abs(dx) > threshold || Math.abs(dz) > threshold;
 
-        /* if (target.getHealth() <= 0)
-        {
-            this.setActiveAction(this.dying);
-        }
-        else if (target.isPlayerSleeping())
-        {
-            this.setActiveAction(this.sleeping);
-        }
-        else if (wet)
-        {
-            this.setActiveAction(!moves ? this.swimmingIdle : this.swimming);
-        }
-        else if (target.isRiding())
-        {
-            Entity riding = target.getRidingEntity();
-            moves = Math.abs(riding.posX - this.prevX) > threshold || Math.abs(riding.posZ - this.prevZ) > threshold;
+        ActionPlayback state = this.pickState(target, moves);
 
-            this.prevX = riding.posX;
-            this.prevZ = riding.posZ;
-            this.setActiveAction(!moves ? this.ridingIdle : this.riding);
-        }
-        else if (creativeFlying || target.isElytraFlying())
+        if (state != null)
         {
-            this.setActiveAction(!moves ? this.flyingIdle : this.flying);
-        } */
-        if (false)
-        {
-            // TODO: implement more actions?
+            this.setActiveAction(state);
         }
         else
         {
@@ -243,7 +247,7 @@ public class Animator implements IAnimator
             {
                 this.setActiveAction(!moves ? this.crouchingIdle : this.crouching);
             }
-            else if (!target.isOnGround() && velocity.y < 0 && target.getFallDistance() > 1.25)
+            else if (!target.isOnGround() && velocity.y < 0 && target.getFallDistance() > 1.25 && !target.isFlying() && !target.isFallFlying())
             {
                 this.setActiveAction(this.falling);
             }

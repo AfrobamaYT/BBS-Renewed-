@@ -135,7 +135,7 @@ class ExportBBSRig(bpy.types.Operator, ExportHelper):
             raise RuntimeError("rig-extrakt: " + (lauf.stderr or lauf.stdout)[-300:])
 
         # BOBJ carries the interactive skin; the native library preserves drivers,
-        # constraints and control widgets for a later re-import into Blender.
+        # constraints and control widgets for the existing Blender bridge importer.
         from . import native_rig_export
         native_rig_export.write(arm, ziel)
 

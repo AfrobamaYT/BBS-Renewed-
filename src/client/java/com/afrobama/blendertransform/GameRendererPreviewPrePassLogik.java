@@ -2,39 +2,23 @@ package com.afrobama.blendertransform;
 
 import com.afrobama.bbstools.client.campreview.ActiveCameraClipRegistry;
 import com.afrobama.bbstools.client.campreview.AltCameraGridRenderer;
-import com.afrobama.bbstools.client.campreview.AltCamModeOverrides;
-import com.afrobama.bbstools.client.campreview.BoneHoverPickRunner;
 import com.afrobama.bbstools.client.campreview.CameraPreviewPerf;
 import com.afrobama.bbstools.client.campreview.CameraPreviewProfiler;
 import com.afrobama.bbstools.client.campreview.ClipViewportFramebuffers;
 import com.afrobama.bbstools.client.mixin.CameraInvokerMixin;
 import com.afrobama.bbstools.client.util.PreviewPassState;
-import com.mojang.blaze3d.ProjectionType;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.TextureTarget;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
+
 import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.film.BaseFilmController;
-import mchorse.bbs_mod.film.FilmControllerContext;
-import mchorse.bbs_mod.film.replays.Replay;
-import mchorse.bbs_mod.forms.FormSammler;
-import mchorse.bbs_mod.forms.FormTranslucentQueue;
-import mchorse.bbs_mod.forms.entities.IEntity;
-import mchorse.bbs_mod.graphics.InverseView;
-import mchorse.bbs_mod.graphics.Projektion;
-import mchorse.bbs_mod.graphics.Zeichenziel;
-import mchorse.bbs_mod.ui.film.UIFilmPanel;
+
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ProjectionMatrixBuffer;
-import net.minecraft.client.renderer.SubmitNodeStorage;
-import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
-import org.joml.Matrix3f;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import org.joml.Matrix4f;
-import org.joml.Vector4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,207 +27,92 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/** Renders film actors and the reference grid into each additional camera's own target. */
+/**
+ * Logik des welt-skip-alt-kamera-vorschau-mixins — im kernel-paket, damit sie hotswapbar ist.
+ *
+ * <p>Herausgelöst aus {@code GameRendererPreviewPrePassMixin} (2026-07-26, brücken-umbau). Der
+ * handler dort ist jetzt ein einzeiler, der hierher delegiert; die gesamte Phase-15-v3-logik
+ * (world-skip alt-camera preview: grid + BBS-replays, kein voller welt-render) lebt hier und
+ * kann bei jedem kernel-swap getauscht werden, ohne dass {@code GameRenderer} neu gewoben
+ * werden muss.</p>
+ *
+ * <p>⚠ KEINE KERNEL-TYPEN IN DER SIGNATUR — {@link #render} nimmt nur Minecraft/BBS-typen.
+ * {@link CameraInvokerMixin} ist selbst ein auf {@code Camera} GEWOBENES mixin-interface (lebt
+ * im stabilen loader wie jeder andere gewobene typ) — kein kernel-typ, daher hier unbedenklich
+ * referenzierbar.</p>
+ */
 public final class GameRendererPreviewPrePassLogik
 {
+    private GameRendererPreviewPrePassLogik() {}
+
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/cam-preview/pre-pass");
 
-    public static void render(DeltaTracker ticks)
+    public static void render(DeltaTracker tickCounter)
     {
-        if (PreviewPassState.PREVIEW_PASS_ACTIVE || !CameraPreviewPerf.ENABLED)
-        {
-            return;
-        }
+        if (PreviewPassState.PREVIEW_PASS_ACTIVE || ZweitKamera.aktiv()) return;
+
+        /* The film camera's docked view (Blender Animation workspace). Without PREVIEW_PASS_ACTIVE:
+         * that flag forces full-bright light for the old world-less preview; this pass renders the
+         * whole world through ZweitKamera and must look like the camera does. */
+        mchorse.bbs_mod.ui.film.FilmKameraAnsicht.zeichnen(tickCounter);
+
+        if (!CameraPreviewPerf.ENABLED) return;
+
         List<ActiveCameraClipRegistry.Active> active = ActiveCameraClipRegistry.snapshot();
-        if (active.isEmpty() || CameraPreviewPerf.shouldSkipFrame())
-        {
-            return;
-        }
-        Minecraft client = Minecraft.getInstance();
-        if (client.level == null)
-        {
-            return;
-        }
-        Set<UUID> rendered = new HashSet<>();
+        if (active.isEmpty()) return;
+        if (CameraPreviewPerf.shouldSkipFrame()) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.level == null || mc.player == null) return;
+        /* A video export owns the frame (same rule as RenderCameraPreview). */
+        if (mchorse.bbs_mod.BBSModClient.getVideoRecorder().isRecording()) return;
+
+        Set<UUID> renderedThisFrame = new HashSet<>();
+
         PreviewPassState.PREVIEW_PASS_ACTIVE = true;
         try
         {
-            for (ActiveCameraClipRegistry.Active camera : active)
+            for (ActiveCameraClipRegistry.Active a : active)
             {
-                if (!camera.poseValid)
+                if (!a.poseValid) continue;
+
+                TextureTarget fb = ClipViewportFramebuffers.get(a.id);
+                if (fb == null) continue;
+
+                /* Tile in Free Mode pins the alt-cam at a static pose (AltCamModeOverrides). */
+                double[] usePose = a.pose;
+                double[] override = com.afrobama.bbstools.client.campreview.AltCamModeOverrides.FREE_POSES.get(a.id);
+                if (override != null && override.length >= 5)
                 {
-                    continue;
+                    usePose = override;
                 }
+
+                CameraPreviewProfiler.recordPassStart();
+
                 try
                 {
-                    TextureTarget target = ClipViewportFramebuffers.get(camera.id);
-                    if (target != null)
+                    ZweitKamera.zeichnen(tickCounter, fb, usePose, a.clip.fov.get());
+                    renderedThisFrame.add(a.id);
+                }
+                catch (Throwable t)
+                {
+                    /* Loud, once per clip: a black window with nothing in the log cost a whole audit round. */
+                    if (GEMELDET.add(a.id))
                     {
-                        CameraPreviewProfiler.recordPassStart();
-                        renderCamera(client, camera, target, ticks, false);
-                        CameraPreviewProfiler.recordPassEnd();
-                        rendered.add(camera.id);
+                        LOG.error("Preview camera {}: world pass failed, window stays black", a.id, t);
                     }
                 }
-                catch (RuntimeException exception)
-                {
-                    LOG.error("Additional camera {} failed", camera.id, exception);
-                }
+
+                CameraPreviewProfiler.recordPassEnd();
             }
-        }
-        finally
-        {
             CameraPreviewProfiler.frameEnd();
-            PreviewPassState.PREVIEW_PASS_ACTIVE = false;
-            ClipViewportFramebuffers.garbageCollect(rendered);
-        }
-    }
-
-    public static com.afrobama.bbstools.client.campreview.BoneHoverPickService.Result pickNow(UUID id,
-        com.afrobama.bbstools.client.campreview.BoneHoverPickService.Request request)
-    {
-        RenderSystem.assertOnRenderThread();
-        for (ActiveCameraClipRegistry.Active camera : ActiveCameraClipRegistry.snapshot())
-        {
-            if (!camera.id.equals(id) || !camera.poseValid)
-            {
-                continue;
-            }
-            TextureTarget target = ClipViewportFramebuffers.get(id);
-            if (target == null)
-            {
-                return null;
-            }
-            com.afrobama.bbstools.client.campreview.BoneHoverPickService.Request previous =
-                com.afrobama.bbstools.client.campreview.BoneHoverPickService.REQUESTS.put(id, request);
-            try
-            {
-                Minecraft client = Minecraft.getInstance();
-                renderCamera(client, camera, target, client.getDeltaTracker(), true);
-                return com.afrobama.bbstools.client.campreview.BoneHoverPickService.RESULTS.get(id);
-            }
-            finally
-            {
-                if (previous == null)
-                {
-                    com.afrobama.bbstools.client.campreview.BoneHoverPickService.REQUESTS.remove(id);
-                }
-                else
-                {
-                    com.afrobama.bbstools.client.campreview.BoneHoverPickService.REQUESTS.put(id, previous);
-                }
-            }
-        }
-        return null;
-    }
-
-    private static void renderCamera(Minecraft client, ActiveCameraClipRegistry.Active active,
-        TextureTarget target, DeltaTracker ticks, boolean pickingOnly)
-    {
-        Camera camera = client.gameRenderer.mainCamera();
-        net.minecraft.world.phys.Vec3 previousPosition = camera.position();
-        float previousYaw = camera.yRot();
-        float previousPitch = camera.xRot();
-        GpuBufferSlice previousProjection = RenderSystem.getProjectionMatrixBuffer();
-        ProjectionType previousType = RenderSystem.getProjectionType();
-        GpuBufferSlice previousLights = RenderSystem.getShaderLights();
-        com.mojang.blaze3d.textures.GpuTextureView previousColor = RenderSystem.outputColorTextureOverride;
-        com.mojang.blaze3d.textures.GpuTextureView previousDepth = RenderSystem.outputDepthTextureOverride;
-        com.mojang.blaze3d.textures.GpuTextureView modelColor = Zeichenziel.farbe();
-        com.mojang.blaze3d.textures.GpuTextureView modelDepth = Zeichenziel.tiefe();
-        com.mojang.blaze3d.systems.ScissorState scissor =
-            new com.mojang.blaze3d.systems.ScissorState(RenderSystem.getScissorStateForRenderTypeDraws());
-        Matrix4f previousView = new Matrix4f(BBSRendering.camera);
-        Matrix3f previousInverse = new Matrix3f(InverseView.get());
-        boolean queueActive = FormTranslucentQueue.suspend();
-        CameraInvokerMixin invoker = (CameraInvokerMixin) (Object) camera;
-        double[] pose = AltCamModeOverrides.FREE_POSES.getOrDefault(active.id, active.pose);
-        RenderSystem.getModelViewStack().pushMatrix();
-        try (ProjectionMatrixBuffer projection = new ProjectionMatrixBuffer("bbs-additional-camera"))
-        {
-            invoker.bbsRenewed$setPos(pose[0], pose[1], pose[2]);
-            invoker.bbsRenewed$setRotation((float) pose[3], (float) pose[4]);
-            Matrix4f view = new Matrix4f().rotation(camera.rotation().conjugate(new org.joml.Quaternionf()));
-            BBSRendering.camera.set(view);
-            InverseView.set(new Matrix3f().rotation(camera.rotation()));
-            RenderSystem.getModelViewStack().set(view);
-            double fov = com.afrobama.bbstools.client.tracker.SprintFovState.MANUAL_SPRINT
-                ? active.clip.fov.get() * 1.3D
-                : mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.adjustFovForSprint(active.clip.fov.get());
-            Matrix4f perspective = new Matrix4f().perspective((float) Math.toRadians(fov),
-                target.width / (float) target.height, 0.05F, 1024F);
-            RenderSystem.setProjectionMatrix(projection.getBuffer(Projektion.umgekehrt(perspective)), ProjectionType.PERSPECTIVE);
-            RenderSystem.outputColorTextureOverride = target.getColorTextureView();
-            RenderSystem.outputDepthTextureOverride = target.getDepthTextureView();
-            Zeichenziel.setzen(target.getColorTextureView(), target.getDepthTextureView());
-            RenderSystem.disableScissorForRenderTypeDraws();
-            if (!pickingOnly)
-            {
-                RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(target.getColorTexture(),
-                    new Vector4f(0F, 0F, 0F, 1F), target.getDepthTexture(), 0D);
-                AltCameraGridRenderer.render(client, camera, perspective, target);
-                renderActors(client, camera, ticks.getGameTimeDeltaPartialTick(false));
-            }
-            CameraRenderState pickCamera = new CameraRenderState();
-            pickCamera.pos = camera.position();
-            pickCamera.xRot = camera.xRot();
-            pickCamera.yRot = camera.yRot();
-            pickCamera.orientation = new org.joml.Quaternionf(camera.rotation());
-            BoneHoverPickRunner.runHover(active.id, pickCamera, target.width, target.height);
         }
         finally
         {
-            invoker.bbsRenewed$setPos(previousPosition.x, previousPosition.y, previousPosition.z);
-            invoker.bbsRenewed$setRotation(previousYaw, previousPitch);
-            RenderSystem.getModelViewStack().popMatrix();
-            BBSRendering.camera.set(previousView);
-            InverseView.set(previousInverse);
-            RenderSystem.setProjectionMatrix(previousProjection, previousType);
-            RenderSystem.setShaderLights(previousLights);
-            RenderSystem.getScissorStateForRenderTypeDraws().setFrom(scissor);
-            RenderSystem.outputColorTextureOverride = previousColor;
-            RenderSystem.outputDepthTextureOverride = previousDepth;
-            Zeichenziel.setzen(modelColor, modelDepth);
-            FormTranslucentQueue.restore(queueActive);
+            PreviewPassState.PREVIEW_PASS_ACTIVE = false;
+            ClipViewportFramebuffers.garbageCollect(renderedThisFrame);
         }
     }
 
-    private static void renderActors(Minecraft client, Camera camera, float transition)
-    {
-        UIFilmPanel panel = BoneHoverPickRunner.findPanel();
-        if (panel == null || panel.getData() == null)
-        {
-            return;
-        }
-        CameraRenderState state = new CameraRenderState();
-        state.pos = camera.position();
-        state.xRot = camera.xRot();
-        state.yRot = camera.yRot();
-        state.orientation = new org.joml.Quaternionf(camera.rotation());
-        SubmitNodeStorage collector = new SubmitNodeStorage();
-        FormSammler.mitSammler(collector, () ->
-        {
-            for (java.util.Map.Entry<Integer, IEntity> actor : panel.getController().getEntities().entrySet())
-            {
-                if (actor.getKey() >= panel.getData().replays.getList().size())
-                {
-                    continue;
-                }
-                Replay replay = panel.getData().replays.getList().get(actor.getKey());
-                if (replay.enabled.get())
-                {
-                    BaseFilmController.renderEntity(FilmControllerContext.instance.setup(panel.getController().getEntities(),
-                        actor.getValue(), replay, state, new PoseStack(), collector, transition).relative(replay.relative.get()));
-                }
-            }
-        });
-        try (FeatureRenderDispatcher dispatcher = new FeatureRenderDispatcher(client.gameRenderer.renderBuffers(),
-            client.getModelManager(), client.getAtlasManager(), client.font, client.gameRenderer.gameRenderState()))
-        {
-            dispatcher.renderAllFeatures(collector);
-        }
-    }
-
-    private GameRendererPreviewPrePassLogik()
-    {}
+    private static final Set<UUID> GEMELDET = new HashSet<>();
 }

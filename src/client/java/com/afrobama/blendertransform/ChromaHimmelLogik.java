@@ -2,6 +2,8 @@ package com.afrobama.blendertransform;
 
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
+import net.minecraft.client.renderer.state.level.SkyRenderState;
+import org.joml.Vector4f;
 
 /**
  * Chroma-Himmel: die Farbe, mit der Himmel und Nebel ueberschrieben werden.
@@ -17,6 +19,26 @@ import mchorse.bbs_mod.client.BBSRendering;
 public final class ChromaHimmelLogik
 {
     private ChromaHimmelLogik() {}
+
+    public static void himmel(SkyRenderState state)
+    {
+        Integer color = farbeOderNull();
+
+        if (color != null)
+        {
+            state.skyColor = net.minecraft.util.ARGB.vector3fFromRGB24(color);
+        }
+    }
+
+    public static void nebel(Vector4f color)
+    {
+        Integer chroma = farbeOderNull();
+
+        if (chroma != null)
+        {
+            color.set(kanal(chroma, 16), kanal(chroma, 8), kanal(chroma, 0), 1F);
+        }
+    }
 
     /**
      * @return die Chroma-Farbe als ARGB, oder {@code null}, wenn der Chroma-Himmel aus ist

@@ -114,7 +114,9 @@ public class ModelBlockItemRenderer
     public static void submit(Item item, ItemDisplayContext mode, PoseStack matrices, SubmitNodeCollector sammler, int light, int overlay)
     {
         ModelProperties properties = item.entity.getProperties();
-        Form form = properties.getForm(mode);
+        IEntity prop = GehaltenerPropEgo.ersatz(item, mode);
+        if (prop == null && GehaltenerPropVerweis.verknuepft(item, mode)) return;
+        Form form = prop != null ? prop.getForm() : properties.getForm(mode);
 
         if (form != null)
         {
@@ -126,6 +128,21 @@ public class ModelBlockItemRenderer
             matrices.translate(0.5F, 0F, 0.5F);
             MatrixStackUtils.applyTransform(matrices, transform);
 
+            if (prop != null)
+            {
+                /* The prop is a copy of the third-person form: its own transform is the
+                 * third-person one plus the animation. Swap that base for the first-person
+                 * form's, so the hand shows the block at its first-person size and place
+                 * (measured 2026-10-13: without this, the owner's face filled the screen). */
+                Form first = properties.getForm(mode);
+                Form third = properties.getForm(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND);
+
+                if (first != null && third != null)
+                {
+                    matrices.mulPose(first.transform.get().createMatrix().mul(third.transform.get().createMatrix().invert()));
+                }
+            }
+
             /* 26.2: die beiden Tiefen-Schalter um diesen Aufruf herum entfallen ersatzlos.
              * Tiefe ist kein globaler Zustand mehr, sondern Teil der Pipeline — den Zustand
              * bringt der Form-Renderer mit, zu dem FormUtilsClient.render verzweigt (Modelle
@@ -136,7 +153,7 @@ public class ModelBlockItemRenderer
              * GUI-Annahme wieder her, und die GUI zeichnet inzwischen selbst mit
              * RenderPipelines.GUI/GUI_TEXTURED. */
             FormUtilsClient.render(form, new FormRenderingContext()
-                .set(FormRenderType.fromModelMode(mode), item.formEntity, matrices, light, overlay, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false))
+                .set(FormRenderType.fromModelMode(mode), prop != null ? prop : item.formEntity, matrices, light, overlay, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false))
                 .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
 
             matrices.popPose();
@@ -152,13 +169,16 @@ public class ModelBlockItemRenderer
 
         if (MAP.containsKey(stack))
         {
-            return MAP.get(stack);
+            Item cached = MAP.get(stack);
+            GehaltenerPropVerweis.merken(cached, stack);
+            return cached;
         }
 
         ModelBlockEntity entity = new ModelBlockEntity(BlockPos.ZERO, BBSMod.MODEL_BLOCK.defaultBlockState());
         Item item = new Item(entity);
 
         MAP.put(stack, item);
+        GehaltenerPropVerweis.merken(item, stack);
 
         /* 26.2: BLOCK_ENTITY_DATA traegt kein CustomData mehr, sondern TypedEntityData -- die
          * Kennung des Blockentity-Typs reist jetzt MIT den Daten. Und das Laden macht man nicht

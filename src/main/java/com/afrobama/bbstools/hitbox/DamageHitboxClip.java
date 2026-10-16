@@ -50,7 +50,9 @@ public class DamageHitboxClip extends CameraClip
             this.sizeX.interpolate(t, 1.0D),
             this.sizeY.interpolate(t, 1.0D),
             this.sizeZ.interpolate(t, 1.0D),
-            this.damage.interpolate(t, 4.0D)
+            /* Damage only while the film plays: in the paused editor the cursor parks inside the
+             * clip and mobs in the box died within a second (audit 2026-10-14 #109). */
+            context.playing ? this.damage.interpolate(t, 4.0D) : 0D
         });
     }
 

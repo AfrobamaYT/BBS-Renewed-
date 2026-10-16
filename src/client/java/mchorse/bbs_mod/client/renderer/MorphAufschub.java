@@ -48,8 +48,8 @@ import java.util.List;
 public final class MorphAufschub
 {
     /** Pose-Schnappschuss + alles, was {@code FormRenderingContext.set} braucht. */
-    private record Auftrag(Form form, IEntity entity, FormRenderType typ, Matrix4f pose, Matrix3f normale,
-        int licht, int ueberlagerung, float teilTick) {}
+    private record Auftrag(Form form, IEntity entity, Matrix4f pose, Matrix3f normale,
+        int licht, int ueberlagerung, float teilTick, NativeMorphCapture.CapturedBody body) {}
 
     private static final List<Auftrag> AUFTRAEGE = new ArrayList<>();
 
@@ -80,23 +80,26 @@ public final class MorphAufschub
     public static void einreichen(Form form, IEntity entity, PoseStack stapel,
         int licht, int ueberlagerung, float teilTick)
     {
-        einreichen(form, entity, FormRenderType.ENTITY, stapel, licht, ueberlagerung, teilTick);
-    }
-
-    /** Dasselbe fuer Modellbloecke und Actors: auch ihre Renderer laufen in Vanillas
-     * Sammelphase ({@code submitBlockEntities}/{@code submitEntities}) und waren deshalb
-     * unsichtbar (2026-10-12 gemessen, beide leer, nur der Schatten stand da). */
-    public static void einreichen(Form form, IEntity entity, FormRenderType typ, PoseStack stapel,
-        int licht, int ueberlagerung, float teilTick)
-    {
+        /* The complete form was already submitted to the light's own native capture. */
+        if (mchorse.bbs_mod.integrations.vitrail.VitrailShadowFrame.collecting()
+            || mchorse.bbs_mod.integrations.vitrail.VitrailActorFrame.traversing()) return;
+        NativeMorphCapture.CapturedBody body = NativeMorphCapture.capture(form, entity, stapel,
+            licht, ueberlagerung, teilTick);
         if (AUFTRAEGE.size() >= MAX_AUFTRAEGE)
         {
             AUFTRAEGE.clear();
         }
 
-        AUFTRAEGE.add(new Auftrag(form, entity, typ,
+        AUFTRAEGE.add(new Auftrag(form, entity,
             new Matrix4f(stapel.last().pose()), new Matrix3f(stapel.last().normal()),
-            licht, ueberlagerung, teilTick));
+            licht, ueberlagerung, teilTick, body));
+    }
+
+    /** A native reset must release queued form/VAO identities without replaying an old frame. */
+    public static void discard()
+    {
+        AUFTRAEGE.clear();
+        NativeMorphCapture.reset();
     }
 
     private static void zeichnen()
@@ -121,11 +124,11 @@ public final class MorphAufschub
 
                 /* Ausnahmen faengt FormUtilsClient.render selbst (gedrosselt geloggt);
                  * was dort durchschluepft, soll laut scheitern statt still. */
-                FormSammler.mitSammler(wegwerf, () ->
+                NativeMorphCapture.replay(auftrag.body(), () -> FormSammler.mitSammler(wegwerf, () ->
                     FormUtilsClient.render(auftrag.form(), new FormRenderingContext()
-                        .set(auftrag.typ(), auftrag.entity(), stapel,
+                        .set(FormRenderType.ENTITY, auftrag.entity(), stapel,
                             auftrag.licht(), auftrag.ueberlagerung(), auftrag.teilTick())
-                        .camera(Minecraft.getInstance().gameRenderer.mainCamera())));
+                        .camera(Minecraft.getInstance().gameRenderer.mainCamera()))));
             }
         }
         finally

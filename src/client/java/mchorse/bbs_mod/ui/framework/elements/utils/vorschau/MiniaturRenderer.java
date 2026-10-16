@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.utils.vorschau;
 
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.graphics.Messpunkt;
 import mchorse.bbs_mod.graphics.Zeichenziel;

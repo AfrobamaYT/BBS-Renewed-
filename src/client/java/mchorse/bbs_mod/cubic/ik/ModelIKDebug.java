@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.cubic.ik;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
@@ -82,8 +82,7 @@ public final class ModelIKDebug
          * are discarded before the visible main pass, which calls us again. */
         if (mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang
             || (mchorse.bbs_mod.client.BBSRendering.isIrisShadersEnabled()
-                && net.irisshaders.iris.api.v0.IrisApi.getInstance().isRenderingShadowPass())
-            || mchorse.bbs_mod.film.VideoExportSession.laeuftExport())
+                && net.irisshaders.iris.api.v0.IrisApi.getInstance().isRenderingShadowPass()))
         {
             return;
         }
@@ -100,28 +99,25 @@ public final class ModelIKDebug
         mchorse.bbs_mod.forms.entities.IEntity entity = controller.getCurrentEntity();
         mchorse.bbs_mod.film.replays.Replay replay = controller.panel.replayEditor.getReplay();
 
-        if (entity == null || replay == null
-            || !(entity.getForm() instanceof mchorse.bbs_mod.forms.forms.ModelForm form)
-            || !(mchorse.bbs_mod.forms.FormUtilsClient.getRenderer(form) instanceof mchorse.bbs_mod.forms.renderers.ModelFormRenderer renderer))
-        {
-            return;
-        }
+        /* The other replays' rigs are drawn too (RigFremd), so the selected replay having no
+         * rig no longer ends the pass — it only leaves its own part out. */
+        mchorse.bbs_mod.forms.forms.ModelForm form = entity != null && replay != null
+            && entity.getForm() instanceof mchorse.bbs_mod.forms.forms.ModelForm f ? f : null;
+        mchorse.bbs_mod.cubic.ModelInstance instance = form != null
+            && mchorse.bbs_mod.forms.FormUtilsClient.getRenderer(form) instanceof mchorse.bbs_mod.forms.renderers.ModelFormRenderer renderer
+            ? renderer.getModel() : null;
+        boolean eigenes = instance != null && instance.model != null;
 
-        mchorse.bbs_mod.cubic.ModelInstance instance = renderer.getModel();
-
-        if (instance == null || instance.model == null)
-        {
-            return;
-        }
-
-        java.util.List<RigCtrl.Eintrag> rig = instance.model instanceof BOBJModel bm
+        java.util.List<RigCtrl.Eintrag> rig = eigenes && instance.model instanceof BOBJModel bm
             ? RigCtrl.fuer(bm.getArmature(), form.model.get()) : null;
-        ModelIKCache.Compiled compiled = ModelIKCache.getFromData(instance.model,
-            form.ik.get() instanceof MapType map ? map : null);
+        ModelIKCache.Compiled compiled = eigenes ? ModelIKCache.getFromData(instance.model,
+            form.ik.get() instanceof MapType map ? map : null) : null;
         List<ModelIKCache.CompiledChain> chains = compiled == null ? List.of() : compiled.chains();
 
         /* Authored face controls do not require an IK chain. */
-        if (rig == null && chains.isEmpty())
+        eigenes = eigenes && !(rig == null && chains.isEmpty());
+
+        if (!eigenes && !mchorse.bbs_mod.cubic.render.RigFremd.gibt(controller.getEntities(), entity))
         {
             return;
         }
@@ -133,6 +129,8 @@ public final class ModelIKDebug
          * verkleinert — ohne die Skala schrumpfen die Linien unter 1px (gemessen:
          * 67 Fragment-Pixel am ganzen Rig). */
         float feld = controller.panel.preview.getViewport().w * mchorse.bbs_mod.BBSModClient.getGUIScale();
+
+        mchorse.bbs_mod.cubic.render.RigDeko.setFeldHoehe(controller.panel.preview.getViewport().h * mchorse.bbs_mod.BBSModClient.getGUIScale());
 
         RigWidgets.setBreitenSkala(feld <= 0F ? 1F
             : mchorse.bbs_mod.client.BBSRendering.getVideoWidth() / feld);
@@ -146,14 +144,21 @@ public final class ModelIKDebug
             ByteBufferBuilder speicher = mchorse.bbs_mod.cubic.render.ControlVertexBatch.speicher(0);
             BufferBuilder wire = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
             float hidden = config.hiddenOpacity.get();
+            /* Zwischenzeit wie in FilmBoneWorldProvider: beim laufenden Film die
+             * echte, sonst 0 — sonst zappeln die Widgets im Standbild. */
+            float uebergang = controller.panel.getRunner().isRunning()
+                && controller.panel.replayEditor.getContext() != null
+                    ? controller.panel.replayEditor.getContext().getTransition() : 0F;
+
+            try (mchorse.bbs_mod.cubic.render.ControlVertexBatch batch =
+                mchorse.bbs_mod.cubic.render.ControlVertexBatch.begin(wire))
+            {
+                mchorse.bbs_mod.cubic.render.RigFremd.weltPass(wire, sicht, kamera, entities,
+                    controller.panel.getData().replays.getList(), entity, a, uebergang);
+            }
 
             if (rig != null)
             {
-                /* Zwischenzeit wie in FilmBoneWorldProvider: beim laufenden Film die
-                 * echte, sonst 0 — sonst zappeln die Widgets im Standbild. */
-                float uebergang = controller.panel.getRunner().isRunning()
-                    && controller.panel.replayEditor.getContext() != null
-                        ? controller.panel.replayEditor.getContext().getTransition() : 0F;
 
                 /* Der Editor-Standard (Unity occluded gizmos, Unreals Control Rig):
                  * sichtbare Baender voll, verdeckte gedimmt — auffindbar hinter dem
@@ -165,12 +170,14 @@ public final class ModelIKDebug
                 {
                     mchorse.bbs_mod.cubic.render.RigCtrlZeichner.weltPass(wire, sicht, kamera,
                         entities, entity, replay, rig, selectedBone, a, uebergang);
+                    mchorse.bbs_mod.cubic.render.RigDeko.weltPass(wire, sicht, kamera,
+                        entities, entity, replay, form.model.get(), a, uebergang);
                 }
             }
 
             /* FK-Skelett (Blenders Pose Mode): JEDER Bone als Octahedron — grau,
              * Auswahl cyan. Die IK-Ziel/Pol-Bones tragen stattdessen ihre Widgets. */
-            if (rig == null && instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bobj)
+            if (rig == null && eigenes && instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bobj)
             {
                 Set<String> ikBones = new HashSet<>();
 
@@ -329,7 +336,7 @@ public final class ModelIKDebug
                 return;
             }
 
-            if (rig != null && mchorse.bbs_mod.client.BBSRendering.isIrisShadersEnabled())
+            if (rig != null && mchorse.bbs_mod.cubic.render.RigOverlayPass.packAktiv())
             {
                 mchorse.bbs_mod.cubic.render.RigOverlayPass.queue(mesh, a, hidden, tiefe);
 
@@ -429,7 +436,7 @@ public final class ModelIKDebug
 
         if (model instanceof BOBJModel)
         {
-            stack.mulPose(Axis.YP.rotation(MathUtils.PI));
+            stack.rotate(Axis.YP.rotation(MathUtils.PI));
         }
 
         for (ModelIKCache.CompiledChain chain : compiled.chains())

@@ -221,8 +221,9 @@ public final class BlockSpawnAnimEffect
 
     /**
      * Append a single block to the currently-running animation (or start a
-     * fresh one if nothing is active). Used by per-place feeders so each
-     * freshly-placed block gets its own drop-in flair without the bulk-{@link #trigger}
+     * fresh one if nothing is active). Used by per-place feeders like
+     * {@code CrowdBuildManager.SPAWN_ANIM_ENABLED} so each freshly-placed
+     * block gets its own drop-in flair without the bulk-{@link #trigger}
      * AABB rescan. Thread-safe enough for main-thread callers — the render
      * thread iterates the list with a stable snapshot reference, so the
      * worst-case race is one frame where the new block isn't rendered yet.

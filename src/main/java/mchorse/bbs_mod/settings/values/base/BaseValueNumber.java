@@ -8,6 +8,7 @@ public abstract class BaseValueNumber <T extends Number> extends BaseKeyframeFac
     protected T max;
 
     protected boolean slider;
+    protected boolean live;
 
     /* Drag-Metadaten fuer generierte Widgets (P8c): gehoeren zur DEFINITION der
      * Property wie min/max, nicht in jedes Panel. null = Widget-Default. */
@@ -46,6 +47,22 @@ public abstract class BaseValueNumber <T extends Number> extends BaseKeyframeFac
     public BaseValueNumber<T> slider()
     {
         this.slider = true;
+
+        return this;
+    }
+
+    public boolean isLive()
+    {
+        return this.live;
+    }
+
+    /**
+     * Report every step of a drag, not only the release — for a value the user
+     * steers by eye while dragging, like the UI scale (Blender's Resolution Scale).
+     */
+    public BaseValueNumber<T> live()
+    {
+        this.live = true;
 
         return this;
     }

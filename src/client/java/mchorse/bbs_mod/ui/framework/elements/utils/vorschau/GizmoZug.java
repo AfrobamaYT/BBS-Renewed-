@@ -1,9 +1,9 @@
 package mchorse.bbs_mod.ui.framework.elements.utils.vorschau;
 
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -43,11 +43,17 @@ public final class GizmoZug
     public static void einreihen(UIContext kontext, Matrix4f projektion, Matrix4f ansicht,
         Area flaeche, float viewportSkalierung)
     {
-        ScreenRectangle rechteck = new ScreenRectangle(flaeche.x, flaeche.y, flaeche.w, flaeche.h);
+        /* Bild-im-Bild liegt in Minecrafts GUI-Raum: BBS-Einheiten mal Rest (UISkala). */
+        float rest = mchorse.bbs_mod.ui.framework.UISkala.rest();
+        int x0 = Math.round(flaeche.x * rest);
+        int y0 = Math.round(flaeche.y * rest);
+        int x1 = Math.round(flaeche.ex() * rest);
+        int y1 = Math.round(flaeche.ey() * rest);
+        ScreenRectangle rechteck = new ScreenRectangle(x0, y0, x1 - x0, y1 - y0);
 
-        kontext.batcher.bildImBild(new GizmoZustand(
+        kontext.batcher.bildImBild(new GizmoBildZustand(
             new Matrix4f(projektion), new Matrix4f(ansicht), viewportSkalierung,
-            flaeche.x, flaeche.y, flaeche.ex(), flaeche.ey(), rechteck, rechteck));
+            x0, y0, x1, y1, rechteck, rechteck, mchorse.bbs_mod.ui.utils.GizmoGimbal.sichern()));
     }
 
     /**
@@ -119,7 +125,7 @@ public final class GizmoZug
         if (zurKamera.lengthSquared() > 1.0E-8F)
         {
             zurKamera.normalize();
-            stapel.mulPose(new Quaternionf().rotationTo(0F, 1F, 0F, zurKamera.x, zurKamera.y, zurKamera.z));
+            stapel.rotate(new Quaternionf().rotationTo(0F, 1F, 0F, zurKamera.x, zurKamera.y, zurKamera.z));
         }
 
         stapel.scale(skalierung, skalierung, skalierung);

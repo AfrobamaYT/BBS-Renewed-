@@ -1,10 +1,10 @@
 package mchorse.bbs_mod.ui.utils;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.utils.context.ContextAction;
 import mchorse.bbs_mod.utils.interps.IInterp;
-import org.lwjgl.glfw.GLFW;
 
 public class InterpolationUtils
 {
@@ -14,11 +14,11 @@ public class InterpolationUtils
 
         if (key.endsWith("_in"))
         {
-            action.key(category, interp.getKeyCode(), GLFW.GLFW_KEY_LEFT_SHIFT);
+            action.key(category, interp.getKeyCode(), InputConstants.KEY_LSHIFT);
         }
         else if (key.endsWith("_out"))
         {
-            action.key(category, interp.getKeyCode(), GLFW.GLFW_KEY_LEFT_CONTROL);
+            action.key(category, interp.getKeyCode(), InputConstants.KEY_LCONTROL);
         }
         else
         {

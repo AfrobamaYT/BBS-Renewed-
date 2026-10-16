@@ -2,7 +2,9 @@ package mchorse.bbs_mod.ui.utils.keys;
 
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.utils.OS;
-import org.lwjgl.glfw.GLFW;
+import mchorse.bbs_mod.l10n.L10n;
+import org.lwjgl.sdl.SDLKeyboard;
+import org.lwjgl.sdl.SDLScancode;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +46,11 @@ public class KeyCodes
 
     public static String getName(int keyCode)
     {
+        if (LegacyKeyboardKeys.isUnmapped(keyCode))
+        {
+            return L10n.lang("bbs.ui.keys.legacy_unavailable").format("F25").get();
+        }
+
         if (keyCode == 0)
         {
             return "N/A";
@@ -65,101 +72,96 @@ public class KeyCodes
         {
             switch (keyCode)
             {
-                case 48: return "0";
-                case 49: return "1";
-                case 50: return "2";
-                case 51: return "3";
-                case 52: return "4";
-                case 53: return "5";
-                case 54: return "6";
-                case 55: return "7";
-                case 56: return "8";
-                case 57: return "9";
-                case 65: return "A";
-                case 66: return "B";
-                case 67: return "C";
-                case 68: return "D";
-                case 69: return "E"; /* Nice! */
-                case 70: return "F";
-                case 71: return "G";
-                case 72: return "H";
-                case 73: return "I";
-                case 74: return "J";
-                case 75: return "K";
-                case 76: return "L";
-                case 77: return "M";
-                case 78: return "N";
-                case 79: return "O";
-                case 80: return "P";
-                case 81: return "Q";
-                case 82: return "R";
-                case 83: return "S";
-                case 84: return "T";
-                case 85: return "U";
-                case 86: return "V";
-                case 87: return "W";
-                case 88: return "X";
-                case 89: return "Y";
-                case 90: return "Z";
+                case SDLScancode.SDL_SCANCODE_0: return "0";
+                case SDLScancode.SDL_SCANCODE_1: return "1";
+                case SDLScancode.SDL_SCANCODE_2: return "2";
+                case SDLScancode.SDL_SCANCODE_3: return "3";
+                case SDLScancode.SDL_SCANCODE_4: return "4";
+                case SDLScancode.SDL_SCANCODE_5: return "5";
+                case SDLScancode.SDL_SCANCODE_6: return "6";
+                case SDLScancode.SDL_SCANCODE_7: return "7";
+                case SDLScancode.SDL_SCANCODE_8: return "8";
+                case SDLScancode.SDL_SCANCODE_9: return "9";
+                case SDLScancode.SDL_SCANCODE_A: return "A";
+                case SDLScancode.SDL_SCANCODE_B: return "B";
+                case SDLScancode.SDL_SCANCODE_C: return "C";
+                case SDLScancode.SDL_SCANCODE_D: return "D";
+                case SDLScancode.SDL_SCANCODE_E: return "E"; /* Nice! */
+                case SDLScancode.SDL_SCANCODE_F: return "F";
+                case SDLScancode.SDL_SCANCODE_G: return "G";
+                case SDLScancode.SDL_SCANCODE_H: return "H";
+                case SDLScancode.SDL_SCANCODE_I: return "I";
+                case SDLScancode.SDL_SCANCODE_J: return "J";
+                case SDLScancode.SDL_SCANCODE_K: return "K";
+                case SDLScancode.SDL_SCANCODE_L: return "L";
+                case SDLScancode.SDL_SCANCODE_M: return "M";
+                case SDLScancode.SDL_SCANCODE_N: return "N";
+                case SDLScancode.SDL_SCANCODE_O: return "O";
+                case SDLScancode.SDL_SCANCODE_P: return "P";
+                case SDLScancode.SDL_SCANCODE_Q: return "Q";
+                case SDLScancode.SDL_SCANCODE_R: return "R";
+                case SDLScancode.SDL_SCANCODE_S: return "S";
+                case SDLScancode.SDL_SCANCODE_T: return "T";
+                case SDLScancode.SDL_SCANCODE_U: return "U";
+                case SDLScancode.SDL_SCANCODE_V: return "V";
+                case SDLScancode.SDL_SCANCODE_W: return "W";
+                case SDLScancode.SDL_SCANCODE_X: return "X";
+                case SDLScancode.SDL_SCANCODE_Y: return "Y";
+                case SDLScancode.SDL_SCANCODE_Z: return "Z";
             }
         }
 
         switch (keyCode)
         {
-            case 32: return "Space";
-            case 256: return "Escape";
-            case 257: return "Enter";
-            case 258: return "Tab";
-            case 259: return "Backspace";
-            case 260: return "Insert";
-            case 261: return "Delete";
-            case 262: return "Right";
-            case 263: return "Left";
-            case 264: return "Down";
-            case 265: return "Up";
-            case 266: return "Page up";
-            case 267: return "Page down";
-            case 268: return "Home";
-            case 269: return "End";
-            case 280: return "Capslock";
-            case 281: return "Scrolllock";
-            case 282: return "Numlock";
-            case 283: return "Printscreen";
-            case 284: return "Pause";
+            case SDLScancode.SDL_SCANCODE_SPACE: return "Space";
+            case SDLScancode.SDL_SCANCODE_ESCAPE: return "Escape";
+            case SDLScancode.SDL_SCANCODE_RETURN: return "Enter";
+            case SDLScancode.SDL_SCANCODE_TAB: return "Tab";
+            case SDLScancode.SDL_SCANCODE_BACKSPACE: return "Backspace";
+            case SDLScancode.SDL_SCANCODE_INSERT: return "Insert";
+            case SDLScancode.SDL_SCANCODE_DELETE: return "Delete";
+            case SDLScancode.SDL_SCANCODE_RIGHT: return "Right";
+            case SDLScancode.SDL_SCANCODE_LEFT: return "Left";
+            case SDLScancode.SDL_SCANCODE_DOWN: return "Down";
+            case SDLScancode.SDL_SCANCODE_UP: return "Up";
+            case SDLScancode.SDL_SCANCODE_PAGEUP: return "Page up";
+            case SDLScancode.SDL_SCANCODE_PAGEDOWN: return "Page down";
+            case SDLScancode.SDL_SCANCODE_HOME: return "Home";
+            case SDLScancode.SDL_SCANCODE_END: return "End";
+            case SDLScancode.SDL_SCANCODE_CAPSLOCK: return "Capslock";
+            case SDLScancode.SDL_SCANCODE_SCROLLLOCK: return "Scrolllock";
+            case SDLScancode.SDL_SCANCODE_NUMLOCKCLEAR: return "Numlock";
+            case SDLScancode.SDL_SCANCODE_PRINTSCREEN: return "Printscreen";
+            case SDLScancode.SDL_SCANCODE_PAUSE: return "Pause";
             /* Shift */
-            case 340: return "Shift";
+            case SDLScancode.SDL_SCANCODE_LSHIFT: return "Shift";
             /* Control */
-            case 341: return "Ctrl";
+            case SDLScancode.SDL_SCANCODE_LCTRL: return "Ctrl";
             /* Alt/Option */
-            case 342: return "Alt";
+            case SDLScancode.SDL_SCANCODE_LALT: return "Alt";
             /* Command/Windows */
-            case 343: return OS.CURRENT == OS.MACOS ? "Cmd" : "Win";
-            case 344: return "R.Shift";
-            case 345: return "R.Ctrl";
-            case 346: return "R.Alt";
-            case 347: return "R." + (OS.CURRENT == OS.MACOS ? "Cmd" : "Win");
+            case SDLScancode.SDL_SCANCODE_LGUI: return OS.CURRENT == OS.MACOS ? "Cmd" : "Win";
+            case SDLScancode.SDL_SCANCODE_RSHIFT: return "R.Shift";
+            case SDLScancode.SDL_SCANCODE_RCTRL: return "R.Ctrl";
+            case SDLScancode.SDL_SCANCODE_RALT: return "R.Alt";
+            case SDLScancode.SDL_SCANCODE_RGUI: return "R." + (OS.CURRENT == OS.MACOS ? "Cmd" : "Win");
         }
 
-        String name = GLFW.glfwGetKeyName(keyCode, 0);
+        String name = SDLKeyboard.SDL_GetKeyName(SDLKeyboard.SDL_GetKeyFromScancode(keyCode, (short) 0, true));
 
-        if (keyCode >= 320 && keyCode <= 336)
+        if ((keyCode >= SDLScancode.SDL_SCANCODE_KP_DIVIDE && keyCode <= SDLScancode.SDL_SCANCODE_KP_PERIOD) || keyCode == SDLScancode.SDL_SCANCODE_KP_EQUALS)
         {
             switch (keyCode)
             {
-                case 335: name = "Enter"; break;
-                case 336: name = "="; break;
+                case SDLScancode.SDL_SCANCODE_KP_ENTER: name = "Enter"; break;
+                case SDLScancode.SDL_SCANCODE_KP_EQUALS: name = "="; break;
             }
 
             return "Num " + name;
         }
 
-        if (name == null)
+        if (name == null || name.isEmpty())
         {
-            if (keyCode >= 290 && keyCode <= 308)
-            {
-                return "F" + (keyCode - 289);
-            }
-
             name = "Key " + keyCode;
         }
 

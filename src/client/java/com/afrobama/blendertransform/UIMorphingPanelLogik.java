@@ -14,7 +14,8 @@ import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
  * die eine Stelle, an der ein Swap nicht sofort sichtbar wird.</p>
  *
  * <p>{@link UIMorphingPanelSetFormInvoker} ist ein Mixin-Invoker-Interface im stabilen Loader,
- * kein Kernel-Typ — es darf deshalb hier stehen.</p>
+ * kein Kernel-Typ — es darf deshalb hier stehen (dasselbe Muster wie ModelPartAccessor in
+ * {@code CrowdLodLogik}).</p>
  */
 public final class UIMorphingPanelLogik
 {

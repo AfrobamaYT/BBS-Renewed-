@@ -41,13 +41,8 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
-import static org.lwjgl.glfw.GLFW.GLFW_VISIBLE;
-import static org.lwjgl.glfw.GLFW.glfwCreateWindow;
-import static org.lwjgl.glfw.GLFW.glfwDefaultWindowHints;
-import static org.lwjgl.glfw.GLFW.glfwDestroyWindow;
-import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
-import static org.lwjgl.glfw.GLFW.glfwWindowHint;
+import org.lwjgl.sdl.SDLError;
+import org.lwjgl.sdl.SDLVideo;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public final class BBSUploadThread implements IFeatureDebugger
@@ -72,6 +67,7 @@ public final class BBSUploadThread implements IFeatureDebugger
     private static volatile boolean initialized = false;
 
     private static volatile long uploadWindow = NULL;
+    private static volatile long uploadContext = NULL;
     private static volatile Thread workerThread;
     private static volatile boolean running = false;
 
@@ -121,27 +117,66 @@ public final class BBSUploadThread implements IFeatureDebugger
         }
         try
         {
-            glfwDefaultWindowHints();
-            glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-            uploadWindow = glfwCreateWindow(64, 48, "BBSTools-Upload",
-                NULL, mainWindowHandle);
+            long mainContext = SDLVideo.SDL_GL_GetCurrentContext();
+
+            if (mainContext == NULL)
+            {
+                throw new IllegalStateException("The upload worker requires a current OpenGL context");
+            }
+
+            uploadWindow = SDLVideo.SDL_CreateWindow("BBSTools-Upload", 64, 48,
+                SDLVideo.SDL_WINDOW_OPENGL | SDLVideo.SDL_WINDOW_HIDDEN);
             if (uploadWindow == NULL)
             {
-                LOG.warn("glfwCreateWindow(shared) returned NULL — upload thread disabled");
+                LOG.warn("SDL_CreateWindow(shared) failed: {}", SDLError.SDL_GetError());
                 ENABLED = false;
                 return false;
+            }
+            try
+            {
+                if (!SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1))
+                {
+                    throw new IllegalStateException(SDLError.SDL_GetError());
+                }
+
+                uploadContext = SDLVideo.SDL_GL_CreateContext(uploadWindow);
+
+                if (uploadContext == NULL)
+                {
+                    throw new IllegalStateException(SDLError.SDL_GetError());
+                }
+            }
+            finally
+            {
+                SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
+
+                if (!SDLVideo.SDL_GL_MakeCurrent(mainWindowHandle, mainContext))
+                {
+                    throw new IllegalStateException("Cannot restore Minecraft OpenGL context: " + SDLError.SDL_GetError());
+                }
             }
             running = true;
             workerThread = new Thread(BBSUploadThread::workerLoop, "BBSTools-Upload");
             workerThread.setDaemon(true);
             workerThread.start();
             initialized = true;
-            LOG.info("BBSTools-Upload thread up — hidden shared GLFW window=0x{} (64x48), ENABLED={}, os.windows={}",
+            LOG.info("BBSTools-Upload thread up — hidden shared SDL window=0x{} (64x48), ENABLED={}, os.windows={}",
                 Long.toHexString(uploadWindow), ENABLED, OS_IS_WINDOWS);
             return true;
         }
         catch (Throwable t)
         {
+            if (uploadContext != NULL)
+            {
+                SDLVideo.SDL_GL_DestroyContext(uploadContext);
+                uploadContext = NULL;
+            }
+
+            if (uploadWindow != NULL)
+            {
+                SDLVideo.SDL_DestroyWindow(uploadWindow);
+                uploadWindow = NULL;
+            }
             LOG.warn("BBSUploadThread init failed — falling back to inline upload: {}", t.toString(), t);
             ENABLED = false;
             return false;
@@ -198,7 +233,10 @@ public final class BBSUploadThread implements IFeatureDebugger
     {
         try
         {
-            glfwMakeContextCurrent(uploadWindow);
+            if (!SDLVideo.SDL_GL_MakeCurrent(uploadWindow, uploadContext))
+            {
+                throw new IllegalStateException(SDLError.SDL_GetError());
+            }
             /* GLCapabilities must be created per-thread for LWJGL's GL
              *  bindings to function. The shared object list is fine, but
              *  the per-thread function-pointer table is not — without
@@ -269,12 +307,17 @@ public final class BBSUploadThread implements IFeatureDebugger
         /* Clean shutdown path. */
         try
         {
-            glfwMakeContextCurrent(NULL);
-            if (uploadWindow != NULL)
+            if (!SDLVideo.SDL_GL_MakeCurrent(uploadWindow, NULL))
             {
-                glfwDestroyWindow(uploadWindow);
-                uploadWindow = NULL;
+                throw new IllegalStateException(SDLError.SDL_GetError());
             }
+
+            runOnRenderThread(() -> {
+                SDLVideo.SDL_GL_DestroyContext(uploadContext);
+                SDLVideo.SDL_DestroyWindow(uploadWindow);
+                uploadContext = NULL;
+                uploadWindow = NULL;
+            });
         }
         catch (Throwable t)
         {
@@ -289,7 +332,7 @@ public final class BBSUploadThread implements IFeatureDebugger
     {
         try
         {
-            Class<?> mc = Class.forName("net.minecraft.client.MinecraftClient");
+            Class<?> mc = Class.forName("net.minecraft.client.Minecraft");
             Object instance = mc.getMethod("getInstance").invoke(null);
             mc.getMethod("execute", Runnable.class).invoke(instance, r);
         }

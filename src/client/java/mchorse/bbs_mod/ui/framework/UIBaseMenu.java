@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.ui.Keys;
@@ -15,7 +16,6 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Base class for GUI screens using this framework
@@ -26,7 +26,7 @@ public abstract class UIBaseMenu
      *  honours the hold-to-hide key, rather than directly. */
     public static boolean renderAxes = true;
 
-    private static InputRenderer inputRenderer = new InputRenderer();
+    private static InputRenderer inputRenderer = InputRenderer.INSTANCE;
 
     /**
      * Whether the transform gizmo / axes should be drawn (and pickable) right now: the F8 toggle
@@ -49,7 +49,7 @@ public abstract class UIBaseMenu
          * Keybind.check, sie fragen die combo selbst. Die zweite Belegung wuerde hier sonst
          * als einzige Stelle im Baum nichts tun — ein halbes Feature, das erst auffaellt,
          * wenn genau diese Aktion probiert wird. */
-        return Zweitbelegungen.gehalten(Keys.TRANSFORMATIONS_HIDE_GIZMO);
+        return Zweitbelegungen.gehalten(Keys.TRANSFORMATIONS_HIDE_GIZMO) || mchorse.bbs_mod.ui.film.controller.ZielPipette.aktiv(); /* an armed eyedropper picks bodies, not handles */
     }
 
     private UIRootElement root;
@@ -77,14 +77,12 @@ public abstract class UIBaseMenu
         UIElement popka = new UIElement();
 
         popka.keys().register(Keys.KEYBINDS, () -> this.context.toggleKeybinds());
+        popka.keys().register(Keys.HILFE, () -> mchorse.bbs_mod.ui.hilfe.Guides.taste(this.context));
         popka.keys().register(Keys.TRANSFORMATIONS_TOGGLE_AXES, () -> renderAxes = !renderAxes);
         /* P8a: die Befehls-Palette erntet den lebenden UI-Baum — in jedem Menue verfuegbar. */
         popka.keys().register(Keys.BEFEHLS_PALETTE, () -> mchorse.bbs_mod.ui.utils.befehle.UIBefehlsPalette.oeffnen(this.context));
-        /* P8e: Skriptkonsole -- nur, wenn ein Begleit-Mod sie anbietet. */
-        if (mchorse.bbs_mod.client.Erweiterungen.konsole != null)
-        {
-            popka.keys().register(Keys.SKRIPT_KONSOLE, () -> mchorse.bbs_mod.client.Erweiterungen.konsole.accept(this.context));
-        }
+        /* P8e: Skriptkonsole auf der In-Prozess-JShell (dev-Gate in BridgeExec). */
+        popka.keys().register(Keys.SKRIPT_KONSOLE, () -> mchorse.bbs_mod.ui.utils.befehle.UISkriptKonsole.oeffnen(this.context));
         popka.keys().register(Keys.UI_SCALE_INC, () -> changeUIScale(0.25F));
         popka.keys().register(Keys.UI_SCALE_DEC, () -> changeUIScale(-0.25F));
         this.root.add(popka);
@@ -169,6 +167,7 @@ public abstract class UIBaseMenu
             this.context.pushViewport(this.viewport);
 
             IUIElement element = this.root.mouseClicked(this.context);
+            mchorse.bbs_mod.ui.utils.keys.MausTastenWiederholung.zuordnen(this.context, element);
 
             this.context.popViewport();
 
@@ -246,14 +245,25 @@ public abstract class UIBaseMenu
 
     public boolean handleKey(int key, int scanCode, int action, int mods)
     {
-        if (action == GLFW.GLFW_PRESS)
+        if (action == InputConstants.PRESS)
         {
             inputRenderer.keyPressed(this.context, key);
         }
 
         this.context.setKeyEvent(key, scanCode, action);
 
-        IUIElement element = this.root.keyPressed(this.context);
+        IUIElement element;
+
+        mchorse.bbs_mod.ui.utils.keys.KeyCombo.ereignisBeginnen(key, scanCode, mods);
+
+        try
+        {
+            element = this.root.keyPressed(this.context);
+        }
+        finally
+        {
+            mchorse.bbs_mod.ui.utils.keys.KeyCombo.ereignisBeenden();
+        }
 
         /* bbs.mess: WER hat die taste angenommen — "angenommen=true ohne wirkung" ist sonst
          * nicht zuzuordnen (Akte 06, G ohne Edit). */
@@ -267,7 +277,7 @@ public abstract class UIBaseMenu
             return true;
         }
 
-        if (this.context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+        if (this.context.isPressed(InputConstants.KEY_ESCAPE))
         {
             this.closeMenu();
 
@@ -292,6 +302,7 @@ public abstract class UIBaseMenu
      */
     protected void closeMenu()
     {
+        mchorse.bbs_mod.ui.utils.keys.MausTastenWiederholung.stoppen(this.context);
         Minecraft.getInstance().gui.setScreen(null);
     }
 
@@ -335,6 +346,13 @@ public abstract class UIBaseMenu
              * nach unten verschoben, bis der Name feststeht.
              *
              * Der Name traegt das Panel mit, sonst sagt die Meldung nur DASS, nicht WO. */
+            /* Under the panels, over the world: the transform constraint lines when the world
+             * fills the window (Blocks, Models). The film viewport draws its own (custom size). */
+            if (!mchorse.bbs_mod.client.BBSRendering.isCustomSize())
+            {
+                mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.zeichnen2D(this.context, this.viewport.x, this.viewport.y, this.viewport.w, this.viewport.h);
+            }
+
             mchorse.bbs_mod.graphics.Stapelwache.pruefen(
                 "menue:" + this.getClass().getSimpleName(), this.context.batcher.pose(),
                 () -> this.root.render(this.context));
@@ -373,6 +391,9 @@ public abstract class UIBaseMenu
         {
             inputRenderer.render(this, mouseX, mouseY);
         }
+
+        /* Last of all, after tooltips and previews: nothing may lie on the guide's video */
+        mchorse.bbs_mod.ui.hilfe.Guides.obenauf(this.context);
 
         this.context.applyCursor();
 

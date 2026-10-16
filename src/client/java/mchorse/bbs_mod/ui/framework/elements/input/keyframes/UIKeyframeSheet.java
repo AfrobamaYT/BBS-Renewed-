@@ -135,7 +135,7 @@ public class UIKeyframeSheet extends UIKeyframeElement
     {
         for (Keyframe keyframe : this.selection.getSelected())
         {
-            keyframe.setTick(keyframe.getTick() + diff, dirty);
+            keyframe.setTick(this.channel.constrainKeyframeTick(keyframe, keyframe.getTick() + diff), dirty);
         }
     }
 

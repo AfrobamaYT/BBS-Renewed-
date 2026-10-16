@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.film.clips.renderer;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
 import mchorse.bbs_mod.client.FormPipelines;
@@ -143,13 +143,14 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
                 Vector2f point = this.calculateEnvelopePoint(vector, (int) keyframe.getTick(), keyframe.getValue().floatValue(), duration, x1, y1, x2, y2);
                 Vector2f prevPoint = this.calculateEnvelopePoint(previous, (int) prevKeyframe.getTick(), prevKeyframe.getValue().floatValue(), duration, x1, y1, x2, y2);
 
-                builder.addVertex(matrix, prevPoint.x, y2, 0F).setColor(c);
-                builder.addVertex(matrix, point.x, point.y, 0F).setColor(c);
-                builder.addVertex(matrix, prevPoint.x, prevPoint.y, 0F).setColor(c);
+                this.shadeAbove(builder, matrix, c, prevPoint.x, prevPoint.y, point.x, point.y, y1);
+            }
+            else if (keyframe.getTick() > 0)
+            {
+                /* Before the first keyframe the envelope holds its value */
+                Vector2f point = this.calculateEnvelopePoint(vector, (int) keyframe.getTick(), keyframe.getValue().floatValue(), duration, x1, y1, x2, y2);
 
-                builder.addVertex(matrix, point.x, y2, 0F).setColor(c);
-                builder.addVertex(matrix, point.x, point.y, 0F).setColor(c);
-                builder.addVertex(matrix, prevPoint.x, y2, 0F).setColor(c);
+                this.shadeAbove(builder, matrix, c, x1, point.y, point.x, point.y, y1);
             }
 
             prevKeyframe = keyframe;
@@ -160,13 +161,7 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
         {
             Vector2f point = this.calculateEnvelopePoint(vector, (int) prevKeyframe.getTick(), prevKeyframe.getValue().floatValue(), duration, x1, y1, x2, y2);
 
-            builder.addVertex(matrix, point.x, y2, 0F).setColor(c);
-            builder.addVertex(matrix, x2, point.y, 0F).setColor(c);
-            builder.addVertex(matrix, point.x, point.y, 0F).setColor(c);
-
-            builder.addVertex(matrix, x2, y2, 0F).setColor(c);
-            builder.addVertex(matrix, x2, point.y, 0F).setColor(c);
-            builder.addVertex(matrix, point.x, y2, 0F).setColor(c);
+            this.shadeAbove(builder, matrix, c, point.x, point.y, x2, point.y, y1);
         }
     }
 
@@ -196,17 +191,26 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
             float x = x1 + width * f;
             float y = y1 + height * (1 - MathUtils.clamp(envelope.factor(duration, duration * f), 0F, 1F));
 
-            builder.addVertex(matrix, prevX, prevY, 0F).setColor(c);
-            builder.addVertex(matrix, prevX, y2, 0F).setColor(c);
-            builder.addVertex(matrix, x, y2, 0F).setColor(c);
-
-            builder.addVertex(matrix, prevX, prevY, 0F).setColor(c);
-            builder.addVertex(matrix, x, y2, 0F).setColor(c);
-            builder.addVertex(matrix, x, y, 0F).setColor(c);
+            this.shadeAbove(builder, matrix, c, prevX, prevY, x, y, y1);
 
             prevX = x;
             prevY = y;
         }
+    }
+
+    /**
+     * Shade the part of the clip above one segment of the envelope, i.e. the part that's faded
+     * away, so a clip without fades looks untouched (BBS FS e24692991).
+     */
+    private void shadeAbove(VertexConsumer builder, Matrix4f matrix, int c, float ax, float ay, float bx, float by, float top)
+    {
+        builder.addVertex(matrix, ax, top, 0F).setColor(c);
+        builder.addVertex(matrix, ax, ay, 0F).setColor(c);
+        builder.addVertex(matrix, bx, by, 0F).setColor(c);
+
+        builder.addVertex(matrix, ax, top, 0F).setColor(c);
+        builder.addVertex(matrix, bx, by, 0F).setColor(c);
+        builder.addVertex(matrix, bx, top, 0F).setColor(c);
     }
 
     protected Vector2f calculateEnvelopePoint(Vector2f vector, int tick, float value, int duration, int x1, int y1, int x2, int y2)

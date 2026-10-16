@@ -147,11 +147,6 @@ public class Scroll
         return this;
     }
 
-    private boolean isSmoothScrolling()
-    {
-        return BBSSettings.scrollingSmoothness.get() && (this.smoothScrolling == null || this.smoothScrolling.getAsBoolean());
-    }
-
     private int getWheelScrollStep()
     {
         return this.wheelScrollStep == null ? 0 : Math.max(0, this.wheelScrollStep.getAsInt());
@@ -512,13 +507,15 @@ public class Scroll
      */
     public void drag(int x, int y)
     {
-        if (this.isSmoothScrolling())
+        float smoothing = Scale.glaettung();
+
+        if (smoothing > 0F && (this.smoothScrolling == null || this.smoothScrolling.getAsBoolean()))
         {
             float delta = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaTicks();
 
             /* The higher the FPS, the smaller the lerp factor is,
              * the lower the FPS, the bigger the factor is */
-            this.scroll = Lerps.lerp(this.scroll, this.targetScroll, Math.min(1F, delta / 2.5F));
+            this.scroll = Lerps.lerp(this.scroll, this.targetScroll, Math.min(1F, delta / (2.5F * smoothing)));
         }
         else
         {

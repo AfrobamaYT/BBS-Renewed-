@@ -16,6 +16,7 @@ import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
+import mchorse.bbs_mod.forms.forms.IPosedForm;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.pose.Pose;
@@ -35,6 +36,13 @@ public class FormProperties extends ValueGroup
     private static final String POSE_PROPERTY = "pose";
 
     public final Map<String, KeyframeChannel> properties = new HashMap<>();
+
+    /**
+     * Tracks whose value type this build does not have (an addon that is not loaded), kept as read
+     * and written back on save. Dropped, opening a film once without the addon and saving it took
+     * the animation with it (BBS FS e2af6c057, Wemppy4/bbs-fs, MIT).
+     */
+    private final MapType fremd = new MapType();
 
     public FormProperties(String id)
     {
@@ -162,9 +170,9 @@ public class FormProperties extends ValueGroup
             RigPropertyPath path = RigPropertyPath.parse(value.getId());
 
             if (!this.hasPoseAt(path.formPath(), tick)
-                && FormUtils.getForm(form, path.formPath()) instanceof ModelForm model)
+                && FormUtils.getForm(form, path.formPath()) instanceof IPosedForm model)
             {
-                model.pose.setRuntimeValue(null);
+                model.getPose().setRuntimeValue(null);
             }
         }
 
@@ -184,9 +192,9 @@ public class FormProperties extends ValueGroup
                     {
                         Form targetForm = FormUtils.getForm(form, formPath);
 
-                        if (targetForm instanceof ModelForm modelForm)
+                        if (targetForm instanceof IPosedForm modelForm)
                         {
-                            modelForm.pose.setRuntimeValue(null);
+                            modelForm.getPose().setRuntimeValue(null);
                         }
                     }
                 }
@@ -239,25 +247,27 @@ public class FormProperties extends ValueGroup
             String bone = poseBonePath.bone();
             Form targetForm = FormUtils.getForm(form, formPath);
 
-            if (targetForm instanceof ModelForm modelForm)
+            /* Model and mob forms alike (BBS FS e341fa733) */
+            if (targetForm instanceof IPosedForm posed)
             {
                 KeyframeSegment segment = value.find(tick);
+                mchorse.bbs_mod.settings.values.core.ValuePose pose = posed.getPose();
 
                 if (segment != null)
                 {
                     /* Copy on write */
-                    if (modelForm.pose.getRuntimeValue() == null)
+                    if (pose.getRuntimeValue() == null)
                     {
-                        modelForm.pose.setRuntimeValue(modelForm.pose.getOriginalValue().copy());
+                        pose.setRuntimeValue(pose.getOriginalValue().copy());
                     }
 
-                    PoseTransform transform = modelForm.pose.get().get(bone);
+                    PoseTransform transform = pose.get().get(bone);
                     boolean isNew = transform == null;
 
                     if (isNew)
                     {
                         transform = new PoseTransform();
-                        modelForm.pose.get().transforms.put(bone, transform);
+                        pose.get().transforms.put(bone, transform);
                     }
 
                     Transform interpolated = (Transform) this.interpolateValue(value, new PoseTransform(), segment, blend);
@@ -399,6 +409,7 @@ public class FormProperties extends ValueGroup
 
         this.removeAll();
         this.properties.clear();
+        this.fremd.keys().clear();
 
         if (!data.isMap())
         {
@@ -406,6 +417,11 @@ public class FormProperties extends ValueGroup
         }
 
         MapType map = data.asMap();
+
+        if (FsSpurListe.ist(map))
+        {
+            map = FsSpurListe.alsKarte(map.getList(FsSpurListe.TRACKS));
+        }
 
         for (String key : map.keys())
         {
@@ -467,7 +483,30 @@ public class FormProperties extends ValueGroup
                 this.properties.put(key, property);
                 this.add(property);
             }
+            else
+            {
+                this.fremd.put(key, mapType.copy());
+            }
         }
+    }
+
+    @Override
+    public BaseType toData()
+    {
+        BaseType data = super.toData();
+
+        if (data.isMap())
+        {
+            for (String key : this.fremd.keys())
+            {
+                if (!data.asMap().has(key))
+                {
+                    data.asMap().put(key, this.fremd.get(key).copy());
+                }
+            }
+        }
+
+        return data;
     }
 
     @Override

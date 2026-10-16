@@ -1,12 +1,12 @@
 package mchorse.bbs_mod.ui.framework.elements.input.text;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.ITextColoring;
 import mchorse.bbs_mod.ui.utils.UIConstants;
 import mchorse.bbs_mod.utils.Patterns;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -182,19 +182,19 @@ public class UITextbox extends UIBaseTextbox implements ITextColoring
     {
         if (this.isFocused())
         {
-            if (context.isPressed(GLFW.GLFW_KEY_TAB))
+            if (context.isPressed(InputConstants.KEY_TAB))
             {
                 context.focus(this, Window.isShiftPressed() ? -1 : 1);
 
                 return true;
             }
-            else if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+            else if (context.isPressed(InputConstants.KEY_ESCAPE))
             {
                 context.unfocus();
 
                 return true;
             }
-            else if (context.isPressed(GLFW.GLFW_KEY_ENTER) && this.delayedInput)
+            else if (context.isPressed(InputConstants.KEY_RETURN) && this.delayedInput)
             {
                 if (this.callback != null)
                 {

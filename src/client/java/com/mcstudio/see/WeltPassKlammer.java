@@ -16,13 +16,15 @@ import java.util.List;
  * exakt wieder her. Drei Handgriffe, alle aus gemessenen Fehllaeufen (2026-08-16):
  *
  * <ul>
- * <li>⛔ Besitz-Guard: haelt ein externes Werkzeug die Kamera, zeigt
- * der Sweep dessen Pose statt der Film-Fahrt — die ersten zwei E2E-Laeufe filmten genau das.
+ * <li>⛔ Besitz-Guard: haelt Blender die Kamera (LiveCameraOverride stempelt jeden Frame), zeigt
+ * der Sweep die Blender-Pose statt der Film-Fahrt — die ersten zwei E2E-Laeufe filmten genau das.
  * Laut scheitern; den Besitz still zu entziehen waere ein Besitz-Grab.</li>
  * <li>POV-Klammer: Modus 0 = Film-Kamera (Orbit aus, Runner uebernimmt) — der Sweep muss die
  * CLIP-Fahrt zeigen, egal in welchem Editor-Modus der Nutzer steht.</li>
- * <li>M1-Kern: Replays mit ModelForm MIT .bobj werden im Welt-Pass VERSTECKT; ihr Schatten
- * verschwindet mit.</li>
+ * <li>M1-Kern: Replays, die Blender rendert (ModelForm MIT .bobj — Spiegel der Addon-Import-
+ * Logik), werden im Welt-Pass VERSTECKT, sonst laegen BBS-Double und MC-Schatten unter dem
+ * Blender-Modell (gemessen: bbs_frame_0000 trug den BBS-Verity). Ihr Schatten verschwindet mit —
+ * den ersetzt Blenders Shadow Catcher.</li>
  * </ul>
  */
 final class WeltPassKlammer
@@ -39,7 +41,7 @@ final class WeltPassKlammer
 	/** Vorbedingungsfehler (Besitz-Guard) oder null. Vom Aufrufer-Thread rufen, NIE Render-Thread. */
 	static String besitzGuard()
 	{
-		if (mchorse.bbs_mod.client.Erweiterungen.kameraExtern())
+		if (com.blenderbridge.camera.CameraAuthority.get() == com.blenderbridge.camera.CameraAuthority.Owner.BLENDER)
 		{
 			return "{\"error\":\"Blender faehrt die BBS-kamera (Drive BBS camera an) — erst freigeben, "
 				+ "sonst zeigt der sweep die Blender-pose statt der film-fahrt\"}";

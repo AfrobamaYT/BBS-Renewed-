@@ -9,7 +9,6 @@ import mchorse.bbs_mod.client.renderer.entity.ActorEntityRenderer;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.model.View;
 import mchorse.bbs_mod.entity.ActorEntity;
-import mchorse.bbs_mod.forms.FormSammler;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -55,6 +54,15 @@ import org.joml.Vector3f;
  */
 public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockEntity, ModelBlockEntityRenderer.ModelBlockRenderState>
 {
+    static
+    {
+        /* While the dashboard is open or a model block is in hand, model blocks are targetable as at
+         * least a full cube even with a tiny hitbox (BBS FS 996eb0adc). Set here, the client side
+         * class every model block goes through. */
+        mchorse.bbs_mod.blocks.ModelBlock.editingCheck = () -> mchorse.bbs_mod.ui.framework.UIScreen.getCurrentMenu() instanceof mchorse.bbs_mod.ui.dashboard.UIDashboard
+            || net.minecraft.client.Minecraft.getInstance().player != null && net.minecraft.client.Minecraft.getInstance().player.getMainHandItem().is(mchorse.bbs_mod.BBSMod.MODEL_BLOCK_ITEM);
+    }
+
     private static ActorEntity entity;
 
     public static void renderShadow(SubmitNodeCollector provider, PoseStack matrices, float tickDelta, double x, double y, double z, float tx, float ty, float tz)
@@ -176,6 +184,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         BlockPos pos = entity.getBlockPos();
 
         zustand.teilTick = teilTick;
+        zustand.risse = zustand.breakProgress == null ? null : risse(entity.getShape().bounds());
         zustand.form = properties.getForm();
         zustand.bbsEntity = entity.getEntity();
         zustand.zeichnen = zustand.form != null && this.canRender(entity);
@@ -226,9 +235,41 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         }
     }
 
+    /** Form draws kept from submit for BBS' world pass, cleared there each frame. */
+    private static final java.util.List<Runnable> WELTZUEGE = new java.util.ArrayList<>();
+
+    /**
+     * Draws the model blocks kept since the last frame; called from Films.render, which runs
+     * twice per frame. Like the film actors (NativeCrowdPreparation.renderOrCollect) nothing is
+     * drawn in the collect pass: the main pass clears color and depth after it, so immediate
+     * draws there were lost -- the first version of this did exactly that.
+     */
+    public static void weltzuegeZeichnen()
+    {
+        if (mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang)
+        {
+            return;
+        }
+
+        for (Runnable zug : WELTZUEGE)
+        {
+            zug.run();
+        }
+
+        WELTZUEGE.clear();
+    }
+
     @Override
     public void submit(ModelBlockRenderState zustand, PoseStack matrices, SubmitNodeCollector vertexConsumers, CameraRenderState kamera)
     {
+        /* The block renders invisible, so vanilla's cracks have nothing to draw on: they go onto
+         * the hitbox here, through vanilla's own crumbling pass (BBS FS 996eb0adc) */
+        if (zustand.risse != null)
+        {
+            vertexConsumers.submitCrumblingOverlay(zustand.risse, matrices, net.minecraft.client.renderer.rendertype.RenderTypes.entitySolid(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS),
+                zustand.lightCoords, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, -1, zustand.breakProgress);
+        }
+
         matrices.pushPose();
         matrices.translate(0.5F, 0F, 0.5F);
 
@@ -250,16 +291,30 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
              * nichts anderes durch). Der Bruch-Fortschritt liegt in 26.2 als
              * zustand.breakProgress separat vor und ist kein Ueberlagerungs-UV mehr.
              * Es geht also nichts verloren. */
-            /* ⛔ Wie im ActorEntityRenderer: Vanillas Blockentity-Weg meldet keinen FormSammler
-             * an, ModelFormRenderer.renderArmor warf "Kein Sammler angemeldet" (2026-10-12
-             * gemessen, player/alex x187). Der Sofortzug des Modells wird hier ausserdem vom
-             * Hauptpass uebermalt — den sichtbaren Zug liefert MorphAufschub nach. */
-            FormSammler.mitSammler(vertexConsumers, () ->
-                FormUtilsClient.render(zustand.form, new FormRenderingContext()
-                    .set(FormRenderType.MODEL_BLOCK, zustand.bbsEntity, matrices, zustand.lichtOben, OverlayTexture.NO_OVERLAY, zustand.teilTick)
-                    .camera(Minecraft.getInstance().gameRenderer.mainCamera())));
-            MorphAufschub.einreichen(zustand.form, zustand.bbsEntity, FormRenderType.MODEL_BLOCK, matrices,
-                zustand.lichtOben, OverlayTexture.NO_OVERLAY, zustand.teilTick);
+            /* Not drawn here: submit runs before the level is drawn, and BBS models draw
+             * immediately -- they were painted over (task 122). The pose is kept and the form
+             * drawn in BBS' world pass with the film actors (BBSRendering.renderCoolStuff). */
+            Form form = zustand.form;
+            IEntity bbsEntity = zustand.bbsEntity;
+            int licht = zustand.lichtOben;
+            float teilTick = zustand.teilTick;
+            PoseStack.Pose pose = matrices.last().copy();
+
+            /* Bounded: should the draw pass ever not run, the list must not grow. */
+            if (WELTZUEGE.size() > 4096)
+            {
+                WELTZUEGE.clear();
+            }
+
+            WELTZUEGE.add(() ->
+            {
+                PoseStack stapel = new PoseStack();
+
+                stapel.last().set(pose);
+                FormUtilsClient.render(form, new FormRenderingContext()
+                    .set(FormRenderType.MODEL_BLOCK, bbsEntity, stapel, licht, OverlayTexture.NO_OVERLAY, teilTick)
+                    .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
+            });
 
             if (zustand.achsen)
             {
@@ -466,6 +521,14 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
      * <p>⚠️ Nur {@link #extractRenderState} fuellt diese Felder; Zustandsobjekte werden
      * wiederverwendet, ein nicht gesetztes Feld traegt den Wert des vorherigen Bildes.
      */
+    /** One cube over the hitbox, in the model units (1/16 block) a model part takes */
+    private static net.minecraft.client.model.geom.ModelPart risse(net.minecraft.world.phys.AABB box)
+    {
+        return new net.minecraft.client.model.geom.ModelPart(java.util.List.of(new net.minecraft.client.model.geom.ModelPart.Cube(0, 0,
+            (float) box.minX * 16F, (float) box.minY * 16F, (float) box.minZ * 16F, (float) box.getXsize() * 16F, (float) box.getYsize() * 16F, (float) box.getZsize() * 16F,
+            0F, 0F, 0F, false, 16F, 16F, java.util.EnumSet.allOf(net.minecraft.core.Direction.class))), java.util.Map.of());
+    }
+
     public static class ModelBlockRenderState extends BlockEntityRenderState
     {
         public Form form;
@@ -478,6 +541,9 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         public int lichtOben;
 
         public float teilTick;
+
+        /** A box at the hitbox for the mining cracks, only while the block is being broken */
+        public net.minecraft.client.model.geom.ModelPart risse;
 
         /** Ob die Form ueberhaupt gezeichnet wird (Einstellungen + Editor-Zustand). */
         public boolean zeichnen;

@@ -16,9 +16,9 @@ import java.util.function.Consumer;
  */
 public abstract class UIKeyframePropTransform extends UIDeltaPropTransform
 {
-    protected abstract void applyDuringRecording(int tick, Consumer<Transform> consumer);
+    protected abstract void applyDuringRecording(float tick, Consumer<Transform> consumer);
 
-    protected Transform getRecordedTransform(int tick)
+    protected Transform getRecordedTransform(float tick)
     {
         return null;
     }
@@ -50,11 +50,11 @@ public abstract class UIKeyframePropTransform extends UIDeltaPropTransform
         return panel != null && panel.getController().isTransformRecording();
     }
 
-    protected int getRecordingTick()
+    protected float getRecordingTick()
     {
         UIFilmPanel panel = this.getPanel();
 
-        return panel == null ? 0 : panel.getCursor();
+        return panel == null ? 0 : panel.getCursor(0F);
     }
 
     @Override

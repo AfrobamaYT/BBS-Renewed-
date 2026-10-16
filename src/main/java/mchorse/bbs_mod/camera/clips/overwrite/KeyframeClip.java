@@ -68,25 +68,25 @@ public class KeyframeClip extends CameraClip
 
         if (this.additive.get())
         {
-            if (!this.x.isEmpty()) position.point.x += this.x.interpolate(0F) - this.x.interpolate(t);
-            if (!this.y.isEmpty()) position.point.y += this.y.interpolate(0F) - this.y.interpolate(t);
-            if (!this.z.isEmpty()) position.point.z += this.z.interpolate(0F) - this.z.interpolate(t);
-            if (!this.yaw.isEmpty()) position.angle.yaw     += this.yaw.interpolate(0F).floatValue()   - this.yaw.interpolate(t).floatValue();
-            if (!this.pitch.isEmpty()) position.angle.pitch += this.pitch.interpolate(0F).floatValue() - this.pitch.interpolate(t).floatValue();
-            if (!this.roll.isEmpty()) position.angle.roll   += this.roll.interpolate(0F).floatValue()  - this.roll.interpolate(t).floatValue();
-            if (!this.fov.isEmpty()) position.angle.fov     += this.fov.interpolate(0F).floatValue()   - this.fov.interpolate(t).floatValue();
+            if (this.x.hasEnabledKeyframes()) position.point.x += this.x.interpolate(0F) - this.x.interpolate(t);
+            if (this.y.hasEnabledKeyframes()) position.point.y += this.y.interpolate(0F) - this.y.interpolate(t);
+            if (this.z.hasEnabledKeyframes()) position.point.z += this.z.interpolate(0F) - this.z.interpolate(t);
+            if (this.yaw.hasEnabledKeyframes()) position.angle.yaw     += this.yaw.interpolate(0F).floatValue()   - this.yaw.interpolate(t).floatValue();
+            if (this.pitch.hasEnabledKeyframes()) position.angle.pitch += this.pitch.interpolate(0F).floatValue() - this.pitch.interpolate(t).floatValue();
+            if (this.roll.hasEnabledKeyframes()) position.angle.roll   += this.roll.interpolate(0F).floatValue()  - this.roll.interpolate(t).floatValue();
+            if (this.fov.hasEnabledKeyframes()) position.angle.fov     += this.fov.interpolate(0F).floatValue()   - this.fov.interpolate(t).floatValue();
         }
         else
         {
-            if (!this.x.isEmpty()) position.point.x = this.x.interpolate(t);
-            if (!this.y.isEmpty()) position.point.y = this.y.interpolate(t);
-            if (!this.z.isEmpty()) position.point.z = this.z.interpolate(t);
-            if (!this.yaw.isEmpty()) position.angle.yaw = this.yaw.interpolate(t).floatValue();
-            if (!this.pitch.isEmpty()) position.angle.pitch = this.pitch.interpolate(t).floatValue();
-            if (!this.roll.isEmpty()) position.angle.roll = this.roll.interpolate(t).floatValue();
-            if (!this.fov.isEmpty()) position.angle.fov = this.fov.interpolate(t).floatValue();
+            if (this.x.hasEnabledKeyframes()) position.point.x = this.x.interpolate(t);
+            if (this.y.hasEnabledKeyframes()) position.point.y = this.y.interpolate(t);
+            if (this.z.hasEnabledKeyframes()) position.point.z = this.z.interpolate(t);
+            if (this.yaw.hasEnabledKeyframes()) position.angle.yaw = this.yaw.interpolate(t).floatValue();
+            if (this.pitch.hasEnabledKeyframes()) position.angle.pitch = this.pitch.interpolate(t).floatValue();
+            if (this.roll.hasEnabledKeyframes()) position.angle.roll = this.roll.interpolate(t).floatValue();
+            if (this.fov.hasEnabledKeyframes()) position.angle.fov = this.fov.interpolate(t).floatValue();
 
-            if (!this.distance.isEmpty())
+            if (this.distance.hasEnabledKeyframes())
             {
                 double distance = this.distance.interpolate(t);
 

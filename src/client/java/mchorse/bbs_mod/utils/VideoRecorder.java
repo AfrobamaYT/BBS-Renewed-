@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.utils;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.renderpearl.api.textures.GpuTexture;
+import mchorse.bbs_mod.graphics.GpuReadback;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
@@ -8,9 +9,6 @@ import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import net.minecraft.client.Minecraft;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
 import sun.misc.Unsafe;
 
@@ -25,6 +23,8 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -36,11 +36,12 @@ public class VideoRecorder
     private WritableByteChannel channel;
     private boolean recording;
 
-    private ByteBuffer buffer;
-    private int textureId = -1;
+    private GpuTexture texture;
     private int textureWidth;
     private int textureHeight;
     private int counter;
+    private int writtenFrames;
+    private final Deque<GpuReadback.Request> pending = new ArrayDeque<>();
 
     public int serverTicks;
     public int lastServerTicks;
@@ -50,9 +51,9 @@ public class VideoRecorder
         return this.recording;
     }
 
-    public int getTextureId()
+    public GpuTexture getTexture()
     {
-        return this.textureId;
+        return this.texture;
     }
 
     public int getCounter()
@@ -60,13 +61,10 @@ public class VideoRecorder
         return this.counter;
     }
 
-    private int[] pbos;
-    private int pboIndex;
-
     /**
      * Start recording the video using ffmpeg
      */
-    public void startRecording(String movieName, File audioFile, int textureId, int width, int height)
+    public void startRecording(String movieName, File audioFile, GpuTexture texture, int width, int height)
     {
         if (this.recording)
         {
@@ -74,16 +72,18 @@ public class VideoRecorder
         }
 
         this.counter = 0;
-        this.textureId = textureId;
+        if (texture == null || texture.isClosed() || texture.getWidth(0) != width || texture.getHeight(0) != height)
+        {
+            throw new IllegalArgumentException("Video capture requires its exact live GPU texture dimensions");
+        }
+
+        GpuReadback.requireRgba8Convertible(texture.getFormat());
+        this.texture = texture;
         this.textureWidth = width;
         this.textureHeight = height;
 
-        int size = width * height * 3;
-
-        if (this.buffer == null)
-        {
-            this.buffer = MemoryUtil.memAlloc(size);
-        }
+        this.writtenFrames = 0;
+        this.pending.clear();
 
         try
         {
@@ -128,7 +128,40 @@ public class VideoRecorder
             /* Tokens are substituted after splitting, so a movie name or an audio path
              * with spaces stays a single argument. ProcessBuilder passes quote characters
              * literally, so they must not be added around paths either. */
-            for (String arg : params.split(" "))
+            /* Liefert die GPU RGBA8 und erwartet die Eingabe bgr24 (Standard-Argumente), bekommt
+             * ffmpeg die Rohdaten als rgba und wandelt selbst um. Die Java-Schleife in bgr8() kostete
+             * bei 4K60 74 % der Exportzeit (JFR, 2026-10-14); eigene Argumente ohne bgr24 behalten
+             * den alten Weg. */
+            String[] teile = params.split(" ");
+
+            boolean roh = false;
+
+            if (this.texture.getFormat() == com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM)
+            {
+                for (int i = 0; i + 1 < teile.length; i++)
+                {
+                    if (teile[i].equals("-pix_fmt") && teile[i + 1].equals("bgr24"))
+                    {
+                        teile[i + 1] = "rgba";
+                        roh = true;
+
+                        break;
+                    }
+                }
+            }
+
+            VideoRohRgba.setzen(this, roh);
+
+            if (roh)
+            {
+                VideoReadbackRing.start(this, texture, width, height);
+            }
+            else
+            {
+                VideoReadbackRing.close(this);
+            }
+
+            for (String arg : teile)
             {
                 if (arg.isEmpty())
                 {
@@ -150,31 +183,6 @@ public class VideoRecorder
             }
 
             System.out.println("Recording video with following arguments: " + args);
-
-            /**
-             * macOS reads the frame synchronously straight into {@link #buffer} (see
-             * {@link #recordFrameDirect()}); the asynchronous PBO pipeline below misbehaves
-             * there and produces pitch-black footage, so we only set it up off macOS.
-             */
-            if (OS.CURRENT == OS.MACOS)
-            {
-                this.pbos = null;
-            }
-            else
-            {
-                this.pbos = new int[2];
-                this.pboIndex = 0;
-
-                for (int i = 0; i < 2; i++)
-                {
-                    this.pbos[i] = GL30.glGenBuffers();
-
-                    GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, this.pbos[i]);
-                    GL30.glBufferData(GL30.GL_PIXEL_PACK_BUFFER, size, GL30.GL_STREAM_READ);
-                }
-
-                GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, 0);
-            }
 
             ProcessBuilder builder = new ProcessBuilder(args);
             File log = path.resolve(movieName.concat(".log")).toFile();
@@ -214,21 +222,20 @@ public class VideoRecorder
                 }
             }
 
-            this.channel = Channels.newChannel(os);
-
-            if (Minecraft.getInstance().getDeltaTracker() instanceof mchorse.bbs_mod.mixin.client.RenderTickCounterAccessor timer)
-            {
-                timer.bbs$setTickDelta(0F);
-                timer.bbs$setDeltaTicks(0F);
-            }
-
+            /* A FileChannel writes a direct buffer in one call; Channels.newChannel copied every
+             * frame through an 8 KB heap array first. */
+            this.channel = os instanceof java.io.FileOutputStream file ? file.getChannel() : Channels.newChannel(os);
             this.recording = true;
+            /* A mid-frame start must wait for the recording timer to prepare its first image. */
+            BBSRendering.canRender = false;
 
             UIUtils.playClick(2F);
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            VideoReadbackRing.close(this);
+            this.texture = null;
+            throw new IllegalStateException("Could not start the video encoder", e);
         }
 
         this.serverTicks = this.lastServerTicks = 0;
@@ -254,53 +261,24 @@ public class VideoRecorder
             return;
         }
 
-        if (this.pbos != null)
+        RuntimeException failure = null;
+        try
         {
-            if (this.counter > 0)
+            this.drain(true);
+            if (this.writtenFrames != this.counter)
             {
-                GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, this.pbos[1 - this.pboIndex]);
-                ByteBuffer pending = GL30.glMapBuffer(GL30.GL_PIXEL_PACK_BUFFER, GL30.GL_READ_ONLY);
-
-                try
-                {
-                    if (pending == null)
-                    {
-                        throw new IOException("Cannot read the final recorded frame");
-                    }
-
-                    while (pending.hasRemaining())
-                    {
-                        this.channel.write(pending);
-                    }
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-                finally
-                {
-                    if (pending != null)
-                    {
-                        GL30.glUnmapBuffer(GL30.GL_PIXEL_PACK_BUFFER);
-                    }
-                    GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, 0);
-                }
-            }
-
-            for (int pbo : this.pbos)
-            {
-                GL30.glDeleteBuffers(pbo);
+                throw new IllegalStateException("Video frame drain incomplete: " + this.writtenFrames + "/" + this.counter);
             }
         }
-
-        this.pbos = null;
-        this.textureId = -1;
-
-        if (this.buffer != null)
+        catch (RuntimeException error)
         {
-            MemoryUtil.memFree(this.buffer);
-
-            this.buffer = null;
+            failure = error;
+        }
+        finally
+        {
+            while (!this.pending.isEmpty()) this.pending.removeFirst().close();
+            VideoReadbackRing.close(this);
+            this.texture = null;
         }
 
         try
@@ -314,14 +292,21 @@ public class VideoRecorder
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
+            failure = new IllegalStateException("Could not close the video encoder input", ex);
         }
 
         try
         {
             if (this.process != null)
             {
-                this.process.waitFor(1, TimeUnit.MINUTES);
+                if (!this.process.waitFor(1, TimeUnit.MINUTES))
+                {
+                    failure = new IllegalStateException("Video encoder did not finish within one minute");
+                }
+                else if (this.process.exitValue() != 0)
+                {
+                    failure = new IllegalStateException("Video encoder exited with code " + this.process.exitValue());
+                }
                 this.process.destroy();
             }
 
@@ -329,17 +314,20 @@ public class VideoRecorder
         }
         catch (InterruptedException ex)
         {
-            ex.printStackTrace();
+            Thread.currentThread().interrupt();
+            failure = new IllegalStateException("Video finalization interrupted", ex);
         }
 
         this.recording = false;
+        this.serverTicks = this.lastServerTicks = 0;
+
+        if (failure != null) throw failure;
 
         if (finishEffects)
         {
             this.playFinishEffects();
         }
 
-        this.serverTicks = this.lastServerTicks = 0;
     }
 
     /**
@@ -372,89 +360,85 @@ public class VideoRecorder
             return;
         }
 
-        if (OS.CURRENT == OS.MACOS)
+        VideoReadbackRing ring = VideoReadbackRing.get(this);
+
+        if (ring != null)
         {
-            this.recordFrameDirect();
-        }
-        else
-        {
-            this.recordFramePBO();
-        }
-
-        this.counter += 1;
-    }
-
-    /**
-     * Asynchronous read-back path (Windows/Linux): {@code glGetTexImage} into a ping-pong
-     * pair of pixel pack buffers, mapping the previously filled buffer to overlap GPU
-     * read-back with the CPU-side write to ffmpeg.
-     */
-    private void recordFramePBO()
-    {
-        try
-        {
-            int pbo = this.pboIndex;
-            int nextPbo = (this.pboIndex + 1) % this.pbos.length;
-
-            GL30.glPixelStorei(GL30.GL_PACK_ALIGNMENT, 1);
-            GL30.glPixelStorei(GL30.GL_PACK_ROW_LENGTH, 0);
-            GL30.glPixelStorei(GL30.GL_PACK_SKIP_ROWS, 0);
-            GL30.glPixelStorei(GL30.GL_PACK_SKIP_PIXELS, 0);
-            GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, this.pbos[pbo]);
-            GlStateManager._bindTexture(this.textureId);
-            GL30.glGetTexImage(GL30.GL_TEXTURE_2D, 0, GL30.GL_BGR, GL30.GL_UNSIGNED_BYTE, 0);
-
-            GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, this.pbos[nextPbo]);
-
-            ByteBuffer mappedBuffer = GL30.glMapBuffer(GL30.GL_PIXEL_PACK_BUFFER, GL30.GL_READ_ONLY);
-
-            if (mappedBuffer != null && this.counter != 0)
+            try
             {
-                this.channel.write(mappedBuffer);
+                this.writtenFrames += ring.record(this.texture, this.textureWidth, this.textureHeight, this.channel);
+            }
+            catch (IOException error)
+            {
+                throw new IllegalStateException("Could not write video frame " + this.writtenFrames, error);
             }
 
-            GL30.glUnmapBuffer(GL30.GL_PIXEL_PACK_BUFFER);
-            GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, 0);
+            this.counter++;
 
-            this.pboIndex = nextPbo;
+            return;
         }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+
+        this.drain(false);
+        if (this.pending.size() >= 2) this.drain(true);
+        this.pending.addLast(GpuReadback.requestRaw(this.texture,
+            new GpuReadback.Region(0, 0, this.textureWidth, this.textureHeight)));
+        this.counter++;
     }
 
     /**
-     * Synchronous read-back path (macOS): {@code glGetTexImage} straight into {@link #buffer}
-     * and write it to ffmpeg. Simpler and stalls the render thread, but avoids the
-     * pixel-pack-buffer path that renders black on macOS.
+     * Drain in issue order. Stop waits for every queued frame before closing ffmpeg.
      */
-    private void recordFrameDirect()
+    private void drain(boolean wait)
     {
-        this.buffer.clear();
+        VideoReadbackRing ring = VideoReadbackRing.get(this);
 
-        GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, 1);
-        GL11.glPixelStorei(GL12.GL_PACK_ROW_LENGTH, 0);
-        GL11.glPixelStorei(GL11.GL_PACK_SKIP_ROWS, 0);
-        GL11.glPixelStorei(GL11.GL_PACK_SKIP_PIXELS, 0);
-        GlStateManager._bindTexture(this.textureId);
-        GL11.glGetTexImage(GL11.GL_TEXTURE_2D, 0, GL12.GL_BGR, GL11.GL_UNSIGNED_BYTE, this.buffer);
-        this.buffer.rewind();
-
-        try
+        if (ring != null)
         {
-            this.channel.write(this.buffer);
+            try
+            {
+                this.writtenFrames += ring.drain(wait, this.channel);
+            }
+            catch (IOException error)
+            {
+                throw new IllegalStateException("Could not write video frame " + this.writtenFrames, error);
+            }
+
+            return;
         }
-        catch (Exception e)
+
+        while (!this.pending.isEmpty())
         {
-            e.printStackTrace();
+            GpuReadback.Request request = this.pending.peekFirst();
+            GpuReadback.Raw raw = wait ? request.await() : request.poll();
+            if (raw == null) return;
+            this.pending.removeFirst();
+            ByteBuffer bgr = null;
+
+            try (request; raw)
+            {
+                ByteBuffer daten = VideoRohRgba.an(this) ? raw.data() : (bgr = raw.bgr8(GpuReadback.Origin.NATIVE));
+                while (daten.hasRemaining())
+                {
+                    int count = this.channel.write(daten);
+                    if (count <= 0) throw new IOException("Video encoder input made no progress");
+                }
+                this.writtenFrames++;
+            }
+            catch (IOException error)
+            {
+                throw new IllegalStateException("Could not write video frame " + this.writtenFrames, error);
+            }
+            finally
+            {
+                if (bgr != null) MemoryUtil.memFree(bgr);
+            }
         }
     }
 
     /**
      * Toggle recording of the video
      */
-    public void toggleRecording(int textureId, int textureWidth, int textureHeight)
+    public void toggleRecording(GpuTexture texture, int textureWidth, int textureHeight)
     {
         if (this.recording)
         {
@@ -462,7 +446,7 @@ public class VideoRecorder
         }
         else
         {
-            this.startRecording(StringUtils.createTimestampFilename(), null, textureId, textureWidth, textureHeight);
+            this.startRecording(StringUtils.createTimestampFilename(), null, texture, textureWidth, textureHeight);
         }
 
         UIUtils.playClick();

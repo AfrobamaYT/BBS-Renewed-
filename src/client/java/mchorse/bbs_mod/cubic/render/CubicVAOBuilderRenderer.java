@@ -10,13 +10,11 @@ import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.data.model.ModelMesh;
 import mchorse.bbs_mod.cubic.data.model.ModelQuad;
 import mchorse.bbs_mod.cubic.data.model.ModelVertex;
-import mchorse.bbs_mod.utils.CollectionUtils;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,9 +49,11 @@ public class CubicVAOBuilderRenderer implements ICubicRenderer
     /** Accumulated triangle data for a single material within a group. */
     private static class MaterialBucket
     {
-        private final List<Float> vertices = new ArrayList<>();
-        private final List<Float> normals = new ArrayList<>();
-        private final List<Float> uvs = new ArrayList<>();
+        /* Primitive lists: boxed List<Float> took ~0.9 GB at the peak for a 1.94 M triangle OBJ
+         * and was where the 2 GB OOM stack ended (audit 2026-10-14 #135-138). */
+        private final it.unimi.dsi.fastutil.floats.FloatArrayList vertices = new it.unimi.dsi.fastutil.floats.FloatArrayList();
+        private final it.unimi.dsi.fastutil.floats.FloatArrayList normals = new it.unimi.dsi.fastutil.floats.FloatArrayList();
+        private final it.unimi.dsi.fastutil.floats.FloatArrayList uvs = new it.unimi.dsi.fastutil.floats.FloatArrayList();
     }
 
     @Override
@@ -74,12 +74,14 @@ public class CubicVAOBuilderRenderer implements ICubicRenderer
         }
 
         /* Split a group's geometry by material so each material can be drawn with its own
-         * texture: cubes belong to the default material (""), meshes to their own. */
+         * texture: a cube or a mesh belongs to the material it names, the default ("") otherwise. */
         Map<String, MaterialBucket> buckets = new LinkedHashMap<>();
 
         for (ModelCube cube : group.cubes)
         {
-            this.renderCube(buckets.computeIfAbsent("", (k) -> new MaterialBucket()), stack, group, cube);
+            String material = cube.material == null ? "" : cube.material;
+
+            this.renderCube(buckets.computeIfAbsent(material, (k) -> new MaterialBucket()), stack, group, cube);
         }
 
         for (ModelMesh mesh : group.meshes)
@@ -100,9 +102,9 @@ public class CubicVAOBuilderRenderer implements ICubicRenderer
                 continue;
             }
 
-            float[] v = CollectionUtils.toArray(bucket.vertices);
-            float[] n = CollectionUtils.toArray(bucket.normals);
-            float[] u = CollectionUtils.toArray(bucket.uvs);
+            float[] v = bucket.vertices.toFloatArray();
+            float[] n = bucket.normals.toFloatArray();
+            float[] u = bucket.uvs.toFloatArray();
             float[] t = BBSRendering.calculateTangents(v, n, u);
 
             groupVaos.put(entry.getKey(), new ModelVAO(new ModelVAOData(v, n, t, u)));

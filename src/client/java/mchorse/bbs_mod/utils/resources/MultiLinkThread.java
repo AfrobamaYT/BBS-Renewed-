@@ -98,7 +98,6 @@ public class MultiLinkThread implements Runnable
                 {
                     Texture newTexture = BBSModClient.getTextures().createTexture(location);
 
-                    newTexture.bind();
                     newTexture.uploadTexture(pixels);
 
                     if (newTexture.isMipmap())

@@ -1,7 +1,8 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
+#include <minecraft:dynamictransforms.glsl>
+#include <minecraft:projection.glsl>
 
 /* Die unbeschattete Zwillingsvariante von model.vsh -- gleiche drei Vertexbindungen
  * (Position an 0, Normale an 1, UV0 an 2), aber KEIN Richtungslicht.
@@ -20,11 +21,11 @@
  * Attribut kostet nichts: die Belegung passiert ueber glBindAttribLocation VOR dem Linken,
  * ein Name, den das Programm nicht kennt, laeuft ins Leere. */
 
-in vec3 Position;
-in vec2 UV0;
+layout(location = 0) in vec3 Position;
+layout(location = 2) in vec2 UV0;
 
-out vec2 texCoord0;
-out vec4 vertexColor;
+layout(location = 0) out vec2 texCoord0;
+layout(location = 1) out vec4 vertexColor;
 
 void main()
 {

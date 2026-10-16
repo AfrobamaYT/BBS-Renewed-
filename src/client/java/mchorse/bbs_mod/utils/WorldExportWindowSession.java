@@ -2,7 +2,9 @@ package mchorse.bbs_mod.utils;
 
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLVideo;
+import org.lwjgl.sdl.SDLError;
+import org.lwjgl.system.MemoryStack;
 
 public class WorldExportWindowSession
 {
@@ -27,7 +29,7 @@ public class WorldExportWindowSession
 
         if (this.snapshot.maximized)
         {
-            GLFW.glfwRestoreWindow(handle);
+            require(SDLVideo.SDL_RestoreWindow(handle));
         }
 
         if (window.getScreenWidth() != width || window.getScreenHeight() != height)
@@ -66,7 +68,7 @@ public class WorldExportWindowSession
 
             if (this.snapshot.maximized)
             {
-                GLFW.glfwMaximizeWindow(handle);
+                require(SDLVideo.SDL_MaximizeWindow(handle));
             }
         }
 
@@ -85,7 +87,7 @@ public class WorldExportWindowSession
 
         if (position.x != this.snapshot.x || position.y != this.snapshot.y)
         {
-            GLFW.glfwSetWindowPos(handle, this.snapshot.x, this.snapshot.y);
+            require(SDLVideo.SDL_SetWindowPosition(handle, this.snapshot.x, this.snapshot.y));
         }
     }
 
@@ -111,8 +113,9 @@ public class WorldExportWindowSession
         private static WindowSnapshot capture(Window window, long handle)
         {
             Position position = Position.capture(handle);
-            boolean maximized = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_MAXIMIZED) == GLFW.GLFW_TRUE;
-            boolean fullscreen = GLFW.glfwGetWindowMonitor(handle) != 0L;
+            long flags = SDLVideo.SDL_GetWindowFlags(handle);
+            boolean maximized = (flags & SDLVideo.SDL_WINDOW_MAXIMIZED) != 0L;
+            boolean fullscreen = (flags & SDLVideo.SDL_WINDOW_FULLSCREEN) != 0L;
 
             return new WindowSnapshot(window.getScreenWidth(), window.getScreenHeight(), position.x, position.y, maximized, fullscreen);
         }
@@ -131,12 +134,23 @@ public class WorldExportWindowSession
 
         private static Position capture(long handle)
         {
-            int[] x = new int[1];
-            int[] y = new int[1];
+            try (MemoryStack stack = MemoryStack.stackPush())
+            {
+                java.nio.IntBuffer x = stack.mallocInt(1);
+                java.nio.IntBuffer y = stack.mallocInt(1);
 
-            GLFW.glfwGetWindowPos(handle, x, y);
+                require(SDLVideo.SDL_GetWindowPosition(handle, x, y));
 
-            return new Position(x[0], y[0]);
+                return new Position(x.get(0), y.get(0));
+            }
+        }
+    }
+
+    private static void require(boolean success)
+    {
+        if (!success)
+        {
+            throw new IllegalStateException("Cannot update export window: " + SDLError.SDL_GetError());
         }
     }
 }

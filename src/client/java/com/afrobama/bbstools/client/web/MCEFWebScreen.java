@@ -8,7 +8,7 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -138,7 +138,7 @@ public class MCEFWebScreen extends Screen
 
         Matrix4f matrix = new Matrix4f().mul(context.pose());
         Tesselator tessellator = Tesselator.getInstance();
-        BufferBuilder buffer = tessellator.begin(com.mojang.blaze3d.PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        BufferBuilder buffer = tessellator.begin(com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 
         buffer.addVertex(matrix, 0F, this.height, 0F).setUv(0F, 1F).setColor(255, 255, 255, 255);
         buffer.addVertex(matrix, this.width, this.height, 0F).setUv(1F, 1F).setColor(255, 255, 255, 255);

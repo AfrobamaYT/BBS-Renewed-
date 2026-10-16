@@ -3,6 +3,15 @@ package mchorse.bbs_mod.forms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
+import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
+import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.graphics.Zeichenziel;
+import java.util.Optional;
+import java.util.OptionalDouble;
 
 /**
  * Der Sammler, in den Formen gerade ihre Zeichenauftraege einreichen.
@@ -167,7 +176,7 @@ public final class FormSammler
          *
          * ⚠️ Sichern und zuruecksetzen ist Pflicht: nach diesem Aufruf zeichnet der
          * GUI-Durchgang weiter, und ein haengengebliebener Lichtblock faerbt alles Folgende. */
-        com.mojang.blaze3d.buffers.GpuBufferSlice gesichertesLicht =
+        com.mojang.renderpearl.api.buffers.GpuBufferSlice gesichertesLicht =
             com.mojang.blaze3d.systems.RenderSystem.getShaderLights();
 
         mchorse.bbs_mod.graphics.UiLicht.ansichtLoeschen();
@@ -175,7 +184,25 @@ public final class FormSammler
 
         try
         {
-            Minecraft.getInstance().gameRenderer.featureRenderDispatcher().renderAllFeatures(eigener);
+            FeatureRenderDispatcher dispatcher = Minecraft.getInstance().gameRenderer.featureRenderDispatcher();
+            RenderTarget target = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+            GpuTextureView color = Zeichenziel.eigenes() ? Zeichenziel.farbe()
+                : BBSRendering.outputColorTextureOverride != null
+                    ? BBSRendering.outputColorTextureOverride : target.getColorTextureView();
+            GpuTextureView depth = Zeichenziel.eigenes() ? Zeichenziel.tiefe()
+                : BBSRendering.outputColorTextureOverride != null
+                    ? BBSRendering.outputDepthTextureOverride : target.getDepthTextureView();
+
+            try (FeatureRenderDispatcher.PreparedFrame frame = dispatcher.prepareFrame(eigener);
+                RenderPass pass = depth == null
+                    ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                        () -> "bbs-form-preview", color, Optional.empty())
+                    : RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                        () -> "bbs-form-preview", color, Optional.empty(), depth, OptionalDouble.empty()))
+            {
+                RenderSystem.bindDefaultUniforms(pass);
+                FeatureRenderDispatcher.renderAllFeatures(pass, frame);
+            }
         }
         finally
         {
@@ -213,8 +240,8 @@ public final class FormSammler
                     : haupt.getDepthTexture().getWidth(0) + "x" + haupt.getDepthTexture().getHeight(0))
                 + " | fenster=" + Minecraft.getInstance().getWindow().getWidth()
                 + "x" + Minecraft.getInstance().getWindow().getHeight()
-                + " | umleitung farbe=" + (com.mojang.blaze3d.systems.RenderSystem.outputColorTextureOverride == null ? "keine" : "gesetzt")
-                + " tiefe=" + (com.mojang.blaze3d.systems.RenderSystem.outputDepthTextureOverride == null ? "keine" : "gesetzt"));
+                + " | umleitung farbe=" + (BBSRendering.outputColorTextureOverride == null ? "keine" : "gesetzt")
+                + " tiefe=" + (BBSRendering.outputDepthTextureOverride == null ? "keine" : "gesetzt"));
         }
         catch (Exception e)
         {

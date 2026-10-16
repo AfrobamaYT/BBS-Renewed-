@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements.utils;
 
 import mchorse.bbs_mod.graphics.InverseView;
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -452,7 +452,13 @@ public abstract class UIModelRenderer extends UIElement
 
     protected void setupViewport(UIContext context)
     {
-        GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+        /* Raw GL without a GL context under Vulkan: LWJGL aborted the JVM ~12 s after opening the
+         * form, model or particle editor, no crash report (audit 2026-10-13). The model draws in
+         * its own picture-in-picture pass, which brings its own depth. */
+        if (mchorse.bbs_mod.graphics.GpuBackend.isOpenGl())
+        {
+            GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+        }
 
         int[] viewport = UIUtils.viewportArea(this.area);
 

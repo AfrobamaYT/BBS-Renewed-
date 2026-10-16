@@ -64,6 +64,13 @@ public final class DragStrategyFactory
 
     public static DragStrategy create(DragContext ctx, TransformOp op, Axis axis, Axis axis2, Variant variant, boolean hotkeyMode)
     {
+        /* Simple keyboard transformation: a hotkey edit moves the channels straight by the cursor,
+         * no ray, no space cycle; dragging the gizmo itself is unaffected (BBS FS b89d70e0b) */
+        if (hotkeyMode && BBSSettings.simpleKeyboardTransform.get())
+        {
+            return new AdditiveDrag(ctx, op, axis, axis2, variant == Variant.UNIFORM_SCALE, true);
+        }
+
         boolean rayAllowed = (!hotkeyMode || BBSSettings.transformHotkeys3dRay.get()) && ctx.drag() != null;
 
         /* Blenders Skalier-Mathe (2D-Distanz-Verhaeltnis zum Pivot) fuer die

@@ -1,6 +1,6 @@
 package com.afrobama.blendertransform;
 
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.afrobama.bbstools.client.fracture.FractureRenderContext;
 import com.afrobama.bbstools.client.fracture.FracturedBoneRegistry;
 import com.afrobama.bbstools.client.mixin.BOBJModelVAOAccessor;

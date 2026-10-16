@@ -1,16 +1,16 @@
 package mchorse.bbs_mod.cubic.render.vao;
 
-import com.mojang.blaze3d.GpuFormat;
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.pipeline.BindGroupLayout;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
+import com.mojang.renderpearl.api.pipeline.BlendFunction;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.pipeline.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSMod;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.resources.Identifier;
@@ -66,6 +66,24 @@ public final class ModelVAOPipeline
 {
     /** Name des eigenen Uniform-Blocks. Muss wortgleich im GLSL stehen. */
     public static final String MODELL_BLOCK = "ModelInfo";
+    private static final VertexFormat FORMAT_MODELL_VERSCHRAENKT = eigenesModellformat();
+
+    private static VertexFormat eigenesModellformat()
+    {
+        /* BBS packs the original entity fields, independent of shader-engine identity hooks. */
+        VertexFormat.Builder builder = VertexFormat.builder(DefaultVertexFormat.ENTITY.getStepRate());
+        java.util.List<com.mojang.renderpearl.api.vertex.VertexFormatElement> elements = DefaultVertexFormat.ENTITY.getElements();
+        for (int index = 0; index < elements.size(); index++)
+        {
+            com.mojang.renderpearl.api.vertex.VertexFormatElement element = elements.get(index);
+            int end = index + 1 < elements.size() ? elements.get(index + 1).offset() : DefaultVertexFormat.ENTITY.getVertexSize();
+            builder.addAttribute(element.name(), element.offset(), end - element.offset(), element.format(), 1);
+        }
+        VertexFormat format = builder.build();
+        if (format == DefaultVertexFormat.ENTITY || !format.equals(DefaultVertexFormat.ENTITY))
+            throw new IllegalStateException("BBS model format does not preserve the actual entity layout");
+        return format;
+    }
 
     /**
      * Die Vertex-Bindungen, eine je Puffer. Die Nummern sind der Vertrag zwischen
@@ -123,9 +141,9 @@ public final class ModelVAOPipeline
      */
     public static final BindGroupLayout GRUPPE_MODELL = BindGroupLayout.builder()
         .withUniform(MODELL_BLOCK, UniformType.UNIFORM_BUFFER)
-        .withSampler("Sampler0")
-        .withSampler("Sampler1")
-        .withSampler("Sampler2")
+        .withUniform("Sampler0", UniformType.COMBINED_IMAGE_SAMPLER)
+        .withUniform("Sampler1", UniformType.COMBINED_IMAGE_SAMPLER)
+        .withUniform("Sampler2", UniformType.COMBINED_IMAGE_SAMPLER)
         .build();
 
     private static final BindGroupLayout GRUPPE_SKIN = BindGroupLayout.builder()
@@ -375,7 +393,7 @@ public final class ModelVAOPipeline
 
         if (verschraenkt)
         {
-            bauer.withVertexBinding(0, DefaultVertexFormat.ENTITY);
+            bauer.withVertexBinding(0, FORMAT_MODELL_VERSCHRAENKT);
         }
         else
         {

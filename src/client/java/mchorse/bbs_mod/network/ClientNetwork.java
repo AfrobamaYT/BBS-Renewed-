@@ -66,6 +66,7 @@ public class ClientNetwork
 
     public static void setup()
     {
+        mchorse.bbs_mod.client.ModelBlockUmwandlungClient.register();
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.idFor(ServerNetwork.CLIENT_CLICKED_MODEL_BLOCK_PACKET), (payload, context) -> handleClientModelBlockPacket(context.client(), payload.asPacketByteBuf()));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.idFor(ServerNetwork.CLIENT_PLAYER_FORM_PACKET), (payload, context) -> handlePlayerFormPacket(context.client(), payload.asPacketByteBuf()));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.idFor(ServerNetwork.CLIENT_PLAY_FILM_PACKET), (payload, context) -> handlePlayFilmPacket(context.client(), payload.asPacketByteBuf()));

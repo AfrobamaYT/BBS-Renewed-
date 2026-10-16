@@ -1,10 +1,16 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.settings.values.base.BaseValueNumber;
+import mchorse.bbs_mod.ui.framework.elements.input.UINumericInput;
+import mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.TrackpadRecorder;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.utils.UIBezierHandles;
@@ -14,14 +20,13 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Base class for numeric keyframe factories (Double, Float, Integer) with recording support.
  */
 public abstract class UINumericKeyframeFactory<T extends Number> extends UIKeyframeFactory<T>
 {
-    protected UITrackpad value;
+    protected UINumericInput<?> value;
     protected UIBezierHandles handles;
     
     private TrackpadRecorder trackpadRecorder;
@@ -31,18 +36,34 @@ public abstract class UINumericKeyframeFactory<T extends Number> extends UIKeyfr
     private double lastRecordedValue;
     private boolean editingMode;
     private double editingInitialValue;
+    private final UIElement editingOverlay = new AcceptRejectOverlay();
 
     public UINumericKeyframeFactory(Keyframe<T> keyframe, UIKeyframes editor)
     {
         super(keyframe, editor);
 
-        this.value = new UITrackpad((v) -> this.setValue(v));
+        this.value = this.feld(editor.getGraph().getSheet(keyframe));
         this.value.setValue(this.getNumericValue(keyframe.getValue()));
         this.handles = new UIBezierHandles(keyframe);
 
         this.setupRecordingContextMenu();
         this.keys().register(Keys.TRANSFORMATIONS_TRANSLATE, this::startEditingMode).category(UIKeys.TRANSFORMS_KEYS_CATEGORY);
         this.scroll.add(this.value, this.handles.createColumn());
+    }
+
+    /**
+     * A track whose value declares itself a slider ({@link BaseValueNumber#slider()}) is edited along
+     * its range, the way settings are; every other numeric track keeps the drag field. The keys are
+     * the same numbers either way (BBS FS 93539b49e).
+     */
+    private UINumericInput<?> feld(UIKeyframeSheet sheet)
+    {
+        if (sheet != null && sheet.property instanceof BaseValueNumber<?> number && number.isSlider())
+        {
+            return new UISliderTrackpad((v) -> this.setValue(v)).limit(number.getMin().doubleValue(), number.getMax().doubleValue());
+        }
+
+        return new UITrackpad((v) -> this.setValue(v));
     }
 
     /**
@@ -120,7 +141,7 @@ public abstract class UINumericKeyframeFactory<T extends Number> extends UIKeyfr
         }
 
         UIContext context = this.getContext();
-        if (context == null)
+        if (context == null || this.editingMode)
         {
             return;
         }
@@ -128,6 +149,7 @@ public abstract class UINumericKeyframeFactory<T extends Number> extends UIKeyfr
         this.editingInitialValue = this.value.getValue();
         this.lastMouseX = context.mouseX;
         this.editingMode = true;
+        context.menu.overlay.add(this.editingOverlay);
     }
 
     private void stopEditingMode(boolean accept)
@@ -138,6 +160,7 @@ public abstract class UINumericKeyframeFactory<T extends Number> extends UIKeyfr
         }
 
         this.editingMode = false;
+        this.editingOverlay.removeFromParent();
 
         if (!accept)
         {
@@ -147,24 +170,15 @@ public abstract class UINumericKeyframeFactory<T extends Number> extends UIKeyfr
     }
     
     @Override
+    protected void onRemove(UIElement parent)
+    {
+        this.stopEditingMode(false);
+        super.onRemove(parent);
+    }
+
+    @Override
     public boolean subMouseClicked(UIContext context)
     {
-        if (this.editingMode)
-        {
-            if (context.mouseButton == 0)
-            {
-                this.stopEditingMode(true);
-
-                return true;
-            }
-            else if (context.mouseButton == 1)
-            {
-                this.stopEditingMode(false);
-
-                return true;
-            }
-        }
-
         if (this.recordingMode && context.mouseButton == 0)
         {
             return true;
@@ -185,28 +199,44 @@ public abstract class UINumericKeyframeFactory<T extends Number> extends UIKeyfr
         return super.subMouseReleased(context);
     }
 
-    @Override
-    protected boolean subKeyPressed(UIContext context)
+    /** Takes the gesture's clicks and keys before fields, timelines and their menus (BBS FS e20e8b0bb). */
+    private class AcceptRejectOverlay extends UIElement
     {
-        if (this.editingMode)
+        @Override
+        protected boolean subMouseClicked(UIContext context)
         {
-            if (context.isPressed(GLFW.GLFW_KEY_ENTER))
+            if (context.mouseButton == 0 || context.mouseButton == 1)
             {
-                this.stopEditingMode(true);
-
-                return true;
+                UINumericKeyframeFactory.this.stopEditingMode(context.mouseButton == 0);
             }
-            else if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
-            {
-                this.stopEditingMode(false);
 
-                return true;
-            }
+            return true;
         }
 
-        return super.subKeyPressed(context);
+        @Override
+        protected boolean subKeyPressed(UIContext context)
+        {
+            if (context.isPressed(InputConstants.KEY_RETURN) || context.isPressed(InputConstants.KEY_NUMPADENTER))
+            {
+                UINumericKeyframeFactory.this.stopEditingMode(true);
+            }
+            else if (context.isPressed(InputConstants.KEY_ESCAPE))
+            {
+                UINumericKeyframeFactory.this.stopEditingMode(false);
+            }
+
+            return true;
+        }
+
+        @Override
+        protected boolean subMouseScrolled(UIContext context)
+        {
+            UITrackpad.updateAmplifier(context);
+
+            return true;
+        }
     }
-    
+
     @Override
     public void render(UIContext context)
     {

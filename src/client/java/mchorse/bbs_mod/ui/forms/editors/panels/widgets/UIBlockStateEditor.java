@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.forms.editors.panels.widgets;
 
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -14,6 +15,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.function.Consumer;
 
 public class UIBlockStateEditor extends UIElement
@@ -100,7 +103,10 @@ public class UIBlockStateEditor extends UIElement
 
         if (!stack.isEmpty())
         {
+            PoseStack matrices = context.batcher.pose();
+            matrices.pushPose();
             context.batcher.getContext().item(stack, this.area.x + (slot - 16) / 2, this.area.my() - 8);
+            matrices.popPose();
         }
 
         FontRenderer font = context.batcher.getFont();

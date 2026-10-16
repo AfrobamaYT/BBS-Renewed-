@@ -20,7 +20,7 @@
       ],
       "upstream_commit": "67807e1800cc48cc7bff3c793525e1179a4d64ca",
       "original_upstream_commit": null,
-      "provenance_basis": "Full source re-audit against official Blender v4.5.3; this is not a reconstruction of the unknown original revision.",
+      "provenance_basis": "New source revalidation against official Blender v4.5.3; the original translation revision remains unknown.",
       "upstream_paths": [
         "intern/iksolver/intern/IK_Math.h",
         "intern/iksolver/intern/IK_QJacobian.cpp",
@@ -40,10 +40,20 @@
       "copyright": [
         "2001-2002 NaN Holding BV. All rights reserved."
       ],
-      "modified": "2026-10-10",
-      "parity_evidence": "docs/BLENDER-IK-PROVENANCE-2026-10-10.md",
-      "independent_support": ["IKAffine.java", "IKMatN.java", "IKSvd.java"],
-      "historical_note": "The original upstream revision remains unknown. Verification applies to the documented re-audit against the pinned revision, not an invented historical attribution."
+      "modified": "2026-10-15",
+      "parity_evidence": "docs/INSTALL-REVALIDATED-20261015.md: integrated product 49c29c08686f2b76b358bbe6a6f9d72f9d78d38dcb906093b7ac6ef1f60be24e passes 22/22 against freshly compiled official Blender, no overlay; max difference 2.90000001e-08 at 1e-6. Fresh separate Blender and actual owned game both pass 15 poses x 212 bones at 1e-3.",
+      "artifact_source_commit": "c6cd47b98daa4b576b851058d6ffd0800d24aa04",
+      "independent_support": [
+        "IKAffine.java",
+        "IKMatN.java",
+        "IKSvd.java"
+      ],
+      "revalidation_groups": {
+        "math_and_conversion": "7 source files reviewed and headers pinned; corrected epsilon passes final product parity",
+        "segments": "7 source files reviewed and headers pinned; bodies unchanged and final product parity passes",
+        "solver_and_bobj_adapter": "7 source files reviewed and headers pinned; final solver and BOBJ rig checks pass"
+      },
+      "historical_note": "The original translation revision was not recorded. The pinned commit identifies this new revalidation only."
     }
   ]
 }

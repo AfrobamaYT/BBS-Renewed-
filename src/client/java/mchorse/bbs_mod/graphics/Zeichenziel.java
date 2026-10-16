@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.graphics;
 
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 /**
  * In WELCHES Bild BBS gerade zeichnet.

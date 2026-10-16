@@ -34,18 +34,25 @@ public abstract class Form extends ValueGroup
     public static final String DISABLED_ALL = "*";
 
     public final ValueBoolean visible = new ValueBoolean("visible", true);
+    /** Whether a click in a viewport can pick this form and its parts (BBS FS d68bc63c7). */
+    public final ValueBoolean pickable = new ValueBoolean("pickable", true);
     public final ValueStringKeys disabledTracks = new ValueStringKeys("disabled_tracks");
     public final ValueString trackName = new ValueString("track_name", "");
-    public final ValueFloat lighting = new ValueFloat("lighting", 1F);
+    public final ValueFloat lighting = (ValueFloat) new ValueFloat("lighting", 1F, 0F, 1F).slider();
     public final ValueString name = new ValueString("name", "");
     public final ValueTransform transform = new ValueTransform("transform", new Transform());
     public final ValueTransform transformOverlay = new ValueTransform("transform_overlay", new Transform());
     public final ValueFloat uiScale = new ValueFloat("uiScale", 1F, 0.01F, 100F);
     public final ValueAnchor anchor = new ValueAnchor("anchor", new Anchor());
     public final ValueBoolean shaderShadow = new ValueBoolean("shaderShadow", true);
+    /** Drawn after the other forms of its pass, for transparency; not animated (BBS FS a0fe6de30) */
+    public final ValueBoolean renderLast = new ValueBoolean("render_last", false);
     public final ValueBoolean additiveColor = new ValueBoolean("additive_color", false);
+    /** Fills the form with a color instead of multiplying it; alpha is the strength (BBS FS f95662b30) */
+    public final mchorse.bbs_mod.settings.values.core.ValueColor overlay = new mchorse.bbs_mod.settings.values.core.ValueColor("overlay", new mchorse.bbs_mod.utils.colors.Color(1F, 1F, 1F, 0F));
 
     public final List<ValueTransform> additionalTransforms = new ArrayList<>();
+    public final List<mchorse.bbs_mod.settings.values.core.ValuePose> additionalOverlays = new ArrayList<>();
 
     /* Hitbox properties */
     public final ValueBoolean hitbox = new ValueBoolean("hitbox", false);
@@ -85,6 +92,7 @@ public abstract class Form extends ValueGroup
         this.additiveColor.invisible();
 
         this.add(this.visible);
+        this.add(this.pickable);
         this.add(this.disabledTracks);
         this.add(this.trackName);
         this.add(this.lighting);
@@ -92,18 +100,15 @@ public abstract class Form extends ValueGroup
         this.add(this.transform);
         this.add(this.transformOverlay);
 
-        for (int i = 0; i < BBSSettings.recordingPoseTransformOverlays.get(); i++)
-        {
-            ValueTransform valueTransform = new ValueTransform("transform_overlay" + i, new Transform());
-
-            this.additionalTransforms.add(valueTransform);
-            this.add(valueTransform);
-        }
+        this.syncOverlayTracks();
 
         this.add(this.uiScale);
         this.add(this.anchor);
         this.add(this.shaderShadow);
+        this.renderLast.invisible();
+        this.add(this.renderLast);
         this.add(this.additiveColor);
+        this.add(this.overlay);
 
         this.hitbox.invisible();
         this.hitboxWidth.invisible();
@@ -131,6 +136,78 @@ public abstract class Form extends ValueGroup
 
         this.add(this.parts);
         this.add(this.states);
+    }
+
+    /**
+     * Brings the extra transform and pose tracks to the global counts, for forms that exist
+     * already as well as new ones, so a count raised from the timeline shows at once. Only the
+     * tracks this form owns count: a preview may hang its own overlay into the list (BBS FS
+     * 8ce6f0238, Wemppy4/bbs-fs, MIT).
+     */
+    public final void syncOverlayTracks()
+    {
+        if (this.additionalOverlays == null || BBSSettings.recordingTransformOverlays == null) return;
+
+        boolean posed = (this instanceof ModelForm || this instanceof MobForm) && super.get("pose") != null;
+
+        this.overlaysAngleichen(this.additionalTransforms, BBSSettings.recordingTransformOverlays.get(), (i) -> new ValueTransform("transform_overlay" + i, new Transform()));
+        this.overlaysAngleichen(this.additionalOverlays, posed ? BBSSettings.recordingPoseOverlays.get() : 0,
+            (i) -> new mchorse.bbs_mod.settings.values.core.ValuePose("pose_overlay" + i, new mchorse.bbs_mod.utils.pose.Pose()));
+    }
+
+    private <T extends BaseValue> void overlaysAngleichen(List<T> list, int count, java.util.function.IntFunction<T> create)
+    {
+        int own = 0;
+
+        for (T value : list) if (value.getParent() == this) own++;
+
+        for (int i = list.size() - 1; i >= 0 && own > count; i--)
+        {
+            if (list.get(i).getParent() == this)
+            {
+                super.remove(list.remove(i));
+                own--;
+            }
+        }
+
+        for (; own < count; own++)
+        {
+            T value = create.apply(own);
+
+            list.add(own, value);
+            this.add(value);
+        }
+    }
+
+    @Override
+    public List<BaseValue> getAll()
+    {
+        this.syncOverlayTracks();
+
+        return super.getAll();
+    }
+
+    @Override
+    public BaseValue get(String key)
+    {
+        this.syncOverlayTracks();
+
+        return super.get(key);
+    }
+
+    @Override
+    public java.util.Map<String, mchorse.bbs_mod.settings.values.base.BaseValueBasic> getAllMap()
+    {
+        this.syncOverlayTracks();
+
+        return super.getAllMap();
+    }
+
+    @Override
+    public void copy(mchorse.bbs_mod.settings.values.base.BaseValueGroup group)
+    {
+        this.syncOverlayTracks();
+        super.copy(group);
     }
 
     public Object getRenderer()
@@ -347,6 +424,7 @@ public abstract class Form extends ValueGroup
     @Override
     public void fromData(BaseType data)
     {
+        this.syncOverlayTracks();
         if (data instanceof MapType map)
         {
             /* Compatibility with older forms */
@@ -381,6 +459,7 @@ public abstract class Form extends ValueGroup
     @Override
     public BaseType toData()
     {
+        this.syncOverlayTracks();
         BaseType data = super.toData();
 
         if (data instanceof MapType map)

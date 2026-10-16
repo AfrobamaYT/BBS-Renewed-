@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.film.audio;
 import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.settings.EditorZustaende;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -23,14 +24,18 @@ import java.util.List;
 /** Native controls keep the scene visible, with a fixed origin for repeatable takes. */
 public class UIAudioRecorder extends UIOverlayPanel implements IUITreeEventListener
 {
-    private static String lastDevice;
-    private static int lastRate = 48000;
-    private static boolean lastCountdown = true;
+    static String lastDevice = VoiceOverMikrofon.laden();
+    /* Rate, count-in, mute and "with replay" live in EditorZustaende so they survive a restart;
+     * DaVinci's "Mute timeline audio while recording" defaults off (the old behaviour). */
+    /** The open voice-over panel; the film's sounds ask it whether to stay silent. */
+    private static volatile UIAudioRecorder active;
     public final UIButton microphone;
     public final UIButton rate;
     public final UIButton record;
     public final UIButton discard;
     public final UIToggle countdown;
+    public final UIToggle withReplay;
+    public final UIToggle mute;
     public final UITextbox name;
     public final UIText status;
     private final UIFilmPanel filmPanel;
@@ -50,26 +55,54 @@ public class UIAudioRecorder extends UIOverlayPanel implements IUITreeEventListe
         menu.action(Icons.SOUND, UIKeys.CAMERA_TIMELINE_CONTEXT_RECORD_MICROPHONE, () -> open(filmPanel));
     }
 
+    /**
+     * True while a take counts in or records with "Mute timeline while recording" on -- from this
+     * window, or as "Also record while recording a replay" (VoiceoverBeiReplay).
+     * AudioClientClip then plays the film's sounds at volume 0, as it does while a video
+     * renders, so they stay in sync and the microphone does not pick them up.
+     */
+    public static boolean mutesTimeline()
+    {
+        UIAudioRecorder recorder = active;
+
+        /* Owner 2026-10-14: with "Also record while recording a replay" the window is usually closed --
+         * the take runs in VoiceoverBeiReplay, and the timeline played on into the microphone. */
+        return recorder != null && !recorder.closed && recorder.mute.getValue()
+            && (recorder.playing || recorder.deadline != 0L)
+            || EditorZustaende.voiceoverMute.get() && VoiceoverBeiReplay.nimmtAuf();
+    }
+
     public static void open(UIFilmPanel panel)
     {
-        UIOverlay.addOverlay(panel.getContext(), new UIAudioRecorder(panel), 350, 228);
+        UIOverlay.addOverlay(panel.getContext(), new UIAudioRecorder(panel), 350, 268);
     }
 
     public UIAudioRecorder(UIFilmPanel panel)
     {
         super(IKey.raw("Voice-over"));
+
+        mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon tutorial = mchorse.bbs_mod.ui.utils.Tutorials.button("voice_over");
+
+        if (tutorial != null)
+        {
+            this.icons.add(tutorial);
+        }
         this.filmPanel = panel;
         this.film = panel.getData();
         this.originCursor = panel.getCursor();
         this.microphone = new UIButton(IKey.raw("Microphone"), (button) -> this.chooseMicrophone());
-        this.rate = new UIButton(IKey.raw(lastRate + " Hz · Mono / 16-bit"), (button) ->
+        this.rate = new UIButton(IKey.raw(EditorZustaende.voiceoverRate.get() + " Hz · Mono / 16-bit"), (button) ->
         {
-            lastRate = lastRate == 48000 ? 44100 : 48000;
-            button.label = IKey.raw(lastRate + " Hz · Mono / 16-bit");
+            EditorZustaende.voiceoverRate.set(EditorZustaende.voiceoverRate.get() == 48000 ? 44100 : 48000);
+            button.label = IKey.raw(EditorZustaende.voiceoverRate.get() + " Hz · Mono / 16-bit");
             this.arm();
         });
-        this.countdown = new UIToggle(IKey.raw("3-second count-in"), lastCountdown,
-            (button) -> lastCountdown = button.getValue());
+        this.countdown = new UIToggle(IKey.raw("3-second count-in"), EditorZustaende.voiceoverCountdown.get(),
+            (button) -> EditorZustaende.voiceoverCountdown.set(button.getValue()));
+        this.withReplay = new UIToggle(IKey.raw("Also record while recording a replay"), EditorZustaende.voiceoverBeiReplay.get(),
+            (button) -> EditorZustaende.voiceoverBeiReplay.set(button.getValue()));
+        this.mute = new UIToggle(IKey.raw("Mute timeline while recording"), EditorZustaende.voiceoverMute.get(),
+            (button) -> EditorZustaende.voiceoverMute.set(button.getValue()));
         this.name = new UITextbox(100, null);
         this.name.setText("Voice-over");
         this.record = new UIButton(IKey.raw("Record"), (button) -> this.toggleRecord());
@@ -87,13 +120,16 @@ public class UIAudioRecorder extends UIOverlayPanel implements IUITreeEventListe
         this.microphone.relative(this.content).xy(12, 8).w(1F, -24).h(22);
         this.rate.relative(this.content).xy(12, 38).w(0.5F, -18).h(22);
         this.countdown.relative(this.content).x(0.5F, 6).y(42).w(0.5F, -18).h(14);
-        this.name.relative(this.content).xy(12, 68).w(1F, -24).h(22);
-        this.status.relative(this.content).xy(12, 137).w(1F, -24).h(24);
-        meter.relative(this.content).xy(12, 101).w(1F, -24).h(32);
-        this.record.relative(this.content).xy(12, 168).w(0.5F, -18).h(24);
-        this.discard.relative(this.content).x(0.5F, 6).y(168).w(0.5F, -18).h(24);
-        this.content.add(this.microphone, this.rate, this.countdown, this.name, meter, this.status, this.record, this.discard);
+        this.withReplay.relative(this.content).xy(12, 68).w(1F, -24).h(14);
+        this.mute.relative(this.content).xy(12, 84).w(1F, -24).h(14);
+        this.name.relative(this.content).xy(12, 108).w(1F, -24).h(22);
+        this.status.relative(this.content).xy(12, 177).w(1F, -24).h(24);
+        meter.relative(this.content).xy(12, 141).w(1F, -24).h(32);
+        this.record.relative(this.content).xy(12, 208).w(0.5F, -18).h(24);
+        this.discard.relative(this.content).x(0.5F, 6).y(208).w(0.5F, -18).h(24);
+        this.content.add(this.microphone, this.rate, this.countdown, this.withReplay, this.mute, this.name, meter, this.status, this.record, this.discard);
         this.onClose((event) -> this.shutdown());
+        active = this;
         this.arm();
     }
 
@@ -106,7 +142,7 @@ public class UIAudioRecorder extends UIOverlayPanel implements IUITreeEventListe
 
         this.microphone.label = IKey.raw("Mic: " + (lastDevice == null ? "System default ▾" : lastDevice + " ▾"));
         this.message = "Opening microphone…";
-        this.recorder = new OpenALRecorder(lastDevice, lastRate);
+        this.recorder = new OpenALRecorder(lastDevice, EditorZustaende.voiceoverRate.get());
         Thread worker = new Thread(this.recorder, "BBS voice-over input");
 
         worker.setDaemon(true);
@@ -124,6 +160,7 @@ public class UIAudioRecorder extends UIOverlayPanel implements IUITreeEventListe
             picker.callback((values) ->
             {
                 lastDevice = values.get(0);
+                VoiceOverMikrofon.speichern(lastDevice);
                 picker.close();
                 this.arm();
             });
@@ -169,7 +206,7 @@ public class UIAudioRecorder extends UIOverlayPanel implements IUITreeEventListe
         }
 
         this.filmPanel.setCursor(this.originCursor);
-        this.deadline = System.nanoTime() + (lastCountdown ? 3000000000L : 1L);
+        this.deadline = System.nanoTime() + (EditorZustaende.voiceoverCountdown.get() ? 3000000000L : 1L);
     }
 
     private void startPlayback()
@@ -220,6 +257,11 @@ public class UIAudioRecorder extends UIOverlayPanel implements IUITreeEventListe
         this.stopPlayback();
         this.deadline = 0L;
         this.recorder.cancel();
+
+        if (active == this)
+        {
+            active = null;
+        }
     }
 
     private void updateRecording()

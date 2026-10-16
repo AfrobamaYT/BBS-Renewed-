@@ -156,6 +156,21 @@ public final class MixinBruecke
         }
     }
 
+    /** Native method wrappers must either execute their operation or propagate a failure. */
+    public static Object rufePflicht(String klasse, String methode, Object... argumente) throws Throwable
+    {
+        MethodHandle handle = handleHolen(klasse, methode, argumente);
+
+        if (handle == null)
+        {
+            throw new IllegalStateException("Required mixin operation is unavailable: " + klasse + "#" + methode);
+        }
+
+        return handle.isVarargsCollector()
+            ? handle.invokeWithArguments(argumente)
+            : (Object) handle.invokeExact(argumente);
+    }
+
     /** Holt einen handle aus dem cache oder baut ihn neu, wenn die generation gewechselt hat. */
     private static MethodHandle handleHolen(String klasse, String methode, Object[] argumente)
         throws Throwable
@@ -568,7 +583,7 @@ public final class MixinBruecke
      * <p>Den griff EINMAL pro frame holen, dann die schleife direkt dagegen laufen lassen:</p>
      * <pre>
      *   // einmal am frame-anfang (oder batch-start):
-     *   MethodHandle h = MixinBruecke.griff("BeispielLogik", "pruefe", 2);
+     *   MethodHandle h = MixinBruecke.griff("CrowdLodLogik", "pruefe", 2);
      *
      *   // dann pro entity, ohne lookup:
      *   for (Entity e : entities) { if (h != null) h.invoke(e, dist); }

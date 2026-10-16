@@ -14,20 +14,17 @@ import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.misc.CurveClip;
-import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
 import mchorse.bbs_mod.camera.controller.CameraWorkCameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
-import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
+import mchorse.bbs_mod.api.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.utils.iris.IrisUtils;
 import mchorse.bbs_mod.utils.iris.ShaderCurves;
 import net.irisshaders.iris.uniforms.custom.cached.CachedUniform;
-import mchorse.bbs_mod.graphics.texture.TextureFormat;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
-import mchorse.bbs_mod.ui.film.UISubtitleRenderer;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
@@ -42,7 +39,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -68,23 +64,54 @@ public class BBSRendering
 
     public static boolean renderingWorld;
     public static int lastAction;
+    public static com.mojang.renderpearl.api.textures.GpuTextureView outputColorTextureOverride;
+    public static com.mojang.renderpearl.api.textures.GpuTextureView outputDepthTextureOverride;
 
     public static final Matrix4f camera = new Matrix4f();
 
     /**
-     * Active world projection from CameraRenderState, copied at LevelRenderer.render HEAD.
-     * The render method's Matrix4fc parameter contains view rotation, not projection.
-     * Lazily initialized so existing instances remain usable after a body hotswap.
+     * Die Projektion, mit der die Welt in DIESEM Bild wirklich gezeichnet wird.
+     *
+     * <p>⛔ WARUM DAS FELD EXISTIERT (2026-08-03, Umriss-Versatz): sie ist NICHT dieselbe wie
+     * {@code cameraRenderState.projectionMatrix}. Gemessen in einem Bild:</p>
+     * <pre>
+     *   gezeichnet     m00=0,9985  m11=0,2450     <- der Parameter von LevelRenderer#render
+     *   kamerazustand  m00=0,7505  m11=1,4281     <- Fenster-Seitenverhaeltnis 1920x1009
+     *   gleich=false
+     * </pre>
+     *
+     * <p>{@code UIFilmPanel#lastProjection} las den Kamerazustand, weil 26.2 die aktive
+     * Projektion nur noch als GPU-Puffer herausgibt und der Kamerazustand als „derselbe Wert,
+     * nur lesbar" galt. Diese Annahme war falsch. Der Auswahlpuffer aktiviert lastProjection
+     * und rendert die Figuren damit in einer anderen Projektion als das Bild darunter — in der
+     * Bildmitte deckungsgleich, nach aussen zunehmend daneben. Genau das Muster, das gemessen
+     * wurde: im Stillstand mit mittiger Figur 1-2 px, bei ausgelenkter Kamera ~50 px.</p>
+     *
+     * <p>Gestempelt am HEAD von {@code LevelRenderer#render} (WorldRendererMixin), eine Zeile
+     * neben {@link #camera} — dort liegt der Parameter als Zahlen vor, und es ist derselbe
+     * Augenblick, aus dem auch die Ansichtsdrehung stammt.</p>
+     *
+     * <p>⛔ LAZY, NICHT IM FELDINITIALISIERER: nach einem Hotswap laufen statische
+     * Initialisierer nicht, das Feld bliebe {@code null} und der erste Zugriff wuerde in JEDEM
+     * Bild werfen. Derselbe Grund wie bei {@code UIFilmControllerStencilThrottleLogik
+     * #tickSpeicher()}; der Hotswap-Waechter blockt einen Tausch mit neuem statischem Feld
+     * genau deswegen.</p>
      */
     private static Matrix4f zeichenProjektion;
 
-    /** Active projection from the latest world pass, or null before the first stamp. */
+    /** Siehe {@link #zeichenProjektion}. {@code null}, solange in diesem Lauf nie gestempelt. */
     public static Matrix4f zeichenProjektion()
     {
         return zeichenProjektion;
     }
 
-    /** Copy the native world projection, initializing its storage on the first pass. */
+    /**
+     * Am HEAD des Weltdurchgangs gerufen; legt das Feld beim ersten Mal an.
+     *
+     * <p>⛔ Der Parameter ist NICHT die Weltprojektion, sondern konstant eine Ortho-/Blit-
+     * Matrix (m00=-1/m11=1; gemessen 2026-08-04, 109 Logpoint-Treffer — die Kamera fuehrt
+     * daneben 0.8027/1.4281). Folgenlos, solange {@link #zeichenProjektion()} keinen
+     * Aufrufer hat — wer den Stempel nutzen will, repariert ihn vorher: falsch UND egal. */
     public static void zeichenProjektionStempeln(org.joml.Matrix4fc projektion)
     {
         if (projektion == null)
@@ -122,8 +149,8 @@ public class BBSRendering
     /* 26.2: clientFramebuffer ist entfallen. Es hielt das vorherige Renderziel, um es nach
      * dem Film-Rendern zurueckzusetzen -- ein Muster, das die neue Umlenkung nicht mehr
      * kennt (siehe reassignFramebuffer: Normalzustand ist null, nicht "das alte Ziel"). */
-    private static Texture texture;
-    private static mchorse.bbs_mod.graphics.Framebuffer /* NECESSARY */ exportFramebuffer;
+
+    private static Runnable pendingExportResolutionAction;
 
     public static int getMotionBlur()
     {
@@ -226,31 +253,19 @@ public class BBSRendering
         LOGGER.info("[BBS film] setCustomSize customSize={} w={} h={} (stored width/height will be {})",
             customSize, w, h, customSize ? w + "/" + h : "0/0");
         BBSRendering.customSize = customSize;
-
         width = newWidth;
         height = newHeight;
 
         if (!customSize)
         {
+            toggleFramebuffer(false); /* the film buffer's depth override goes with the size (audit #103) */
             resizeExtraFramebuffers();
         }
     }
 
     public static Texture getTexture()
     {
-        if (texture == null)
-        {
-            texture = new Texture();
-            /* ⚠️ 26.2: RGB8 GEHT NICHT MEHR. GlDevice.createTexture lehnt jedes dreikanalige
-             * Format ab ("RGB8_UNORM format cannot be used to create textures") -- der neue
-             * Zeichenweg legt Texturen ueber GpuDevice an, und der kennt nur ausgerichtete
-             * Formate. Vier Kanaele statt drei; das Alpha bleibt ungenutzt, kostet aber ein
-             * Byte je Bildpunkt. Kein Bildunterschied. */
-            texture.setFormat(TextureFormat.RGBA_U8);
-            texture.setFilter(GL11.GL_NEAREST);
-        }
-
-        return texture;
+        return mchorse.bbs_mod.graphics.FilmExportTexture.get();
     }
 
     public static void startTick()
@@ -288,6 +303,19 @@ public class BBSRendering
         return framebuffer;
     }
 
+    public static void closeGpuResources()
+    {
+        RenderSystem.assertOnRenderThread();
+        outputColorTextureOverride = null;
+        outputDepthTextureOverride = null;
+        if (framebuffer != null)
+        {
+            framebuffer.destroyBuffers();
+            framebuffer = null;
+        }
+        mchorse.bbs_mod.graphics.FilmExportTexture.close();
+    }
+
     public static void setupFramebuffer()
     {
         Window window = Minecraft.getInstance().getWindow();
@@ -302,86 +330,14 @@ public class BBSRendering
          *
          * RGBA8_UNORM, weil dreikanalige Formate abgelehnt werden (siehe getTexture). */
         framebuffer = new com.mojang.blaze3d.pipeline.TextureTarget(
-            "bbs-film", window.getWidth(), window.getHeight(), true,
-            com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
+            "bbs-film", window.getWidth(), window.getHeight(),
+            com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM, com.mojang.renderpearl.api.GpuFormat.D32_FLOAT);
     }
 
-    /* 26.2: RenderTarget.frameBufferId ist entfallen -- 26.2 gibt nur noch GpuTexture heraus,
-     * keine rohen GL-Kennungen mehr, weil der Renderer auf Vulkan umziehen soll.
-     *
-     * Der Export-Blit unten BRAUCHT aber einen Lese-Rahmenpuffer: er verkleinert linear
-     * (glBlitFramebuffer mit GL_LINEAR), und genau das kann weder copyTextureToTexture noch
-     * glCopyTexSubImage2D. Ohne die Verkleinerung liefe das Bild in voller Fenstergroesse in
-     * den Videorecorder -- falsche Aufloesung, und auf macOS ein Absturz.
-     *
-     * Also haengen wir die Farbtextur des Ziels selbst an einen EIGENEN Rahmenpuffer. Der
-     * wird einmal angelegt und nur neu behaengt, wenn sich die Textur aendert.
-     *
-     * ⛔ DAS IST BEWUSST NOCH ROHES GL UND HAT EIN ABLAUFDATUM. Unter dem Vulkan-Backend gibt
-     * es keine GL-Kennung mehr; dann muss der Export ueber den Befehlsgeber laufen und die
-     * Verkleinerung woanders herkommen (eigener Durchgang mit Sampler). Siehe
-     * docs/26.2-UMSTIEG-SPICKZETTEL.md. */
-    private static int leseFbo = 0;
-
-    /**
-     * ⛔ DER ANHANG WIRD JEDES MAL NEU GESETZT — die GL-Nummer zu merken war ein Fehler, und
-     * zwar ein stiller.
-     *
-     * <p>Hier stand ein Zwischenspeicher: "gleiche Texturnummer wie beim letzten Mal, also ist
-     * der Anhang noch gut". Das gilt in 26.2 nicht mehr. Eine Groessenaenderung von
-     * {@code RenderTarget} SCHLIESST die alte GPU-Textur und legt eine neue an; GL darf die
-     * freigewordene Nummer sofort wiederverwenden. Dann stimmt die Nummer ueberein, obwohl es
-     * ein anderes Objekt ist — der Zwischenspeicher meldet "unveraendert" und der Rahmenpuffer
-     * haengt weiter am toten Anhang. Dieselbe Falle steht in {@code Texture}: wer die Nummer
-     * zwischenspeichert, liest nach der naechsten Groessenaenderung ins Leere.
-     *
-     * <p>KOSTEN DES FEHLERS (Aufgabe 91): der Export-Blit las darueber und kopierte Schwarz,
-     * obwohl BBS' Rahmenpuffer gefuellt war. Zwei Messwege auf DIESELBE Textur zeigten es --
-     * direkt gelesen: Mittelwert 198, ueber diesen Rahmenpuffer gelesen: 0. Ohne die zweite
-     * Messung haette man weiter im Weltdurchgang gesucht, wo nichts kaputt war.
-     *
-     * <p>Ein {@code glFramebufferTexture2D} je Bild kostet nichts Messbares — der
-     * Zwischenspeicher sparte nichts und verbarg einen Fehler.
-     */
-    private static int leseFboFuer(RenderTarget ziel)
-    {
-        int textur = ((com.mojang.blaze3d.opengl.GlTexture) ziel.getColorTexture()).glId();
-
-        if (leseFbo == 0)
-        {
-            leseFbo = GL30.glGenFramebuffers();
-        }
-
-        int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
-
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFbo);
-        GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
-            GL11.GL_TEXTURE_2D, textur, 0);
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
-
-        return leseFbo;
-    }
 
     public static void resizeExtraFramebuffers()
     {
-        Set<RenderTarget> buffers = new HashSet<>();
-        Minecraft mc = Minecraft.getInstance();
-
-        /* 26.2: die sechs Ziel-Getter haben nur das get-Praefix verloren (entityTarget heisst
-         * jetzt entityOutlineTarget, weil es immer schon das Umriss-Ziel war). Kein Umbau --
-         * aber ein Muster, das in 26.2 oft zuschlaegt: eine Methode, die "weg" aussieht, hat
-         * haeufig nur das get verloren. Vor dem Aufgeben ohne Praefix nachsehen. */
-        buffers.add(mc.levelRenderer.entityOutlineTarget());
-        buffers.add(mc.levelRenderer.translucentTarget());
-        buffers.add(mc.levelRenderer.itemEntityTarget());
-        buffers.add(mc.levelRenderer.particlesTarget());
-        buffers.add(mc.levelRenderer.weatherTarget());
-        buffers.add(mc.levelRenderer.cloudsTarget());
-
-        for (RenderTarget buffer : buffers)
-        {
-            resizeFramebuffer(buffer);
-        }
+        mchorse.bbs_mod.graphics.NativeWorldTargets.resizeExtras();
     }
 
     public static void resizeFramebuffer(RenderTarget framebuffer)
@@ -457,17 +413,11 @@ public class BBSRendering
                     && dashboard.getPanels().panel instanceof UIFilmPanel;
                 if (!filmPanelShowing)
                 {
-                    /* 26.2: blitToScreen ist entfallen. Der Nachfolger sitzt an der
-                     * Fensterflaeche selbst: sie nimmt einen Befehlsgeber und die
-                     * Farb-Textursicht des Puffers.
-                     *
-                     * ⚠️ Die Zielgroesse (drawW/drawH) faellt dabei weg -- der Blit fuellt die
-                     * Flaeche. Fuer den Vollbild-Fall ist das dasselbe Ergebnis; wenn hier je
-                     * eine ANDERE Groesse als das Fenster ankommt, waere es eine Streckung,
-                     * die vorher nicht da war. */
-                    Minecraft.getInstance().windowSurface().blitFromTexture(
-                        RenderSystem.getDevice().createCommandEncoder(),
-                        framebuffer.getColorTextureView());
+                    /* ⛔ 26.3: not windowSurface().blitFromTexture -- the surface takes ONE blit
+                     * per frame and Minecraft blits the main target after us: "Already blitted
+                     * to this frame!" (task 121). Into the main target, scaled to the window. */
+                    RenderTarget haupt = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+                    framebuffer.blitAndBlendToTexture(haupt.getColorTextureView(), haupt.getDepthTextureView());
                 }
             }
         }
@@ -485,7 +435,7 @@ public class BBSRendering
      */
     private static void reassignFramebuffer(RenderTarget framebuffer)
     {
-        RenderSystem.outputColorTextureOverride =
+        outputColorTextureOverride =
             framebuffer == null ? null : framebuffer.getColorTextureView();
 
         /* ⛔ DIE TIEFE MUSS MIT. Sie ist eine ZWEITE, eigenstaendige Umleitung, und wer nur
@@ -504,8 +454,8 @@ public class BBSRendering
          * ⚠️ Die Meldung erscheint im WELTdurchgang (LevelRenderer.render), nicht dort, wo
          * umgelenkt wurde. Sie hat mich einen Messlauf lang in den Oberflaechen-Weg geschickt,
          * wo gar nichts kaputt war. */
-        RenderSystem.outputDepthTextureOverride =
-            framebuffer == null || !framebuffer.useDepth ? null : framebuffer.getDepthTextureView();
+        outputDepthTextureOverride =
+            framebuffer == null || !framebuffer.hasDepth() ? null : framebuffer.getDepthTextureView();
     }
 
     /* Rendering */
@@ -567,7 +517,7 @@ public class BBSRendering
             GuiGraphicsExtractor drawContext = zeichner(mc);
             Batcher2D batcher = new Batcher2D(drawContext);
 
-            UISubtitleRenderer.renderSubtitles(batcher.pose(), batcher, SubtitleClip.getSubtitles(controller.getContext()));
+            mchorse.bbs_mod.ui.film.FrameOverlays.render(batcher, controller.getContext(), new mchorse.bbs_mod.ui.utils.Area(0, 0, mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight()));
         }
 
         if (!customSize)
@@ -599,7 +549,7 @@ public class BBSRendering
             if (dashboard.getPanels().panel instanceof UIFilmPanel panel
                 && currentMenu.context.batcher.getContext() != null)
             {
-                UISubtitleRenderer.renderSubtitles(currentMenu.context.batcher.pose(), currentMenu.context.batcher, SubtitleClip.getSubtitles(panel.getRunner().getContext()));
+                mchorse.bbs_mod.ui.film.FrameOverlays.render(currentMenu.context.batcher, panel.getRunner().getContext(), panel.preview.getViewport());
             }
         }
 
@@ -616,13 +566,24 @@ public class BBSRendering
         abschliessen();
     }
 
-    /** Copies the world target into the preview/export texture without changing its owner.
-     * GUI extraction may reuse the previous frame; exports refresh at world completion. */
+    /**
+     * Nur die Vorschau-Textur fuellen, ohne den Framebuffer abzuhaengen.
+     *
+     * <p>⛔ WOFUER (2026-08-02, #19): im Editor haengt das Fuellen am TAIL von
+     * {@code Gui.extractRenderState} — gemessen per Stapelabzug. In 26.2 werden dort erst
+     * ALLE UI-Elemente eingesammelt und danach gezeichnet: der Blit des Vorschaufeldes ist
+     * also schon eingereiht, wenn die Textur gefuellt wird. Das Feld zeigt deshalb immer
+     * das Bild des VORIGEN Durchgangs (gemessen: beim Blit stand die Fuellung auf 132,
+     * waehrend sie bei 133 war), und der aktuelle Replay-Umriss darueber sitzt bei
+     * Kamerabewegung daneben.
+     *
+     * <p>Das Fuellen darf deshalb vorziehen, das ABHAENGEN nicht: InGameHudMixin sagt
+     * "dort muss der framebuffer bis zum TAIL gebunden bleiben, sonst landet das HUD im
+     * haupt-framebuffer statt im viewport". Genau diese Trennung macht diese Methode.
+     */
     public static void fuellen()
     {
-        /* Resizing or reload may temporarily release the target or its color attachment.
-         * Both must exist before attempting the framebuffer readback. */
-        if (framebuffer == null || framebuffer.getColorTexture() == null)
+        if (!Minecraft.getInstance().isGameLoadFinished() || framebuffer == null || framebuffer.getColorTexture() == null)
         {
             return;
         }
@@ -631,124 +592,12 @@ public class BBSRendering
         int targetWidth = getVideoWidth();
         int targetHeight = getVideoHeight();
 
-        if (exportFramebuffer == null)
-        {
-            exportFramebuffer = new mchorse.bbs_mod.graphics.Framebuffer();
-            exportFramebuffer.attach(texture, GL30.GL_COLOR_ATTACHMENT0);
-            exportFramebuffer.unbind();
-        }
-
         if (texture.width != targetWidth || texture.height != targetHeight)
         {
-            /* ⛔ NIE texture.setSize() direkt: in 26.2 wechselt setSize die GL-Nummer
-             * (Texture.allocate legt ein neues GPU-Objekt an), und das FBO behielte die
-             * alte im GL-Anhang — der Blit fuellte fortan eine freigegebene Textur,
-             * waehrend das Vorschaufeld die neue, ewig leere sampelt (RenderDoc-Beweis
-             * 2026-08-13: Welt+Overlays landeten in der toten 1280x720, das GUI las die
-             * schwarze 640x360; V1-Wurzelursache). resize() zieht den Anhang nach. */
-            exportFramebuffer.resize(targetWidth, targetHeight);
+            texture.setSize(targetWidth, targetHeight);
         }
 
-        /* Jedes Bild, nicht nur bei Groessenwechsel: setSize kann auch WOANDERS gelaufen
-         * sein (gleiche Groesse, neue GL-Nummer) — dieselbe Entscheidung wie leseFboFuer. */
-        exportFramebuffer.anhangNachziehen();
-
-        /* The export framebuffer is rendered at the display's native resolution, which on
-         * HiDPI screens (such as Retina) is larger than the requested video size. Downscale
-         * it into the export texture with a linear blit so the recording stays at the
-         * resolution the user asked for (and gains free supersampling). A plain
-         * glCopyTexSubImage2D can't rescale, so it would copy the full-size frame and
-         * overflow the video recorder's frame buffer (macOS crashes in storeVecColor_BGR_UB). */
-        int prevRead = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
-        int prevDraw = GL30.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
-
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFboFuer(framebuffer));
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, exportFramebuffer.id);
-
-        /* ⛔ ALPHA MUSS 1 BLEIBEN, SONST FEHLT DER HIMMEL IM VORSCHAUFELD.
-         *
-         * Direkt aus BBS' Puffer gelesen (tools: Pufferprobe), nach dem Weltdurchgang:
-         *
-         *     Himmel  173,203,255,0     Farbe genau richtig (#ADCBFF), Alpha NULL
-         *     Boden   148,148,148,255
-         *     Modell  110,17,80,255
-         *
-         * Der Himmel wird also gezeichnet und ist nur vollstaendig durchsichtig -- Vanillas
-         * Himmelsdurchgang schreibt kein deckendes Alpha, weil der Bildschirm nie gemischt
-         * wird. Vanillas eigenes MainTarget zeigt dieselben Alpha-Nullen, das ist kein
-         * Portierfehler. In 1.21.1 stand hier Alpha 1, weil Vanillas Loeschen damals BBS'
-         * Puffer traf (BBS tauschte das Feld Minecraft.mainRenderTarget); in 26.2 gibt es
-         * dieses Feld nicht mehr.
-         *
-         * Und die durchsichtigen Stellen verschwinden nicht durch Mischung, sondern durch
-         * DISCARD im GUI-Fragmentshader: mit einer Pipeline ganz OHNE Mischfunktion
-         * (GUI_OPAQUE_TEXTURED_BACKGROUND, blendFunction=Optional.empty) blieben sie ebenso
-         * unsichtbar, waehrend alle Punkte mit Alpha 255 sauber durchkamen. Am Blit fuehrt
-         * deshalb kein Weg vorbei.
-         *
-         * Loesung: NACH dem Blit den Alphakanal allein auf 1 setzen.
-         *
-         * ⚠️ DIE REIHENFOLGE IST KEIN GESCHMACK, SONDERN SPEZIFIKATION. Erst versucht und
-         * gemessen wirkungslos: vorher mit Alpha 1 loeschen und den Blit mit maskiertem
-         * Alphakanal fahren. glBlitFramebuffer beachtet Schreibmasken NAEMLICH NICHT -- laut
-         * GL-Spezifikation wirken auf einen Blit nur Pixel-Ownership, Scissor und
-         * sRGB-Wandlung, der komplette Fragmentteil wird uebersprungen. Die Maske blieb also
-         * folgenlos und die Nullen kamen mit. glClear dagegen BEACHTET die Maske, deshalb
-         * geht es hinterher und nur ueber den Alphakanal.
-         *
-         * Ebenfalls verworfen: BBS' Puffer vor dem Weltdurchgang mit Alpha 1 vorzuloeschen --
-         * gemessen wirkungslos, der Weltdurchgang ueberschreibt Farbe UND Alpha (mit Rot als
-         * Loeschfarbe gegengeprueft). */
-        /* ⛔ DER SCISSOR MUSS SCHON FUER DEN BLIT AUS SEIN, NICHT ERST FUER DAS CLEAR.
-         * Laut GL-Spez wirken auf einen Blit Pixel-Ownership, SCISSOR und sRGB — Schreib-
-         * masken nicht (Fragmentteil uebersprungen). Gemessen 2026-08-04: ein stehen-
-         * gelassenes GUI-Rechteck (512x256 auf 1280x720) liess den Blit nur einen Ausschnitt
-         * beschreiben — sichtbar als eingefrorener Streifen ab 0,8 der Breite (Bugliste
-         * #1/#3), bei hohen FPS unsichtbar schnell, bei 10 fps deutlich. */
-        boolean scissor = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
-
-        if (scissor)
-        {
-            GL11.glDisable(GL11.GL_SCISSOR_TEST);
-        }
-
-        GL30.glBlitFramebuffer(
-            0, 0, framebuffer.width, framebuffer.height,
-            0, 0, targetWidth, targetHeight,
-            GL11.GL_COLOR_BUFFER_BIT, GL11.GL_LINEAR
-        );
-
-        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
-        {
-            /* ⚠️ GL-Nummern-Gleichheit beweist hier KEINE Objektidentitaet: GL recycelt
-             * freigegebene Nummern sofort (V1-Jagd 2026-08-13 — vonTex/nachTex sahen
-             * korrekt aus, waehrend das GUI ein totes Objekt gleicher Nummer las). */
-            mchorse.bbs_mod.graphics.Messpunkt.zaehle("fuellen.blit",
-                "vonTex=" + ((com.mojang.blaze3d.opengl.GlTexture) framebuffer.getColorTexture()).glId()
-                    + " von=" + framebuffer.width + "x" + framebuffer.height
-                    + " nachTex=" + getTexture().id + " nach=" + targetWidth + "x" + targetHeight);
-        }
-
-        /* Dasselbe gilt fuers Clear: ein stehengelassenes Rechteck wuerde den Alphakanal nur
-         * teilweise setzen -- ein halb sichtbarer Himmel waere schwerer zu deuten als gar
-         * keiner. Der Scissor ist oben schon aus und bleibt es bis zum Ende. */
-        GL11.glColorMask(false, false, false, true);
-        GL11.glClearColor(0F, 0F, 0F, 1F);
-        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-        GL11.glColorMask(true, true, true, true);
-
-        if (scissor)
-        {
-            GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        }
-
-        /* ⚗️ Auf Anforderung genau das messen, was die Vorschau danach abtastet. */
-        mchorse.bbs_mod.graphics.Pufferprobe.vielleichtLesenFbo(exportFramebuffer.id,
-            targetWidth, targetHeight, "export-textur");
-
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevRead);
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDraw);
-
+        mchorse.bbs_mod.graphics.ExportBlit.blit(framebuffer.getColorTextureView(), texture.attachmentView());
     }
 
     /**
@@ -774,11 +623,18 @@ public class BBSRendering
         renderRecordingOverlay();
 
         toggleFramebuffer(false);
+
+        if (pendingExportResolutionAction != null)
+        {
+            Runnable action = pendingExportResolutionAction;
+            pendingExportResolutionAction = null;
+            Minecraft.getInstance().execute(action);
+        }
     }
 
     public static void scheduleAfterNextExportFrame(Runnable action)
     {
-        ExportFrameCallbacks.schedule(action);
+        pendingExportResolutionAction = action;
     }
 
     /**
@@ -895,7 +751,7 @@ public class BBSRendering
         /* ⛔ Figuren VOR den Editor-Overlays — Herleitung am Verdeckt-Pass in ModelIKDebug. */
         BBSModClient.getFilms().render(worldRenderContext);
 
-        if (Minecraft.getInstance().gui.screen() instanceof UIScreen screen)
+        if (Minecraft.getInstance().gui.screen() instanceof UIScreen screen && !mchorse.bbs_mod.ui.film.FilmKameraAnsicht.nurFiguren(worldRenderContext))
         {
             screen.renderInWorld(worldRenderContext);
         }
@@ -1004,10 +860,10 @@ public class BBSRendering
     {
         if (!iris)
         {
-            return false;
+            return mchorse.bbs_mod.integrations.vitrail.VitrailShadowFrame.active();
         }
 
-        return IrisUtils.isShadowPass();
+        return mchorse.bbs_mod.integrations.vitrail.VitrailShadowFrame.active() || IrisUtils.isShadowPass();
     }
 
     /**
@@ -1076,22 +932,12 @@ public class BBSRendering
 
     public static List<String> getShadersSliderOptions()
     {
-        if (!iris)
-        {
-            return Collections.emptyList();
-        }
-
-        return IrisUtils.getSliderProperties();
+        return mchorse.bbs_mod.utils.iris.ShaderOptionBackend.sliders(iris);
     }
 
     public static Map<String, String> getShadersLanguageMap(String language)
     {
-        if (!iris)
-        {
-            return Collections.emptyMap();
-        }
-
-        return IrisUtils.getShadersLanguageMap(language);
+        return mchorse.bbs_mod.utils.iris.ShaderOptionBackend.language(iris, language);
     }
 
     /* Curves */

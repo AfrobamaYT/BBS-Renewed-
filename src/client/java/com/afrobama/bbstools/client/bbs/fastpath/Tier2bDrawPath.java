@@ -29,7 +29,7 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.cubic.ModelInstance;
@@ -182,7 +182,7 @@ public final class Tier2bDrawPath
                     eckenSpeicher = new ByteBufferBuilder(4096);
                     builder = SofortZeichner.beginnen(
                         eckenSpeicher,
-                        com.mojang.blaze3d.PrimitiveTopology.TRIANGLES,
+                        com.mojang.renderpearl.api.pipeline.PrimitiveTopology.TRIANGLES,
                         DefaultVertexFormat.ENTITY);
                 }
                 catch (Throwable t)
@@ -322,7 +322,7 @@ public final class Tier2bDrawPath
          * render3D line 625 (world matrix + 180° Y rotation). */
         PoseStack stack = new PoseStack();
         stack.mulPose(s.worldMatrix);
-        stack.mulPose(Axis.YP.rotation((float) MathUtils.PI));
+        stack.rotate(Axis.YP.rotation((float) MathUtils.PI));
 
         /* Extract per-group world-space Matrix4f via BBS's own
          * CubicMatrixRenderer. Index matches IR.boneIndices entries. */

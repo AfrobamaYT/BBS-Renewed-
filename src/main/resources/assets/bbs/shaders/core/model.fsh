@@ -1,6 +1,7 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
-#moj_import <minecraft:fog.glsl>
+#include <minecraft:fog.glsl>
 
 /* Derselbe Vertrag wie in model.vsh und ModelVAORenderer.schreibeBlock. Hier wird nur
  * Modus.x gebraucht, der Block muss aber vollstaendig und in gleicher Reihenfolge stehen. */
@@ -15,16 +16,16 @@ layout(std140) uniform ModelInfo {
 
 uniform sampler2D Sampler0;
 
-in float sphericalVertexDistance;
-in float cylindricalVertexDistance;
-in vec4 vertexColor;
-in vec4 unlitColor;
-in float emissionMix;
-in vec4 lightMapColor;
-in vec4 overlayColor;
-in vec2 texCoord0;
+layout(location = 0) in float sphericalVertexDistance;
+layout(location = 1) in float cylindricalVertexDistance;
+layout(location = 2) in vec4 vertexColor;
+layout(location = 3) in vec4 unlitColor;
+layout(location = 4) in float emissionMix;
+layout(location = 5) in vec4 lightMapColor;
+layout(location = 6) in vec4 overlayColor;
+layout(location = 7) in vec2 texCoord0;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 void main()
 {

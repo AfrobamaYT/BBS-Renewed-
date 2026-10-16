@@ -49,18 +49,18 @@ public final class SpurGruppen
 	{
 		return switch (kern)
 		{
-			case "item_main_hand", "item_off_hand", "item_head", "item_chest", "item_legs",
+			case "item_main_hand", "item_head", "item_chest", "item_legs",
 				"item_feet", "selected_slot" -> true;
 			default -> false;
 		};
 	}
 
-	/** Hand- und HUD-Spuren (Nutzerwunsch 2026-07-28) — ohne die Items, die haben ihre eigene Gruppe. */
+	/** Offhand, hotbar and hand/HUD tracks share one collapsible inventory group. */
 	private static boolean istHandHud(String kern)
 	{
 		return switch (kern)
 		{
-			case "hotbar_slot_1", "hotbar_slot_2", "hotbar_slot_3", "hotbar_slot_4", "hotbar_slot_5",
+			case "item_off_hand", "hotbar_slot_1", "hotbar_slot_2", "hotbar_slot_3", "hotbar_slot_4", "hotbar_slot_5",
 				"hotbar_slot_6", "hotbar_slot_7", "hotbar_slot_8", "hotbar_slot_9",
 				"health", "hunger", "show_hand", "show_hud",
 				"using_item", "item_use_time", "active_hand" -> true;
@@ -89,15 +89,49 @@ public final class SpurGruppen
 	{
 	}
 
+	/**
+	 * The actor's own pose track and its overlays first, everything else in its order: the pose
+	 * is what an animator keys most, and it was row 55 of 63 for a model actor, below the edge
+	 * (measured 2026-10-15). BBS FS shows pose and transform first in its pose category.
+	 */
+	private static List<UIKeyframeSheet> poseZuerst(List<UIKeyframeSheet> sheets)
+	{
+		List<UIKeyframeSheet> reihe = new ArrayList<>(sheets.size());
+
+		for (UIKeyframeSheet sheet : sheets)
+		{
+			if (sheet.id.equals("pose") || sheet.id.startsWith("pose_overlay"))
+			{
+				reihe.add(sheet);
+			}
+		}
+
+		for (UIKeyframeSheet sheet : sheets)
+		{
+			if (!reihe.contains(sheet))
+			{
+				reihe.add(sheet);
+			}
+		}
+
+		return reihe;
+	}
+
 	/** Topf-Name für ein Sheet, oder null = bleibt eigene Zeile (Pose, Overlays, Shape Keys …). */
 	private static String topf(UIKeyframeSheet sheet)
 	{
 		/* Form-Properties matchen per Grundnamen: bei mehreren Formen heißt die Id „<pfad>/transform". */
 		String kern = sheet.id.contains("/") ? sheet.id.substring(sheet.id.lastIndexOf('/') + 1) : sheet.id;
 
-		if (istTransform(kern))
+		/* The extra transform tracks sit with the transform, the pose overlays together (BBS FS 8ce6f0238). */
+		if (istTransform(kern) || kern.startsWith("transform_overlay"))
 		{
 			return "Transform";
+		}
+
+		if (kern.startsWith("pose_overlay"))
+		{
+			return "Pose Overlay";
 		}
 
 		if (istItem(kern))
@@ -121,6 +155,14 @@ public final class SpurGruppen
 	 */
 	public static void einfuegen(UIKeyframes view, List<UIKeyframeSheet> sheets)
 	{
+		for (UIKeyframeSheet sheet : sheets)
+		{
+			if (sheet.id.equals("item_off_hand"))
+			{
+				sheet.title = IKey.constant("Offhand Slot");
+			}
+		}
+
 		if (!gruppierungAn())
 		{
 			for (UIKeyframeSheet sheet : sheets)
@@ -232,7 +274,7 @@ public final class SpurGruppen
 			kopf.auge = gewaehlt.enabled::get;
 		}
 
-		for (UIKeyframeSheet sheet : sheets)
+		for (UIKeyframeSheet sheet : poseZuerst(sheets))
 		{
 			String name = topf(sheet);
 			UIKeyframeElement element = name == null || !gruppen.containsKey(name) ? sheet
@@ -297,6 +339,39 @@ public final class SpurGruppen
 				view.addElement(fremd);
 			}
 		}
+	}
+
+	/**
+	 * Right click on a pose or transform track, or on one of its overlays: one more track of that
+	 * kind. The count is global, so every form gets it, and the group opens to show it (BBS FS
+	 * 8ce6f0238, Wemppy4/bbs-fs, MIT).
+	 */
+	public static void overlayAnbieten(mchorse.bbs_mod.ui.utils.context.ContextMenuManager menu, UIKeyframeSheet sheet, Runnable neuBauen)
+	{
+		mchorse.bbs_mod.forms.forms.Form form = sheet == null || sheet.property == null ? null : mchorse.bbs_mod.forms.FormUtils.getForm(sheet.property);
+		String kern = sheet == null ? "" : sheet.id.substring(sheet.id.lastIndexOf('/') + 1);
+		boolean pose = kern.equals("pose") || kern.startsWith("pose_overlay");
+		boolean posiert = form instanceof mchorse.bbs_mod.forms.forms.ModelForm || form instanceof mchorse.bbs_mod.forms.forms.MobForm;
+
+		if (form == null || (pose ? !posiert : !(kern.equals("transform") || kern.startsWith("transform_overlay"))))
+		{
+			return;
+		}
+
+		mchorse.bbs_mod.settings.values.numeric.ValueInt anzahl = pose ? BBSSettings.recordingPoseOverlays : BBSSettings.recordingTransformOverlays;
+
+		if (anzahl.get() >= anzahl.getMax())
+		{
+			return;
+		}
+
+		menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.ADD, mchorse.bbs_mod.l10n.L10n.lang(pose ? "bbs.ui.keyframes.context.add_pose_track" : "bbs.ui.keyframes.context.add_transform_track"), () ->
+		{
+			anzahl.set(anzahl.get() + 1);
+			form.syncOverlayTracks();
+			klappZustand().put(pose ? "Pose Overlay" : "Transform", true);
+			neuBauen.run();
+		});
 	}
 
 	/** Hand/HUD hat einen Sprachschlüssel; die Entwurfs-Gruppen heißen wie im Entwurf. */

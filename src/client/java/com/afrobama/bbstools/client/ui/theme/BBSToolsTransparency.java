@@ -5,7 +5,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -52,8 +51,8 @@ public final class BBSToolsTransparency
 
         toggleKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.ui_transparency_toggle",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_T,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_T,
             BBSKeyCategories.BBSTOOLS
         ));
 
@@ -61,11 +60,11 @@ public final class BBSToolsTransparency
         {
             if (client == null || client.getWindow() == null) return;
             long handle = client.getWindow().handle();
-            boolean ctrl = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)
-                        || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL);
-            boolean alt = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_ALT)
-                       || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_ALT);
-            boolean t = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_T);
+            boolean ctrl = InputConstants.isKeyDown(InputConstants.KEY_LCONTROL)
+                        || InputConstants.isKeyDown(InputConstants.KEY_RCONTROL);
+            boolean alt = InputConstants.isKeyDown(InputConstants.KEY_LALT)
+                       || InputConstants.isKeyDown(InputConstants.KEY_RALT);
+            boolean t = InputConstants.isKeyDown(InputConstants.KEY_T);
             boolean combo = ctrl && alt && t;
             if (combo && !lastKeyDown)
             {

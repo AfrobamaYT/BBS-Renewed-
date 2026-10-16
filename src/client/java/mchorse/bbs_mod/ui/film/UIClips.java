@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.film;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.clips.CameraClip;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
@@ -42,7 +43,6 @@ import mchorse.bbs_mod.utils.factory.IFactory;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.presets.PresetManager;
 import org.joml.Vector3i;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -105,6 +105,7 @@ public class UIClips extends UIElement
     private UIClipRenderers renderers = new UIClipRenderers();
 
     private List<Clip> grabbedClips = Collections.emptyList();
+    private final ClipFadeGriffe fades = new ClipFadeGriffe();
     private List<Clip> otherClips = Collections.emptyList();
     private Set<Integer> snappingPoints = new TreeSet<>();
     private List<Vector3i> grabbedData = new ArrayList<>();
@@ -113,10 +114,6 @@ public class UIClips extends UIElement
 
     private int layerHeight = 20;
 
-    /**
-     * Render cursor that displays the full duration of the camera work,
-     * and also current tick within the camera work.
-     */
     /**
      * Der Abspielkopf: Linie + Kopf mit der Tick-Zahl.
      *
@@ -243,7 +240,7 @@ public class UIClips extends UIElement
                 this.copyPasteController.openPresets(context, context.mouseX, context.mouseY);
                 UIUtils.playClick();
             }
-        }).category(KEYS_CATEGORY).active(canUseKeybinds);
+        }).inside().category(KEYS_CATEGORY).active(canUseKeybinds);
         this.keys().register(Keys.CLIP_CUT, this::cut).category(KEYS_CATEGORY).active(canUseKeybinds);
         this.keys().register(Keys.CLIP_SHIFT, this::shiftToCursor).category(KEYS_CATEGORY).active(canUseKeybinds);
         this.keys().register(Keys.CLIP_DURATION, this::shiftDurationToCursor).category(KEYS_CATEGORY).active(canUseKeybindsSelected);
@@ -1261,19 +1258,31 @@ public class UIClips extends UIElement
         {
             int tick = (int) Math.floor(this.scale.from(mouseX));
             int layerIndex = this.fromLayerY(mouseY);
+            Clip original = this.delegate.getClip();
             Clip clip = this.clips.getClipAt(tick, layerIndex);
+            /* A 1-tick clip is drawn wider than its tick (getClipArea): hit what is drawn, too. */
+            clip = clip != null ? clip : this.clips.get().stream().filter((c) -> c.layer.get() == layerIndex && this.getClipArea(c, new Area(), this.getLayerHeight()).isInside(mouseX, mouseY)).findFirst().orElse(null);
 
             if (clip != null)
             {
-                if (shift || this.selection.contains(this.clips.getIndex(clip)))
+                if (clip != original)
                 {
-                    this.addSelected(clip);
-                    this.delegate.pickClip(this.getLastSelectedClip());
-                }
-                else
-                {
-                    this.delegate.pickClip(clip);
-                    this.setSelected(clip);
+                    if (shift || this.selection.contains(this.clips.getIndex(clip)))
+                    {
+                        this.addSelected(clip);
+
+                        Clip last = this.getLastSelectedClip();
+
+                        if (last != original)
+                        {
+                            this.delegate.pickClip(last);
+                        }
+                    }
+                    else
+                    {
+                        this.delegate.pickClip(clip);
+                        this.setSelected(clip);
+                    }
                 }
 
                 this.grabMode = this.getClipHandle(clip, context, this.getLayerHeight());
@@ -1317,10 +1326,8 @@ public class UIClips extends UIElement
 
                 this.setMouse(mouseX, mouseY);
 
-                for (Clip selectedClip : this.getClipsFromSelection())
-                {
-                    this.grabbedData.add(new Vector3i(selectedClip.tick.get(), selectedClip.layer.get(), selectedClip.duration.get()));
-                }
+                for (Clip selectedClip : this.getClipsFromSelection()) this.grabbedData.add(new Vector3i(selectedClip.tick.get(), selectedClip.layer.get(), selectedClip.duration.get()));
+                this.fades.merken(this.getClipsFromSelection());
 
                 return true;
             }
@@ -1343,7 +1350,7 @@ public class UIClips extends UIElement
         else
         {
             this.scrubbing = true;
-            this.delegate.setCursor(this.fromGraphX(mouseX));
+            this.delegate.setCursor(ICursor.einrasten((float) this.scale.from(mouseX)));
 
             return true;
         }
@@ -1410,16 +1417,16 @@ public class UIClips extends UIElement
                 else
                 {
                     int step = (int) Math.copySign(2, context.mouseWheel);
-                    this.layerHeight = MathUtils.clamp(this.layerHeight + step, LAYER_HEIGHT_MIN, LAYER_HEIGHT_MAX);
+                    this.layerHeight = MathUtils.clamp(this.layerHeight - step, LAYER_HEIGHT_MIN, LAYER_HEIGHT_MAX);
                 }
             }
-            else if (Window.isShiftPressed())
+            else if (Window.isShiftPressed() && !Window.isCtrlPressed())
             {
                 this.vertical.mouseScroll(context);
             }
             else if (context.mouseWheel != 0D)
             {
-                this.scale.zoomAnchor(Scale.getAnchorX(context, this.area), Math.copySign(this.scale.getZoomFactor(), context.mouseWheel));
+                this.scale.animateZoom(Scale.getAnchorX(context, this.area), context.mouseWheel, Scale.radTempo());
             }
 
             return true;
@@ -1533,7 +1540,7 @@ public class UIClips extends UIElement
     @Override
     protected boolean subKeyPressed(UIContext context)
     {
-        if (this.embedded != null && context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+        if (this.embedded != null && context.isPressed(InputConstants.KEY_ESCAPE))
         {
             this.embedView(null);
             UIUtils.playClick();
@@ -1547,8 +1554,8 @@ public class UIClips extends UIElement
     @Override
     public void render(UIContext context)
     {
+        this.scale.updateZoom(); /* smooth wheel zoom, BBS FS c832fd3af */
         this.updateScrollSize();
-
         if (this.centerScrollOnRender)
         {
             this.centerScrollOnRender = false;
@@ -1570,7 +1577,7 @@ public class UIClips extends UIElement
     {
         if (this.scrubbing)
         {
-            this.delegate.setCursor(this.fromGraphX(mouseX));
+            this.delegate.setCursor(ICursor.einrasten((float) this.scale.from(mouseX)));
         }
         else if (this.selectingLoop == 0)
         {
@@ -1609,42 +1616,15 @@ public class UIClips extends UIElement
         int dx = this.fromGraphX(mouseX) - this.fromGraphX(this.initialX);
         int dy = this.fromLayerY(mouseY) - this.fromLayerY(this.initialY);
 
-        if (this.grabMode != 0 && Window.isShiftPressed())
-        {
-            this.dragEnvelope(this.grabMode == 1, mouseX);
-        }
+        /* Empty after a desynced grab: then a drag frame does nothing (was UIClipsDragEdgeCrashFixMixin) */
+        if (this.grabbedData.isEmpty() || this.grabbedClips.isEmpty()) return;
+        if (this.grabMode == 3 || this.grabMode == 4) this.fades.ziehen(this, this.grabbedClips, this.grabbedData, this.grabMode == 3, dx);
         else if (this.grabMode == 0) this.moveClips(others, dx, dy);
-        else if (this.grabMode == 1) this.dragLeftEdge(others, dx, dy);
-        else if (this.grabMode == 2) this.dragRightEdge(others, dx, dy);
+        /* Grabbed clips stop at each other too, not only at the rest */
+        else if (this.grabMode == 1) this.dragLeftEdge(Window.isAltPressed() ? Collections.emptyList() : this.clips.get(), dx);
+        else if (this.grabMode == 2) this.dragRightEdge(Window.isAltPressed() ? Collections.emptyList() : this.clips.get(), dx);
 
         this.delegate.fillData();
-    }
-
-    /**
-     * While dragging a clip's edge with shift held, adjust the envelope's fade
-     * instead of the clip length — the left handle drives fade in, the right handle
-     * fade out. The clip's own bounds stay put.
-     */
-    private void dragEnvelope(boolean left, int mouseX)
-    {
-        Clip clip = this.grabbedClips.get(this.grabbedClips.size() - 1);
-        Vector3i data = this.grabbedData.get(this.grabbedData.size() - 1);
-        int tick = data.x();
-        int duration = data.z();
-        int mouse = this.fromGraphX(mouseX);
-
-        /* Pin the clip to its original bounds — an earlier frame may have resized it. */
-        this.setClipData(clip, tick, data.y(), duration);
-        clip.envelope.enabled.set(true);
-
-        if (left)
-        {
-            clip.envelope.fadeIn.set((float) MathUtils.clamp(mouse - tick, 0, duration));
-        }
-        else
-        {
-            clip.envelope.fadeOut.set((float) MathUtils.clamp(tick + duration - mouse, 0, duration));
-        }
     }
 
     private void moveClips(List<Clip> others, int dx, int dy)
@@ -1722,37 +1702,41 @@ public class UIClips extends UIElement
         return edge;
     }
 
-    private void dragLeftEdge(List<Clip> others, int dx, int dy)
+    /** All grabbed clips' left edges move by the same snapped amount, each stopping at its own neighbour (BBS FS e24692991). */
+    private void dragLeftEdge(List<Clip> neighbours, int dx)
     {
-        Vector3i data = grabbedData.get(grabbedData.size() - 1);
-        Clip clip = grabbedClips.get(grabbedClips.size() - 1);
-        int tick = data.x();
-        int right = tick + data.z();
-        int minLeft = others.stream()
-            .filter((o) -> this.sameLayer(o, clip) && o.tick.get() + o.duration.get() <= tick)
-            .mapToInt((o) -> o.tick.get() + o.duration.get())
-            .max()
-            .orElse(0);
+        Vector3i grabbed = this.grabbedData.get(this.grabbedData.size() - 1);
+        int delta = this.snapEdge(grabbed.x() + dx) - grabbed.x();
 
-        int newTick = MathUtils.clamp(this.snapEdge(tick + dx), minLeft, right - 1);
+        for (int i = 0; i < this.grabbedClips.size(); i++)
+        {
+            Clip clip = this.grabbedClips.get(i);
+            Vector3i data = this.grabbedData.get(i);
+            int tick = data.x(), right = tick + data.z();
+            int minLeft = neighbours.stream().filter((o) -> o != clip && this.sameLayer(o, clip) && o.tick.get() + o.duration.get() <= tick)
+                .mapToInt((o) -> o.tick.get() + o.duration.get()).max().orElse(0);
+            int newTick = MathUtils.clamp(tick + delta, minLeft, right - 1);
 
-        this.setClipData(clip, newTick, data.y(), right - newTick);
+            this.setClipData(clip, newTick, data.y(), right - newTick);
+        }
     }
 
-    private void dragRightEdge(List<Clip> others, int dx, int dy)
+    /** The same for the right edges. */
+    private void dragRightEdge(List<Clip> neighbours, int dx)
     {
-        Vector3i data = grabbedData.get(grabbedData.size() - 1);
-        Clip clip = grabbedClips.get(grabbedClips.size() - 1);
-        int tick = data.x();
-        int maxRight = others.stream()
-            .filter((o) -> this.sameLayer(o, clip) && o.tick.get() >= tick + data.z())
-            .mapToInt((o) -> o.tick.get())
-            .min()
-            .orElse(Integer.MAX_VALUE);
+        Vector3i grabbed = this.grabbedData.get(this.grabbedData.size() - 1);
+        int delta = this.snapEdge(grabbed.x() + grabbed.z() + dx) - (grabbed.x() + grabbed.z());
 
-        int newEnd = MathUtils.clamp(this.snapEdge(tick + data.z() + dx), tick + 1, maxRight);
+        for (int i = 0; i < this.grabbedClips.size(); i++)
+        {
+            Clip clip = this.grabbedClips.get(i);
+            Vector3i data = this.grabbedData.get(i);
+            int tick = data.x(), end = tick + data.z();
+            int maxRight = neighbours.stream().filter((o) -> o != clip && this.sameLayer(o, clip) && o.tick.get() >= end)
+                .mapToInt((o) -> o.tick.get()).min().orElse(Integer.MAX_VALUE);
 
-        this.setClipData(clip, tick, data.y(), newEnd - tick);
+            this.setClipData(clip, tick, data.y(), MathUtils.clamp(end + delta, tick + 1, maxRight) - tick);
+        }
     }
 
     /**
@@ -1760,7 +1744,7 @@ public class UIClips extends UIElement
      * resizing). Neighbour clamping is applied by the caller, so this only picks
      * the nearest point within reach.
      */
-    private int snapEdge(int tick)
+    int snapEdge(int tick)
     {
         if (Window.isAltPressed())
         {
@@ -1931,7 +1915,7 @@ public class UIClips extends UIElement
         }
 
         area.render(batcher, BBSSettings.deepSurface());
-        batcher.clip(this.vertical.area.x, rulerBottom, this.vertical.area.ex(), this.vertical.area.ey(), context);
+        batcher.clip(this.vertical.area.x, rulerBottom, this.vertical.area.w, this.vertical.area.ey() - rulerBottom, context);
 
         for (int i = 0; i < this.layers; i++)
         {
@@ -1949,7 +1933,7 @@ public class UIClips extends UIElement
         this.renderTickMarkers(context, area.y, area.h);
 
         batcher.unclip(context);
-        batcher.clip(this.vertical.area.x, rulerBottom, this.vertical.area.ex(), this.vertical.area.ey(), context);
+        batcher.clip(this.vertical.area.x, rulerBottom, this.vertical.area.w, this.vertical.area.ey() - rulerBottom, context);
 
         if (BBSSettings.editorTimelineGrid.get())
         {
@@ -1990,6 +1974,12 @@ public class UIClips extends UIElement
             int clipHandle = this.getClipHandle(clip, context, h);
             int color = this.grabMode != 0 ? Colors.WHITE : Colors.A50;
 
+            if ((clipHandle != -1 || (selected && this.grabMode >= 3)) && ClipFadeGriffe.hat(this, clip))
+            {
+                ClipFadeGriffe.zeichnen(context, this, clip, true, clipHandle == 3 || (selected && this.grabMode == 3));
+                ClipFadeGriffe.zeichnen(context, this, clip, false, clipHandle == 4 || (selected && this.grabMode == 4));
+            }
+
             if (clipHandle == 1 || (selected && this.grabMode == 1))
             {
                 context.batcher.icon(Icons.CLIP_HANLDE_LEFT, color, clipArea.x, clipArea.y + 10, 0F, 0.5F);
@@ -2008,9 +1998,9 @@ public class UIClips extends UIElement
 
         /* ⛔ NUR DIE ZAHL. Vorher „cursor/dauer" — die Gesamtdauer steht bereits im Kopf der
          * Zeitleiste („20 / 26   1,0 s") und gehoert nicht ein zweites Mal an den Zeiger. */
-        String label = TimeUtils.formatTime(this.delegate.getCursor());
+        String label = TimeUtils.formatCursorTime(this.delegate.getCursor(0F));
 
-        renderCursor(context, label, area, this.toGraphX(this.delegate.getCursor()));
+        renderCursor(context, label, area, (int) this.scale.to(this.delegate.getCursor(0F)));
         this.renderSelection(context);
 
         batcher.unclip(context);
@@ -2026,8 +2016,7 @@ public class UIClips extends UIElement
         int tick = clip.tick.get();
         int x = this.toGraphX(tick);
         int y = this.toLayerY(clip.layer.get());
-        int w = this.toGraphX(tick + clip.duration.get()) - x;
-
+        int w = Math.max(this.toGraphX(tick + clip.duration.get()) - x, 8); /* 1-tick clips stay visible */
         area.set(x, y, w, h);
 
         return area;
@@ -2040,11 +2029,9 @@ public class UIClips extends UIElement
 
         if (clipArea.isInside(context))
         {
-            if (Window.isCtrlPressed())
-            {
-                return 0;
-            }
+            int fade = Window.isCtrlPressed() ? 0 : ClipFadeGriffe.griff(this, clip, context.mouseX, context.mouseY);
 
+            if (Window.isCtrlPressed() || fade != 0) return fade;
             if (context.mouseX - clipArea.x < separation)
             {
                 return 1;

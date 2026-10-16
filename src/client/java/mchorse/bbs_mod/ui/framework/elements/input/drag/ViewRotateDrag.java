@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.drag;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.utils.GizmoDrag;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -176,7 +177,9 @@ public class ViewRotateDrag extends DragStrategy
 
         Vector3f base = this.ctx.cache().rotate;
 
-        Matrix3f deltaLocal = new Matrix3f().rotation(MathUtils.toRad(this.accumulatedDeg), this.viewLocalAxis);
+        /* Ctrl snaps the swept angle to snap_rotate, as on the axis rings (RingRotateDrag) */
+        float winkel = this.ctx.shouldSnap(TransformOp.ROTATE) ? (float) snap(this.accumulatedDeg, BBSSettings.snapRotate.get()) : this.accumulatedDeg;
+        Matrix3f deltaLocal = new Matrix3f().rotation(MathUtils.toRad(winkel), this.viewLocalAxis);
 
         RotationDragMath.applyLocalDelta(this.ctx, deltaLocal, base);
     }

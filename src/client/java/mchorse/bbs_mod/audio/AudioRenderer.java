@@ -97,16 +97,16 @@ public class AudioRenderer
 
             if (drawX2 <= centerX)
             {
-                wave.render(batcher, dimColor, drawX1, y, drawX2 - drawX1, h, a1, a2);
+                wave.renderPreview(batcher, dimColor, drawX1, y, drawX2 - drawX1, h, a1, a2);
             }
             else if (drawX1 >= centerX)
             {
-                wave.render(batcher, Colors.WHITE, drawX1, y, drawX2 - drawX1, h, a1, a2);
+                wave.renderPreview(batcher, Colors.WHITE, drawX1, y, drawX2 - drawX1, h, a1, a2);
             }
             else
             {
-                wave.render(batcher, dimColor, drawX1, y, centerX - drawX1, h, a1, aCenter);
-                wave.render(batcher, Colors.WHITE, centerX, y, drawX2 - centerX, h, aCenter, a2);
+                wave.renderPreview(batcher, dimColor, drawX1, y, centerX - drawX1, h, a1, aCenter);
+                wave.renderPreview(batcher, Colors.WHITE, centerX, y, drawX2 - centerX, h, aCenter, a2);
             }
         }
 
@@ -241,13 +241,13 @@ public class AudioRenderer
 
         if (runningOffset > 0)
         {
-            wave.render(batcher, Colors.WHITE, x + half, y, half, h, playback, playback + duration / 2);
+            wave.renderPreview(batcher, Colors.WHITE, x + half, y, half, h, playback, playback + duration / 2);
         }
 
         /* Draw the passed waveform */
         if (offset > 0)
         {
-            wave.render(batcher, waveformDimColor(), x, y, half, h, playback - duration / 2, playback);
+            wave.renderPreview(batcher, waveformDimColor(), x, y, half, h, playback - duration / 2, playback);
         }
 
         batcher.unclip(sw, sh);

@@ -126,7 +126,10 @@ public class UIValueFactory
         });
 
         trackpad.limit(value.getMin(), value.getMax());
-        trackpad.delayedInput();
+        if (!value.isLive())
+        {
+            trackpad.delayedInput();
+        }
         trackpad.setValue(value.get());
         trackpad.tooltip(L10n.lang(getValueCommentKey(value)));
 

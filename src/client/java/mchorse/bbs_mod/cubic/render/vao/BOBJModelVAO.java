@@ -6,9 +6,8 @@ import mchorse.bbs_mod.bobj.BOBJLoader;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.joml.Matrices;
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.IndexType;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryUtil;
@@ -47,6 +46,7 @@ public class BOBJModelVAO implements IModelVAO
     private final int indexCount;
     private final int[] indices;
     private int count;
+    private GpuBuffer vitrailCorners;
 
     /**
      * 26.2: aus sechs GL-Puffernummern werden drei GpuBuffer.
@@ -166,7 +166,8 @@ public class BOBJModelVAO implements IModelVAO
              * genau deshalb einen Messlauf gekostet. Massgeblich ist nicht, wie der Puffer
              * entsteht, sondern ob er je wieder beschrieben wird. */
             return RenderSystem.getDevice().createBuffer(() -> name,
-                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, roh);
+                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_COPY_SRC
+                    | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER, roh);
         }
         finally
         {
@@ -206,7 +207,8 @@ public class BOBJModelVAO implements IModelVAO
             roh.asIntBuffer().put(werte);
 
             return RenderSystem.getDevice().createBuffer(() -> name,
-                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, roh);
+                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_COPY_SRC
+                    | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER, roh);
         }
         finally
         {
@@ -223,7 +225,7 @@ public class BOBJModelVAO implements IModelVAO
             roh.asIntBuffer().put(werte);
 
             return RenderSystem.getDevice().createBuffer(() -> "bobj-indizes",
-                GpuBuffer.USAGE_INDEX, roh);
+                GpuBuffer.USAGE_INDEX | GpuBuffer.USAGE_COPY_SRC | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER, roh);
         }
         finally
         {
@@ -252,6 +254,11 @@ public class BOBJModelVAO implements IModelVAO
      */
     public void delete()
     {
+        if (this.vitrailCorners != null)
+        {
+            this.vitrailCorners.close();
+            this.vitrailCorners = null;
+        }
         this.skinCacheLeeren();
 
         if (this.verzug != null)
@@ -526,7 +533,8 @@ public class BOBJModelVAO implements IModelVAO
                         if (pose.position == null)
                         {
                             pose.position = RenderSystem.getDevice().createBuffer(() -> "bobj-morph-pose",
-                                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, this.verzug.daten());
+                                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_COPY_SRC
+                                    | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER, this.verzug.daten());
                         }
                         else
                         {
@@ -687,35 +695,7 @@ public class BOBJModelVAO implements IModelVAO
             return;
         }
 
-        GpuBuffer aktuellePosition = this.aktiveSkinPose == null
-            || this.gpuMode && !this.aktiveSkinPose.morphed
-            ? this.position : this.aktiveSkinPose.position;
-        GpuBuffer aktuelleNormale = this.aktiveSkinPose == null || this.gpuMode
-            ? this.normale : this.aktiveSkinPose.normale;
-
-        if (IrisModelBuffers.tryDraw(pass, aktuellePosition, aktuelleNormale, this.texturUV,
-            this.indexed ? this.indexBuffer : null, this.indexed ? this.indexCount : this.count)) return;
-
-        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_POSITION, aktuellePosition.slice());
-        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_NORMALE, aktuelleNormale.slice());
-        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_LICHT, this.licht.slice());
-        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_UV0, this.texturUV.slice());
-
-        if (this.gpuMode)
-        {
-            this.gpuSkin.bind(pass);
-        }
-
-        if (this.indexed)
-        {
-            pass.setIndexBuffer(this.indexBuffer, IndexType.INT);
-            pass.drawIndexed(this.indexCount, 1, 0, 0, 0);
-        }
-        else
-        {
-            /* SimpleVAO und der explizite Legacy-Fallback behalten die Originalecken. */
-            pass.draw(this.count, 1, 0, 0);
-        }
+        this.currentDrawInputs().draw(pass);
     }
 
     @Override
@@ -727,6 +707,41 @@ public class BOBJModelVAO implements IModelVAO
     public GpuBuffer skinMatrices()
     {
         return this.gpuMode && this.aktiveSkinPose != null ? this.aktiveSkinPose.skinMatrices : null;
+    }
+
+    public mchorse.bbs_mod.integrations.vitrail.VitrailMeshInputs vitrailInputs()
+    {
+        if (this.vitrailCorners == null)
+            this.vitrailCorners = mchorse.bbs_mod.integrations.vitrail.VitrailCornerBuffer.create(this.indexCount);
+        return this.currentDrawInputs().vitrailInputs(this.vitrailCorners, this.count);
+    }
+
+    private BOBJDrawInputs currentDrawInputs()
+    {
+        GpuBuffer p = this.aktiveSkinPose == null || this.gpuMode && !this.aktiveSkinPose.morphed
+            ? this.position : this.aktiveSkinPose.position;
+        GpuBuffer n = this.aktiveSkinPose == null || this.gpuMode ? this.normale : this.aktiveSkinPose.normale;
+        return new BOBJDrawInputs(this, p, n, this.texturUV, this.licht, this.indexed ? this.indexBuffer : null,
+            this.indexed ? this.indexCount : this.count, this.gpuMode ? this.gpuSkin : null, this.skinMatrices());
+    }
+
+    /** Read-only state for the optional paused cache, after shape drivers have evaluated. */
+    public Object pausedPoseIdentity()
+    {
+        return this.aktiveSkinPose;
+    }
+
+    public java.util.Map<String, Float> pausedPoseShapes()
+    {
+        return this.shapeKeys == null ? java.util.Collections.emptyMap() : this.shapeKeys.shapeKeys;
+    }
+
+    public boolean pausedPoseReady(Object expectedPose, boolean gpuAllowed)
+    {
+        boolean desiredGpu = BOBJGpuSkin.ENABLED && gpuAllowed && this.indexed
+            && !mchorse.bbs_mod.client.BBSRendering.isIrisShadersEnabled();
+        return BobjPoseSnapshot.ready(this.meshGueltig, this.aktiveSkinPose, expectedPose,
+            this.gpuMode, desiredGpu, this.gpuSupportChecked, this.gpuSupported);
     }
 
     public boolean gpuSkinAktiv()

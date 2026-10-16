@@ -1,4 +1,5 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
 /* ⛔ OHNE DIESEN IMPORT KOMPILIERT DER SHADER NICHT (2026-08-01 im Log gefunden):
  *     Couldn't compile fragment shader (bbs:core/picker_models):
@@ -7,7 +8,7 @@
  *
  * ColorModulator steckt seit 26.2 im Vanilla-Block DynamicTransforms. Der Kommentar
  * darunter sagte das bereits richtig -- nur der Import dazu fehlte. */
-#moj_import <minecraft:dynamictransforms.glsl>
+#include <minecraft:dynamictransforms.glsl>
 
 /* Derselbe Block wie im Vertexshader -- Reihenfolge und Groesse muessen mit
  * ModelVAORenderer.schreibeBlock uebereinstimmen, kein Compiler prueft das. */
@@ -22,10 +23,10 @@ layout(std140) uniform ModelInfo {
 
 uniform sampler2D Sampler0;
 
-in vec2 texCoord0;
-flat in ivec2 texCoord2;
+layout(location = 0) in vec2 texCoord0;
+layout(location = 1) flat in ivec2 texCoord2;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 void main()
 {

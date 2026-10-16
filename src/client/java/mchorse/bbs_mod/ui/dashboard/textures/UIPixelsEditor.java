@@ -353,7 +353,6 @@ public class UIPixelsEditor extends UICanvasEditor
                 this.temporaryFlat = new Texture();
                 this.temporaryFlat.setFilter(GL11.GL_NEAREST);
             }
-            this.temporaryFlat.bind();
             this.temporaryFlat.updateTexture(flat);
             flat.delete();
             return this.temporaryFlat;
@@ -988,13 +987,11 @@ public class UIPixelsEditor extends UICanvasEditor
         if (this.selectionMaskTexture == null)
         {
             this.selectionMaskTexture = new Texture();
-            this.selectionMaskTexture.bind();
             this.selectionMaskTexture.setFilter(GL11.GL_NEAREST);
             this.selectionMaskTexture.setWrap(GL12.GL_CLAMP_TO_EDGE);
         }
 
         this.selectionMaskPixels.rewindBuffer();
-        this.selectionMaskTexture.bind();
         this.selectionMaskTexture.updateTexture(this.selectionMaskPixels);
     }
 

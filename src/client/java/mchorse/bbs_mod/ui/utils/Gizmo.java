@@ -1,13 +1,13 @@
 package mchorse.bbs_mod.ui.utils;
 
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
@@ -41,7 +41,6 @@ import org.joml.Vector2f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.opengl.GL11;
 
 public class Gizmo
 {
@@ -127,7 +126,7 @@ public class Gizmo
 
     Mode mode = Mode.COMBINED;
     /** The mode to return to when combined mode is toggled off. */
-    private Mode previousMode = Mode.TRANSLATE;
+    private Mode previousMode = Mode.ROTATE; /* T leaves combined to the rings alone, as Maya's E -- posing is rotating (was TRANSLATE: T then R) */
 
     private int index;
     private int mouseX;
@@ -363,13 +362,9 @@ public class Gizmo
      * matches the sphere's actual visual size at the current camera
      * distance and axes scale.
      *
-     * <p>Projects three local-axis edge points
-     * ({@code (r,0,0)}, {@code (0,r,0)}, {@code (0,0,r)}) onto the
-     * viewport and returns the largest pixel distance from the
-     * projected centre — covers all camera orientations without
-     * needing a true ellipse-from-sphere derivation. Returns {@code 0}
-     * when the gizmo hasn't been rendered yet, the centre is behind
-     * the camera, or the sphere radius hasn't been captured.
+     * <p>Samples the silhouette where the view rays graze the sphere (BBS FS 6daa06cbf); the three
+     * axis tips it projected fell up to ~18 % short (57.8 against 63.4 GUI px seen from the front).
+     * {@code 0} before the first render, with the centre behind the camera or the camera inside.
      */
     public float computeScreenRadius(Matrix4f projection, float areaX, float areaY, float areaW, float areaH)
     {
@@ -385,16 +380,20 @@ public class Gizmo
             return 0F;
         }
 
-        Matrix4f mvp = new Matrix4f(projection).mul(this.lastRenderMatrix);
-        float r = this.lastSphereLocalRadius;
-        float[] xs = {r, 0F, 0F};
-        float[] ys = {0F, r, 0F};
-        float[] zs = {0F, 0F, r};
+        Vector3f scale = this.lastRenderMatrix.getScale(new Vector3f()), middle = this.lastRenderMatrix.getTranslation(new Vector3f()), normal = new Vector3f(0F, 0F, 1F);
+        float radius = this.lastSphereLocalRadius * Math.max(scale.x, Math.max(scale.y, scale.z)); /* a scaled frame stretches it: bound by the longest axis */
+        float k = projection.m23() == 0F ? 1F : 1F - radius * radius / middle.lengthSquared(); /* perspective rays touch a smaller circle nearer the eye */
+
+        if (!(k > 0F)) return 0F;
+        if (k < 1F) { middle.normalize(normal); middle.mul(k); }
+
+        Vector3f u = normal.cross(Math.abs(normal.x) < 0.9F ? new Vector3f(1F, 0F, 0F) : new Vector3f(0F, 1F, 0F), new Vector3f()).normalize().mul(radius * (float) Math.sqrt(k));
+        Vector3f v = new Vector3f(normal).cross(u);
         float maxSq = 0F;
 
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 32; i++)
         {
-            Vector4f clip = mvp.transform(new Vector4f(xs[i], ys[i], zs[i], 1F));
+            Vector4f clip = projection.transform(new Vector4f(new Vector3f(u).mul((float) Math.cos(Math.PI * i / 16D)).fma((float) Math.sin(Math.PI * i / 16D), v).add(middle), 1F));
 
             if (clip.w <= 0F) continue;
 
@@ -688,33 +687,30 @@ public class Gizmo
     {
         this.applyBakedRotation(stack);
 
+        float distanceScale = this.getAxesDistanceScale(stack);
+
+        stack.pushPose();
+        GizmoAnsicht.scheren(stack);
+        stack.scale(distanceScale, distanceScale, distanceScale);
+
         if (BBSSettings.gizmos.get())
         {
-            float distanceScale = this.getAxesDistanceScale(stack);
-
             /* Cache the sphere's effective world radius (in
              * {@link #lastRenderMatrix}'s coordinate frame) so
              * {@link #computeScreenRadius} can report the real on-screen
              * pixel size for hover/pick distance checks. */
             this.lastSphereLocalRadius = 0.22F * BBSSettings.axesScale.get() * distanceScale;
-
-            stack.pushPose();
-            stack.scale(distanceScale, distanceScale, distanceScale);
             this.lastSphereMatrix.set(GizmoRinge.modellAnsicht(stack));
             this.hasLastSphereMatrix = true;
             this.drawOccludedGizmo(stack);
-            stack.popPose();
         }
         else
         {
-            float distanceScale = this.getAxesDistanceScale(stack);
-
-            stack.pushPose();
-            stack.scale(distanceScale, distanceScale, distanceScale);
             Draw.coolerAxes(stack, 0.25F, 0.008F);
-            stack.popPose();
         }
 
+        stack.popPose();
+        /* Outside the VIEW shear: the constraint guide runs along the axis the drag really slides on. */
         this.drawInfiniteLine(stack);
     }
 
@@ -735,14 +731,10 @@ public class Gizmo
         float opacity = BBSSettings.gizmoOpacity.get();
         Vector4f deckkraft = new Vector4f(1F, 1F, 1F, opacity);
 
-        /* ⛔ UMGEKEHRTE TIEFE: der Durchgang stempelt die Griff-Flaeche auf die FERNE Ebene,
-         * damit das Modell davor das Gizmo nicht verdecken kann. In 1.21.1 lag fern bei 1,0
-         * (depthRange(1,1)); 26.2 rechnet umgekehrt, dort ist fern 0,0. Mechanisch
-         * uebernommen haette dieselbe Zeile das Gegenteil bewirkt -- das Gizmo waere ganz
-         * nach vorn gestempelt worden und haette die Szene ausgestanzt. */
-        GL11.glDepthRange(0D, 0D);
-        this.drawAxes(stack, FormPipelines.tiefenwand(), null, 0.25F, 0.008F);
-        GL11.glDepthRange(0D, 1D);
+        /* Hier stand ein Tiefenstempel per GL11.glDepthRange gegen die Tiefe des Modells. Das
+         * Gizmo zeichnet aber nur noch in seine eigene PiP-Textur (GizmoRenderer), deren Farbe
+         * und Tiefe Vanilla vorher loescht -- dort gibt es keine Modelltiefe. Unter Vulkan
+         * brach der GL-Aufruf die JVM ab ("No context is current", 2026-10-12). */
 
         /* Die Deckkraft reitet auf dem Alpha des Farbmodulators, den der position_color-Shader
          * in jede Ecke multipliziert -- Mischen muss also an sein, damit sie sichtbar wird
@@ -1046,16 +1038,16 @@ public class Gizmo
     void drawOccludedRing(PoseStack stack, Axis axis, float radius, float thickness, float r, float g, float b)
     {
         Vector2f arc = new Vector2f();
+        boolean gimbal = GizmoGimbal.ausrichten(stack, axis); /* GIMBAL: the ring lies on its channel's axis, here and in the pick pass */
 
-        if (!this.visibleRingArc(stack, axis, radius, arc))
+        if (this.visibleRingArc(stack, axis, radius, arc))
         {
-            return;
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle(
+                mchorse.bbs_mod.graphics.PickZiel.aktiv() == null ? "gizmo3d.stelle4" : "gizmo3d.stelle5");
+            this.ringe.abschnittZeichnen(stack, axis, radius, thickness, arc.x, arc.y, r, g, b);
         }
 
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle(
-            mchorse.bbs_mod.graphics.PickZiel.aktiv() == null ? "gizmo3d.stelle4" : "gizmo3d.stelle5");
-
-        this.ringe.abschnittZeichnen(stack, axis, radius, thickness, arc.x, arc.y, r, g, b);
+        if (gimbal) stack.popPose();
     }
 
     void drawCachedRingBillboard(PoseStack stack, float r, float g, float b, float a)
@@ -1150,8 +1142,8 @@ public class Gizmo
 
         stack.pushPose();
         
-        if (axis == Axis.X) stack.mulPose(com.mojang.math.Axis.ZP.rotation(MathUtils.PI / 2F));
-        if (axis == Axis.Z) stack.mulPose(com.mojang.math.Axis.XP.rotation(MathUtils.PI / 2F));
+        if (axis == Axis.X) stack.rotate(com.mojang.math.Axis.ZP.rotation(MathUtils.PI / 2F));
+        if (axis == Axis.Z) stack.rotate(com.mojang.math.Axis.XP.rotation(MathUtils.PI / 2F));
 
         int color = axis == Axis.X ? Colors.RED : (axis == Axis.Y ? Colors.GREEN : Colors.BLUE);
         float r = Colors.getR(color);
@@ -1339,19 +1331,19 @@ public class Gizmo
         {
             float scale = BBSSettings.axesScale.get();
             float radius = 0.22F * scale;
-            float ringThickness = 0.02F * scale * BBSSettings.axesThickness.get();
+            float ringThickness = 0.02F * scale * BBSSettings.axesThickness.get() * GizmoHover.LINIE;
 
-            if (active == null || active == Handle.ROTATE_Z) this.drawOccludedRing(stack, Axis.Z, radius, ringThickness, dimmed(Colors.getR(Colors.BLUE), constrained), dimmed(Colors.getG(Colors.BLUE), constrained), dimmed(Colors.getB(Colors.BLUE), constrained));
-            if (active == null || active == Handle.ROTATE_X) this.drawOccludedRing(stack, Axis.X, radius, ringThickness, dimmed(Colors.getR(Colors.RED), constrained), dimmed(Colors.getG(Colors.RED), constrained), dimmed(Colors.getB(Colors.RED), constrained));
-            if (active == null || active == Handle.ROTATE_Y) this.drawOccludedRing(stack, Axis.Y, radius, ringThickness, dimmed(Colors.getR(Colors.GREEN), constrained), dimmed(Colors.getG(Colors.GREEN), constrained), dimmed(Colors.getB(Colors.GREEN), constrained));
+            if (active == null || active == Handle.ROTATE_Z) this.drawOccludedRing(stack, Axis.Z, radius, ringThickness, GizmoHover.kanal(Handle.ROTATE_Z, active, 0, dimmed(Colors.getR(Colors.BLUE), constrained)), GizmoHover.kanal(Handle.ROTATE_Z, active, 1, dimmed(Colors.getG(Colors.BLUE), constrained)), GizmoHover.kanal(Handle.ROTATE_Z, active, 2, dimmed(Colors.getB(Colors.BLUE), constrained)));
+            if (active == null || active == Handle.ROTATE_X) this.drawOccludedRing(stack, Axis.X, radius, ringThickness, GizmoHover.kanal(Handle.ROTATE_X, active, 0, dimmed(Colors.getR(Colors.RED), constrained)), GizmoHover.kanal(Handle.ROTATE_X, active, 1, dimmed(Colors.getG(Colors.RED), constrained)), GizmoHover.kanal(Handle.ROTATE_X, active, 2, dimmed(Colors.getB(Colors.RED), constrained)));
+            if (active == null || active == Handle.ROTATE_Y) this.drawOccludedRing(stack, Axis.Y, radius, ringThickness, GizmoHover.kanal(Handle.ROTATE_Y, active, 0, dimmed(Colors.getR(Colors.GREEN), constrained)), GizmoHover.kanal(Handle.ROTATE_Y, active, 1, dimmed(Colors.getG(Colors.GREEN), constrained)), GizmoHover.kanal(Handle.ROTATE_Y, active, 2, dimmed(Colors.getB(Colors.GREEN), constrained)));
         }
 
         /* The screen-space (billboard) view-rotation ring is intentionally excluded from the
          * "Hide rotation rings" option, so it is always drawn regardless of that setting. */
         if (active == null || active == Handle.VIEW)
         {
-            int color = Colors.LIGHTEST_GRAY;
-            float alpha = Colors.getA(color) * BBSSettings.gizmoOpacity.get() * (constrained ? 0.35F : 1F);
+            int color = GizmoHover.farbe(Handle.VIEW, active, Colors.LIGHTEST_GRAY);
+            float alpha = Colors.getA(Colors.LIGHTEST_GRAY) * BBSSettings.gizmoOpacity.get() * (constrained ? 0.35F : 1F);
 
             /* This VBO ring sets the shader colour itself, so the opacity modulator
              * doesn't reach it — fold it into the alpha here instead. */
@@ -1385,7 +1377,7 @@ public class Gizmo
         boolean showRotate = this.mode.shows(Op.ROTATE) && (active == null || active.op == Op.ROTATE || active.op == Op.VIEW || active.op == Op.TRACKBALL);
 
         axisSize *= scale * this.combinedInnerScale();
-        axisOffset *= scale * thickness;
+        axisOffset *= scale * thickness * GizmoHover.LINIE;
 
         boolean building = false;
         BufferBuilder builder = null;
@@ -1413,9 +1405,9 @@ public class Gizmo
                 Handle planeXY = showMove ? Handle.MOVE_XY : Handle.SCALE_XY;
                 Handle planeZY = showMove ? Handle.MOVE_ZY : Handle.SCALE_ZY;
 
-                if (active == null || active == barX) Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, Colors.RED);
-                if (active == null || active == barY) Draw.fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, Colors.GREEN);
-                if (active == null || active == barZ) Draw.fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, Colors.BLUE);
+                if (active == null || active == barX) Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, GizmoHover.farbe(barX, active, Colors.RED));
+                if (active == null || active == barY) Draw.fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, GizmoHover.farbe(barY, active, Colors.GREEN));
+                if (active == null || active == barZ) Draw.fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, GizmoHover.farbe(barZ, active, Colors.BLUE));
 
                 /* Screen-space (view-plane) translate handle: a white cube at the centre,
                  * twice the bars' thickness. Drawn before the planes so they overlay it,
@@ -1424,7 +1416,7 @@ public class Gizmo
                 {
                     float screenHalf = SCREEN_CUBE_HALF * scale * thickness;
 
-                    Draw.fillBox(builder, stack, -screenHalf, -screenHalf, -screenHalf, screenHalf, screenHalf, screenHalf, Colors.WHITE);
+                    Draw.fillBox(builder, stack, -screenHalf, -screenHalf, -screenHalf, screenHalf, screenHalf, screenHalf, GizmoHover.farbe(Handle.SCREEN, active, Colors.WHITE));
                 }
 
                 /* Uniform-scale handle: the same centre cube, shown in scale mode only when
@@ -1434,7 +1426,7 @@ public class Gizmo
                 {
                     float scaleAllHalf = SCREEN_CUBE_HALF * scale * thickness;
 
-                    Draw.fillBox(builder, stack, -scaleAllHalf, -scaleAllHalf, -scaleAllHalf, scaleAllHalf, scaleAllHalf, scaleAllHalf, Colors.WHITE);
+                    Draw.fillBox(builder, stack, -scaleAllHalf, -scaleAllHalf, -scaleAllHalf, scaleAllHalf, scaleAllHalf, scaleAllHalf, GizmoHover.farbe(Handle.SCALE_ALL, active, Colors.WHITE));
                 }
 
                 /* The plane quad's footprint is a fixed fraction of the axis length,
@@ -1444,17 +1436,17 @@ public class Gizmo
                 float planeEnd = planeStart + axisSize * 0.2F;
                 float planeThickness = axisOffset * 0.5F;
 
-                if (active == null || active == planeXZ) Draw.fillBox(builder, stack, planeStart, -planeThickness, planeStart, planeEnd, planeThickness, planeEnd, Colors.PLANE_XZ);
-                if (active == null || active == planeXY) Draw.fillBox(builder, stack, planeStart, planeStart, -planeThickness, planeEnd, planeEnd, planeThickness, Colors.PLANE_XY);
-                if (active == null || active == planeZY) Draw.fillBox(builder, stack, -planeThickness, planeStart, planeStart, planeThickness, planeEnd, planeEnd, Colors.PLANE_ZY);
+                if (active == null || active == planeXZ) Draw.fillBox(builder, stack, planeStart, -planeThickness, planeStart, planeEnd, planeThickness, planeEnd, GizmoHover.farbe(planeXZ, active, Colors.PLANE_XZ));
+                if (active == null || active == planeXY) Draw.fillBox(builder, stack, planeStart, planeStart, -planeThickness, planeEnd, planeEnd, planeThickness, GizmoHover.farbe(planeXY, active, Colors.PLANE_XY));
+                if (active == null || active == planeZY) Draw.fillBox(builder, stack, -planeThickness, planeStart, planeStart, planeThickness, planeEnd, planeEnd, GizmoHover.farbe(planeZY, active, Colors.PLANE_ZY));
 
                 if (showScale)
                 {
                     float cubeHalf = SCALE_CUBE_HALF * scale * thickness;
 
-                    if (active == null || active == Handle.SCALE_X) Draw.fillBox(builder, stack, axisSize - cubeHalf, -cubeHalf, -cubeHalf, axisSize + cubeHalf, cubeHalf, cubeHalf, Colors.RED);
-                    if (active == null || active == Handle.SCALE_Y) Draw.fillBox(builder, stack, -cubeHalf, axisSize - cubeHalf, -cubeHalf, cubeHalf, axisSize + cubeHalf, cubeHalf, Colors.GREEN);
-                    if (active == null || active == Handle.SCALE_Z) Draw.fillBox(builder, stack, -cubeHalf, -cubeHalf, axisSize - cubeHalf, cubeHalf, cubeHalf, axisSize + cubeHalf, Colors.BLUE);
+                    if (active == null || active == Handle.SCALE_X) Draw.fillBox(builder, stack, axisSize - cubeHalf, -cubeHalf, -cubeHalf, axisSize + cubeHalf, cubeHalf, cubeHalf, GizmoHover.farbe(Handle.SCALE_X, active, Colors.RED));
+                    if (active == null || active == Handle.SCALE_Y) Draw.fillBox(builder, stack, -cubeHalf, axisSize - cubeHalf, -cubeHalf, cubeHalf, axisSize + cubeHalf, cubeHalf, GizmoHover.farbe(Handle.SCALE_Y, active, Colors.GREEN));
+                    if (active == null || active == Handle.SCALE_Z) Draw.fillBox(builder, stack, -cubeHalf, -cubeHalf, axisSize - cubeHalf, cubeHalf, cubeHalf, axisSize + cubeHalf, GizmoHover.farbe(Handle.SCALE_Z, active, Colors.BLUE));
                 }
             }
 
@@ -1522,6 +1514,7 @@ public class Gizmo
         float distanceScale = this.getAxesDistanceScale(stack);
 
         stack.pushPose();
+        GizmoAnsicht.scheren(stack); /* same VIEW flattening as the visual pass, or the hitboxes drift off the handles */
         stack.scale(distanceScale, distanceScale, distanceScale);
         /* Same axisOffset as the visual pass (Gizmo#drawGizmo) so the pick hitbox
          * matches the drawn handles instead of overhanging them. */
@@ -1606,7 +1599,9 @@ public class Gizmo
      */
     public void reorientForSpace(PoseStack stack, TransformSpace space, Matrix4f cameraView, Matrix3f globalAxes)
     {
-        if (space == null || space == TransformSpace.LOCAL || space == TransformSpace.PARENT || cameraView == null)
+        GizmoGimbal.platzieren(cameraView == null ? null : space); /* for the draw passes (VIEW shear, GIMBAL rings); without a camera nothing is reoriented */
+
+        if (space == null || space == TransformSpace.LOCAL || space == TransformSpace.PARENT || space == TransformSpace.GIMBAL || cameraView == null)
         {
             /* MERGE fsgh/2.5: hier stand unser "orientierung beim greifen einfrieren".
              * Es ist NICHT verloren — upstream hat dieselbe sache neu gebaut, siehe

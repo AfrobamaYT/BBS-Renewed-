@@ -31,6 +31,9 @@ public class MinecraftSourcePack implements ISourcePack
 
     public void setupPaths()
     {
+        /* A resource reload calls this again: textures of a pack switched off must go */
+        this.links = new HashMap<>();
+
         Map<Identifier, List<Resource>> map = this.manager.listResourceStacks("textures", (l) -> l.getNamespace().equals("minecraft") && l.getPath().endsWith(".png"));
 
         for (Identifier id : map.keySet())

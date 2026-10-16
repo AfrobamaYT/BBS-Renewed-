@@ -72,6 +72,8 @@ public class UITextureManagerPanel extends UIDashboardPanel
         super(dashboard);
 
         this.picker = new UITexturePicker(null).cantBeClosed();
+        /* cantBeClosed() nimmt das X aus der Symbolzeile; ihre Breite zaehlt es noch mit -> Luecke vor dem Pinsel. */
+        this.picker.pixelEdit.getParent().w(this.picker.pixelEdit.getParent().getChildren().size() * 20);
         this.picker.full(this);
         this.picker.fill(null);
 

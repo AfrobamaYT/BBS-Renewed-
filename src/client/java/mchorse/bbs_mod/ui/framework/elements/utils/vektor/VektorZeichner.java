@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.utils.vektor;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
@@ -26,7 +26,7 @@ public final class VektorZeichner
     /** Saumbreite: ein physisches Pixel, in GUI-Einheiten. */
     private static float saum()
     {
-        return 1F / (float) Minecraft.getInstance().getWindow().getGuiScale();
+        return 1F / mchorse.bbs_mod.BBSModClient.getGUIScale();
     }
 
     /**

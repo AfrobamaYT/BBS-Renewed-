@@ -4,6 +4,7 @@ import net.fabricmc.loader.api.FabricLoader;
 
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.ui.utils.keys.Zweitbelegungen;
+import mchorse.bbs_mod.ui.utils.keys.LegacyKeyboardKeys;
 
 import org.slf4j.Logger;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
@@ -109,6 +110,19 @@ public final class KeybindOverrides
     public static synchronized Map<String, KeyCombo> all()
     {
         return Collections.unmodifiableMap(registry);
+    }
+
+    /** Retire a removed shortcut without changing saved presets or unrelated bindings. */
+    public static synchronized void unregister(String id)
+    {
+        KeyCombo combo = registry.remove(id);
+        defaultKeys.remove(id);
+
+        if (combo != null)
+        {
+            combo.keys.clear();
+            KeyCombo.getRegistrierte().remove(combo);
+        }
     }
 
     /** Die eine Kategorie, die überall gilt — sie kollidiert mit jedem anderen Kontext. */
@@ -500,6 +514,11 @@ public final class KeybindOverrides
             try
             {
                 parsePresetFile(file);
+                /* A saved shipped preset replaces the seeded one wholesale, so a binding added
+                 * to the shipped layout later never reached an existing install. Fill in what
+                 * the file lacks; what the user bound stays. */
+                LinkeHandVorgaben.buildLeftHandLayout().forEach(presets.get(PRESET_LEFT_HAND)::putIfAbsent);
+                LinkeHandVorgaben.buildLeftHandMouseLayout().forEach(presets.get(PRESET_LEFT_HAND_MOUSE)::putIfAbsent);
                 LOG.info("Loaded keybind presets from {}", file);
             }
             catch (Exception ex)
@@ -518,22 +537,16 @@ public final class KeybindOverrides
                 {
                     String body = readAll(legacy);
                     Map<String, int[]> parsed = parseFlatJson(body);
+                    migrateLegacyKeys(parsed);
                     if (!parsed.isEmpty())
                     {
-                        presets.put(PRESET_LEFT_HAND, parsed);
-                        activePreset = PRESET_LEFT_HAND;
+                        presets.put(PRESET_LEFT_HAND, parsed); /* kept as a preset to pick; activating it changed keys behind the user's back */
                         LOG.info("Migrated legacy keybinds.json into '{}' preset", PRESET_LEFT_HAND);
                     }
                 }
                 catch (Exception ignored) {}
             }
-            else
-            {
-                /* Brand-new install: pick Left-Hand as the active preset
-                 *  so the user gets the curated layout out of the box. */
-                activePreset = PRESET_LEFT_HAND;
-            }
-            save();
+            save(); /* a new install stays on BBS Default; Left-Hand is offered, never chosen for the user */
         }
 
         /* Apply active preset's overrides to whatever combos already
@@ -561,6 +574,7 @@ public final class KeybindOverrides
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file)))
         {
             writer.write("{\n");
+            writer.write("  \"key_format\": \"sdl3-scancode\",\n");
             writer.write("  \"active\": \"");
             writer.write(escape(activePreset));
             writer.write("\",\n");
@@ -634,6 +648,9 @@ public final class KeybindOverrides
     {
         String s = readAll(file);
         int n = s.length();
+        com.google.gson.JsonObject document = com.google.gson.JsonParser.parseString(s).getAsJsonObject();
+        boolean legacy = !document.has("key_format")
+            || !"sdl3-scancode".equals(document.get("key_format").getAsString());
 
         /* "active": "name" */
         int activeIdx = s.indexOf("\"active\"");
@@ -685,6 +702,7 @@ public final class KeybindOverrides
 
             String body = s.substring(bodyStart, j + 1);
             Map<String, int[]> parsed = parseFlatJson(body);
+            if (legacy) migrateLegacyKeys(parsed);
             presets.put(name, parsed);
 
             i = j + 1;
@@ -731,6 +749,17 @@ public final class KeybindOverrides
         }
 
         return result;
+    }
+
+    private static void migrateLegacyKeys(Map<String, int[]> bindings)
+    {
+        for (int[] keys : bindings.values())
+        {
+            for (int i = 0; i < keys.length; i++)
+            {
+                if (keys[i] > 0) keys[i] = LegacyKeyboardKeys.fromGlfw(keys[i]);
+            }
+        }
     }
 
     private static String escape(String s)

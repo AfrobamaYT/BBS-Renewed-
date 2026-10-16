@@ -272,7 +272,7 @@ public final class RigWidgets
             }
         }
 
-        float ui = (float) net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale();
+        float ui = mchorse.bbs_mod.BBSModClient.getGUIScale();
         float dick = breite * Math.max(ui, 1F);
         Vector3f[] richtung = scratch.richtungen;
         float[] streckung = scratch.streckung;
@@ -402,7 +402,7 @@ public final class RigWidgets
     }
 
     /** Weltbreite eines halben Pixels am Ort dieses Punktes. */
-    private static float halb(Vector3f p)
+    static float halb(Vector3f p)
     {
         return weltProPixel(p.length()) * (breitenSkala <= 0F ? 1F : breitenSkala);
     }

@@ -162,7 +162,7 @@ public final class BBSPerfConfig
      *  wasted-channel ratio. */
     public static volatile long lazyKeyframeChannelBuilds = 0L;
 
-    /** iter 82 — gate for the wrapped renderer's Sodium fast-path.
+    /** iter 82 — gate for CrowdIrisWrappedRenderer's Sodium fast-path.
      *
      *  When true: write 54-byte Iris-extended vertex format off-heap +
      *  Sodium VertexBufferWriter.push(IrisVertexFormats.ENTITY) →
@@ -181,9 +181,14 @@ public final class BBSPerfConfig
      *  of transparency. */
     public static volatile boolean CROWD_IRIS_FAST_PATH = false;
 
-    /** Crowd frustum culling. DEFAULT OFF per user: everything must stay
+    /** Crowd frustum culling. DEFAULT OFF per user: the crowd army must stay
      *  fully visible regardless of camera angle (mirrors the no-distance-cull
-     *  rule for BBS replays). No LODs ever (user rule). */
+     *  rule for BBS replays — armies are placed/prepared off-camera and must
+     *  not pop in/out during a shot). When false, the Phase-1a frustum cull in
+     *  CrowdIrisWrappedRenderer is skipped and every spawned mob is baked
+     *  (subject only to MAX_VISIBLE_BAKE). Toggle on via
+     *  /crowdmass cull on  for the perf win when you DO want off-screen mobs
+     *  skipped (tight first-person shots). No LODs ever (user rule). */
     public static volatile boolean ENABLE_CROWD_FRUSTUM_CULL = false;
 
     /** afrobama 2026-05-31 — pool the per-frame instance ByteBuffers (gbuffer + shadow) instead of
@@ -923,7 +928,7 @@ public final class BBSPerfConfig
      * ------------------------------------------------------------------ */
 
     /** Master switch for the Tier 2a dedicated worker pool. When true,
-     *  the wrapped renderer's Phase 1b dispatches 256-instance
+     *  CrowdIrisWrappedRenderer's Phase 1b dispatches 256-instance
      *  batches to BBSEntityWorkerPool instead of using parallelStream.
      *  Default OFF. */
     public static volatile boolean CROWD_USE_DEDICATED_POOL = false;
@@ -942,7 +947,7 @@ public final class BBSPerfConfig
      * ------------------------------------------------------------------ */
 
     /** Master gate for the Tier 2c multi-draw path in
-     *  the GPU-instanced renderer. When true, the renderer consults
+     *  CrowdIrisGpuInstancedRenderer. When true, the renderer consults
      *  BBSCrowdMeshAtlas + BBSMultiDrawBatch instead of calling
      *  glDrawElementsInstanced directly. Default OFF — opt-in via
      *  /bbsdebug multidraw on. For the single-mesh villager crowd the

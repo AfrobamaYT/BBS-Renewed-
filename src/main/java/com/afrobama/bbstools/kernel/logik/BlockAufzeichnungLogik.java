@@ -12,6 +12,9 @@ import net.minecraft.world.level.chunk.LevelChunk;
 /**
  * Logik hinter {@code WorldChunkMixin} — schreibt Blockaenderungen fuer die Aufzeichnung mit.
  *
+ * <p>Nicht zu verwechseln mit {@code BlockAenderungMeldenLogik} auf der Client-Seite: die
+ * meldet an die Blender-Bruecke, diese hier fuellt die Aufzeichnung.</p>
+ *
  * <p>⚠️ DIE REIHENFOLGE IST DER GANZE WITZ. Das Blockobjekt wird bei HEAD abgeschrieben, der
  * Blockzustand erst bei RETURN:</p>
  * <ul>

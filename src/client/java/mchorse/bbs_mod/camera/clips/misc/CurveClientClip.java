@@ -68,7 +68,7 @@ public class CurveClientClip extends CurveClip
 
         for (KeyframeChannel<Double> channel : this.channels.getChannels())
         {
-            if (channel.isEmpty())
+            if (!channel.hasEnabledKeyframes())
             {
                 continue;
             }
@@ -77,6 +77,14 @@ public class CurveClientClip extends CurveClip
 
             if (id.startsWith(SHADER_CURVES_PREFIX))
             {
+                if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("vitrail")
+                    && mchorse.bbs_mod.graphics.GpuBackend.isVulkan()
+                    && mchorse.bbs_mod.integrations.vitrail.VitrailShaderOptions.present())
+                {
+                    mchorse.bbs_mod.integrations.vitrail.VitrailCurveUniforms.setValue(id.substring(SHADER_CURVES_PREFIX.length()),
+                        channel.interpolate(context.relativeTick + context.transition).floatValue());
+                    continue;
+                }
                 ShaderCurves.ShaderVariable variable = ShaderCurves.variableMap.get(id.substring(SHADER_CURVES_PREFIX.length()));
 
                 if (variable != null)

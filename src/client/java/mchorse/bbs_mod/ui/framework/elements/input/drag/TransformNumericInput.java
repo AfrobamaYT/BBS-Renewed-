@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements.input.drag;
 
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLScancode;
+import com.mojang.blaze3d.platform.InputConstants;
 
 /**
  * Blender-style numeric input captured while a hotkey-driven G/S/R operation
@@ -57,7 +58,7 @@ public class TransformNumericInput
             return Result.CHANGED;
         }
 
-        if (key == GLFW.GLFW_KEY_PERIOD || key == GLFW.GLFW_KEY_KP_DECIMAL)
+        if (key == InputConstants.KEY_PERIOD || key == SDLScancode.SDL_SCANCODE_KP_PERIOD)
         {
             StringBuilder buffer = this.activeBuffer();
 
@@ -77,7 +78,7 @@ public class TransformNumericInput
             return Result.CONSUMED;
         }
 
-        if (key == GLFW.GLFW_KEY_MINUS || key == GLFW.GLFW_KEY_KP_SUBTRACT)
+        if (key == InputConstants.KEY_MINUS || key == SDLScancode.SDL_SCANCODE_KP_MINUS)
         {
             this.negative = !this.negative;
             this.active = true;
@@ -85,7 +86,7 @@ public class TransformNumericInput
             return Result.CHANGED;
         }
 
-        if (key == GLFW.GLFW_KEY_SLASH || key == GLFW.GLFW_KEY_KP_DIVIDE)
+        if (key == InputConstants.KEY_SLASH || key == SDLScancode.SDL_SCANCODE_KP_DIVIDE)
         {
             /* First '/' opens a divisor that subsequent typing feeds; a second
              * '/' drops it and returns to editing the dividend as usual. */
@@ -104,7 +105,7 @@ public class TransformNumericInput
             return Result.CHANGED;
         }
 
-        if (key == GLFW.GLFW_KEY_BACKSPACE)
+        if (key == InputConstants.KEY_BACKSPACE)
         {
             if (!this.active)
             {
@@ -195,14 +196,19 @@ public class TransformNumericInput
 
     private static int digit(int key)
     {
-        if (key >= GLFW.GLFW_KEY_0 && key <= GLFW.GLFW_KEY_9)
+        if (key == InputConstants.KEY_0 || key == InputConstants.KEY_NUMPAD0)
         {
-            return key - GLFW.GLFW_KEY_0;
+            return 0;
         }
 
-        if (key >= GLFW.GLFW_KEY_KP_0 && key <= GLFW.GLFW_KEY_KP_9)
+        if (key >= InputConstants.KEY_1 && key <= InputConstants.KEY_9)
         {
-            return key - GLFW.GLFW_KEY_KP_0;
+            return key - InputConstants.KEY_1 + 1;
+        }
+
+        if (key >= InputConstants.KEY_NUMPAD1 && key <= InputConstants.KEY_NUMPAD9)
+        {
+            return key - InputConstants.KEY_NUMPAD1 + 1;
         }
 
         return -1;

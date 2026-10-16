@@ -114,6 +114,12 @@ public class ProceduralAnimator implements IAnimator
         }
 
         IModel model = armature.getModel();
+        /* Which bone plays which role: the model's own assignment, else the old names (BBS FS f3113ccdd) */
+        java.util.Map<String, String> roles = armature.getProceduralBones();
+        String headBone = ProceduralBone.HEAD.resolve(model, roles), torsoBone = ProceduralBone.TORSO.resolve(model, roles);
+        String rightArmBone = ProceduralBone.RIGHT_ARM.resolve(model, roles), leftArmBone = ProceduralBone.LEFT_ARM.resolve(model, roles);
+        String rightLegBone = ProceduralBone.RIGHT_LEG.resolve(model, roles), leftLegBone = ProceduralBone.LEFT_LEG.resolve(model, roles);
+        String anchorBone = ProceduralBone.ANCHOR.resolve(model, roles);
         ItemStack main = target.getEquipmentStack(EquipmentSlot.MAINHAND);
         ItemStack offhand = target.getEquipmentStack(EquipmentSlot.OFFHAND);
 
@@ -164,10 +170,11 @@ public class ProceduralAnimator implements IAnimator
             ModelGroup leftArm = null;
             ModelGroup rightArm = null;
             ModelGroup torso = null;
+            ModelGroup rightLeg = null, leftLeg = null;
 
             for (ModelGroup group : model.getAllGroups())
             {
-                if (group.id.equals("anchor"))
+                if (!anchorBone.isEmpty() && group.id.equals(anchorBone))
                 {
                     if (target.isUsingRiptide())
                     {
@@ -215,8 +222,12 @@ public class ProceduralAnimator implements IAnimator
                         }
                     }
                 }
-                else if (group.id.equals("head"))
+                else if (!headBone.isEmpty() && group.id.equals(headBone))
                 {
+                    /* The look direction must not erase the authored sneaking head offset. */
+                    float sneakX = target.isSneaking() ? group.current.rotate.x - group.initial.rotate.x : 0F;
+                    float sneakY = target.isSneaking() ? group.current.rotate.y - group.initial.rotate.y : 0F;
+                    if (target.isSneaking()) group.current.rotate.x = group.initial.rotate.x;
                     group.current.rotate.y = -yaw;
 
                     if (isRolling)
@@ -231,8 +242,10 @@ public class ProceduralAnimator implements IAnimator
                     {
                         group.current.rotate.x = -pitch;
                     }
+                    group.current.rotate.x += sneakX;
+                    group.current.rotate.y += sneakY;
                 }
-                else if (group.id.equals("right_arm"))
+                else if (!rightArmBone.isEmpty() && group.id.equals(rightArmBone))
                 {
                     group.current.rotate.x += MathUtils.toDeg(Mth.cos(limbPhase * 0.6662F) * 2.0F * limbSpeed * 0.5F / coefficient);
                     group.current.rotate.z += MathUtils.toDeg(1F * (Mth.cos(-age * 0.09F) * 0.05F + 0.05F));
@@ -245,7 +258,7 @@ public class ProceduralAnimator implements IAnimator
 
                     rightArm = group;
                 }
-                else if (group.id.equals("left_arm"))
+                else if (!leftArmBone.isEmpty() && group.id.equals(leftArmBone))
                 {
                     group.current.rotate.x += MathUtils.toDeg(Mth.cos(limbPhase * 0.6662F + 3.1415927F) * 2.0F * limbSpeed * 0.5F / coefficient);
                     group.current.rotate.z += MathUtils.toDeg(-1F * (Mth.cos(-age * 0.09F) * 0.05F + 0.05F));
@@ -258,17 +271,19 @@ public class ProceduralAnimator implements IAnimator
 
                     leftArm = group;
                 }
-                else if (group.id.equals("torso"))
+                else if (!torsoBone.isEmpty() && group.id.equals(torsoBone))
                 {
                     torso = group;
                 }
-                else if (group.id.equals("right_leg"))
+                else if (!rightLegBone.isEmpty() && group.id.equals(rightLegBone))
                 {
                     group.current.rotate.x = MathUtils.toDeg(Mth.cos(limbPhase * 0.6662F + 3.1415927F) * 1.4F * limbSpeed / coefficient);
+                    rightLeg = group;
                 }
-                else if (group.id.equals("left_leg"))
+                else if (!leftLegBone.isEmpty() && group.id.equals(leftLegBone))
                 {
                     group.current.rotate.x = MathUtils.toDeg(Mth.cos(limbPhase * 0.6662F) * 1.4F * limbSpeed / coefficient);
+                    leftLeg = group;
                 }
             }
 
@@ -303,16 +318,20 @@ public class ProceduralAnimator implements IAnimator
                 rightArm.current.rotate.y += torso.current.rotate.y * 2F;
                 rightArm.current.rotate.z += MathUtils.toDeg(Mth.sin(handSwingProgress * MathUtils.PI) * -0.4F);
             }
+
+            /* Last, as vanilla does: the swim stroke overrides the walk, weighted by the lean (BBS FS f0668c423) */
+            if (leaningPitch > 0F) VanillaSwimPose.apply(VanillaBone.of(rightArm), VanillaBone.of(leftArm), VanillaBone.of(rightLeg), VanillaBone.of(leftLeg), leaningPitch, limbPhase, handSwingProgress, target.isUsingItem());
         }
         /* For BOBJ models */
         else
         {
             BOBJBone bobjLeftArm = null;
-            BOBJBone bobjRightArm = null;
+            BOBJBone bobjRightLeg = null, bobjLeftLeg = null;
+            BOBJBone bobjRightArm = null, bobjTorso = null;
 
             for (BOBJBone bone : model.getAllBOBJBones())
             {
-                if (bone.name.equals("anchor"))
+                if (!anchorBone.isEmpty() && bone.name.equals(anchorBone))
                 {
                     if (target.isUsingRiptide())
                     {
@@ -358,8 +377,16 @@ public class ProceduralAnimator implements IAnimator
                         }
                     }
                 }
-                else if (bone.name.equals("head"))
+                else if (!torsoBone.isEmpty() && bone.name.equals(torsoBone))
                 {
+                    bobjTorso = bone;
+                }
+                else if (!headBone.isEmpty() && bone.name.equals(headBone))
+                {
+                    /* BOBJ pose offsets are already radians; its reset transform is identity. */
+                    float sneakX = target.isSneaking() ? bone.transform.rotate.x : 0F;
+                    float sneakY = target.isSneaking() ? bone.transform.rotate.y : 0F;
+                    if (target.isSneaking()) bone.transform.rotate.x = 0F;
                     bone.transform.rotate.y = MathUtils.toRad(-yaw);
 
                     if (isRolling)
@@ -374,8 +401,10 @@ public class ProceduralAnimator implements IAnimator
                     {
                         bone.transform.rotate.x = -MathUtils.toRad(-pitch);
                     }
+                    bone.transform.rotate.x += sneakX;
+                    bone.transform.rotate.y += sneakY;
                 }
-                else if (bone.name.equals("right_arm"))
+                else if (!rightArmBone.isEmpty() && bone.name.equals(rightArmBone))
                 {
                     bone.transform.rotate.x += Mth.cos(limbPhase * 0.6662F) * 2.0F * limbSpeed * 0.5F / coefficient;
                     bone.transform.rotate.z -= 1F * (Mth.cos(-age * 0.09F) * 0.05F + 0.05F);
@@ -388,7 +417,7 @@ public class ProceduralAnimator implements IAnimator
 
                     bobjRightArm = bone;
                 }
-                else if (bone.name.equals("left_arm"))
+                else if (!leftArmBone.isEmpty() && bone.name.equals(leftArmBone))
                 {
                     bone.transform.rotate.x += Mth.cos(limbPhase * 0.6662F + 3.1415927F) * 2.0F * limbSpeed * 0.5F / coefficient;
                     bone.transform.rotate.z -= -1F * (Mth.cos(-age * 0.09F) * 0.05F + 0.05F);
@@ -401,13 +430,15 @@ public class ProceduralAnimator implements IAnimator
 
                     bobjLeftArm = bone;
                 }
-                else if (bone.name.equals("right_leg"))
+                else if (!rightLegBone.isEmpty() && bone.name.equals(rightLegBone))
                 {
                     bone.transform.rotate.x = Mth.cos(limbPhase * 0.6662F + 3.1415927F) * 1.4F * limbSpeed / coefficient;
+                    bobjRightLeg = bone;
                 }
-                else if (bone.name.equals("left_leg"))
+                else if (!leftLegBone.isEmpty() && bone.name.equals(leftLegBone))
                 {
                     bone.transform.rotate.x = Mth.cos(limbPhase * 0.6662F) * 1.4F * limbSpeed / coefficient;
+                    bobjLeftLeg = bone;
                 }
             }
 
@@ -416,6 +447,8 @@ public class ProceduralAnimator implements IAnimator
                 BOBJBone group;
                 float swingFactor = handSwingProgress;
                 float rotate = -MathUtils.toDeg(Mth.sin(Mth.sqrt(swingFactor) * MathUtils.PI * 2F) * 0.2F);
+
+                if (bobjTorso != null) bobjTorso.transform.rotate.y = -MathUtils.toRad(rotate);
 
                 bobjLeftArm.transform.translate.z -= ((float) Math.sin(MathUtils.toRad(rotate)) * 5F) / 16F;
                 bobjLeftArm.transform.translate.x -= ((float) Math.cos(MathUtils.toRad(rotate)) * 5F - 5F) / 16F;
@@ -441,6 +474,8 @@ public class ProceduralAnimator implements IAnimator
                 bobjRightArm.transform.rotate.y -= MathUtils.toRad(rotate * 2F);
                 bobjRightArm.transform.rotate.z -= Mth.sin(handSwingProgress * MathUtils.PI) * -0.4F;
             }
+
+            if (leaningPitch > 0F) VanillaSwimPose.apply(VanillaBone.of(bobjRightArm), VanillaBone.of(bobjLeftArm), VanillaBone.of(bobjRightLeg), VanillaBone.of(bobjLeftLeg), leaningPitch, limbPhase, handSwingProgress, target.isUsingItem());
         }
 
         if (this.basePost != null)

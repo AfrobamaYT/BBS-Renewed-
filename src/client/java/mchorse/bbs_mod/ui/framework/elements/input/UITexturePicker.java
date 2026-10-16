@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
@@ -47,7 +48,6 @@ import mchorse.bbs_mod.utils.resources.FilteredLink;
 import mchorse.bbs_mod.utils.resources.LinkUtils;
 import mchorse.bbs_mod.utils.resources.MultiLink;
 import org.apache.commons.io.IOUtils;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
@@ -258,7 +258,6 @@ public class UITexturePicker extends UIElement implements IImportPathProvider, I
                     filter = b.getValue() ? GL30.GL_LINEAR_MIPMAP_NEAREST : GL30.GL_NEAREST_MIPMAP_NEAREST;
                 }
 
-                texture.bind();
                 texture.setFilter(filter);
             }
         });
@@ -271,8 +270,6 @@ public class UITexturePicker extends UIElement implements IImportPathProvider, I
             if (link != null)
             {
                 Texture texture = BBSModClient.getTextures().getTexture(link);
-
-                texture.bind();
 
                 if (!texture.isMipmap())
                 {
@@ -297,10 +294,10 @@ public class UITexturePicker extends UIElement implements IImportPathProvider, I
         this.remove = new UIIcon(Icons.REMOVE, (b) -> this.removeMulti());
         this.edit = new UIIcon(Icons.EDIT, (b) -> this.toggleEditor());
 
-        UIElement icons = UI.row(0, this.viewMode, this.pixelEdit, this.folder, this.close);
+        UIElement icons = mchorse.bbs_mod.ui.texturstudio.TexturStudio.mitPinsel(UI.row(0, this.viewMode, this.pixelEdit, this.folder, this.close), this);
 
         icons.row().preferred(0);
-        icons.relative(this.browseContent).x(1F, -10).y(10).w(60).h(20).anchorX(1F);
+        icons.relative(this.browseContent).x(1F, -10).y(10).w(icons.getChildren().size() * 20).h(20).anchorX(1F);
 
         this.right.full(this.browseContent);
         this.text.relative(this.multi).x(1F, 20).wTo(icons.area).h(20);
@@ -966,8 +963,6 @@ public class UITexturePicker extends UIElement implements IImportPathProvider, I
 
         if (texture != null)
         {
-            texture.bind();
-
             this.linear.setValue(texture.isLinear());
             this.mipmap.setValue(texture.isReallyMipmap());
         }
@@ -1054,7 +1049,7 @@ public class UITexturePicker extends UIElement implements IImportPathProvider, I
     @Override
     public boolean subKeyPressed(UIContext context)
     {
-        if (context.isPressed(GLFW.GLFW_KEY_ENTER))
+        if (context.isPressed(InputConstants.KEY_RETURN))
         {
             UIFileLinkList.FileLink link = this.picker.getCurrentFirst();
 
@@ -1071,15 +1066,15 @@ public class UITexturePicker extends UIElement implements IImportPathProvider, I
 
             return true;
         }
-        else if (context.isHeld(GLFW.GLFW_KEY_UP))
+        else if (context.isHeld(InputConstants.KEY_UP))
         {
             return this.moveCurrent(-1, Window.isShiftPressed());
         }
-        else if (context.isHeld(GLFW.GLFW_KEY_DOWN))
+        else if (context.isHeld(InputConstants.KEY_DOWN))
         {
             return this.moveCurrent(1, Window.isShiftPressed());
         }
-        else if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+        else if (context.isPressed(InputConstants.KEY_ESCAPE))
         {
             if (this.currentTab != 0)
             {

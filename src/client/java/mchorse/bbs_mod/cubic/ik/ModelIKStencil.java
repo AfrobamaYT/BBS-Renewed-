@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.cubic.ik;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
@@ -90,7 +90,7 @@ public final class ModelIKStencil
 
         if (model instanceof BOBJModel)
         {
-            stack.mulPose(Axis.YP.rotation(MathUtils.PI));
+            stack.rotate(Axis.YP.rotation(MathUtils.PI));
         }
 
         /* Control-Rig vorhanden -> die Original-Shapes sind die Klickziele, nicht die Kloetze. */

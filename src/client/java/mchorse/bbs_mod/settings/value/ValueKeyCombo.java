@@ -5,6 +5,7 @@ import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.settings.values.base.BaseValueBasic;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
+import mchorse.bbs_mod.ui.utils.keys.LegacyKeyboardKeys;
 import mchorse.bbs_mod.ui.utils.keys.Zweitbelegungen;
 
 public class ValueKeyCombo extends BaseValueBasic<KeyCombo>
@@ -23,16 +24,9 @@ public class ValueKeyCombo extends BaseValueBasic<KeyCombo>
     }
 
     /**
-     * ⛔ OHNE Zweitbelegung bleibt das Format BYTE-GLEICH zum alten: eine blanke Tastenliste.
-     * Das ist der Normalfall (die meisten der 169 Aktionen bekommen nie eine zweite Belegung)
-     * und der Grund, warum eine von diesem Build geschriebene Datei in einem aelteren Build
-     * weiter laedt.
-     *
-     * <p>Mit Zweitbelegung wird daraus ein Objekt {@code {"keys": [...], "zweit": [...]}} —
-     * dasselbe Muster wie IntelliJs Keymap-XML, wo unter EINER Aktion mehrere
-     * {@code <keyboard-shortcut>} stehen. Bewusst NICHT eine Liste von Listen: {@code getInt}
-     * auf einem Listen-Element liefert still 0, und 0 ist hier der vergiftete Tastencode, der
-     * jeden Linksklick trifft.</p>
+     * 26.3 stores marked SDL scancodes. Historical bare lists and unmarked primary/secondary
+     * maps retain their GLFW interpretation during import, so numeric codes are never guessed.
+     * Unsupported historical bindings retain their original identity and source metadata.
      */
     @Override
     public BaseType toData()
@@ -50,7 +44,13 @@ public class ValueKeyCombo extends BaseValueBasic<KeyCombo>
 
         if (zweit == null || zweit.keys.isEmpty())
         {
-            return list;
+            MapType map = new MapType();
+
+            map.putString("key_format", "sdl3-scancode");
+            map.put("keys", list);
+            this.unmappedPreserve(map);
+
+            return map;
         }
 
         ListType zweitListe = new ListType();
@@ -62,8 +62,10 @@ public class ValueKeyCombo extends BaseValueBasic<KeyCombo>
 
         MapType map = new MapType();
 
+        map.putString("key_format", "sdl3-scancode");
         map.put("keys", list);
         map.put("zweit", zweitListe);
+        this.unmappedPreserve(map);
 
         return map;
     }
@@ -74,7 +76,7 @@ public class ValueKeyCombo extends BaseValueBasic<KeyCombo>
         if (data.isList())
         {
             /* ALTES FORMAT und Normalfall: blanke Tastenliste, keine Zweitbelegung. */
-            this.tastenLesen(data.asList());
+            this.tastenLesen(data.asList(), true);
             Zweitbelegungen.entfernen(this.value);
 
             return;
@@ -86,11 +88,12 @@ public class ValueKeyCombo extends BaseValueBasic<KeyCombo>
         }
 
         MapType map = data.asMap();
+        boolean legacy = !"sdl3-scancode".equals(map.getString("key_format"));
         BaseType keys = map.get("keys");
 
         if (keys != null && keys.isList())
         {
-            this.tastenLesen(keys.asList());
+            this.tastenLesen(keys.asList(), legacy);
         }
 
         BaseType zweit = map.get("zweit");
@@ -102,7 +105,9 @@ public class ValueKeyCombo extends BaseValueBasic<KeyCombo>
 
             for (int i = 0; i < liste.size(); i++)
             {
-                tasten.add(liste.getInt(i));
+                int key = liste.getInt(i);
+
+                tasten.add(legacy && key > 0 ? LegacyKeyboardKeys.fromGlfw(key) : key);
             }
 
             Zweitbelegungen.setzen(this.value, tasten);
@@ -113,13 +118,52 @@ public class ValueKeyCombo extends BaseValueBasic<KeyCombo>
         }
     }
 
-    private void tastenLesen(ListType list)
+    private void tastenLesen(ListType list, boolean legacy)
     {
         this.value.keys.clear();
 
         for (int i = 0; i < list.size(); i++)
         {
-            this.value.keys.add(list.getInt(i));
+            int key = list.getInt(i);
+
+            this.value.keys.add(legacy && key > 0 ? LegacyKeyboardKeys.fromGlfw(key) : key);
         }
+    }
+
+    private void unmappedPreserve(MapType map)
+    {
+        ListType primary = new ListType();
+        ListType secondary = new ListType();
+        KeyCombo zweit = Zweitbelegungen.hinterlegt(this.value);
+
+        for (int i = 0; i < this.value.keys.size(); i++)
+        {
+            if (LegacyKeyboardKeys.isUnmapped(this.value.keys.get(i)))
+            {
+                MapType entry = new MapType();
+
+                entry.putInt("index", i);
+                entry.putInt("glfw_code", 314);
+                primary.add(entry);
+            }
+        }
+
+        if (zweit != null)
+        {
+            for (int i = 0; i < zweit.keys.size(); i++)
+            {
+                if (LegacyKeyboardKeys.isUnmapped(zweit.keys.get(i)))
+                {
+                    MapType entry = new MapType();
+
+                    entry.putInt("index", i);
+                    entry.putInt("glfw_code", 314);
+                    secondary.add(entry);
+                }
+            }
+        }
+
+        if (!primary.isEmpty()) map.put("unmapped_legacy_keys", primary);
+        if (!secondary.isEmpty()) map.put("unmapped_legacy_zweit", secondary);
     }
 }

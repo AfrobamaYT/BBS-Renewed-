@@ -48,7 +48,14 @@ public final class NanoBausteine
 	public static void feld(long vg, float x, float y, float b, float k,
 		String etikett, String wert, int achsPunkt, float fuellung, int gruppe)
 	{
-		NanoStifte.widgetGruppe(vg, x, y, b, H_WIDGET * k, R_WIDGET * k, FELD, k, gruppe);
+		feld(vg, x, y, b, k, etikett, wert, achsPunkt, fuellung, gruppe, FELD);
+	}
+
+	/** Wie oben, mit eigenem Feldgrund (G7: FELD_KEY / FELD_ANIMIERT). */
+	public static void feld(long vg, float x, float y, float b, float k,
+		String etikett, String wert, int achsPunkt, float fuellung, int gruppe, int grund)
+	{
+		NanoStifte.widgetGruppe(vg, x, y, b, H_WIDGET * k, R_WIDGET * k, grund, k, gruppe);
 
 		if (fuellung >= 0F)
 		{
@@ -141,17 +148,38 @@ public final class NanoBausteine
 	}
 
 	/**
+	 * Optional action line under a tooltip, by zone id: {text, key} — Help's "Watch the 30-second
+	 * clip" · "Shift+F1" at a feature that has a short clip (spec section 6). Null = none.
+	 */
+	public static java.util.function.Function<String, String[]> tooltipZusatz = (id) -> null;
+
+	/** What a click on that action line does, by zone id. */
+	public static java.util.function.Consumer<String> tooltipAktion = (id) -> {};
+
+	/** The tooltip of {@code f}, its action line a click zone of {@code f}. */
+	public static void tooltip(long vg, int flaecheB, int flaecheH, float k, NanoFlaeche f)
+	{
+		Object[] faellig = f.tooltipFaellig();
+		float[] zeile = tooltip(vg, flaecheB, flaecheH, k, faellig);
+
+		if (zeile != null)
+		{
+			f.zone("tooltip-aktion", zeile[0], zeile[1], zeile[2], zeile[3], () -> tooltipAktion.accept((String) faellig[4]));
+		}
+	}
+
+	/**
 	 * Tooltip-Box nach Blenders Muster: kurze Beschreibung, darunter das Kuerzel in gedaempfter
 	 * Farbe. Wird ZULETZT gezeichnet, damit sie ueber allem liegt, und kippt an den Raendern
 	 * nach innen statt aus der Flaeche zu laufen.
 	 *
 	 * @param faellig {x, y, Beschreibung, Taste} aus {@code NanoFlaeche.tooltipFaellig()}
 	 */
-	public static void tooltip(long vg, int flaecheB, int flaecheH, float k, Object[] faellig)
+	public static float[] tooltip(long vg, int flaecheB, int flaecheH, float k, Object[] faellig)
 	{
 		if (faellig == null)
 		{
-			return;
+			return null;
 		}
 
 		String text = (String) faellig[2];
@@ -160,8 +188,10 @@ public final class NanoBausteine
 
 		float tb = breite(text, 11F * k);
 		float kb = zweizeilig ? breite(taste, 10F * k) : 0F;
-		float b = Math.max(tb, kb) + 18F * k;
-		float h = (zweizeilig ? 34F : 21F) * k;
+		String[] zusatz = faellig.length > 4 ? tooltipZusatz.apply((String) faellig[4]) : null;
+		float zb = zusatz == null ? 0F : 27F * k + breite(zusatz[0], 10.5F * k) + 16F * k + breite(zusatz[1], 10F * k) + 9F * k;
+		float b = Math.max(Math.max(tb, kb) + 18F * k, zb);
+		float h = (zweizeilig ? 34F : 21F) * k + (zusatz == null ? 0F : 26F * k);
 		float x = (Float) faellig[0];
 		float y = (Float) faellig[1] + 4F * k;
 
@@ -182,6 +212,22 @@ public final class NanoBausteine
 		{
 			NanoStifte.text(vg, SANS, 10F * k, x + 9F * k, y + 28F * k, TXT_OFF, taste, null);
 		}
+
+		if (zusatz != null)
+		{
+			/* Joint, then screen-with-play · text · key on the right */
+			float zy = y + h - 26F * k;
+
+			NanoStifte.flaeche(vg, x + 1F * k, zy, b - 2F * k, Math.max(1F, k), 0F, 0x2E2E2E);
+			NanoStifte.rahmen(vg, x + 9F * k, zy + 8.5F * k, 12F * k, 9F * k, 1.5F * k, Math.max(1F, k), BLAU_HELL);
+			NanoStifte.dreieck(vg, x + 13.5F * k, zy + 10.5F * k, x + 13.5F * k, zy + 15.5F * k, x + 17.5F * k, zy + 13F * k, BLAU_HELL);
+			NanoStifte.text(vg, SANS, 10.5F * k, x + 27F * k, zy + 17F * k, TXT, zusatz[0], null);
+			NanoStifte.text(vg, SANS, 10F * k, x + b - 9F * k - breite(zusatz[1], 10F * k), zy + 17F * k, TXT_OFF, zusatz[1], null);
+
+			return new float[] {x, zy, b, 26F * k};
+		}
+
+		return null;
 	}
 
 	/**

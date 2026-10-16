@@ -20,6 +20,7 @@ public class AudioClientClip extends AudioClip
 {
     static final class Playback
     {
+        final Link link;
         final float seconds;
         final float gain;
 
@@ -31,8 +32,9 @@ public class AudioClientClip extends AudioClip
          */
         final Vector3f position;
 
-        Playback(float seconds, float gain, Vector3f position)
+        Playback(Link link, float seconds, float gain, Vector3f position)
         {
+            this.link = link;
             this.seconds = seconds;
             this.gain = gain;
             this.position = position;
@@ -44,22 +46,26 @@ public class AudioClientClip extends AudioClip
         super();
     }
 
-    public static Map<Link, Playback> getPlayback(ClipContext context)
+    /** Keyed by the CLIP, so two clips of the same file each keep their own playback (BBS FS dcf49cf95) */
+    public static Map<Object, Playback> getPlayback(ClipContext context)
     {
         return context.clipData.get("audio", ConcurrentHashMap::new);
     }
 
     public static void manageSounds(ClipContext context)
     {
-        Map<Link, Playback> playback = getPlayback(context);
+        Map<Object, Playback> playback = getPlayback(context);
         boolean muteFilmAudioDuringVideoCapture = BBSSettings.videoMuteAudioWhileRender.get()
-            && BBSModClient.getVideoRecorder().isRecording();
+            && BBSModClient.getVideoRecorder().isRecording()
+            || mchorse.bbs_mod.ui.film.audio.UIAudioRecorder.mutesTimeline()
+            /* Playing along with DaVinci Resolve: Resolve plays the sound, BBS would double it. */
+            || com.davincilink.DavinciTabState.followsResolve;
 
-        for (Map.Entry<Link, Playback> entry : playback.entrySet())
+        for (Map.Entry<Object, Playback> entry : playback.entrySet())
         {
             Playback state = entry.getValue();
             float tickTime = state.seconds;
-            SoundPlayer player = BBSModClient.getSounds().playUnique(entry.getKey(), state.position == null);
+            SoundPlayer player = BBSModClient.getSounds().playUnique(entry.getKey(), state.link, state.position == null);
 
             if (player == null)
             {
@@ -130,24 +136,23 @@ public class AudioClientClip extends AudioClip
     @Override
     public void shutdown(ClipContext context)
     {
-        Link link = this.audio.get();
-
-        if (link != null)
-        {
-            BBSModClient.getSounds().stop(link);
-        }
+        BBSModClient.getSounds().stopOwned(this);
     }
 
     @Override
     protected void applyClip(ClipContext context, Position position)
     {
-        Link link = this.audio.get();
+        abspielen(this, this.audio.get(), context, this.volume.get());
+    }
 
+    /** Plays {@code link} for {@code clip} at the clip's time; the video clip passes its extracted track */
+    public static void abspielen(AudioClip clip, Link link, ClipContext context, float gain)
+    {
         if (link != null)
         {
             /* Nicht "position" nennen — so heisst schon die kamera-position des clips */
-            Vector3f source = this.resolveSpatialPosition(context);
-            SoundPlayer player = BBSModClient.getSounds().playUnique(link, source == null);
+            Vector3f source = resolveSpatialPosition(clip, context);
+            SoundPlayer player = BBSModClient.getSounds().playUnique(clip, link, source == null);
 
             if (player == null)
             {
@@ -155,16 +160,15 @@ public class AudioClientClip extends AudioClip
             }
 
             float tickTime = (context.relativeTick + context.transition) / 20F;
-            Map<Link, Playback> playback = getPlayback(context);
-            float gain = this.volume.get();
+            Map<Object, Playback> playback = getPlayback(context);
 
-            if (context.relativeTick >= this.duration.get() || tickTime < 0)
+            if (context.relativeTick >= clip.duration.get() || tickTime < 0)
             {
-                playback.putIfAbsent(link, new Playback(-1F, gain, source));
+                playback.putIfAbsent(clip, new Playback(link, -1F, gain, source));
             }
             else
             {
-                playback.put(link, new Playback(TimeUtils.toSeconds(this.offset.get()) + tickTime, gain, source));
+                playback.put(clip, new Playback(link, TimeUtils.toSeconds(clip.offset.get()) + tickTime, gain, source));
             }
         }
     }
@@ -179,20 +183,20 @@ public class AudioClientClip extends AudioClip
      * ausserhalb des films). Ein stiller clip waere schwerer zu diagnostizieren als ein
      * nicht-raeumlicher.</p>
      */
-    private Vector3f resolveSpatialPosition(ClipContext context)
+    private static Vector3f resolveSpatialPosition(AudioClip clip, ClipContext context)
     {
-        int mode = this.spatial.get();
+        int mode = clip.spatial.get();
 
         if (mode == SPATIAL_WORLD)
         {
-            Point point = this.spatialPoint.get();
+            Point point = clip.spatialPoint.get();
 
             return new Vector3f((float) point.x, (float) point.y, (float) point.z);
         }
 
         if (mode == SPATIAL_ACTOR && context instanceof CameraClipContext cameraContext)
         {
-            int selector = this.spatialSelector.get();
+            int selector = clip.spatialSelector.get();
             IEntity entity = selector < 0 ? null : cameraContext.entities.get(selector);
 
             if (entity != null)

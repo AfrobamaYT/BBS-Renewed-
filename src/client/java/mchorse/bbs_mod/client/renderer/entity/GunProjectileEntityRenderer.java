@@ -66,8 +66,8 @@ public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEnt
     {
         matrices.pushPose();
 
-        if (zustand.drehen) matrices.mulPose(Axis.YP.rotationDegrees(zustand.koerperDrehung));
-        if (zustand.neigen) matrices.mulPose(Axis.XP.rotationDegrees(-zustand.neigung));
+        if (zustand.drehen) matrices.rotate(Axis.YP.rotationDegrees(zustand.koerperDrehung));
+        if (zustand.neigen) matrices.rotate(Axis.XP.rotationDegrees(-zustand.neigung));
         matrices.scale(zustand.skalierung, zustand.skalierung, zustand.skalierung);
         MatrixStackUtils.applyTransform(matrices, zustand.transform);
 

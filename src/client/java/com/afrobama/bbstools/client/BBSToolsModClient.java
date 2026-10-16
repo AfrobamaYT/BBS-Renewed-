@@ -70,7 +70,7 @@ public final class BBSToolsModClient implements ClientModInitializer
         com.afrobama.bbstools.client.ui.theme.BBSToolsTransparency.register();
         BBSToolsMod.LOG.info("UI Overhaul ready — theme={}, mixins=[toggle, button, scrollbar, icon, bg-alpha]",
             com.afrobama.bbstools.client.ui.theme.BBSToolsBrand.NAME);
-        BBSToolsMod.LOG.info("UI Overhaul shortcuts: Ctrl+Alt+T transparency · Ctrl+, settings · Ctrl+H undo · Ctrl+Shift+R replay dock · Ctrl+Shift+Z/Y undo/redo step · Shift+F9 keybind editor");
+        BBSToolsMod.LOG.info("UI Overhaul shortcuts: Ctrl+Alt+T transparency · Ctrl+, settings · Ctrl+H undo · Ctrl+Shift+Z/Y undo/redo step · Shift+F9 keybind editor");
         BBSToolsMod.LOG.info("UI Overhaul commands: /bbsdebug ui-info · transparency · overlays · undo-history · replay-dock · settings");
 
         /* UI Overhaul Phase 3: align BBS-CML's accent color with our
@@ -230,6 +230,20 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  unresolved). OFF = 7 FPS visible. Default OFF for safe
          *  rendering. */
         if (com.afrobama.bbstools.client.qol.QuickWinKeybinds.DEV_ENV) com.afrobama.bbstools.client.cinematic.FastPathCommand.register();
+        /* /bbstools accelrender on|off|status: Tier 1a — toggle the
+         *  AcceleratedRendering GPU-compute crowd path. Requires
+         *  AccelRender mod installed. Default OFF until tested. */
+        /* ⛔ P3-26.2-AUS — /bbstools accelrender ist AUS (massen-crowd ueber den
+         * GPU-compute-pfad der fremd-mod AcceleratedRendering).
+         * Hier stand:  com.afrobama.bbstools.client.cinematic.AccelRenderCommand.register();
+         *
+         * Der befehl schaltet BBSCrowdAcceleratedRenderer.ENABLED, und dieser renderer ist
+         * im ausschluss-block von build.gradle stillgelegt — er uebersetzt gegen die
+         * AcceleratedRendering-API, die es fuer 26.2 nicht gibt.
+         *
+         * ZURUECK KOMMT ES MIT DER ABHAENGIGKEIT, NICHT DURCH PORTIEREN: AccelRender-mod
+         * fuer 26.2 einbinden, ausschluss von BBSCrowdAcceleratedRenderer +
+         * mixin/accelrender/** streichen, diese zeile wieder einsetzen. */
         /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         /* Tier 1 — replay fast-path measure-mode toggle. Coded by Afrobama/Claude. */
         if (com.afrobama.bbstools.client.qol.QuickWinKeybinds.DEV_ENV) com.afrobama.bbstools.client.cinematic.ReplayFastPathCommand.register();
@@ -257,8 +271,11 @@ public final class BBSToolsModClient implements ClientModInitializer
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STARTED
             .register(client ->
             {
-                long handle = client.getWindow().handle();
-                com.afrobama.bbstools.perf.BBSUploadThread.initOnClient(handle);
+                if (mchorse.bbs_mod.graphics.GpuBackend.isOpenGl())
+                {
+                    long handle = client.getWindow().handle();
+                    com.afrobama.bbstools.perf.BBSUploadThread.initOnClient(handle);
+                }
             });
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING
             .register(client -> com.afrobama.bbstools.perf.BBSUploadThread.shutdown());
@@ -283,16 +300,7 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  ragdoll feet — this lets the user clean a 64-256 b zone in
          *  one tick before rolling without /fill replace gymnastics. */
         com.afrobama.bbstools.client.level.DeleteGrassCommand.register();
-        /* DISABLED — BBS Renewed (the renamed BBS-CML fork) ships the
-         *  same editor-cam handler at source level. Running both = double
-         *  cycling per F8 press. The BBS-Renewed jar's
-         *  mchorse.bbs_mod.client.editorcam.EditorCamHandler owns this
-         *  feature now. Re-enable only if user runs BBSTools without
-         *  BBS Renewed (e.g. on stock BBS-CML). */
-        if (!isBBSRenewedPresent())
-        {
-            com.afrobama.bbstools.client.editorcam.EditorCamHandler.register();
-        }
+        /* The F8 replay-camera override was removed at the owner's request (2026-10-16). */
 
         /* Phase 16: F7 "record from cursor" hotkey — vanilla V records
          *  from tick 0, F7 records from the editor's current scrub
@@ -339,6 +347,33 @@ public final class BBSToolsModClient implements ClientModInitializer
         /* (Removed 2026-05-31) The old TAB-hold "Axiom-style" block-selection mode was
          *  inaccurate/annoying and is superseded by the BBS-side WorldBlockCapture
          *  (drag-box marquee → StructureForm/BlockForm replays). Dead code deleted. */
+
+        /* Iris Path-A (CrowdBOBJVanilla) DISABLED — produced only depth
+         *  outlines under shaders (Iris's gbuffers_entities patcher
+         *  generated shadow/outline silhouette but main color was lost).
+         *  Path B (raw-GL inside CrowdBOBJGL with GbufferPrograms phase
+         *  tagging) handles both shader-on and shader-off cases now.
+         *  Re-enable when Path A's color path is debugged. */
+        // com.afrobama.bbstools.client.crowd.mass.CrowdBOBJVanilla.register();
+
+        /* CrowdIrisWrappedRenderer — fresh take on Path-A. Same
+         *  InnerWrappedRenderType + EntityRenderStateShard pattern but
+         *  now uses real per-vertex block+sky-light (D5 fix). Without
+         *  that fix Iris's patched gbuffers_entities shader emitted
+         *  only depth/shadow data → user saw outlines only ("ghost
+         *  silhouettes"). Pull-driven: tryDraw() called from
+         *  CrowdInstancedRenderer's path-ladder, no separate
+         *  WorldRenderEvents hook. Activates only when Iris is loaded
+         *  + a shaderpack is active. */
+        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
+        /* iter 84 (2026-05-17): GPU-instanced crowd renderer that routes
+         *  through the companion Iris fork's BBSTOOLS_CROWD_ENTITIES
+         *  ShaderKey. ONE glDrawElementsInstanced for all visible mobs
+         *  through the shaderpack-patched gbuffers_entities. On stock
+         *  Iris (no fork installed) tryDraw returns false and the ladder
+         *  falls through to CrowdIrisWrappedRenderer as before. */
+        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
+
 
         /* Phase 2 Editor: Block Animation. Captures Block-Selection region,
          *  animates per-block transforms over time. Primary trigger via
@@ -467,13 +502,6 @@ public final class BBSToolsModClient implements ClientModInitializer
         /* Phase 10 redesign: clip-driven viewports replace this */
         /* com.afrobama.bbstools.client.campreview.CameraReplayWatcher.register(); */
 
-        /* Resolve F8 conflict — BBS's axes-toggle moves to Ctrl+F8 so
-         *  our F8 editor-cam can take the bare F8 binding without the
-         *  dashboard silently flipping axes off when the user presses F8. */
-        /* Deferred to the first client tick — touching BBS Keys at init poisons UIKeys against
-         * this BBS-CML jar (L10n not up yet); see AxesToggleKeyFix.register(). */
-        com.afrobama.bbstools.client.keybinds.AxesToggleKeyFix.register();
-
         /* Register the fracture action clip type. Both data class
          *  (server-side bbs:model_fracture in factoryActionClips) and
          *  client subclass (UIClip mapping for the editor inspector)
@@ -561,11 +589,13 @@ public final class BBSToolsModClient implements ClientModInitializer
                 (clip, editor) -> new com.afrobama.bbstools.client.clip.UIBBSToolsAddCameraClip(
                     (com.afrobama.bbstools.clip.BBSToolsAddCameraClip) clip, editor));
 
+            /* AUTONOMIE 2026-07-27: UI-editor fuer den damage-hitbox-clip. Der clip-typ
+             * selbst wird serverseitig in BBSToolsMod registriert; ohne DIESE zeile gaebe
+             * es ihn zwar in der clip-liste, aber ohne editor-panel. */
             mchorse.bbs_mod.ui.film.clips.UIClip.register(
                 com.afrobama.bbstools.hitbox.DamageHitboxClip.class,
                 (clip, editor) -> new com.afrobama.bbstools.client.hitbox.UIDamageHitboxClip(
                     (com.afrobama.bbstools.hitbox.DamageHitboxClip) clip, editor));
-            com.afrobama.bbstools.client.hitbox.UIDamageHitboxClip.registerWireframe();
 
             BBSToolsMod.LOG.info("Add Camera clip registered (bbs:bbstools_add_camera)");
         }

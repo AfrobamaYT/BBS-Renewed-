@@ -41,7 +41,10 @@ public final class Miniaturschlange
          *   eingereiht GUI (85,120)-(125,160) ->  erschien bei Bildpunkt (85,120)-(125,160)
          * Das ist die Miniatur, die der Nutzer oben links im Viewport sah: das Abzeichen
          * neben dem Replay-Namen, um Faktor 2 nach oben links gerutscht. */
-        float s = mchorse.bbs_mod.BBSModClient.getGUIScale();
+        /* Minecrafts Faktor, nicht der effektive: die Pose unten traegt die Wurzel des
+         * stufenlosen UI-Scales schon (UISkala), ihr Ergebnis ist Minecrafts GUI-Raum. */
+        float s = (float) net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale();
+        float rest = mchorse.bbs_mod.ui.framework.UISkala.rest();
 
         /* ⛔ ELEMENTRAUM REIN, GLOBALER RAUM RAUS (2026-08-11 an der laufenden Instanz gemessen).
          *
@@ -112,12 +115,13 @@ public final class Miniaturschlange
             float dx = x1 - kontext.globalX(x1);
             float dy = y1 - kontext.globalY(y1);
 
-            flaechenmatrix.transformPosition(schnitt.left() + dx, schnitt.top() + dy, ecke);
+            /* Der Spiegel liegt im Bildraum (SchnittSpiegel), / rest holt ihn nach GLOBAL. */
+            flaechenmatrix.transformPosition(schnitt.left() / rest + dx, schnitt.top() / rest + dy, ecke);
 
             int sl = Math.round(ecke.x * s);
             int so = Math.round(ecke.y * s);
 
-            flaechenmatrix.transformPosition(schnitt.right() + dx, schnitt.bottom() + dy, ecke);
+            flaechenmatrix.transformPosition(schnitt.right() / rest + dx, schnitt.bottom() / rest + dy, ecke);
 
             int sx = Math.max(flaeche.left(), sl);
             int sy = Math.max(flaeche.top(), so);
@@ -153,6 +157,12 @@ public final class Miniaturschlange
 
         try
         {
+            /* Bild-im-Bild liegt in Minecrafts GUI-Raum, die Aufrufer geben BBS-Einheiten. */
+            float rest = mchorse.bbs_mod.ui.framework.UISkala.rest();
+
+            breite = (int) Math.ceil(breite * rest);
+            hoehe = (int) Math.ceil(hoehe * rest);
+
             ScreenRectangle voll = new ScreenRectangle(0, 0, breite, hoehe);
 
             /* ⛔ EIGENE EBENE, SONST HAENGT DIE SICHTBARKEIT AN DER FENSTERGROESSE

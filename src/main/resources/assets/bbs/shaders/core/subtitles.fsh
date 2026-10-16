@@ -1,4 +1,5 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
 uniform sampler2D Sampler0;
 
@@ -12,10 +13,10 @@ uniform sampler2D Sampler0;
 #define TextureSize vec2(textureSize(Sampler0, 0))
 #define Blur (vertexColor.rg * 25.5)
 
-in vec2 texCoord0;
-in vec4 vertexColor;
+layout(location = 0) in vec2 texCoord0;
+layout(location = 1) in vec4 vertexColor;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 vec4 texture_blur(sampler2D tex, vec2 uv, float blur)
 {

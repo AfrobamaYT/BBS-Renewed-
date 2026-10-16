@@ -21,6 +21,9 @@ import java.util.function.Predicate;
 
 public class UIFileLinkList extends UIList<UIFileLinkList.FileLink>
 {
+    /** When a tile last opened a folder; see subMouseClicked. */
+    private long ordnerGewechselt;
+
     /** Row height of the plain list, and the smallest step of the size walk. */
     public static final int VIEW_LIST = 16;
     public static final int VIEW_ICONS_SMALL = 32;
@@ -62,6 +65,7 @@ public class UIFileLinkList extends UIList<UIFileLinkList.FileLink>
             else
             {
                 this.setPath(fileLink.link, !fileLink.title.equals(".."));
+                this.ordnerGewechselt = System.currentTimeMillis();
             }
         };
         this.fileCallback = fileCallback;
@@ -316,6 +320,15 @@ public class UIFileLinkList extends UIList<UIFileLinkList.FileLink>
 
         if (this.area.isInside(context) && context.mouseButton == 0)
         {
+            /* A tile opens its folder on the first click. The second click of a double click then
+             * landed on the tile now under the cursor -- usually ".." -- and went straight back up,
+             * so a double click seemed to do nothing (audit 2026-10-13, 0/3). It belongs to the
+             * same gesture and is swallowed. */
+            if (System.currentTimeMillis() - this.ordnerGewechselt < 400)
+            {
+                return true;
+            }
+
             int index = this.getListIndexFromVisible(this.getGridVisibleIndex(context.mouseX, context.mouseY));
 
             if (this.exists(index))

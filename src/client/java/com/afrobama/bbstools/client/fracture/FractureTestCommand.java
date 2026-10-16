@@ -179,7 +179,7 @@ public final class FractureTestCommand
             catch (Throwable ignored) {}
 
             sendChat(src, "§a[BBSTools] §fCamera-replay '§e" + r.getName() + "§f' created at your current view.");
-            sendChat(src, "§7Press §fF8§7 to cycle to it. Edit its keyframes in the replay sidebar to move/animate the camera.");
+            sendChat(src, "§7Select the replay in the film editor to edit its position and rotation keys.");
         }
         catch (Throwable t)
         {
@@ -248,7 +248,7 @@ public final class FractureTestCommand
             sendChat(src, "§cReplay enumeration failed: " + t);
         }
 
-        sendChat(src, "§7Hint: §fF8 §7cycles cameras, §fShift+F8 §7cycles all replays");
+        sendChat(src, "§7Legacy replay camera removed. Film camera: §fEditor type > Camera View");
     }
 
     private static void runHelp(FabricClientCommandSource src)
@@ -279,8 +279,7 @@ public final class FractureTestCommand
         sendChat(src, "§7  Release §fG§7 — throw forward at 2.5 blocks/tick");
         sendChat(src, "");
         sendChat(src, "§e§lEditor camera (F8)§r");
-        sendChat(src, "§7  §fF8§7 — cycle through camera-style replays in current film");
-        sendChat(src, "§7  §fShift+F8§7 — cycle through ALL replays (incl. actors)");
+        sendChat(src, "§7  §fEditor type > Camera View§7 — film-camera view in the selected area");
         sendChat(src, "§7  Use a tracker clip on the chosen replay to follow a moving target.");
         sendChat(src, "");
         sendChat(src, "§e§lCommands§r");
@@ -288,7 +287,7 @@ public final class FractureTestCommand
         sendChat(src, "§7  §f/bbstools fracture-clear§7 — kill all fractures + restore blocks");
         sendChat(src, "§7  §f/bbstools fracture-restore-blocks§7 — restore destroyed blocks only");
         sendChat(src, "§7  §f/bbstools fracture-test§7 — sanity-spawn a stone debris cube");
-        sendChat(src, "§7  §f/bbstools editorcam§7 — list replays + active F8 cycle state");
+        sendChat(src, "§7  §f/bbstools editorcam§7 — inspect legacy camera diagnostics");
         sendChat(src, "§7  §f/bbstools debug-everything§7 — full subsystem dump (fracture / physics / settings)");
         sendChat(src, "§7  §f/bbstools verbose-chat on|off§7 — toggle per-fire chat diagnostics");
         sendChat(src, "");

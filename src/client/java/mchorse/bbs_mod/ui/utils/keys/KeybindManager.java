@@ -65,7 +65,7 @@ public class KeybindManager
 
     public boolean checkMouse(UIContext context, boolean inside)
     {
-        if (this.focus && context.isFocused())
+        if (this.focus && context.isFocused() || com.mcstudio.nano.NanoTextFokus.tippt())
         {
             return false;
         }
@@ -105,7 +105,14 @@ public class KeybindManager
 
         if (index >= 0)
         {
-            this.keybinds.get(index).callback.run();
+            Keybind getroffen = this.keybinds.get(index);
+
+            if (mouse)
+            {
+                MausTastenWiederholung.beginnen(context, this, getroffen);
+            }
+
+            getroffen.callback.run();
 
             return true;
         }

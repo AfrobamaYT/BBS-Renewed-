@@ -13,7 +13,7 @@ import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mojang.blaze3d.pipeline.TextureTarget;
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import java.util.ArrayList;
@@ -239,8 +239,8 @@ public final class CameraPreviewRegistry
         try
         {
             p.framebuffer = new TextureTarget("bbstools-kameravorschau",
-                    p.fbWidth, p.fbHeight, true,
-                    com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
+                    p.fbWidth, p.fbHeight,
+                    com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM, com.mojang.renderpearl.api.GpuFormat.D32_FLOAT);
             /* 26.2: setClearColor ist entfallen. Die Loeschfarbe wird nicht mehr am Ziel
              * geparkt, sondern beim Loeschen mitgegeben -- das tut CameraPreviewRenderHook
              * (siehe dort den 26.2-Ersatz fuer bindWrite + clearColor + clear). Hier ist

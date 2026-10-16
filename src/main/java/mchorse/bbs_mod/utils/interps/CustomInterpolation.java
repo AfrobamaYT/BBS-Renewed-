@@ -5,7 +5,7 @@ import mchorse.bbs_mod.utils.interps.types.BaseInterp;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLScancode;
 
 public class CustomInterpolation extends BaseInterp
 {
@@ -14,7 +14,7 @@ public class CustomInterpolation extends BaseInterp
 
     public CustomInterpolation(String name)
     {
-        super(name, GLFW.GLFW_KEY_UNKNOWN);
+        super(name, SDLScancode.SDL_SCANCODE_UNKNOWN);
         this.channel = new KeyframeChannel<>("channel", KeyframeFactories.DOUBLE);
         this.channel.insert(0, 0D);
         this.channel.insert(1, 1D);

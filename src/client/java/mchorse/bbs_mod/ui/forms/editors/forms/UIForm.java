@@ -1,5 +1,8 @@
 package mchorse.bbs_mod.ui.forms.editors.forms;
 
+import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
+import mchorse.bbs_mod.l10n.L10n;
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -35,11 +38,29 @@ public abstract class UIForm <T extends Form> extends UIPanelBase<UIFormPanel<T>
 
     private UIPropTransform general;
 
+    /** Digits 1-9 and 0 pick the tabs from the top, like the track categories do (BBS FS 02d46cd0f). */
+    private static final KeyCombo[] TAB_KEYS = new KeyCombo[10];
+
+    static
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            TAB_KEYS[i] = new KeyCombo("tab_" + (i + 1), L10n.lang("bbs.ui.forms.editor.keys.tab").format(i + 1), i == 9 ? InputConstants.KEY_0 : InputConstants.KEY_1 + i).categoryKey("forms");
+        }
+    }
+
     public UIForm()
     {
         super(Direction.LEFT);
 
         this.keys().register(Keys.FILM_CONTROLLER_CYCLE_EDITORS, this::cyclePanels);
+
+        for (int i = 0; i < TAB_KEYS.length; i++)
+        {
+            final int index = i;
+
+            this.keys().register(TAB_KEYS[i], () -> this.setPanel(this.panels.get(index))).active(() -> index < this.panels.size());
+        }
     }
 
     public UIPropTransform getEditableTransform()
@@ -98,7 +119,7 @@ public abstract class UIForm <T extends Form> extends UIPanelBase<UIFormPanel<T>
     {
         Form root = FormUtils.getRoot(this.form);
         MatrixCache map = FormUtilsClient.getRenderer(root).collectMatrices(this.editor.renderer.getTargetEntity(), transition);
-        Matrix4f matrix = local ? map.get(path).matrix() : map.get(path).origin();
+        Matrix4f matrix = mchorse.bbs_mod.ui.utils.GizmoGimbal.merken(local, map.get(path));
 
         return matrix == null ? Matrices.EMPTY_4F : matrix;
     }

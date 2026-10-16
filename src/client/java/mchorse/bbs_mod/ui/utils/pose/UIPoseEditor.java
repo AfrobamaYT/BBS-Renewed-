@@ -43,9 +43,15 @@ public class UIPoseEditor extends UIElement
     private static final int MIN_LIST_HEIGHT = UIStringList.DEFAULT_HEIGHT * 4;
 
     public UIBoneList groups;
+    /** Id of the model being posed, for its rig.json (control order, overwritten bones). */
+    public String rigModell;
     public UISliderTrackpad fix;
     public UIColor color;
-    public UIToggle lighting;
+    public UIToggle boneVisible;
+    /** The bone's glow, 0 lit by the world, 1 full (a toggle until BBS FS f95662b30) */
+    public UISliderTrackpad lighting;
+    /** The bone's color overlay, alpha its strength (BBS FS f95662b30) */
+    public UIColor overlay;
     public UIPropTransform transform;
 
     private String group = "";
@@ -104,19 +110,27 @@ public class UIPoseEditor extends UIElement
                 this.applyChildren((p) -> this.setColor(p, this.color.picker.color.getARGBColor()));
             });
         });
-        this.lighting = new UIToggle(UIKeys.FORMS_EDITORS_GENERAL_LIGHTING, (b) -> this.applyLightingToSelection(b.getValue()));
-        this.lighting.h(UIConstants.CONTROL_HEIGHT);
+        this.overlay = new UIColor((c) -> { this.forEachSelectedPose((pt) -> this.setOverlay(pt, c)); this.overlay.setColor(c); }).withAlpha();
+        this.overlay.tooltip(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.overlay-tooltip"));
+        this.lighting = new UISliderTrackpad((v) -> this.applyLightingToSelection(v.floatValue()));
+        this.lighting.limit(0D, 1D);
         this.lighting.context((menu) ->
         {
             menu.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () ->
             {
-                this.applyChildren((p) -> this.setLighting(p, this.lighting.getValue()));
+                this.applyChildren((p) -> this.setLighting(p, (float) this.lighting.getValue()));
             });
         });
+        /* Hides the bone where the pose is played (BBS FS fce301787); stepped, it switches at a key */
+        this.boneVisible = new UIToggle(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.model_editor.bone.visible"), true, (b) -> this.forEachSelectedPose((pt) -> this.setBoneVisible(pt, b.getValue())));
+        this.boneVisible.h(UIConstants.CONTROL_HEIGHT);
+        this.boneVisible.context((menu) -> menu.action(Icons.DOWNLOAD, UIKeys.POSE_CONTEXT_APPLY, () -> this.applyChildren((p) -> this.setBoneVisible(p, this.boneVisible.getValue()))));
         this.transform = this.createTransformEditor();
         this.transform.setModel();
 
         this.keys().register(Keys.TRANSFORMATIONS_TOGGLE_FIX, this::toggleFix).category(UIKeys.TRANSFORMS_KEYS_CATEGORY);
+        /* Over the pose editor Ctrl+Shift+F flips the pose, elsewhere it finds a track, as Ctrl+F (BBS FS 5c38791ea) */
+        this.keys().register(Keys.TRANSFORMATIONS_FLIP_POSE, this::flipPose).active(this.groups::hasBones).category(UIKeys.TRANSFORMS_KEYS_CATEGORY);
 
         this.column().vertical().stretch();
         /* Both rows ride the same labelRow grid, so the fix trackpad and the colour
@@ -126,7 +140,10 @@ public class UIPoseEditor extends UIElement
         this.add(
             this.groups,
             UI.labelRow(UIKeys.POSE_CONTEXT_FIX, this.fix),
-            UI.labelRow(this.lighting, this.color),
+            UI.labelRow(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.bone_color"), this.color),
+            UI.labelRow(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.glow"), this.lighting),
+            UI.labelRow(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.overlay"), this.overlay),
+            this.boneVisible,
             this.transform
         );
     }
@@ -221,6 +238,12 @@ public class UIPoseEditor extends UIElement
         return this.pose;
     }
 
+    /** The model's left/right bone pairs (empty: name patterns), for mirrored pasting */
+    public Map<String, String> getFlippedParts()
+    {
+        return this.flippedParts;
+    }
+
     /**
      * First selected bone name (for keyframe paths and legacy callers).
      */
@@ -281,6 +304,7 @@ public class UIPoseEditor extends UIElement
         List<String> bones = new ArrayList<>(model.getGroupKeysInHierarchyOrder());
 
         bones.removeIf((bone) -> PoseBones.isHidden(disabledBones, bone));
+        bones = mchorse.bbs_mod.cubic.ik.RigPoseListe.ordnen(model, this.rigModell, bones);
         this.fillInGroups(bones, reset, false);
     }
 
@@ -301,6 +325,8 @@ public class UIPoseEditor extends UIElement
 
         this.fix.setVisible(hasBones);
         this.color.setVisible(hasBones);
+        this.overlay.setVisible(hasBones);
+        this.boneVisible.setVisible(hasBones);
         this.transform.setVisible(hasBones);
 
         List<String> list = this.groups.list.getList();
@@ -437,7 +463,9 @@ public class UIPoseEditor extends UIElement
             lastLimb = "";
             this.fix.setValue(0F);
             this.color.setColor(Colors.WHITE);
-            this.lighting.setValue(false);
+            this.overlay.setColor(0x00FFFFFF);
+            this.lighting.setValue(0D);
+            this.boneVisible.setValue(true);
             this.transform.setTransform(null);
 
             return;
@@ -451,8 +479,27 @@ public class UIPoseEditor extends UIElement
 
         this.fix.setValue(poseTransform.fix);
         this.color.setColor(poseTransform.color.getARGBColor());
-        this.lighting.setValue(poseTransform.lighting == 0F);
+        this.overlay.setColor(poseTransform.overlay.getARGBColor());
+        this.lighting.setValue(poseTransform.lighting);
+        this.boneVisible.setValue(poseTransform.visible);
         this.transform.setTransform(poseTransform);
+        this.sperren(primary);
+    }
+
+    /**
+     * Blender greys out the axes a bone locks; Rigify's face controls free one translation axis
+     * only. Without this, rotating face_jaw took the value and nothing moved (audit 2026-10-14).
+     */
+    private void sperren(String knochen)
+    {
+        boolean[] s = mchorse.bbs_mod.cubic.ik.RigPoseListe.sperren(this.rigModell, knochen);
+        mchorse.bbs_mod.ui.framework.elements.input.UITrackpad[] felder = {this.transform.tx, this.transform.ty, this.transform.tz,
+            this.transform.rx, this.transform.ry, this.transform.rz, this.transform.sx, this.transform.sy, this.transform.sz};
+
+        for (int i = 0; i < felder.length; i++)
+        {
+            felder[i].setEnabled(s == null || !s[i]);
+        }
     }
 
     private void forEachSelectedPose(Consumer<? super PoseTransform> consumer)
@@ -616,7 +663,7 @@ public class UIPoseEditor extends UIElement
         this.color.setColor(argb);
     }
 
-    private void applyLightingToSelection(boolean value)
+    private void applyLightingToSelection(float value)
     {
         this.forEachSelectedPose((pt) -> this.setLighting(pt, value));
         this.lighting.setValue(value);
@@ -644,8 +691,18 @@ public class UIPoseEditor extends UIElement
         transform.color.set(value);
     }
 
-    protected void setLighting(PoseTransform poseTransform, boolean value)
+    protected void setOverlay(PoseTransform transform, int value)
     {
-        poseTransform.lighting = value ? 0F : 1F;
+        transform.overlay.set(value);
+    }
+
+    protected void setLighting(PoseTransform poseTransform, float value)
+    {
+        poseTransform.lighting = value;
+    }
+
+    protected void setBoneVisible(PoseTransform poseTransform, boolean value)
+    {
+        poseTransform.visible = value;
     }
 }

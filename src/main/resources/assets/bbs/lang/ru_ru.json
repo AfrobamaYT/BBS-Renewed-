@@ -1,4 +1,6 @@
 {
+    "block.bbs.model.tooltip.convert": "Alt + ПКМ по блоку — превратить в блок-модель",
+    "bbs.ui.keys.legacy_unavailable": "%s (старое назначение; недоступно в SDL)",
 	"block.bbs.model": "Блок-модель",
 	"block.bbs.chroma_red": "Красный хрома",
 	"block.bbs.chroma_green": "Зелёный хрома",

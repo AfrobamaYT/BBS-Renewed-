@@ -43,6 +43,11 @@ public class UIKeybinds extends UIScrollView
     @Override
     public void render(UIContext context)
     {
+        /* The list lies over the editor: film tile models waiting in the queue go first, or they
+         * land on top of the text (F9 over the film list, 2026-10-14). As UIOverlay does. */
+        mchorse.bbs_mod.ui.framework.elements.utils.vorschau.Miniaturschlange.abgeben(
+            context, context.menu.width, context.menu.height);
+
         int cx = 40;
 
         context.batcher.box(this.area.x, this.area.y, cx, this.area.ey(), Colors.A75);

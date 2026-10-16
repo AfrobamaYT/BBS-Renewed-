@@ -45,14 +45,14 @@ public interface ICubicRenderer
     {
         if (group.orient != null)
         {
-            stack.mulPose(group.orient);
+            stack.rotate(group.orient);
 
             return;
         }
 
         if (group.current.rotationMode == Transform.RotationMode.QUATERNION)
         {
-            stack.mulPose(group.current.quat);
+            stack.rotate(group.current.quat);
 
             return;
         }
@@ -63,7 +63,7 @@ public interface ICubicRenderer
          * the trig entirely; cubic model channels are degrees. */
         if (rotate.x != 0F || rotate.y != 0F || rotate.z != 0F)
         {
-            stack.mulPose(Matrices.toLocalRotationZYXDegrees(rotate));
+            stack.rotate(Matrices.toLocalRotationZYXDegrees(rotate));
         }
     }
 

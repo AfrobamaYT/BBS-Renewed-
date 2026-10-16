@@ -3,7 +3,7 @@ package mchorse.bbs_mod.ui.particles;
 import net.minecraft.client.renderer.RenderPipelines;
 
 import mchorse.bbs_mod.graphics.InverseView;
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;

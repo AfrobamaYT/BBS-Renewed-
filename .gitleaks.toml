@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Portuguese play-film translation, not an API key"
+condition = "AND"
+paths = ['''(^|/)assets/bbs/assets/strings/pt_(br|pt)\.json$''']
+regexTarget = "line"
+regexes = ['''"bbs\.ui\.camera\.editor\.keys\.editor\.play_film": "Reproduzir filme fora"''']

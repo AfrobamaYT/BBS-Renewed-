@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.utils;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.ui.Keys;
@@ -13,11 +14,11 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.resources.Pixels;
 import org.joml.Vector2d;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 public class UIChalkboard extends UIElement
 {
+    private static final java.util.Map<Texture, Pixels> ALLOZIERT = new java.util.IdentityHashMap<>();
     private UIColor picker;
 
     private Pixels pixels;
@@ -35,6 +36,7 @@ public class UIChalkboard extends UIElement
         super();
 
         this.texture = new Texture();
+        ALLOZIERT.put(this.texture, null);
         this.texture.setFilter(GL11.GL_NEAREST);
 
         this.picker = new UIColor((c) -> this.color = c).withAlpha();
@@ -45,13 +47,32 @@ public class UIChalkboard extends UIElement
         this.add(this.picker);
 
         this.keys().register(Keys.DELETE, this::resize).active(() -> this.isChalkEnabled);
-        this.keys().register(new KeyCombo("", UIKeys.PANELS_KEYS_TOGGLE_CHALKBOARD, GLFW.GLFW_KEY_F10), this::toggleChalk);
+        this.keys().register(new KeyCombo("", UIKeys.PANELS_KEYS_TOGGLE_CHALKBOARD, InputConstants.KEY_F10), this::toggleChalk);
     }
 
     private void toggleChalk()
     {
         this.isChalkEnabled = !this.isChalkEnabled;
         this.picker.setEnabled(this.isChalkEnabled);
+
+        if (this.isChalkEnabled && this.pixels == null)
+        {
+            this.resize();
+        }
+    }
+
+    public static void closeGpuResources()
+    {
+        com.mojang.blaze3d.systems.RenderSystem.assertOnRenderThread();
+        try
+        {
+            for (var entry : ALLOZIERT.entrySet())
+            {
+                try { entry.getKey().delete(); }
+                finally { if (entry.getValue() != null) entry.getValue().delete(); }
+            }
+        }
+        finally { ALLOZIERT.clear(); }
     }
 
     public boolean isChalkDisabled()
@@ -117,13 +138,23 @@ public class UIChalkboard extends UIElement
         if (this.pixels != null)
         {
             this.pixels.delete();
+            this.pixels = null;
+            ALLOZIERT.put(this.texture, null);
+        }
+
+        /* Nur mit eingeschalteter Tafel (F10): der bildschirmgrosse Puffer samt Upload kostete
+         * 14 ms je Resize, 92 % eines resizeGui -- beim live gezogenen UI-Scale jedes Bild
+         * (gemessen 2026-10-13, 58 -> 5 fps). Gezeichnet wird ohnehin nur eingeschaltet. */
+        if (this.isChalkDisabled())
+        {
+            return;
         }
 
         float scale = BBSModClient.getGUIScale();
 
         this.pixels = Pixels.fromSize(Math.round(this.area.w * scale), Math.round(this.area.h * scale));
+        ALLOZIERT.put(this.texture, this.pixels);
         this.pixels.rewindBuffer();
-        this.texture.bind();
         this.texture.updateTexture(this.pixels);
     }
 
@@ -156,7 +187,6 @@ public class UIChalkboard extends UIElement
                 }
 
                 this.pixels.rewindBuffer();
-                this.texture.bind();
                 this.texture.updateTexture(this.pixels);
 
                 this.lastX = x;

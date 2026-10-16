@@ -11,6 +11,23 @@ laufenden Programm nichts tut, taucht hier gar nicht auf.
 
 ---
 
+## [2.5.0] — Minecraft 26.3, 2026-10-16
+
+- Minecraft 26.3 support, including the OpenGL and Vulkan rendering paths. The NanoVG
+  Vulkan libraries for all six supported OS/architecture combinations are bundled.
+- Updated film and animation tools, the Regie workspace, texture editor and Resolve link
+  from the integrated 26.3 product snapshot.
+- Held props retain independent main-hand and offhand bindings, including shared item bones.
+  Recording, reequipping, undo and save/load fixes are included.
+- Blender IK source provenance is pinned to an official commit and revalidated. The release
+  includes its corresponding source and licence notices.
+- The public build works without the private development companion. Java startup diagnostics
+  no longer corrupt the addon API check.
+- A fresh installation no longer logs an exception for its not-yet-created category settings.
+
+Verification and the precise scope are recorded in [RELEASE-26.3.md](docs/RELEASE-26.3.md).
+The older feature inventory below is historical and does not establish current version parity.
+
 ## [2.4.3] — hotfix, 2026-10-12
 
 - **Model blocks and actors are visible again.** Models placed with a model block, and actors

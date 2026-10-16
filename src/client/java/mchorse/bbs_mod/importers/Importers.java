@@ -2,7 +2,6 @@ package mchorse.bbs_mod.importers;
 
 import mchorse.bbs_mod.importers.types.GIFImporter;
 import mchorse.bbs_mod.importers.types.IImporter;
-import mchorse.bbs_mod.importers.types.ModelDropImporter;
 import mchorse.bbs_mod.importers.types.OldSkinImporter;
 import mchorse.bbs_mod.importers.types.PNGImporter;
 import mchorse.bbs_mod.importers.types.ToPNGImporter;
@@ -43,10 +42,12 @@ public class Importers
         importers.add(new OldSkinImporter());
         importers.add(new PNGImporter());
         importers.add(new WAVImporter());
-        importers.add(new ModelDropImporter());
     }
 
-    /** Einen importer registrieren -- fuer Begleit-Mods und Addons. */
+    /** Einen importer registrieren.
+     *
+     *  MERGE 2026-07-27: aus dem CML-fork — RegisterImportersEvent (addon-API) traegt hier ein,
+     *  unsere blenderbridge meldet darueber ihren BOBJ-importer an. */
     public static void register(IImporter importer)
     {
         importers.add(importer);

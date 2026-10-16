@@ -1,0 +1,66 @@
+{
+  "note": "This guide shows the original BBS by McHorse. BBS Renewed looks different, but everything works the same way.",
+  "community": "https://discord.gg/9ayQBj79AR",
+  "guides": [
+    {
+      "id": "bbs2",
+      "title": "BBS 2.0 Guide, pt. 1",
+      "author": "McHorse",
+      "video": "69MLxvALupg",
+      "length": 7635,
+      "chapters": [
+        {"t": 0, "title": "Intro", "here": "A short overview of what BBS can do — nothing to look for yet."},
+        {"t": 44, "title": "Requirements", "here": "What you need installed. You're running BBS already, so you're set."},
+        {"t": 109, "title": "Setup", "here": "Settings live behind the gear icon in the top right corner.", "show": "settings", "topic": "settings"},
+        {"t": 375, "title": "Basics", "here": "Replays are listed in the Outliner, top left. Record one with Record replay in the timeline bar.", "show": "record", "topic": "replays"},
+        {"t": 1432, "title": "Intermediary", "here": "Keyframes and replay settings sit in the Properties area, bottom left.", "show": "properties"},
+        {"t": 3269, "title": "Advanced", "here": "Rig controls moved to the Rig tab on the right edge of the viewport.", "show": "rig"},
+        {"t": 5207, "title": "Model blocks", "here": "Model blocks have their own workspace — the Blocks tab in the top bar.", "show": "blocks", "topic": "model_blocks"},
+        {"t": 5489, "title": "Forms", "here": "Forms are picked and edited in the Morphing workspace in the top bar.", "show": "morphing", "topic": "forms"},
+        {"t": 6342, "title": "Camera clips", "here": "Camera clips live in the timeline — set the menu at its top left to Camera clips.", "show": "camera_menu", "topic": "camera"},
+        {"t": 7555, "title": "Outro", "here": "That's the whole tour. Features added in this version have their own short clips.", "show": "shorts"}
+      ]
+    },
+    {
+      "id": "ultimate",
+      "title": "The Ultimate Guide to BBS mod",
+      "author": "McHorse",
+      "video": "X7bTb7QI-V8",
+      "length": 13563,
+      "chapters": [
+        {"t": 0, "title": "Intro"},
+        {"t": 77, "title": "BBS mod installation"},
+        {"t": 488, "title": "Creating a basic scene", "topic": "replays"},
+        {"t": 1083, "title": "Create a dialogue scene"},
+        {"t": 2472, "title": "Model blocks", "topic": "model_blocks"},
+        {"t": 2925, "title": "Eyes animation"},
+        {"t": 3694, "title": "Anchoring replays"},
+        {"t": 5821, "title": "Replay management"},
+        {"t": 6485, "title": "Entity selectors"},
+        {"t": 6628, "title": "Hotkeys list"},
+        {"t": 6925, "title": "Media importers"},
+        {"t": 7458, "title": "Presets"},
+        {"t": 7641, "title": "Keyframes"},
+        {"t": 8042, "title": "Thumbnails"},
+        {"t": 8425, "title": "Glowing texture"},
+        {"t": 8602, "title": "Hermite overshoots"},
+        {"t": 8734, "title": "Forms", "topic": "forms"},
+        {"t": 10730, "title": "Camera clips", "topic": "camera"},
+        {"t": 12506, "title": "BBS gun"},
+        {"t": 13530, "title": "Outro"}
+      ]
+    }
+  ],
+  "shorts": [
+    {"id": "interface_tour", "title": "A tour of the new interface", "length": 93, "where": "Top bar, film editor, Help", "text": "Where everything went, if you come from BBS or BBS FS."},
+    {"id": "recording_guide", "title": "Recording guide", "length": 29, "where": "Viewport › Guide tab", "text": "Marks where and when each actor starts, so every take lines up.", "show": "guide_tab"},
+    {"id": "voice_over", "title": "Voice-over", "length": 42, "where": "Timeline bar › Microphone", "text": "Record your voice onto the film's timeline, with the film itself muted while you speak.", "show": "mic"},
+    {"id": "resolve_tab", "title": "DaVinci Resolve tab", "length": 44, "where": "Top bar › Resolve, with BBS Link", "text": "Opens DaVinci Resolve inside BBS and keeps both timelines in step.", "show": "resolve_tab"},
+    {"id": "held_model_block", "title": "Held model block", "length": 27, "where": "Replay list › right-click the actor", "text": "Animate the model block in your first-person hand as its own Held replay."},
+    {"id": "texture_studio", "title": "Texture Studio", "length": 60, "where": "Textures › brush button", "text": "Paint a texture in Photopea inside BBS with a live 3D preview. Needs the Rinku mod.", "show": "textures"},
+    {"id": "smooth_ui_scale", "title": "Smooth UI scale", "length": 30, "where": "Settings › Appearance › GUI scale", "text": "In-between sizes like 1.5, and the interface follows the slider while you drag.", "show": "settings"},
+    {"id": "film_tile_scrubbing", "title": "Film tile scrubbing", "length": 24, "where": "Film list › move the mouse over a tile", "text": "Slide across a film tile to look through the film without opening it."},
+    {"id": "help_inside_bbs", "title": "Help inside BBS", "length": 64, "where": "Top bar › Help, or Shift+F1", "text": "A tour of this Help: the chapter for your editor, Show me, and clips at features.", "show": "help_menu"}
+  ]
+
+}

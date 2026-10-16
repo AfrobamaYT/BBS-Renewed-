@@ -14,8 +14,8 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
  * als Feldstapel, unten die beiden Startknöpfe.
  *
  * <p>Alle Werte sind echte BBS-Einstellungen ({@code videoWidth/Height/FrameRate/MotionBlur},
- * {@code renderEngine}) und per Ziehen änderbar. „Samples" aus dem Entwurf fehlt bewusst — BBS
- * kennt den Begriff nicht; ein Feld ohne Wert dahinter wäre erfunden.</p>
+ * {@code renderEngine}) und per Ziehen änderbar. „Samples" aus dem Entwurf fehlt bewusst — das
+ * ist ein Cycles-Begriff, den BBS nicht kennt; ein Feld ohne Wert dahinter wäre erfunden.</p>
  */
 public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auffrischbar
 {
@@ -23,9 +23,6 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 	/** Ob der Zieh-Handler an der Flaeche haengt — siehe zeichnen(). */
 	private boolean ziehenVerdrahtet;
 	private String stand = "";
-
-	/** Status des BBS-eigenen Exports, solange kein externer Render-Weg eingehaengt ist. */
-	private static volatile String nativStatus = "";
 
 	public static UIElement neu()
 	{
@@ -47,7 +44,8 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 		String jetzt = BBSSettings.renderEngine.get() + "|" + BBSSettings.videoWidth.get()
 			+ "x" + BBSSettings.videoHeight.get() + "|" + BBSSettings.videoFrameRate.get()
 			+ "|" + BBSSettings.videoMotionBlur.get() + "|"
-			+ status() + (laeuft() ? "!" : "");
+			+ com.blenderbridge.render.RenderKnopf.status
+			+ (com.blenderbridge.render.RenderKnopf.laeuft ? "!" : "");
 
 		if (!jetzt.equals(this.stand))
 		{
@@ -113,10 +111,8 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 
 		/* ── Engine als Segment ── */
 		y = this.gruppentitel(vg, rand, y, k, "Engine");
-		String[] engines = engines();
-
 		y = this.segment(vg, f, rand, y, b - rand * 2, k,
-			engines, Math.min(BBSSettings.renderEngine.get(), engines.length - 1),
+			new String[] {"BBS", "Eevee", "Cycles"}, BBSSettings.renderEngine.get(),
 			(wahl) -> BBSSettings.renderEngine.set(wahl));
 
 		/* ── Ausgabe ── */
@@ -139,7 +135,7 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 			blur == 0 ? "aus" : String.valueOf(blur), "feld:blur", blur / 6F, 0);
 
 		/* ── Startknöpfe unten ── */
-		boolean laeuft = laeuft();
+		boolean laeuft = com.blenderbridge.render.RenderKnopf.laeuft;
 		float kh = 24F * k;
 		float ky = h - kh - rand;
 
@@ -147,7 +143,7 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 			laeuft ? "Rendering …" : "Render Animation", !laeuft, this::starten);
 
 		/* Status über den Knöpfen, einzeilig gekürzt. */
-		String status = status();
+		String status = com.blenderbridge.render.RenderKnopf.status;
 
 		if (!status.isEmpty())
 		{
@@ -244,24 +240,17 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 			return;
 		}
 
-		mchorse.bbs_mod.client.Erweiterungen.Render extern = mchorse.bbs_mod.client.Erweiterungen.render;
-
-		if ((extern != null && extern.laeuft()) || panel.recorder.isExporting())
-		{
-			return;
-		}
-
-		int engine = Math.min(BBSSettings.renderEngine.get(), engines().length - 1);
+		int engine = BBSSettings.renderEngine.get();
 
 		if (engine == 0)
 		{
-			/* BBS-nativ laeuft ueber den bewiesenen Vorschau-Weg; ein externer Weg nur ab Engine 1. */
+			/* BBS-nativ laeuft ueber den bewiesenen Vorschau-Weg — RenderKnopf kann nur Blender. */
 			nativStarten(panel);
 
 			return;
 		}
 
-		extern.starten(panel, engine - 1);
+		com.blenderbridge.render.RenderKnopf.starten(panel, engine == 2 ? "CYCLES" : "EEVEE");
 	}
 
 	private void nativStarten(UIFilmPanel panel)
@@ -273,67 +262,17 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 
 		if (!mchorse.bbs_mod.utils.FFMpegUtils.checkFFMPEG())
 		{
-			status("ffmpeg not found — see BBS settings");
+			com.blenderbridge.render.RenderKnopf.status = "ffmpeg not found — see BBS settings";
 
 			return;
 		}
 
 		int dauer = panel.getData().camera.calculateDuration();
 
-		panel.recorder.setFinishedListener(cancelled ->
-			status(cancelled ? "Cancelled (BBS)" : "Done (BBS)"));
 		UIFilmPanel.applyExportSizeToBBS();
 		mchorse.bbs_mod.client.BBSRendering.scheduleAfterNextExportFrame(() ->
-			panel.recorder.startRecording(dauer, mchorse.bbs_mod.client.BBSRendering.getTexture().id,
+			panel.recorder.startRecording(dauer, () -> mchorse.bbs_mod.client.BBSRendering.getTexture().gpu(),
 				mchorse.bbs_mod.client.BBSRendering.getVideoWidth(), mchorse.bbs_mod.client.BBSRendering.getVideoHeight()));
-		status("Exporting (BBS) ...");
-	}
-
-	/** "BBS" und dahinter die Engines eines eingehaengten externen Render-Wegs. */
-	private static String[] engines()
-	{
-		mchorse.bbs_mod.client.Erweiterungen.Render extern = mchorse.bbs_mod.client.Erweiterungen.render;
-
-		if (extern == null)
-		{
-			return new String[] {"BBS"};
-		}
-
-		String[] weitere = extern.engines();
-		String[] alle = new String[weitere.length + 1];
-
-		alle[0] = "BBS";
-		System.arraycopy(weitere, 0, alle, 1, weitere.length);
-
-		return alle;
-	}
-
-	private static boolean laeuft()
-	{
-		mchorse.bbs_mod.client.Erweiterungen.Render extern = mchorse.bbs_mod.client.Erweiterungen.render;
-
-		return (extern != null && extern.laeuft()) || mchorse.bbs_mod.film.VideoExportSession.laeuftExport();
-	}
-
-	/** Ein Status fuer beide Wege: mit externem Render-Weg dessen, sonst der eigene. */
-	private static String status()
-	{
-		mchorse.bbs_mod.client.Erweiterungen.Render extern = mchorse.bbs_mod.client.Erweiterungen.render;
-
-		return extern != null ? extern.status() : nativStatus;
-	}
-
-	private static void status(String status)
-	{
-		mchorse.bbs_mod.client.Erweiterungen.Render extern = mchorse.bbs_mod.client.Erweiterungen.render;
-
-		if (extern != null)
-		{
-			extern.status(status);
-		}
-		else
-		{
-			nativStatus = status;
-		}
+		com.blenderbridge.render.RenderKnopf.status = "Exporting (BBS) ...";
 	}
 }

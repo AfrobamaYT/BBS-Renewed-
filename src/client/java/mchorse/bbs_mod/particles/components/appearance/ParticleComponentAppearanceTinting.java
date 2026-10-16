@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.particles.components.appearance;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.math.molang.MolangException;

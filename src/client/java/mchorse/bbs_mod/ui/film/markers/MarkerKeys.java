@@ -1,9 +1,9 @@
 package mchorse.bbs_mod.ui.film.markers;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.l10n.keys.IKey;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Beschriftungen und Kürzel der Merkstellen — bewusst NICHT in {@code UIKeys}/{@code Keys}.
@@ -27,7 +27,7 @@ public final class MarkerKeys
     public static final IKey KEYS_ADD = L10n.lang("bbs.ui.film.markers.keys.add");
 
     public static final KeyCombo MARKER_ADD =
-        new KeyCombo("marker_add", KEYS_ADD, GLFW.GLFW_KEY_M, GLFW.GLFW_KEY_LEFT_CONTROL).categoryKey("camera");
+        new KeyCombo("marker_add", KEYS_ADD, InputConstants.KEY_M, InputConstants.KEY_LCONTROL).categoryKey("camera");
 
     private MarkerKeys()
     {

@@ -140,14 +140,20 @@ public class CtrlGriff
         }
 
         /* Der Hotkey-Achsen-Walk faellt ohne Gizmo auf Achse X (gemessen: die Fussbox
-         * wanderte nur seitlich) — deshalb direkt Blenders Startmodi. */
+         * wanderte nur seitlich) — deshalb direkt Blenders Startmodi. Mit dem Zug, den G
+         * bekommt: ohne ihn baute die Fabrik die additive Variante, und waagerechtes
+         * Ziehen schob das Control auf Welt-X (gemessen 2026-10-14: AdditiveDrag statt
+         * ScreenTranslateDrag, drag=null). */
+        mchorse.bbs_mod.ui.utils.GizmoDrag zug = FilmGizmoDrag.buildFilmGizmoDrag(editor.filmPanel,
+            editor.filmPanel.getCamera(), editor.filmPanel.preview.getViewport(), transform, context.getTransition());
+
         if (RigCtrl.dragRotiert(RigCtrl.fuerEntity(editor.filmPanel.getController().getCurrentEntity()), pick.b))
         {
-            transform.enableViewRotate(null, true);
+            transform.enableViewRotate(zug, true);
         }
         else
         {
-            transform.enableScreenTranslate(null, true);
+            transform.enableScreenTranslate(zug, true);
         }
     }
 }

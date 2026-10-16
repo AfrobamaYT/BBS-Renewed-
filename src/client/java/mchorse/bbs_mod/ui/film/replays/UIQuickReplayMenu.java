@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.film.replays;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.film.Film;
@@ -21,7 +22,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Quick search: type a form name, press Enter, get a replay carrying that form.
@@ -147,7 +147,7 @@ public class UIQuickReplayMenu extends UIContextMenu
         @Override
         public boolean subKeyPressed(UIContext context)
         {
-            if (this.isFocused() && context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+            if (this.isFocused() && context.isPressed(InputConstants.KEY_ESCAPE))
             {
                 /* Fokus zuerst abgeben: das feld verschwindet gleich, und ein fokus auf
                  * einem element ohne parent laesst die tastatur ins leere laufen. */
@@ -211,19 +211,19 @@ public class UIQuickReplayMenu extends UIContextMenu
          * diese tasten muessen trotzdem wirken. Enter erreicht uns, weil UITextbox es nur im
          * delayedInput-modus schluckt. ESC faellt ans UIContextMenu durch (super) und
          * schliesst die box. */
-        if (context.isPressed(GLFW.GLFW_KEY_ENTER) || context.isPressed(GLFW.GLFW_KEY_KP_ENTER))
+        if (context.isPressed(InputConstants.KEY_RETURN) || context.isPressed(InputConstants.KEY_NUMPADENTER))
         {
             this.createReplay(this.forms.getHighlighted());
 
             return true;
         }
-        else if (context.isPressed(GLFW.GLFW_KEY_DOWN))
+        else if (context.isPressed(InputConstants.KEY_DOWN))
         {
             this.forms.moveHighlight(1);
 
             return true;
         }
-        else if (context.isPressed(GLFW.GLFW_KEY_UP))
+        else if (context.isPressed(InputConstants.KEY_UP))
         {
             this.forms.moveHighlight(-1);
 

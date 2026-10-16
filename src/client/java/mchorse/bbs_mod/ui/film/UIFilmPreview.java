@@ -89,6 +89,7 @@ public class UIFilmPreview extends UIElement
          * weitere kommen ueber UISeitenleiste.anmelden(name, bauer) dazu. */
         UISeitenleiste.anmelden("Rig", mchorse.bbs_mod.ui.film.replays.UIRigReiter::neu);
         UISeitenleiste.anmelden("Render", UIRenderReiterNano::neu);
+        UISeitenleiste.anmelden("Guide", () -> new mchorse.bbs_mod.ui.film.regie.UIRegieReiter(this.panel));
 
         UISeitenleiste leiste = new UISeitenleiste();
 
@@ -100,6 +101,8 @@ public class UIFilmPreview extends UIElement
          * x=8, also links (gemessen). x(0.66F)+w(0.34F) legt sie eindeutig ans rechte
          * Drittel, unabhaengig von der Fenstergroesse. */
         leiste.relative(this).x(0.66F).y(30).w(0.34F, -4).h(1F, -34);
+        /* Regie-Marker ziehen: VOR der Leiste eingehaengt, damit Leiste, Werkzeuge und HUD Klicks zuerst bekommen. */
+        this.add(new mchorse.bbs_mod.ui.film.regie.UIRegieGriff(this.panel).full(this));
         this.add(leiste);
 
         this.icons = UI.row(0, 0);
@@ -219,7 +222,7 @@ public class UIFilmPreview extends UIElement
             UIFilmPanel.applyExportSizeToBBS();
             BBSRendering.scheduleAfterNextExportFrame(() ->
             {
-                this.panel.recorder.startRecording(duration, BBSRendering.getTexture().id, BBSRendering.getVideoWidth(), BBSRendering.getVideoHeight());
+                this.panel.recorder.startRecording(duration, () -> BBSRendering.getTexture().gpu(), BBSRendering.getVideoWidth(), BBSRendering.getVideoHeight());
             });
         });
         this.recordVideo.tooltip(UIKeys.CAMERA_TOOLTIPS_RECORD);
@@ -236,7 +239,7 @@ public class UIFilmPreview extends UIElement
                     Texture texture = BBSRendering.getTexture();
                     int w = BBSRendering.getVideoWidth();
                     int h = BBSRendering.getVideoHeight();
-                    recorder.takeScreenshot(output, texture.id, w, h);
+                    recorder.takeScreenshot(output, texture.gpu(), w, h);
 
                     /* Derselbe Zug legt auch das Standbild des Films an — genau der Ausschnitt,
                      * den der Nutzer gerade gewaehlt hat, wird sein Kachelbild. Kein zweiter
@@ -296,11 +299,11 @@ public class UIFilmPreview extends UIElement
          * Werkzeuge · Ansicht · Aufnahme. */
         this.werkzeuge = new UIWerkzeugleisteNano(this);
         this.werkzeuge.relative(this).x(7).y(7)
-            .w(UIWerkzeugleisteNano.breite()).h(UIWerkzeugleisteNano.hoehe(8, 1));
+            .w(UIWerkzeugleisteNano.breite()).h(UIWerkzeugleisteNano.hoehe(6, 1));
 
         /* Kontextzeile am Bild wie im Entwurf: Ansichtsart, Film, gewaehltes Replay. */
         this.hud = new UIViewportHudNano(this);
-        this.hud.relative(this).x(46).y(7).w(1F, -86).h(28);
+        this.hud.relative(this).x(46).y(7).w(1F, -86).h(42); /* third line: stepped preview */
 
         /* ⛔ ECKEN MIT NANOVG, NICHT MIT RECHTECKEN. Uebermalen bleibt eine Treppe, auch mit
          * Teildeckung je Bildschirmzeile (2026-09-11: 4 -> 8 Stufen, sichtbar blieb sie).
@@ -311,7 +314,8 @@ public class UIFilmPreview extends UIElement
         this.eckenFlaeche.setEnabled(false);
 
         this.add(this.eckenFlaeche, this.werkzeuge, this.hud);
-        mchorse.bbs_mod.ui.film.markers.UITimerPlacement.install(this, this.panel);
+        this.add(new UIPlacementGizmo(this.panel).full(this));
+        mchorse.bbs_mod.client.AddonRegister.VORSCHAU_EBENEN.forEach((ebene) -> this.add(ebene.apply(this)));
     }
 
     public void openOnionSkin()
@@ -450,8 +454,7 @@ public class UIFilmPreview extends UIElement
     @Override
     protected boolean subKeyPressed(UIContext context)
     {
-        var transform = mchorse.bbs_mod.ui.film.replays.UIReplaysEditorUtils
-            .getEditableTransform(this.panel.replayEditor == null ? null : this.panel.replayEditor.keyframeEditor);
+        var transform = mchorse.bbs_mod.ui.film.replays.UIReplayWurzelTransform.filmTransform(this.panel);
 
         if (transform != null
             && !mchorse.bbs_mod.ui.framework.elements.input.UITransformHandler.aufSchirm(transform))
@@ -515,8 +518,11 @@ public class UIFilmPreview extends UIElement
             }
 
             context.batcher.texturedBox(texture, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
+            FilmStreifen.erfassen(this.panel, texture);
 
             this.renderViewportHud(context, area);
+            mchorse.bbs_mod.film.regie.RegieHud.editor(context, this.panel, area.x, area.y, area.w, area.h);
+            mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.zeichnen2D(context, area.x, area.y, area.w, area.h);
 
             /* Runde Ecken wie an Zeitleiste und Panels. texturedBox kann nur ein hartes
              * Rechteck, also werden die vier Ecken danach in der Nahtfarbe uebermalt —
@@ -619,6 +625,7 @@ public class UIFilmPreview extends UIElement
 
         context.batcher.clip(this.area, context);
         super.render(context);
+        this.panel.recorder.renderFertig(context, area); /* saved-file mark after an export, BBS FS 79172021c */
         context.batcher.unclip(context);
     }
 
@@ -646,6 +653,7 @@ public class UIFilmPreview extends UIElement
 
         com.mojang.blaze3d.platform.Window window = mc.getWindow();
         int gameScale = window.calculateScale(mc.options.guiScale().get(), mc.isEnforceUnicode());
+        com.afrobama.blendertransform.AtlasSchaerfeLogik.anfordern(gameScale);
         int guiWidth = (int) Math.ceil(window.getWidth() / (double) gameScale);
         float scale = area.w / (float) guiWidth;
         int guiHeight = Math.max(1, (int) Math.ceil(area.h / scale));
@@ -661,7 +669,9 @@ public class UIFilmPreview extends UIElement
 
         /* Scissor auf das viewport-rechteck: ohne das zeichnet das HUD ueber das ganze
          * dashboard (hotbar neben der replay-liste, siehe screenshot des nutzers). */
-        draw.enableScissor(area.x, area.y, area.ex(), area.ey());
+        /* Eigener Stapel ohne BBS-Wurzel: Flaeche in Minecrafts Einheiten (UISkala-Rest). */
+        float rest = mchorse.bbs_mod.ui.framework.UISkala.rest();
+        draw.enableScissor((int) (area.x * rest), (int) (area.y * rest), (int) Math.ceil(area.ex() * rest), (int) Math.ceil(area.ey() * rest));
 
         boolean hidden = mchorse.bbs_mod.client.HudSichtbarkeit.istVersteckt();
 
@@ -685,6 +695,7 @@ public class UIFilmPreview extends UIElement
                  * viewport mapping so the tracker's slide is scaled with the HUD too. */
                 matrices.scaleLocal(scale, scale);
                 matrices.translateLocal(area.x, area.y);
+                matrices.scaleLocal(rest, rest);
                 mc.gui.hud.extractRenderState(draw, mc.getDeltaTracker());
             }
             finally
@@ -738,7 +749,7 @@ public class UIFilmPreview extends UIElement
                 mchorse.bbs_mod.ui.film.UIFilmSelectionPanel.standbildPfad(film.getId()));
 
             ziel.getParentFile().mkdirs();
-            BBSModClient.getScreenshotRecorder().takeScreenshot(ziel, texture.id, w, h);
+            BBSModClient.getScreenshotRecorder().takeScreenshot(ziel, texture.gpu(), w, h);
         }
         catch (Exception fehler)
         {

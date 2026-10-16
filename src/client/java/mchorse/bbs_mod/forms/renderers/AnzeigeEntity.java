@@ -31,8 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * keiner echten Entity kollidieren -- wichtig, weil Code, der Entities nach Kennung
  * nachschlaegt, sonst die falsche faende.
  *
- * <p>⚠️ ALLE WEGWERF-PFADE MUESSEN HIER DURCH: {@code MobFormRenderer} und die Exporter
- * einer Begleit-Mod.
+ * <p>⚠️ ALLE DREI WEGWERF-PFADE MUESSEN HIER DURCH: {@code MobFormRenderer},
+ * {@code EntityExportBridge.createPosingEntity} und {@code ReplayPoseReader.createPosingEntity}.
  * Ihre Klassendocs verlangen ohnehin, dass sie denselben Aufruf benutzen; wer einen vergisst,
  * bekommt denselben Absturz an anderer Stelle wieder.
  */

@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -103,8 +103,13 @@ public final class DopeSheetFlaeche
 	{
 		for (int j = 1; j < keyframes.size(); j++)
 		{
-			Keyframe<?> previous = (Keyframe<?>) keyframes.get(j - 1);
 			Keyframe<?> frame = (Keyframe<?>) keyframes.get(j);
+			int vorher = j - 1;
+
+			while (vorher >= 0 && !((Keyframe<?>) keyframes.get(vorher)).isEnabled()) vorher--; /* disabled keys hold nothing */
+			if (!frame.isEnabled() || vorher < 0) continue;
+
+			Keyframe<?> previous = (Keyframe<?>) keyframes.get(vorher);
 			int xx = this.dope.keyframes.toGraphX(previous.getTick());
 			int xxx = this.dope.keyframes.toGraphX(frame.getTick());
 
@@ -157,9 +162,33 @@ public final class DopeSheetFlaeche
 			this.dope.randMarker(context, builder, matrix, frame, this.dope.keyframes.toGraphX(frame.getTick()), my);
 		}
 
-		for (int j = 0; j < keyframes.size(); j++)
+		this.fuellungen(context, builder, matrix, sheet, my);
+	}
+
+	/** Fuellungen einer Zeile, die gewaehlten ZULETZT (Maler-Reihenfolge wie Blender/AE).
+	 *
+	 *  <p>⛔ WOFUER (Nutzerbefund 2026-10-13: „der ausgewaehlte Keyframe leuchtet nicht"):
+	 *  in Listenreihenfolge uebermalte der naechste, NICHT gewaehlte Nachbar die Auswahl —
+	 *  bei Standard-Zoom liegt er oft nur 1 px daneben (gemessen: Pose-Tick 184 gewaehlt,
+	 *  186 bei 0,62 px/Tick). Ein freistehender Keyframe leuchtete schon vorher.</p> */
+	void fuellungen(UIContext context, VertexConsumer builder, Matrix4f matrix, UIKeyframeSheet sheet, int my)
+	{
+		int n = sheet.channel.getKeyframes().size();
+
+		for (int j = 0; j < n; j++)
 		{
-			this.dope.fuelleMarker(context, builder, matrix, sheet, j, my);
+			if (!sheet.selection.has(j))
+			{
+				this.dope.fuelleMarker(context, builder, matrix, sheet, j, my);
+			}
+		}
+
+		for (int j = 0; j < n; j++)
+		{
+			if (sheet.selection.has(j))
+			{
+				this.dope.fuelleMarker(context, builder, matrix, sheet, j, my);
+			}
 		}
 	}
 
@@ -457,7 +486,8 @@ public final class DopeSheetFlaeche
 	{
 		float roh = tick;
 
-		tick = Math.round(tick);
+		/* The playhead scrub (ohneCursor) may stand between ticks when snapping is off (BBS FS 096836ac2) */
+		tick = ohneCursor ? mchorse.bbs_mod.ui.film.ICursor.einrasten(tick) : Math.round(tick);
 
 		if (!mchorse.bbs_mod.ui.film.ZeitleisteZweig.istMagnet()
 			|| !(this.dope.keyframes instanceof mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes fk)

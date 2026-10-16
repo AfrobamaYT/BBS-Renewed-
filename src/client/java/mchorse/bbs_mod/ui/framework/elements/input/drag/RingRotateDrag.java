@@ -19,12 +19,16 @@ import org.joml.Vector3f;
  * without limit so the user can wind several full turns in either direction.
  *
  * <p>The rotation is rebuilt every frame as the FIXED grab pose plus the total
- * sweep — a pure function of the gesture. LOCAL/GLOBAL/VIEW turn about the
- * axis the ring is DRAWN about (in LOCAL that is the bone's own tilted axis —
- * true local, not the euler channel's gimbal axis; the readback's live winding
- * keeps &gt;360° sweeps counting). PARENT deliberately keeps the pre-spaces behaviour:
- * the ring bumps the driven channel directly (the channels compose in the
- * parent frame), giving exact single-parameter turns and native winding.
+ * sweep — a pure function of the gesture. Every space but GIMBAL turns about the
+ * axis the ring is DRAWN about: in LOCAL the bone's own tilted axis, in PARENT the
+ * parent bone's axis the gizmo is placed on (BBS FS a01a2853e) — a real parent-frame
+ * turn, which generally moves more than one euler channel. PARENT used to bump the
+ * driven channel instead, and the bone left its ring as soon as an outer channel
+ * tilted it (measured 2026-10-15: head at Z 45 deg, red and green rings turned it
+ * 45 deg off their drawn axes). That single-channel turn now lives in GIMBAL, Maya's
+ * and Blender's gimbal orientation, whose rings are drawn on the channel axes
+ * ({@code GizmoGimbal}) so the picture matches. The readback's live winding keeps
+ * &gt;360° sweeps counting in either path.
  */
 public class RingRotateDrag extends DragStrategy
 {
@@ -60,12 +64,10 @@ public class RingRotateDrag extends DragStrategy
     private final Vector3f axisLocalParent = new Vector3f();
 
     /** Whether this gesture bumps the driven channel directly instead of
-     *  composing about a world axis. True for the whole of PARENT space — the
-     *  channels compose in the parent frame, so PARENT is the home of the
-     *  pre-spaces raw single-parameter turn (exact values, native &gt;360°
-     *  winding, Blender's gimbal-style workflow). Also the euler LOCAL ring's
-     *  fallback exactly at the euler pole, where the parent frame can't be
-     *  recovered and the world-axis path can't start. */
+     *  composing about a world axis. True for the whole of GIMBAL space (exact
+     *  single-parameter turns, native &gt;360° winding), and the euler LOCAL and
+     *  PARENT rings' fallback exactly at the euler pole, where the parent frame
+     *  can't be recovered and the world-axis path can't start. */
     private boolean channelPath;
 
     public RingRotateDrag(DragContext ctx, Axis axis)
@@ -123,7 +125,7 @@ public class RingRotateDrag extends DragStrategy
 
         this.space = this.ctx.space();
         this.quatMode = this.ctx.transform().rotationMode == Transform.RotationMode.QUATERNION;
-        this.channelPath = this.space == TransformSpace.PARENT;
+        this.channelPath = this.space == TransformSpace.GIMBAL;
 
         /* The world axis this ring turns around. The world-axis path uses the
          * axis the ring is DRAWN about (frameBasis) — in LOCAL that is the
@@ -131,7 +133,7 @@ public class RingRotateDrag extends DragStrategy
          * channel's response axis, so the bone follows the grabbed ring even
          * when inner channels tilt it (sign-safe on cubics: the delta is
          * DEFINED by the world axis and parentInverse folds the Ry(180)
-         * post-flip). The CHANNEL path (PARENT) is the opposite: it drives the
+         * post-flip). The CHANNEL path (GIMBAL) is the opposite: it drives the
          * channel itself, so its cursor coupling (rotateSign, pie) must use the
          * channel's MEASURED response axis (rotateAxes) — the drawn parent axis
          * points opposite on cubic X/Z because of that same post-flip, and
@@ -194,10 +196,10 @@ public class RingRotateDrag extends DragStrategy
          * post-flip), NOT the raw bone orientation: that flip is post-multiplied
          * after the bone's own rotation, so the raw orientation would leave X/Z
          * turning backwards. Exactly at the euler pole the recovery degenerates;
-         * the euler LOCAL ring then falls back to the channel path (gimbal
-         * semantics, but alive) and re-anchors its cursor coupling to the
-         * channel's measured response axis, every other space skips the gesture
-         * as before. */
+         * the euler LOCAL and PARENT rings then fall back to the channel path
+         * (gimbal semantics, but alive) and re-anchor their cursor coupling to
+         * the channel's measured response axis; the frames with no channel of
+         * their own (GLOBAL/VIEW/WORLD) skip the gesture as before. */
         if (!this.channelPath)
         {
             Matrix3f parentInverse = RotationDragMath.parentInverse(this.ctx, drag);
@@ -209,7 +211,7 @@ public class RingRotateDrag extends DragStrategy
 
             if (parentInverse == null || this.axisLocalParent.lengthSquared() < 1.0E-8F)
             {
-                if (this.space != TransformSpace.LOCAL || this.quatMode)
+                if ((this.space != TransformSpace.LOCAL && this.space != TransformSpace.PARENT) || this.quatMode)
                 {
                     return;
                 }
@@ -269,7 +271,7 @@ public class RingRotateDrag extends DragStrategy
             return;
         }
 
-        /* Channel path (PARENT / pole fallback): bump the single driven channel
+        /* Channel path (GIMBAL / pole fallback): bump the single driven channel
          * on top of the grab angles. Snap only the driven axis, and only in the
          * written value — the raw accumulation stays smooth, and the other two
          * axes carry their start values and must not be rounded out from under
@@ -350,16 +352,66 @@ public class RingRotateDrag extends DragStrategy
         }
 
         /* A numeric turn rotates about the ring's world axis mapped to the
-         * parent frame — same as the drag; the channel path (PARENT / pole
+         * parent frame — same as the drag; the channel path (GIMBAL / pole
          * fallback) bumps the single parameter instead, mode-aware. */
         if (!this.channelPath)
         {
-            this.numericAxisRotation(value, this.axisLocalParent);
+            Vector3f exakt = this.exakteAchse();
+
+            if (exakt != null)
+            {
+                /* In the channels' frame, without the renderer's additive base (the model's idle
+                 * animation): numericAxisRotation composes on top of it, and a parent-X turn then
+                 * needs Y/Z in the channels. The field gets exactly the typed turn instead. */
+                Vector3f basis = this.ctx.cache().rotate;
+                Vector3f euler = Matrices.toCompatibleEulerZYXRadians(new Matrix3f().rotation(MathUtils.toRad((float) value), exakt).mul(RotationDragMath.eulerZYX(basis)),
+                    basis, new Vector3f(this.ctx.transform().rotate), new Vector3f());
+
+                this.ctx.writeRotateDeg(MathUtils.toDeg(euler.x), MathUtils.toDeg(euler.y), MathUtils.toDeg(euler.z));
+
+                return;
+            }
+
+            /* Typed values count in the FIELD's direction (AdditiveDrag: field + value). A ring
+             * shows no direction, but its drawn axis points opposite the channel on cubic X/Z
+             * (Ry(180) post-flip): R X 90 gave -90 here and +90 without a drawn gizmo. Same
+             * ring axis, sign from the channel's measured response axis. */
+            GizmoDrag drag = this.ctx.drag();
+            float sign = drag == null ? 1F : Math.signum(this.axisDir.dot(drag.rotateAxes.getColumn(this.axis.ordinal(), new Vector3f())));
+
+            this.numericAxisRotation(sign < 0F ? -value : value, this.axisLocalParent);
 
             return;
         }
 
         this.numericRotate(value);
+    }
+
+    /**
+     * A typed turn in PARENT or LOCAL on an euler bone: the axis in the channels' own frame, not
+     * recovered from the measured axes -- those carry the model's animation, and R X 90 on an
+     * idling arm put ~2 degrees onto Y and Z (2026-10-16). PARENT = the unit axis, LOCAL = the
+     * pose's ZYX turning it; signed so the value counts in the field's direction (as above).
+     * Null elsewhere: the world-bound spaces need the measured frame.
+     */
+    private Vector3f exakteAchse()
+    {
+        if (this.quatMode || (this.space != TransformSpace.PARENT && this.space != TransformSpace.LOCAL))
+        {
+            return null;
+        }
+
+        Vector3f basis = this.ctx.cache().rotate;
+        Vector3f einheit = new Vector3f();
+
+        einheit.setComponent(this.axis.ordinal(), 1F);
+
+        Vector3f achse = this.space == TransformSpace.LOCAL ? RotationDragMath.eulerZYX(basis).transform(new Vector3f(einheit)) : new Vector3f(einheit);
+        /* the channel's own response axis in the parent frame under ZYX: X -> Rz Ry x, Y -> Rz y, Z -> z */
+        Matrix3f kanal = this.axis == Axis.X ? new Matrix3f().rotationZ(basis.z).rotateY(basis.y)
+            : this.axis == Axis.Y ? new Matrix3f().rotationZ(basis.z) : new Matrix3f();
+
+        return achse.dot(kanal.transform(einheit)) < 0F ? achse.negate() : achse;
     }
 
     @Override

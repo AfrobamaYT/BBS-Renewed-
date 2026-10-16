@@ -52,6 +52,7 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
             if (model != null)
             {
                 this.poseEditor.setPose(keyframe.getValue(), model.getPoseGroup());
+                this.poseEditor.rigModell = model.id;
                 this.poseEditor.fillGroups(model.model, model.getFlippedParts(), false, model.getDisabledBones());
             }
         }
@@ -74,13 +75,13 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         if (this.getFlex().getW() > 240)
         {
             this.poseEditor.add(UI.row(
-                UI.column(UI.labelRow(UIKeys.POSE_CONTEXT_FIX, this.poseEditor.fix), UI.column(this.poseEditor.color, this.poseEditor.lighting), this.poseEditor.transform),
+                UI.column(UI.labelRow(UIKeys.POSE_CONTEXT_FIX, this.poseEditor.fix), UI.labelRow(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.bone_color"), this.poseEditor.color), UI.labelRow(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.glow"), this.poseEditor.lighting), UI.labelRow(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.overlay"), this.poseEditor.overlay), this.poseEditor.boneVisible, this.poseEditor.transform),
                 UI.column(UI.label(UIKeys.FORMS_EDITOR_BONE), this.poseEditor.groups)
             ));
         }
         else
         {
-            this.poseEditor.add(UI.label(UIKeys.FORMS_EDITOR_BONE), this.poseEditor.groups, UI.labelRow(UIKeys.POSE_CONTEXT_FIX, this.poseEditor.fix), UI.column(this.poseEditor.color, this.poseEditor.lighting), this.poseEditor.transform);
+            this.poseEditor.add(UI.label(UIKeys.FORMS_EDITOR_BONE), this.poseEditor.groups, UI.labelRow(UIKeys.POSE_CONTEXT_FIX, this.poseEditor.fix), UI.labelRow(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.bone_color"), this.poseEditor.color), UI.labelRow(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.glow"), this.poseEditor.lighting), UI.labelRow(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.overlay"), this.poseEditor.overlay), this.poseEditor.boneVisible, this.poseEditor.transform);
         }
 
         /* Ew... */
@@ -172,6 +173,9 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
             this.keyframe = keyframe;
 
             ((UIPoseTransforms) this.transform).setKeyframe(this);
+            mchorse.bbs_mod.ui.film.replays.PoseBreakdowner.anmelden(this, this.editor, this.keyframe);
+            mchorse.bbs_mod.ui.film.replays.FilmPoseClipboard.anmelden(this, this.editor, this.keyframe);
+            mchorse.bbs_mod.ui.film.replays.SpiegelAuswahl.anmelden(this);
         }
 
         private String getGroup(PoseTransform transform)
@@ -230,9 +234,21 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         }
 
         @Override
-        protected void setLighting(PoseTransform poseTransform, boolean value)
+        protected void setOverlay(PoseTransform transform, int value)
         {
-            apply(this.editor, this.keyframe, this.getGroup(poseTransform), (poseT) -> poseT.lighting = value ? 0F : 1F);
+            apply(this.editor, this.keyframe, this.getGroup(transform), (poseT) -> poseT.overlay.set(value));
+        }
+
+        @Override
+        protected void setLighting(PoseTransform poseTransform, float value)
+        {
+            apply(this.editor, this.keyframe, this.getGroup(poseTransform), (poseT) -> poseT.lighting = value);
+        }
+
+        @Override
+        protected void setBoneVisible(PoseTransform poseTransform, boolean value)
+        {
+            apply(this.editor, this.keyframe, this.getGroup(poseTransform), (poseT) -> poseT.visible = value);
         }
     }
 
@@ -261,7 +277,7 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         }
 
         @Override
-        protected void applyDuringRecording(int tick, Consumer<Transform> consumer)
+        protected void applyDuringRecording(float tick, Consumer<Transform> consumer)
         {
             Map<String, UIPoseEditor.BoneEdit> targets = this.editor.resolveBoneEdits(this.isMirrorEdit(), this.isAlternateInvert());
 
@@ -270,7 +286,7 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         }
 
         @Override
-        protected Transform getRecordedTransform(int tick)
+        protected Transform getRecordedTransform(float tick)
         {
             UIKeyframeSheet sheet = this.editor.editor.getGraph().getSheet(this.editor.keyframe);
             Keyframe<Pose> recorded = UIReplaysEditorUtils.ensureKeyframe(sheet, tick);
@@ -284,7 +300,7 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
             return recorded.getValue().get(bone);
         }
 
-        public static void applyRecording(UIKeyframes editor, Keyframe keyframe, int tick, List<String> bones, Consumer<PoseTransform> consumer)
+        public static void applyRecording(UIKeyframes editor, Keyframe keyframe, float tick, List<String> bones, Consumer<PoseTransform> consumer)
         {
             if (bones == null || bones.isEmpty())
             {
@@ -305,7 +321,7 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
             });
         }
 
-        public static void applyRecordingBones(UIKeyframes editor, Keyframe keyframe, int tick, List<String> bones, BiConsumer<String, PoseTransform> consumer)
+        public static void applyRecordingBones(UIKeyframes editor, Keyframe keyframe, float tick, List<String> bones, BiConsumer<String, PoseTransform> consumer)
         {
             if (bones == null || bones.isEmpty())
             {
@@ -329,12 +345,23 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         @Override
         protected void reset()
         {
-            UIPoseFactoryEditor.apply(this.editor.editor, this.editor.keyframe, this.editor.groups.list.getCurrent(), (poseT) ->
+            Consumer<PoseTransform> ruhe = (poseT) ->
             {
                 poseT.translate.set(0F, 0F, 0F);
                 poseT.scale.set(1F, 1F, 1F);
                 poseT.resetRotation();
-            });
+            };
+
+            /* Under auto-key (or a bone click's hold) Shift+R resets at the playhead, like any edit (applyToTarget) */
+            if (this.isTransformRecording() || mchorse.bbs_mod.ui.film.FilmAutoKey.isEditing(this))
+            {
+                applyRecording(this.editor.editor, this.editor.keyframe, this.getRecordingTick(), this.editor.groups.list.getCurrent(), ruhe);
+            }
+            else
+            {
+                UIPoseFactoryEditor.apply(this.editor.editor, this.editor.keyframe, this.editor.groups.list.getCurrent(), ruhe);
+            }
+
             this.refillTransform();
         }
 

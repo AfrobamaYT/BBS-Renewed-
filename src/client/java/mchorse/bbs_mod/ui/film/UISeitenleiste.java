@@ -82,18 +82,6 @@ public class UISeitenleiste extends UIElement
         this.add(this.inhalt, this.streifen);
     }
 
-    /** Opens a registered tool directly without toggling another sidebar tab first. */
-    public void show(String name)
-    {
-        if (!reiter().containsKey(name))
-        {
-            throw new IllegalArgumentException("Unknown viewport tool: " + name);
-        }
-        this.aktiv = name;
-        this.offen = true;
-        this.aktualisiere();
-    }
-
     /**
      * ⛔ Die Leiste zieht sich SELBST nach, statt dass der Editor sie tickt. Grund ist
      * nicht Eleganz: `UIFilmPanel` ist ein gelisteter Monolith und darf nur schrumpfen —
@@ -105,6 +93,18 @@ public class UISeitenleiste extends UIElement
         this.aktualisiere();
 
         super.render(context);
+    }
+
+    /** Open the bar on one tab — Help's Show me points at it there. */
+    public void zeige(String name)
+    {
+        if (reiter().containsKey(name))
+        {
+            this.offen = true;
+            this.aktiv = name;
+            this.gebautFuer = "";
+            this.aktualisiere();
+        }
     }
 
     /** Baut die Leiste neu, wenn sich der Reiter-Satz oder die Auswahl geaendert hat. */

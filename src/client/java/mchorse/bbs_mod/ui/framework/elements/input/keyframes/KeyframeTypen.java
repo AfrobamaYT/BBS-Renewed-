@@ -15,7 +15,7 @@ import java.util.List;
  * Ein-Klick-Menue. Ausgelagert aus {@link UIKeyframes} (Monolith), zusammen mit dem
  * Runden-Eintrag desselben Menues.
  */
-final class KeyframeTypen
+public final class KeyframeTypen
 {
 	/** {Name, RGB} — an Blenders Theme-Farben angelehnt, auf unserem Grund lesbar. */
 	private static final Object[][] TYPEN = {
@@ -87,5 +87,22 @@ final class KeyframeTypen
 
 			sheet.channel.postNotify();
 		}
+	}
+
+	/** Turns the selected keys off or on; null flips each one (J, BBS FS 341d8c886). */
+	public static void aktivieren(UIKeyframes keyframes, Boolean an)
+	{
+		java.util.List<UIKeyframeSheet> sheets = new java.util.ArrayList<>();
+
+		for (UIKeyframeSheet sheet : keyframes.getGraph().getSheets()) if (sheet.selection.hasAny()) sheets.add(sheet);
+		if (sheets.isEmpty()) return;
+
+		for (UIKeyframeSheet sheet : sheets) sheet.channel.preNotify(mchorse.bbs_mod.settings.values.IValueListener.FLAG_UNMERGEABLE);
+		for (UIKeyframeSheet sheet : sheets)
+		{
+			for (Object key : sheet.selection.getSelected()) ((Keyframe) key).setEnabled(an == null ? !((Keyframe) key).isEnabled() : an);
+		}
+		for (UIKeyframeSheet sheet : sheets) sheet.channel.postNotify(mchorse.bbs_mod.settings.values.IValueListener.FLAG_UNMERGEABLE);
+		keyframes.triggerChange();
 	}
 }

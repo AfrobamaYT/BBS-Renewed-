@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
@@ -10,6 +10,7 @@ import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.KeyframeEinfuegen;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.shapes.IKeyframeShapeRenderer;
@@ -28,6 +29,7 @@ import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import org.joml.Matrix4f;
 
 import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 public class UIKeyframeGraph implements IUIKeyframeGraph
@@ -109,6 +111,26 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
             /* Spread apart vertically */
             this.yAxis.viewOffset(minY, maxY, this.keyframes.area.h, 30);
         }
+    }
+
+    /** Fits the view to the selected keys of every shown track, time and value (BBS FS 3fa2db306) */
+    public void fitSelection()
+    {
+        double t0 = Double.MAX_VALUE, t1 = -Double.MAX_VALUE, v0 = Double.MAX_VALUE, v1 = -Double.MAX_VALUE;
+
+        for (UIKeyframeSheet sheet : this.getSheets()) for (Keyframe key : sheet.selection.getSelected())
+        {
+            double y = key.getFactory().getY(key.getValue());
+
+            t0 = Math.min(t0, key.getTick()); t1 = Math.max(t1, key.getTick()); v0 = Math.min(v0, y); v1 = Math.max(v1, y);
+        }
+
+        if (t0 > t1) return;
+        if (t1 - t0 < 1) { t0 -= 10; t1 += 10; }
+        if (v1 - v0 < 0.01) { v0 -= 1; v1 += 1; }
+
+        this.keyframes.getXAxis().viewOffset(t0, t1, this.keyframes.area.w, 30);
+        this.yAxis.viewOffset(v0, v1, this.keyframes.area.h, 30);
     }
 
     @Override
@@ -267,9 +289,13 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
         return false;
     }
 
+    /** While a key is dragged, X keeps it to time and Y to value; pressing it again frees it (BBS FS 3fa2db306) */
+    private int achse;
+
+    public void achse(int achse) { this.achse = this.achse == achse ? 0 : achse; }
+
     @Override
-    public void mouseReleased(UIContext context)
-    {}
+    public void mouseReleased(UIContext context) { this.achse = 0; }
 
     @Override
     public void mouseScrolled(UIContext context)
@@ -287,26 +313,17 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
         }
         else
         {
-            boolean x = Window.isShiftPressed();
-            boolean y = Window.isCtrlPressed();
-            boolean none = !x && !y;
+            boolean shift = Window.isShiftPressed(), ctrl = Window.isCtrlPressed();
 
-            /* Scaling X */
-            if (x && !y || none)
+            /* Shift isolates time, Ctrl values, both together zoom both faster (BBS FS 3810a7ff5) */
+            if (context.mouseWheel != 0D && (!ctrl || shift))
             {
-                if (context.mouseWheel != 0D)
-                {
-                    this.keyframes.getXAxis().zoomAnchor(Scale.getAnchorX(context, this.keyframes.area), Math.copySign(this.keyframes.getXAxis().getZoomFactor(), context.mouseWheel));
-                }
+                this.keyframes.getXAxis().animateZoom(Scale.getAnchorX(context, this.keyframes.area), context.mouseWheel, Scale.radTempo());
             }
 
-            /* Scaling Y */
-            if (y && !x || none)
+            if (context.mouseWheel != 0D && (!shift || ctrl))
             {
-                if (context.mouseWheel != 0D)
-                {
-                    this.yAxis.zoomAnchor(Scale.getAnchorY(context, this.keyframes.area), Math.copySign(this.yAxis.getZoomFactor(), context.mouseWheel));
-                }
+                this.yAxis.animateZoom(Scale.getAnchorY(context, this.keyframes.area), context.mouseWheel, Scale.radTempo());
             }
         }
     }
@@ -350,8 +367,8 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
                 fx = Math.round(this.keyframes.fromGraphX(context.mouseX) - offsetX);
             }
 
-            this.setTick(fx, false);
-            this.setValue(fy, false);
+            this.setTick(this.achse == 2 ? originalT : fx, false);
+            this.setValue(this.achse == 1 ? originalV : fy, false);
         }
         else if (type.b == KeyframeType.LEFT_HANDLE)
         {
@@ -382,6 +399,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     @Override
     public void render(UIContext context)
     {
+        this.yAxis.updateZoom();
         this.renderGrid(context);
         this.renderGraph(context);
     }
@@ -477,7 +495,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
                 x += length;
             }
         }
-        else if (Window.isCtrlPressed())
+        else if (Window.isCtrlPressed() && !KeyframeEinfuegen.amAbspielkopf(this.keyframes))
         {
             UIKeyframeSheet sheet = this.getSheet(context.mouseY);
 
@@ -493,19 +511,21 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
                 this.renderPreviewKeyframe(context, sheet, tick, context.mouseY, Colors.WHITE);
             }
         }
-        else if (Window.isAltPressed())
+        else if (Window.isAltPressed() && KeyframeEinfuegen.dupliziert(this.keyframes, context))
         {
             UIKeyframeSheet current = this.sheet;
             List<Keyframe> selected = current.selection.getSelected();
             IKeyframeFactory factory = current.channel.getFactory();
+            float firstTick = selected.isEmpty() ? 0 : selected.get(0).getTick();
 
-            for (int i = 0; i < selected.size(); i++)
+            currentTick = KeyframeEinfuegen.duplikatTick(this.keyframes, context);
+            if (KeyframeEinfuegen.amAbspielkopf(this.keyframes)) for (Keyframe k : selected) firstTick = Math.min(firstTick, k.getTick());
+
+            for (Keyframe keyframe : selected)
             {
-                Keyframe first = selected.get(0);
-                Keyframe keyframe = selected.get(i);
                 int y = (int) this.yAxis.to(factory.getY(keyframe.getValue()));
 
-                this.renderPreviewKeyframe(context, current, currentTick + (keyframe.getTick() - first.getTick()), y, Colors.YELLOW);
+                this.renderPreviewKeyframe(context, current, currentTick + (keyframe.getTick() - firstTick), y, Colors.YELLOW);
             }
         }
     }
@@ -526,8 +546,20 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     {
         Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
 
+        if (!this.sheet.channel.getLoops().isEmpty())
+        {
+            KurveSchleife.zeichnen(this, context, matrix);
+            return;
+        }
+
         UIKeyframeSheet sheet = this.sheet;
         List keyframes = sheet.channel.getKeyframes();
+        boolean filtered = sheet.channel.hasDisabledKeyframes();
+        if (filtered)
+        {
+            keyframes = new ArrayList(keyframes);
+            keyframes.removeIf(key -> !((Keyframe) key).isEnabled());
+        }
         KeyframeSegment segment = new KeyframeSegment();
 
         /* Render graph */
@@ -556,7 +588,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
                     lineBuilder.add(x, py);
                     lineBuilder.push();
                 }
-                else if (interp != Interpolations.LINEAR)
+                else if (interp != Interpolations.LINEAR || prev.getMotionShift() != 0F)
                 {
                     float steps = 50F;
 
@@ -627,7 +659,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
          *
          * ⛔ Der Bereich ist die Graph-Flaeche und NICHT null -- null hiesse gecullt. */
         context.batcher.netz(FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
-            (ecken) -> this.renderGraphPointShapes(context, ecken, matrix, keyframes),
+            (ecken) -> this.renderGraphPointShapes(context, ecken, matrix, sheet.channel.getKeyframes()),
             UIKeyframeDopeSheet.flaeche(this.keyframes.graphArea));
     }
 
@@ -666,7 +698,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
                 isPointHover = isPointHover || this.keyframes.getGrabbingArea(context).isInside(x1, y);
             }
 
-            int kc = frame.getColor() != null ? frame.getColor().getRGBColor() | Colors.A100 : sheet.color;
+            int kc = Colors.mulRGB(frame.getColor() != null ? frame.getColor().getRGBColor() | Colors.A100 : sheet.color, frame.isEnabled() ? 1F : 0.4F);
             int c = (sheet.selection.has(i) || isPointHover ? Colors.WHITE : kc) | Colors.A100;
 
             if (toRemove)
@@ -753,7 +785,6 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     @Override
     public void saveState(MapType extra)
     {
-        extra.putString("graph_sheet", this.sheet.id);
         extra.putDouble("y_min", this.yAxis.getMinValue());
         extra.putDouble("y_max", this.yAxis.getMaxValue());
     }

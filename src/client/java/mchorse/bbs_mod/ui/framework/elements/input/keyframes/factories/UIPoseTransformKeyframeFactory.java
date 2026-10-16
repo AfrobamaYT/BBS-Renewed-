@@ -22,6 +22,7 @@ public class UIPoseTransformKeyframeFactory extends UIKeyframeFactory<PoseTransf
     public UISliderTrackpad fix;
     public UIColor color;
     public UIToggle lighting;
+    public UIToggle boneVisible;
     public UIPropTransform transform;
 
     public UIPoseTransformKeyframeFactory(Keyframe<PoseTransform> keyframe, UIKeyframes editor)
@@ -64,11 +65,14 @@ public class UIPoseTransformKeyframeFactory extends UIKeyframeFactory<PoseTransf
         });
         this.lighting.h(UIConstants.CONTROL_HEIGHT);
         this.lighting.setValue(keyframe.getValue().lighting == 0F);
+        this.boneVisible = new UIToggle(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.model_editor.bone.visible"), keyframe.getValue().visible, (b) -> UIPoseTransforms.apply(editor, keyframe, (poseT) -> poseT.visible = b.getValue()));
+        this.boneVisible.h(UIConstants.CONTROL_HEIGHT);
 
         /* Same labelRow grid as the pose editor, which this panel mirrors. */
         this.scroll.add(
             UI.labelRow(UIKeys.POSE_CONTEXT_FIX, this.fix),
             UI.labelRow(this.lighting, this.color),
+            this.boneVisible,
             this.transform
         );
     }
@@ -100,13 +104,13 @@ public class UIPoseTransformKeyframeFactory extends UIKeyframeFactory<PoseTransf
         }
 
         @Override
-        protected void applyDuringRecording(int tick, Consumer<Transform> consumer)
+        protected void applyDuringRecording(float tick, Consumer<Transform> consumer)
         {
             applyRecording(this.editor.editor, this.editor.keyframe, tick, (poseT) -> consumer.accept(poseT));
         }
 
         @Override
-        protected Transform getRecordedTransform(int tick)
+        protected Transform getRecordedTransform(float tick)
         {
             UIKeyframeSheet sheet = this.editor.editor.getGraph().getSheet(this.editor.keyframe);
             Keyframe<PoseTransform> recorded = UIReplaysEditorUtils.ensureKeyframe(sheet, tick);
@@ -114,7 +118,7 @@ public class UIPoseTransformKeyframeFactory extends UIKeyframeFactory<PoseTransf
             return recorded == null ? null : recorded.getValue();
         }
 
-        public static void applyRecording(UIKeyframes editor, Keyframe keyframe, int tick, Consumer<PoseTransform> consumer)
+        public static void applyRecording(UIKeyframes editor, Keyframe keyframe, float tick, Consumer<PoseTransform> consumer)
         {
             UIReplaysEditorUtils.forEachRecordedKeyframe(editor, keyframe, tick, (recorded) ->
             {

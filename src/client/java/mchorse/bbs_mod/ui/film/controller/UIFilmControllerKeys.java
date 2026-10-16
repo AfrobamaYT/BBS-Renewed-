@@ -42,13 +42,29 @@ public class UIFilmControllerKeys
         Supplier<Boolean> hasTwoOrMoreReplays = () -> c.panel.getData() != null && c.panel.getData().replays.getList().size() >= 2;
 
         c.keys().register(Keys.FILM_CONTROLLER_START_RECORDING, c::pickRecording).active(hasActor).category(category);
-        c.keys().register(BBSToolsKeys.RECORD_FROM_CURSOR, RecordFromCursorHandler::fireFromViewport).inside().strict().active(hasActor).category(category);
-        c.keys().register(BBSToolsKeys.RECORD_FROM_KEYFRAMES, RecordFromKeyframesHandler::fireFromViewport).inside().strict().active(hasActor).category(category);
+        /* Not inside(): the controller itself has no area (0x0, measured 2026-10-12), so inside() never
+         * held and F6/F7 did nothing in the editor. The hover that matters is the viewport's. */
+        Supplier<Boolean> overViewport = () -> hasActor.get() && c.getContext() != null && c.panel.preview.area.isInside(c.getContext());
+
+        c.keys().register(BBSToolsKeys.RECORD_FROM_CURSOR, RecordFromCursorHandler::fireFromViewport).strict().active(overViewport).category(category);
+        c.keys().register(BBSToolsKeys.RECORD_FROM_KEYFRAMES, RecordFromKeyframesHandler::fireFromViewport).strict().active(overViewport).category(category);
+        c.keys().register(Keys.FILM_CONTROLLER_ZOOM_TO_REPLAY, c.orbit::starteZoomZumReplay)
+            .active(() -> c.orbit.enabled && c.getContext() != null && c.panel.preview.area.isInside(c.getContext()))
+            .category(category);
         c.keys().register(Keys.FILM_CONTROLLER_INSERT_FRAME, () ->
         {
-            c.insertFrame();
+            if (!mchorse.bbs_mod.ui.film.replays.FilmPoseKey.insert(c.panel, c.panel.getCursor()))
+            {
+                c.insertFrame();
+            }
             UIUtils.playClick();
         }).active(hasActor).category(category);
+        mchorse.bbs_mod.ui.film.replays.FilmZeitSchieben.anmelden(c, hasActor, category);
+        c.keys().register(mchorse.bbs_mod.ui.film.FilmStufenVorschau.TASTE, () -> mchorse.bbs_mod.ui.film.FilmStufenVorschau.umschalten(c.panel)).strict().category(category);
+        c.keys().register(mchorse.bbs_mod.ui.film.AutoKeyTaste.TASTE, () -> mchorse.bbs_mod.ui.film.AutoKeyTaste.umschalten(c.panel)).strict().category(category);
+        c.keys().register(mchorse.bbs_mod.ui.film.markers.MarkerSprung.NAECHSTER, () -> mchorse.bbs_mod.ui.film.markers.MarkerSprung.springen(c.panel, 1)).strict().category(category);
+        c.keys().register(mchorse.bbs_mod.ui.film.markers.MarkerSprung.VORIGER, () -> mchorse.bbs_mod.ui.film.markers.MarkerSprung.springen(c.panel, -1)).strict().category(category);
+        c.keys().register(mchorse.bbs_mod.ui.film.markers.MarkerKeys.MARKER_ADD, () -> mchorse.bbs_mod.ui.film.markers.MarkerSprung.setzen(c.panel)).strict().category(category);
         c.keys().register(Keys.FILM_CONTROLLER_TOGGLE_CONTROL, c::toggleControl).category(category);
         c.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ORBIT_MODE, c::toggleOrbitMode).category(category);
         registerCameraModeKey(c, Keys.FILM_CONTROLLER_CAMERA_MODE_CAMERA, UIFilmController.CAMERA_MODE_CAMERA, category);

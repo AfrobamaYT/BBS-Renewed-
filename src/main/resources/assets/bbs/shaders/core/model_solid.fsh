@@ -1,4 +1,5 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
 /* Der Fragmentteil der Solid-Vorschau: Grundfarbe mal Studio-Licht, sonst nichts.
  *
@@ -33,10 +34,10 @@
  * einen zweiten Vektor je Licht und traegt zur Frage "sitzt die Pose" nichts bei.
  */
 
-in vec3 sichtNormale;
-in vec4 grundfarbe;
+layout(location = 0) in vec3 sichtNormale;
+layout(location = 1) in vec4 grundfarbe;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 /* Blenders gewickeltes Lambert. w = 0 ist gewoehnliches N·L, groesseres w schiebt den
  * Terminator um die Silhouette herum. */

@@ -28,6 +28,12 @@ public class TimeUtils
         return String.valueOf((int) ticks);
     }
 
+    /** The playhead's label: two decimals while it stands between ticks (BBS FS 096836ac2) */
+    public static String formatCursorTime(float ticks)
+    {
+        return BBSSettings.editorSeconds.get() || ticks == (int) ticks ? formatTime(ticks) : String.format(java.util.Locale.ROOT, "%.2f", ticks);
+    }
+
     public static double toTime(double ticks)
     {
         return BBSSettings.editorSeconds.get() ? ticks / 20D : ticks;

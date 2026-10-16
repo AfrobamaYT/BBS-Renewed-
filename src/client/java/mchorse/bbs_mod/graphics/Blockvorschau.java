@@ -153,7 +153,7 @@ public final class Blockvorschau
          * Editor-Richtungen mit in denselben gespiegelten Raum: dot(M*d, M*n) = dot(d, n),
          * das Licht rechnet wieder im Lokalraum des Blocks — Oberseite 1.0, Front 0.86,
          * Seite 0.4, wie 1.21.1s Kachel. */
-        com.mojang.blaze3d.buffers.GpuBufferSlice gesichertesLicht = RenderSystem.getShaderLights();
+        com.mojang.renderpearl.api.buffers.GpuBufferSlice gesichertesLicht = RenderSystem.getShaderLights();
 
         org.joml.Matrix3f ansicht = new org.joml.Matrix3f(stapel.last().normal());
         org.joml.Vector3f spalte = new org.joml.Vector3f();
@@ -212,7 +212,7 @@ public final class Blockvorschau
         var mc = Minecraft.getInstance();
         var textur = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS);
         var abtaster = com.mojang.blaze3d.systems.RenderSystem.getSamplerCache()
-            .getClampToEdge(com.mojang.blaze3d.textures.FilterMode.NEAREST);
+            .getClampToEdge(com.mojang.renderpearl.api.textures.FilterMode.NEAREST);
 
         return new TextureSetup(
             textur.getTextureView(),

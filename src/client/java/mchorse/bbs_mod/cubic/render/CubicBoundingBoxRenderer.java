@@ -127,7 +127,7 @@ public class CubicBoundingBoxRenderer implements ICubicRenderer
 
         if (rotate.x != 0F || rotate.y != 0F || rotate.z != 0F)
         {
-            stack.mulPose(Matrices.toLocalRotationZYXDegrees(rotate));
+            stack.rotate(Matrices.toLocalRotationZYXDegrees(rotate));
         }
 
         MatrixStackUtils.scaleStack(stack, scale.x, scale.y, scale.z);

@@ -234,7 +234,10 @@ public class Pose implements IMapSerializable
             }
         }
 
-        data.put("pose", pose);
+        if (!pose.isEmpty())
+        {
+            data.put("pose", pose);
+        }
     }
 
     @Override
@@ -260,5 +263,34 @@ public class Pose implements IMapSerializable
     public boolean isEmpty()
     {
         return this.transforms.isEmpty();
+    }
+
+    /**
+     * Lays an overlay pose over this one, in place: added, or blended by the overlay's fix, and a
+     * bone it hides stays hidden. Model and mob forms both stack their overlays this way.
+     */
+    public Pose ueberlagern(Pose overlay)
+    {
+        for (Map.Entry<String, PoseTransform> entry : overlay.transforms.entrySet())
+        {
+            PoseTransform poseTransform = this.get(entry.getKey()), value = entry.getValue();
+
+            poseTransform.visible &= value.visible;
+
+            if (!mchorse.bbs_mod.math.Operation.equals(value.fix, 0))
+            {
+                poseTransform.translate.lerp(value.translate, value.fix);
+                poseTransform.scale.lerp(value.scale, value.fix);
+                poseTransform.lerpRotation(value, value.fix);
+            }
+            else
+            {
+                poseTransform.translate.add(value.translate);
+                poseTransform.scale.add(value.scale).sub(1, 1, 1);
+                poseTransform.addRotation(value);
+            }
+        }
+
+        return this;
     }
 }

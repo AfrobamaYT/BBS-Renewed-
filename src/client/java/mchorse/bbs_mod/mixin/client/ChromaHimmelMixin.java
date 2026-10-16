@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.mixin.client;
 
-import com.afrobama.blendertransform.ChromaHimmelLogik;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SkyRenderer;
@@ -25,11 +25,6 @@ public class ChromaHimmelMixin
     private void bbs$chromaHimmel(ClientLevel welt, float teilbild, Camera kamera,
         SkyRenderState zustand, CallbackInfo info)
     {
-        Integer farbe = ChromaHimmelLogik.farbeOderNull();
-
-        if (farbe != null)
-        {
-            zustand.skyColor = farbe;
-        }
+        MixinBruecke.rufe("ChromaHimmelLogik", "himmel", zustand);
     }
 }

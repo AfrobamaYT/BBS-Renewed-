@@ -32,14 +32,18 @@ public class UIGeneralFormPanel extends UIFormPanel
 
     public UIKeybind hotkey;
 
+    public UIToggle pickable;
     public UIToggle visible;
     public UIButton filterTracks;
     public UIToggle boneTracks;
     
     public UITextbox trackName;
-    public UIToggle lighting;
+    /** How much the world's light reaches the form, 1 lit as usual, 0 glowing at full (smooth since BBS FS f95662b30) */
+    public mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad lighting;
     public UIToggle shaderShadow;
+    public UIToggle renderLast;
     public UIToggle additiveColor;
+    public mchorse.bbs_mod.ui.framework.elements.input.UIColor overlay;
     public UITrackpad uiScale;
     public UITextbox name;
     public UIPropTransform transform;
@@ -65,6 +69,8 @@ public class UIGeneralFormPanel extends UIFormPanel
         this.hotkey.single().tooltip(UIKeys.FORMS_EDITORS_GENERAL_HOTKEY);
 
         this.visible = this.props.toggle(UIKeys.FORMS_EDITORS_GENERAL_VISIBLE, () -> this.form.visible);
+        this.pickable = this.props.toggle(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.pickable"), () -> this.form.pickable);
+        this.pickable.tooltip(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.pickable-tooltip"));
         this.filterTracks = new UIButton(UIKeys.FORMS_EDITORS_GENERAL_FILTER_TRACKS, (b) -> this.openTrackFilter());
         this.filterTracks.tooltip(UIKeys.FORMS_EDITORS_GENERAL_FILTER_TRACKS_TOOLTIP);
         this.boneTracks = new UIToggle(UIKeys.FORMS_EDITORS_GENERAL_BONE_TRACKS, (b) ->
@@ -74,10 +80,13 @@ public class UIGeneralFormPanel extends UIFormPanel
         this.boneTracks.tooltip(UIKeys.FORMS_EDITORS_GENERAL_BONE_TRACKS_TOOLTIP);
         this.trackName = this.props.text(() -> this.form.trackName);
         this.trackName.tooltip(UIKeys.FORMS_EDITORS_GENERAL_TRACK_NAME_TOOLTIP);
-        this.lighting = new UIToggle(UIKeys.FORMS_EDITORS_GENERAL_LIGHTING, (b) -> this.form.lighting.set(b.getValue() ? 1F : 0F));
+        this.lighting = this.props.schieber(() -> this.form.lighting);
         this.lighting.tooltip(UIKeys.FORMS_EDITORS_GENERAL_LIGHTING_TOOLTIP);
         this.shaderShadow = this.props.toggle(UIKeys.FORMS_EDITORS_GENERAL_SHADER_SHADOW, () -> this.form.shaderShadow);
+        this.renderLast = this.props.toggle(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.render_last"), () -> this.form.renderLast);
         this.additiveColor = this.props.toggle(UIKeys.FORMS_EDITORS_ADDITIVE_COLOR, () -> this.form.additiveColor);
+        this.overlay = this.props.color(() -> this.form.overlay);
+        this.overlay.tooltip(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.overlay-tooltip"));
         this.uiScale = this.props.zahl(() -> this.form.uiScale);
         this.name = this.props.text(() -> this.form.name);
 
@@ -100,8 +109,9 @@ public class UIGeneralFormPanel extends UIFormPanel
 
         display.fields.add(
             UI.labelRow(UIKeys.FORMS_EDITORS_GENERAL_DISPLAY, this.name),
-            this.hotkey, this.visible,
-            this.lighting, this.shaderShadow, this.additiveColor,
+            this.hotkey, this.visible, this.pickable,
+            UI.labelRow(UIKeys.FORMS_EDITORS_GENERAL_LIGHTING, this.lighting), this.shaderShadow, this.renderLast, this.additiveColor,
+            UI.labelRow(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.forms.editors.general.overlay"), this.overlay),
             UI.labelRow(UIKeys.FORMS_EDITORS_GENERAL_UI_SCALE, this.uiScale)
         );
 
@@ -157,7 +167,6 @@ public class UIGeneralFormPanel extends UIFormPanel
         {
             this.boneTracks.setVisible(false);
         }
-        this.lighting.setValue(form.lighting.get() > 0F);
         this.transform.setTransform(form.transform.get());
 
 

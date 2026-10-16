@@ -1,11 +1,13 @@
 package com.mcstudio.nano;
 
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.lwjgl.nanovg.NVGPaint;
 import org.lwjgl.nanovg.NanoVG;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 /**
@@ -24,6 +26,11 @@ public final class NanoBilder
 
 	private NanoBilder()
 	{
+	}
+
+	static void verwerfen(long vg)
+	{
+		CACHE.remove(vg);
 	}
 
 	/**
@@ -64,6 +71,42 @@ public final class NanoBilder
 			NanoVG.nvgImagePattern(vg, x, y, gr, gr, 0F, bild, alpha, muster);
 			NanoVG.nvgBeginPath(vg);
 			NanoVG.nvgRect(vg, x, y, gr, gr);
+			NanoVG.nvgFillPaint(vg, muster);
+			NanoVG.nvgFill(vg);
+		}
+
+		return true;
+	}
+
+	/**
+	 * A picture from the classpath (full path) filling (x, y, w, h) like CSS object-fit: cover —
+	 * scaled to cover, cut centred — with rounded corners.
+	 *
+	 * @return false when the picture is missing
+	 */
+	public static boolean bild(long vg, String pfad, float x, float y, float w, float h, float radius)
+	{
+		Map<String, Integer> je = CACHE.computeIfAbsent(vg, k -> new HashMap<>());
+		int bild = je.computeIfAbsent(pfad, (p) -> laden(vg, p));
+
+		if (bild == 0)
+		{
+			return false;
+		}
+
+		try (MemoryStack s = MemoryStack.stackPush())
+		{
+			IntBuffer bb = s.mallocInt(1), bh = s.mallocInt(1);
+
+			NanoVG.nvgImageSize(vg, bild, bb, bh);
+
+			float skala = Math.max(w / Math.max(1, bb.get(0)), h / Math.max(1, bh.get(0)));
+			float pb = bb.get(0) * skala, ph = bh.get(0) * skala;
+			NVGPaint muster = NVGPaint.malloc(s);
+
+			NanoVG.nvgImagePattern(vg, x + (w - pb) / 2F, y + (h - ph) / 2F, pb, ph, 0F, bild, 1F, muster);
+			NanoVG.nvgBeginPath(vg);
+			NanoVG.nvgRoundedRect(vg, x, y, w, h, radius);
 			NanoVG.nvgFillPaint(vg, muster);
 			NanoVG.nvgFill(vg);
 		}

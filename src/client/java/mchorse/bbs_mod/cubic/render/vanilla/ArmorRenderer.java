@@ -8,12 +8,12 @@ import mchorse.bbs_mod.utils.colors.Color;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.palette.PalettedTextureManager;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.EquipmentAssetManager;
 import net.minecraft.client.resources.model.EquipmentClientInfo;
 import net.minecraft.core.component.DataComponents;
@@ -44,7 +44,6 @@ public class ArmorRenderer
     private static final Map<String, Identifier> ARMOR_TEXTURE_CACHE = Maps.newHashMap();
     private final HumanoidModel innerModel;
     private final HumanoidModel outerModel;
-    private final TextureAtlas armorTrimsAtlas;
     private final EquipmentAssetManager equipmentAssets;
 
     /**
@@ -58,20 +57,6 @@ public class ArmorRenderer
     {
         this.innerModel = innerModel;
         this.outerModel = outerModel;
-        /* ⛔ DAS WAR DER SCHWARZE BILDSCHIRM. Sheets.ARMOR_TRIMS_SHEET ist der TEXTURPFAD
-         * (minecraft:textures/atlas/armor_trims.png); getAtlas will in 26.2 eine ATLAS-KENNUNG
-         * (net.minecraft.data.AtlasIds.ARMOR_TRIMS). Der falsche Wert wirft
-         *     IllegalArgumentException: Invalid atlas id: minecraft:textures/atlas/armor_trims.png
-         * und zwar in EntityRenderDispatcher.onResourceManagerReload -- also MITTEN IM
-         * RESSOURCEN-RELOAD. Der bricht dadurch ab, kein Modell wird fertig gebacken, und das
-         * Spiel zeichnet ab da NICHTS mehr.
-         *
-         * ⚠️ WARUM DAS SO LANGE GEDAUERT HAT: es sieht nicht wie ein Renderfehler aus. Der
-         * Renderthread laeuft weiter, es kommt KEINE Ausnahme pro Bild, der Titelbildschirm
-         * meldet sich normal -- nur das Bild bleibt schwarz. Die Ausnahme faellt EINMAL, waehrend
-         * des Ladens, und steht danach still im Log. Der Hinweis, der es aufloeste, kam vom
-         * Nutzer: "Ladebildschirm war kurz da, DANN schwarz" -- also kippt es beim Reload-Ende. */
-        this.armorTrimsAtlas = ctx.getAtlas(net.minecraft.data.AtlasIds.ARMOR_TRIMS);
         this.equipmentAssets = ctx.getEquipmentAssets();
     }
 
@@ -124,35 +109,42 @@ public class ArmorRenderer
             ? EquipmentClientInfo.LayerType.HUMANOID_LEGGINGS
             : EquipmentClientInfo.LayerType.HUMANOID;
         int dyeColor = DyedItemColor.getOrDefault(itemStack, 0);
-        List<EquipmentClientInfo.Layer> layers = this.equipmentAssets.get(asset).getLayers(layerType);
+        EquipmentClientInfo equipmentInfo = this.equipmentAssets.get(asset);
+        List<EquipmentClientInfo.Layer> layers = equipmentInfo.getLayers(layerType);
 
-        /* ⚠️ Verhaltensaenderung: frueher waren es fest ein bzw. zwei Ebenen (Grundtextur +
-         * "_overlay" bei gefaerbtem Leder). Jetzt bestimmt die Beschreibung, WIE VIELE Ebenen
-         * es gibt und welche davon faerbbar ist. Fuer Vanilla-Ruestung ist das Ergebnis
-         * dasselbe; Datenpakete/Mods mit mehr Ebenen werden jetzt richtig gezeichnet. */
+        if (layers.isEmpty())
+        {
+            return;
+        }
+
+        ArmorTrim trim = itemStack.get(DataComponents.TRIM);
+        boolean drawTrim = trim != null && layerType != EquipmentClientInfo.LayerType.HUMANOID_BABY;
+        boolean drawLayerGlint = itemStack.hasFoil() && !drawTrim;
+        int order = 1;
+
         for (EquipmentClientInfo.Layer layer : layers)
         {
             int color = getColorForLayer(layer, dyeColor);
 
-            /* 0 heisst: faerbbare Ebene ohne Farbe — die wird gar nicht gezeichnet. */
             if (color == 0)
             {
                 continue;
             }
 
-            this.renderArmorParts(part, matrices, vertexConsumers, light, this.getArmorTexture(layer, layerType), color);
+            this.renderArmorParts(part, matrices, vertexConsumers.order(order++), light,
+                this.getArmorTexture(layer, layerType), color, drawLayerGlint);
+            drawLayerGlint = false;
         }
 
-        ArmorTrim trim = itemStack.get(DataComponents.TRIM);
-
-        if (trim != null)
+        if (drawTrim)
         {
-            this.renderTrim(part, asset, layerType, matrices, vertexConsumers, light, trim);
-        }
+            PalettedTextureManager.Handle handle = resolveTrim(trim, layerType, equipmentInfo);
+            this.renderTrim(part, matrices, vertexConsumers.order(order++), light, trim, handle);
 
-        if (itemStack.hasFoil())
-        {
-            this.renderGlint(part, matrices, vertexConsumers, light);
+            if (itemStack.hasFoil())
+            {
+                this.renderGlint(part, matrices, vertexConsumers.order(order), light);
+            }
         }
     }
 
@@ -220,43 +212,87 @@ public class ArmorRenderer
         return stack;
     }
 
-    private void renderArmorParts(ModelPart part, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, Identifier texture, int color)
+    private void renderArmorParts(ModelPart part, PoseStack matrices,
+        OrderedSubmitNodeCollector vertexConsumers, int light, Identifier texture, int color, boolean glint)
     {
-        /* Farbe kommt jetzt als ARGB-Zahl statt als drei floats; zerlegt wird sie wie vorher,
-         * die Deckkraft bleibt fest 1 (alle Wege oben liefern deckende Farben). */
         float red = (float) (color >> 16 & 255) / 255F;
         float green = (float) (color >> 8 & 255) / 255F;
         float blue = (float) (color & 255) / 255F;
 
-        vertexConsumers.submitCustomGeometry(matrices, RenderTypes.armorCutoutNoCull(texture), (entry, base) ->
+        vertexConsumers.submitCustomGeometry(matrices,
+            glint ? RenderTypes.armorCutoutNoCullGlint(texture) : RenderTypes.armorCutoutNoCull(texture),
+            (entry, base) ->
         {
-            VertexConsumer vertexConsumer = new RecolorVertexConsumer(base, new Color(red, green, blue, 1F));
-
-            part.render(poseStack(entry), vertexConsumer, light, OverlayTexture.NO_OVERLAY);
+            VertexConsumer consumer = new RecolorVertexConsumer(base, new Color(red, green, blue, 1F));
+            part.render(poseStack(entry), consumer, light, OverlayTexture.NO_OVERLAY);
         });
     }
 
-    private void renderTrim(ModelPart part, ResourceKey<EquipmentAsset> asset, EquipmentClientInfo.LayerType layerType, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, ArmorTrim trim)
+    private void renderTrim(ModelPart part, PoseStack matrices,
+        OrderedSubmitNodeCollector vertexConsumers, int light, ArmorTrim trim,
+        PalettedTextureManager.Handle handle)
     {
-        /* ⚠️ trim.innerTexture/outerTexture(material) gibt es nicht mehr. Die Zier-Textur
-         * haengt jetzt an der Ausruestungs-assetId, nicht am Ruestungsmaterial: der Praefix
-         * kommt vom Ebenentyp ("", "leggings"), der Rest aus Muster + Zier-Material. */
-        TextureAtlasSprite sprite = this.armorTrimsAtlas.getSprite(trim.layerAssetId(layerType.trimAssetPrefix(), asset));
-
-        vertexConsumers.submitCustomGeometry(matrices, Sheets.armorTrimsSheet(trim.pattern().value().decal()), (entry, base) ->
+        vertexConsumers.submitCustomGeometry(matrices,
+            RenderTypes.armorTrim(handle.textureLocation(), trim.pattern().value().decal()), (entry, base) ->
         {
-            VertexConsumer vertexConsumer = sprite.wrap(base);
-
-            part.render(poseStack(entry), vertexConsumer, light, OverlayTexture.NO_OVERLAY);
+            part.render(poseStack(entry), handle.wrap(base), light, OverlayTexture.NO_OVERLAY);
         });
     }
 
-    private void renderGlint(ModelPart part, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light)
+    private void renderGlint(ModelPart part, PoseStack matrices,
+        OrderedSubmitNodeCollector vertexConsumers, int light)
     {
-        vertexConsumers.submitCustomGeometry(matrices, RenderTypes.armorEntityGlint(), (entry, base) ->
+        vertexConsumers.submitCustomGeometry(matrices, RenderTypes.trimmedArmorGlint(), (entry, base) ->
         {
             part.render(poseStack(entry), base, light, OverlayTexture.NO_OVERLAY);
         });
+    }
+
+    private static PalettedTextureManager.Handle resolveTrim(ArmorTrim trim,
+        EquipmentClientInfo.LayerType layerType, EquipmentClientInfo equipmentInfo)
+    {
+        Identifier texture = trim.pattern().value().assetId();
+        Identifier palette = trim.material().value().paletteId();
+
+        for (EquipmentClientInfo.TrimOverride override : equipmentInfo.trimOverrides())
+        {
+            if (override.predicate().matches(trim))
+            {
+                texture = override.textureId().orElse(texture);
+                palette = override.paletteId().orElse(null);
+                break;
+            }
+        }
+
+        Identifier logicalTexture = texture.withPath(path -> layerType.trimAssetPrefix() + "/" + path);
+
+        if (palette != null)
+        {
+            return Minecraft.getInstance().getPalettedTextureManager().getOrPrepare(logicalTexture, palette);
+        }
+
+        Identifier directTexture = logicalTexture.withPath(path -> "textures/" + path + ".png");
+
+        return new PalettedTextureManager.Handle()
+        {
+            @Override
+            public Identifier textureLocation()
+            {
+                return directTexture;
+            }
+
+            @Override
+            public float getU(float u)
+            {
+                return u;
+            }
+
+            @Override
+            public float getV(float v)
+            {
+                return v;
+            }
+        };
     }
 
     private HumanoidModel getModel(EquipmentSlot slot)

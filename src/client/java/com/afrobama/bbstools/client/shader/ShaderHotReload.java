@@ -25,8 +25,9 @@ public final class ShaderHotReload implements IFeatureDebugger
     private ShaderHotReload() {}
 
     /**
-     * Reflectively trigger Iris's shaderpack reload, picking up edited
-     * shader files from the JAR classpath.
+     * Reflectively trigger Iris's shaderpack reload. After reload, the
+     * fork's CrowdShaderOverride will re-load our crowd_entities.vsh
+     * from JAR classpath, picking up edits.
      */
     public boolean reload()
     {

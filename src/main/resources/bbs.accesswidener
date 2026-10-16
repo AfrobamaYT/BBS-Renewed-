@@ -38,6 +38,18 @@ accessWidener v2 official
 #     .startedBuilders / .lastSharedType   Sofortmodus, den es bediente, existiert nicht mehr.
 # ============================================================================
 
-# Die Knochen-Hierarchie von Vanilla-Modellen fuer den Modell-Export. In 26.2 weiterhin
-# `private final`.
+# Unsere blenderbridge (EntityExporter) liest die Knochen-Hierarchie von Vanilla-Modellen,
+# um sie nach Blender zu exportieren. In 26.2 weiterhin `private final`.
 accessible field net/minecraft/client/model/geom/ModelPart children Ljava/util/Map;
+accessible method net/minecraft/client/model/geom/ModelPart compile (Lcom/mojang/blaze3d/vertex/PoseStack$Pose;Lcom/mojang/blaze3d/vertex/VertexConsumer;III)V
+# Addon API, VanillaAccess (BBS FS f37a1b632): what a stand-in for an item's user has to set
+accessible field net/minecraft/world/entity/LivingEntity useItem Lnet/minecraft/world/item/ItemStack;
+accessible field net/minecraft/world/entity/LivingEntity useItemRemaining I
+accessible field net/minecraft/world/entity/LivingEntity autoSpinAttackTicks I
+accessible method net/minecraft/world/entity/LivingEntity setLivingEntityFlag (IZ)V
+# TrueType fonts for labels: world text resolves a font by id through vanilla's FontManager (BBS FS b0224f806)
+accessible field net/minecraft/client/Minecraft fontManager Lnet/minecraft/client/gui/font/FontManager;
+accessible field net/minecraft/client/gui/font/FontManager fontSets Ljava/util/Map;
+accessible field net/minecraft/client/gui/font/FontManager anyGlyphs Lnet/minecraft/client/gui/font/FontManager$CachedFontProvider;
+accessible field net/minecraft/client/gui/font/FontManager nonFishyGlyphs Lnet/minecraft/client/gui/font/FontManager$CachedFontProvider;
+accessible class net/minecraft/client/gui/font/FontManager$CachedFontProvider

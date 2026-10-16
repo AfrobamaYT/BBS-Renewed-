@@ -108,7 +108,7 @@ final class KanalSuche
 	/** Zeichen anhaengen, Ruecktaste loescht; Filter sofort anwenden. */
 	private static void tippen(String fokusId, char c)
 	{
-		if (!"kanalsuche".equals(fokusId))
+		if (!"kanalsuche".equals(fokusId) || c == '\n')
 		{
 			return;
 		}

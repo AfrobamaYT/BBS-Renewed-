@@ -1,8 +1,8 @@
 package mchorse.bbs_mod.ui.utils.keys;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,6 +12,27 @@ import java.util.function.IntPredicate;
 
 public class KeyCombo
 {
+    /**
+     * The modifiers of the key event being dispatched right now, or null outside of one.
+     *
+     * <p>Ctrl/Shift/Alt of a combo were read as the CURRENT key state. The editor draws at
+     * ~13 fps while idle and handles queued SDL events once per frame, so a quick human
+     * Ctrl+Z (Ctrl released before that frame) arrived as a bare Z: 1 of 2 presses with a
+     * 120 ms hold were lost (measured 2026-10-13, audit item 3). The event carries its own
+     * modifiers; while it is dispatched, they are the truth.</p>
+     */
+    private static net.minecraft.client.input.KeyEvent ereignis;
+
+    public static void ereignisBeginnen(int key, int scanCode, int mods)
+    {
+        ereignis = new net.minecraft.client.input.KeyEvent(key, scanCode, mods);
+    }
+
+    public static void ereignisBeenden()
+    {
+        ereignis = null;
+    }
+
     private static Set<String> categoryKeys = new HashSet<>();
 
     /**
@@ -145,15 +166,24 @@ public class KeyCombo
             return Window.isMouseButtonPressed(-key);
         }
 
-        if (key == GLFW.GLFW_KEY_LEFT_SHIFT || key == GLFW.GLFW_KEY_RIGHT_SHIFT)
+        net.minecraft.client.input.KeyEvent event = ereignis;
+
+        if (event != null)
+        {
+            if (key == InputConstants.KEY_LSHIFT || key == InputConstants.KEY_RSHIFT) return event.hasShiftDown();
+            if (key == InputConstants.KEY_LCONTROL || key == InputConstants.KEY_RCONTROL) return event.hasControlDown();
+            if (key == InputConstants.KEY_LALT || key == InputConstants.KEY_RALT) return event.hasAltDown();
+        }
+
+        if (key == InputConstants.KEY_LSHIFT || key == InputConstants.KEY_RSHIFT)
         {
             return Window.isShiftPressed();
         }
-        else if (key == GLFW.GLFW_KEY_LEFT_CONTROL || key == GLFW.GLFW_KEY_RIGHT_CONTROL)
+        else if (key == InputConstants.KEY_LCONTROL || key == InputConstants.KEY_RCONTROL)
         {
             return Window.isCtrlPressed();
         }
-        else if (key == GLFW.GLFW_KEY_LEFT_ALT || key == GLFW.GLFW_KEY_RIGHT_ALT)
+        else if (key == InputConstants.KEY_LALT || key == InputConstants.KEY_RALT)
         {
             return Window.isAltPressed();
         }

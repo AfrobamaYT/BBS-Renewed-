@@ -932,7 +932,7 @@ public final class VeilCubicBatch implements AutoCloseable
             try { GL20C.glUseProgram(savedProgram); } catch (Throwable ig) {}
             try { GL30C.glBindVertexArray(savedVao); } catch (Throwable ig) {}
             try { GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, savedArrayBuffer); } catch (Throwable ig) {}
-            try { com.mojang.blaze3d.opengl.GlStateManager._activeTexture(savedActiveTex); } catch (Throwable ig) {}
+            try { com.mojang.renderpearl.backend.opengl.GlStateManager._activeTexture(savedActiveTex); } catch (Throwable ig) {}
             try { org.lwjgl.opengl.GL30C.glBindFramebuffer(0x8CA9 /* GL_DRAW_FRAMEBUFFER */, savedDrawFbo); } catch (Throwable ig) {}
             try
             {
@@ -956,8 +956,8 @@ public final class VeilCubicBatch implements AutoCloseable
              *  the saved values; GlStateManager is idempotent + cheap. */
             try
             {
-                com.mojang.blaze3d.opengl.GlStateManager._glUseProgram(savedProgram);
-                com.mojang.blaze3d.opengl.GlStateManager._glBindVertexArray(savedVao);
+                com.mojang.renderpearl.backend.opengl.GlStateManager._glUseProgram(savedProgram);
+                com.mojang.renderpearl.backend.opengl.GlStateManager._glBindVertexArray(savedVao);
                 if (savedBlend)    com.mojang.blaze3d.systems.RenderSystem.enableBlend();
                 else               com.mojang.blaze3d.systems.RenderSystem.disableBlend();
                 if (savedCullFace) com.mojang.blaze3d.systems.RenderSystem.enableCull();

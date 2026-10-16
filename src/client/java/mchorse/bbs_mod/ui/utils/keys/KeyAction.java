@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.utils.keys;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 public enum KeyAction
 {
@@ -8,11 +8,11 @@ public enum KeyAction
 
     public static KeyAction get(int action)
     {
-        if (action == GLFW.GLFW_PRESS)
+        if (action == InputConstants.PRESS)
         {
             return PRESSED;
         }
-        else if (action == GLFW.GLFW_REPEAT)
+        else if (action == InputConstants.REPEAT)
         {
             return REPEAT;
         }

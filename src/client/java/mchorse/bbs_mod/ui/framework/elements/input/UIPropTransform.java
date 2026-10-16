@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import org.joml.Matrix4f;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.cubic.ik.ModelIKRuntime;
@@ -44,7 +45,6 @@ import org.joml.Matrix3f;
 import org.joml.Quaternionf;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -433,42 +433,19 @@ public class UIPropTransform extends UITransform
     /** The dedicated icon for a space (used on the dropdown trigger and in its list). */
     private Icon spaceIcon(TransformSpace space)
     {
-        switch (space)
-        {
-            case GLOBAL: return Icons.SPACE_GLOBAL;
-            /* The globe: no dedicated space_* sprite exists for WORLD, and a
-             * globe reads as "the map itself" better than a new flat glyph. */
-            case WORLD: return Icons.GLOBE;
-            case VIEW: return Icons.SPACE_VIEW;
-            case PARENT: return Icons.SPACE_PARENT;
-            default: return Icons.SPACE_LOCAL;
-        }
+        return space.icon;
     }
 
     /** The accent colour a space is tagged with in the picker. RGB only (no alpha):
      *  the colourful menu action builds its own bar + gradient from it. */
     private int spaceColor(TransformSpace space)
     {
-        switch (space)
-        {
-            case GLOBAL: return 0x4C8DFF;
-            case WORLD: return 0x2FBFD9;
-            case VIEW: return 0x43C67A;
-            case PARENT: return 0xB27BE0;
-            default: return 0xF0A63C;
-        }
+        return space.color;
     }
 
     private IKey spaceLabel(TransformSpace space)
     {
-        switch (space)
-        {
-            case GLOBAL: return UIKeys.TRANSFORMS_SPACE_GLOBAL;
-            case WORLD: return UIKeys.TRANSFORMS_SPACE_WORLD;
-            case VIEW: return UIKeys.TRANSFORMS_SPACE_VIEW;
-            case PARENT: return UIKeys.TRANSFORMS_SPACE_PARENT;
-            default: return UIKeys.TRANSFORMS_SPACE_LOCAL;
-        }
+        return space.label;
     }
 
     private Vector3f calculateLocalVector(double factor, Axis axis)
@@ -503,8 +480,8 @@ public class UIPropTransform extends UITransform
         IKey category = UIKeys.TRANSFORMS_KEYS_CATEGORY;
         Supplier<Boolean> active = () -> enabled.get() && this.editing;
 
-        this.keys().register(Keys.TRANSFORMATIONS_TRANSLATE, () -> this.enableMode(TransformOp.TRANSLATE)).active(enabled).category(category);
-        this.keys().register(Keys.TRANSFORMATIONS_SCALE, () -> this.enableMode(TransformOp.SCALE)).active(enabled).category(category);
+        this.keys().register(Keys.TRANSFORMATIONS_TRANSLATE, () -> mchorse.bbs_mod.ui.film.replays.IKGriff.greifen(this)).active(() -> enabled.get() && !mchorse.bbs_mod.ui.film.replays.KeyframeGreifen.ueberKeys(this.getContext())).category(category);
+        this.keys().register(Keys.TRANSFORMATIONS_SCALE, () -> this.enableMode(TransformOp.SCALE)).active(() -> enabled.get() && !mchorse.bbs_mod.ui.film.replays.KeyframeGreifen.ueberKeys(this.getContext())).category(category);
         this.keys().register(Keys.TRANSFORMATIONS_ROTATE, () -> this.enableMode(TransformOp.ROTATE)).active(enabled).category(category);
         this.keys().register(Keys.TRANSFORMATIONS_COMBINED, () -> Gizmo.INSTANCE.toggleCombined()).strict().active(enabled).category(category);
         this.keys().register(Keys.TRANSFORMATIONS_X, () -> this.setEditingAxis(Axis.X)).active(active).category(category);
@@ -512,7 +489,7 @@ public class UIPropTransform extends UITransform
         this.keys().register(Keys.TRANSFORMATIONS_Z, () -> this.setEditingAxis(Axis.Z)).active(active).category(category);
         this.keys().register(Keys.TRANSFORMATIONS_SPACE_MENU, this::openSpaceMenu).active(enabled).category(category);
         this.keys().register(Keys.TRANSFORMATIONS_ROTATION_MODE, this::toggleRotationMode).active(enabled).category(category);
-
+        this.keys().register(Keys.TRANSFORMATIONS_RESET, () -> { this.reset(); this.refillTransform(); }).active(() -> enabled.get() && !this.editing && this.transform != null).strict().category(category);
         return this;
     }
 
@@ -603,7 +580,7 @@ public class UIPropTransform extends UITransform
             return null;
         }
 
-        return this.strategy.readout();
+        return this.numeric.isActive() ? this.numeric.display() + (this.getOp() == TransformOp.ROTATE ? "°" : "") : this.strategy.readout(); /* typed, not the mouse sweep (read 0.0° while typing) */
     }
 
     public GizmoDrag getDrag()
@@ -1207,6 +1184,7 @@ public class UIPropTransform extends UITransform
 
     public void acceptChanges()
     {
+        mchorse.bbs_mod.ui.film.GestenKeys.behalten();
         this.disable();
         this.setTransform(this.transform);
         this.endGesture();
@@ -1221,12 +1199,11 @@ public class UIPropTransform extends UITransform
             return;
         }
 
-        /* Rewind BEFORE tearing down: restore() routes a pivot-session revert
-         * through the session's per-bone snapshots, and disable() nulls that
-         * session. Do it the other way round and the rewind falls back to the
-         * per-channel path, which fans the primary's values onto the whole
-         * selection — the bones come back crooked instead of where they were. */
+        /* Rewind BEFORE tearing down: restore() reverts a pivot session through its per-bone
+         * snapshots, which disable() nulls; the other order fans the primary's values onto the
+         * whole selection. Keys the gesture created at the playhead go too (GestenKeys). */
         this.restore();
+        mchorse.bbs_mod.ui.film.GestenKeys.verwerfen();
         this.disable();
         this.setTransform(this.transform);
     }
@@ -1412,13 +1389,13 @@ public class UIPropTransform extends UITransform
     {
         if (this.editing)
         {
-            if (context.isPressed(GLFW.GLFW_KEY_ENTER))
+            if (context.isPressed(InputConstants.KEY_RETURN))
             {
                 this.acceptChanges();
 
                 return true;
             }
-            else if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+            else if (context.isPressed(InputConstants.KEY_ESCAPE))
             {
                 this.rejectChanges();
 
@@ -1527,7 +1504,7 @@ public class UIPropTransform extends UITransform
          *
          * It gets updated outside the window only when one of mouse buttons is
          * being held! */
-        GLFW.glfwGetCursorPos(Window.getWindow(), CURSOR_X, CURSOR_Y);
+        Window.getCursorPosition(CURSOR_X, CURSOR_Y);
 
         Minecraft mc = Minecraft.getInstance();
         int w = mc.getWindow().getScreenWidth();

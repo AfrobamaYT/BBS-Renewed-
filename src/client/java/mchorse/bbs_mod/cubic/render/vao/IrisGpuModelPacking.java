@@ -1,9 +1,9 @@
 package mchorse.bbs_mod.cubic.render.vao;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.opengl.GlBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.backend.opengl.GlBuffer;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import net.irisshaders.iris.vertices.IrisVertexFormats;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;

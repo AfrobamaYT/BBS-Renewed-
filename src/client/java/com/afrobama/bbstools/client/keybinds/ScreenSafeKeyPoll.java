@@ -6,7 +6,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Liest den PHYSISCHEN zustand der taste, auf die ein {@link KeyMapping}
@@ -105,19 +104,19 @@ public final class ScreenSafeKeyPoll
          * entscheidet die kategorie ueber den abfrage-weg. */
         if (key.getType() == InputConstants.Type.MOUSE)
         {
-            return GLFW.glfwGetMouseButton(handle, code) == GLFW.GLFW_PRESS;
+            return mchorse.bbs_mod.graphics.window.Window.isNativeMouseButtonPressed(code);
         }
 
-        return InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), code);
+        return InputConstants.isKeyDown(code);
     }
 
     private static boolean anyModifierDown(long handle)
     {
-        return InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT)
-            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT)
-            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)
-            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL)
-            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_ALT)
-            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_ALT);
+        return InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+            || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT)
+            || InputConstants.isKeyDown(InputConstants.KEY_LCONTROL)
+            || InputConstants.isKeyDown(InputConstants.KEY_RCONTROL)
+            || InputConstants.isKeyDown(InputConstants.KEY_LALT)
+            || InputConstants.isKeyDown(InputConstants.KEY_RALT);
     }
 }

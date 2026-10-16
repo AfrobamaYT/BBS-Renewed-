@@ -1,9 +1,10 @@
 package mchorse.bbs_mod.ui.framework.elements.input;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.function.Consumer;
 
-import org.lwjgl.glfw.GLFW;
 
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -47,7 +48,14 @@ public class UISliderTrackpad extends UINumericInput<UISliderTrackpad>
 
     protected boolean wasInside;
     protected boolean dragging;
-    protected int initialX;
+
+    /* Where the drag began in window pixels, and the scale and track it was measured
+     * on. A live UI scale (ui_scale) changes the units under a still cursor and the
+     * track width while its own slider drags; measured in these, the value follows
+     * the hand instead of chasing the layout it just changed. */
+    protected double initialPixel;
+    protected double startScale;
+    protected int startTrackWidth;
 
     /** The value the gesture began with, restored when it gets cancelled. */
     protected double startValue;
@@ -149,7 +157,7 @@ public class UISliderTrackpad extends UINumericInput<UISliderTrackpad>
      */
     protected double getDraggedValue(int mouseX)
     {
-        int dx = mouseX - this.initialX;
+        double dx = (mouseX * (double) BBSModClient.getGUIScale() - this.initialPixel) / this.startScale;
 
         if (!this.hasSliderRange())
         {
@@ -158,7 +166,7 @@ public class UISliderTrackpad extends UINumericInput<UISliderTrackpad>
             return diff < 0D ? this.anchorValue : this.anchorValue + (dx < 0 ? -diff : diff);
         }
 
-        double value = this.anchorValue + (dx / (double) this.getTrackWidth()) * (this.max - this.min) * this.getDragPrecision();
+        double value = this.anchorValue + (dx / this.startTrackWidth) * (this.max - this.min) * this.getDragPrecision();
 
         if (Window.isCtrlPressed() && this.increment > 0D)
         {
@@ -211,7 +219,9 @@ public class UISliderTrackpad extends UINumericInput<UISliderTrackpad>
     protected void beginDragging(UIContext context)
     {
         this.dragging = true;
-        this.initialX = context.mouseX;
+        this.startScale = Math.max(1E-3D, BBSModClient.getGUIScale());
+        this.initialPixel = context.mouseX * this.startScale;
+        this.startTrackWidth = Math.max(1, this.getTrackWidth());
         this.startValue = this.value;
 
         /* Grabbing the handle takes the value as it stands, pressing anywhere
@@ -344,11 +354,11 @@ public class UISliderTrackpad extends UINumericInput<UISliderTrackpad>
         {
             if (context.mouseWheel > 0)
             {
-                this.setValueAndNotify(this.value + this.getValueModifier());
+                this.setValueFromGesture(this.value + this.getValueModifier());
             }
             else
             {
-                this.setValueAndNotify(this.value - this.getValueModifier());
+                this.setValueFromGesture(this.value - this.getValueModifier());
             }
 
             return true;
@@ -360,7 +370,7 @@ public class UISliderTrackpad extends UINumericInput<UISliderTrackpad>
     @Override
     public boolean subKeyPressed(UIContext context)
     {
-        if (this.dragging && context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+        if (this.dragging && context.isPressed(InputConstants.KEY_ESCAPE))
         {
             this.cancelDragging();
 

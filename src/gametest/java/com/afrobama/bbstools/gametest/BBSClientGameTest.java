@@ -92,7 +92,19 @@ public class BBSClientGameTest implements FabricClientGameTest {
 			// prueft er nur, ob Vanilla eine Welt zeichnet -- das sagt ueber unseren
 			// Editor nichts. UIScreen ist die Screen-Huelle, UIDashboard das Menue darin;
 			// setScreen ist der von Fabric vorgesehene Weg und umgeht jede Tastensimulation.
-			context.setScreen(() -> new UIScreen(Component.empty(), new StillDashboard()));
+			context.setScreen(() ->
+			{
+				/* The fixture compares the editor, not the installation's one-time announcement.
+				 * Fabric runs this in its private clientGameTest directory. */
+				com.afrobama.bbstools.client.dashboard.AnnouncementGate.markShown();
+
+				if (com.afrobama.bbstools.client.dashboard.AnnouncementGate.shouldShow())
+				{
+					throw new AssertionError("Could not prepare the test-only announcement state");
+				}
+
+				return new UIScreen(Component.empty(), new StillDashboard());
+			});
 
 			// Das Dashboard baut seine Panels erst im ersten Zeichendurchlauf auf. Ohne
 			// Wartezeit faengt der Screenshot ein halb aufgebautes Fenster ein und der

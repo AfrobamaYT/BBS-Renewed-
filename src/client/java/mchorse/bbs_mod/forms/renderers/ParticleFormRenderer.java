@@ -6,7 +6,7 @@ import mchorse.bbs_mod.graphics.InverseView;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -20,7 +20,7 @@ import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.world.level.Level;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
@@ -110,6 +110,14 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
     @Override
     public void render3D(FormRenderingContext context)
     {
+        if ((mchorse.bbs_mod.integrations.vitrail.VitrailActorFrame.earlyWorld()
+            || mchorse.bbs_mod.integrations.vitrail.VitrailActorFrame.replaying()
+                && mchorse.bbs_mod.integrations.vitrail.VitrailActorFrame.world(context))
+            && mchorse.bbs_mod.integrations.vitrail.VitrailActorFrame.mesh("particle")) return;
+        Matrix4f capturePose = new Matrix4f(context.stack.last().pose());
+        if (!context.ui && !context.isPicking() && !mchorse.bbs_mod.graphics.Zeichenziel.eigenes()
+            && !BBSRendering.isIrisShadowPass()
+            && mchorse.bbs_mod.client.renderer.NativeMorphCapture.suppressesParticle(this.form, context.entity, capturePose)) return;
         this.ensureEmitter(Minecraft.getInstance().level, context.transition);
 
         ParticleEmitter emitter = this.emitter;
@@ -160,15 +168,27 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
             if (!BBSRendering.isIrisShadowPass())
             {
-                boolean shadersEnabled = BBSRendering.isIrisShadersEnabled();
+                boolean early = mchorse.bbs_mod.client.renderer.NativeMorphCapture.capturingParticles()
+                    || mchorse.bbs_mod.integrations.vitrail.VitrailActorFrame.earlyWorld();
+                boolean nativeWorld = !context.isPicking() && !context.ui
+                    && !mchorse.bbs_mod.graphics.Zeichenziel.eigenes()
+                    && (early || mchorse.bbs_mod.forms.FormTranslucentQueue.isActive())
+                    && mchorse.bbs_mod.integrations.vitrail.VitrailRetainedParticles.active();
+                boolean shadersEnabled = !nativeWorld && BBSRendering.isIrisShadersEnabled();
 
-                VertexFormat format = shadersEnabled ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.PARTICLE;
+                VertexFormat format = context.isPicking() ? DefaultVertexFormat.POSITION_TEX_COLOR
+                    : shadersEnabled ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.PARTICLE;
                 Supplier<RenderPipeline> shader = shadersEnabled
-                    ? this.getShader(context, () -> RenderPipelines.ENTITY_TRANSLUCENT, BBSShaders::getPickerBillboardProgram)
-                    : this.getShader(context, () -> RenderPipelines.TRANSLUCENT_PARTICLE, BBSShaders::getPickerParticlesProgram);
+                    ? this.getShader(context, () -> RenderPipelines.ENTITY_TRANSLUCENT,
+                        mchorse.bbs_mod.forms.renderers.utils.TexturedFormPicking::pipeline)
+                    : this.getShader(context, () -> RenderPipelines.TRANSLUCENT_PARTICLE,
+                        mchorse.bbs_mod.forms.renderers.utils.TexturedFormPicking::pipeline);
 
                 emitter.setupCameraProperties(context.camera);
-                emitter.render(format, shader, context.stack, context.overlay, context.getTransition());
+                if (mchorse.bbs_mod.client.renderer.NativeMorphCapture.capturingParticles() && nativeWorld)
+                    mchorse.bbs_mod.client.renderer.NativeMorphCapture.particle(this.form, context.entity, capturePose, () ->
+                        emitter.render(format, shader, context.stack, context.overlay, context.getTransition(), context.getPickingIndex(), true));
+                else emitter.render(format, shader, context.stack, context.overlay, context.getTransition(), context.getPickingIndex(), nativeWorld);
             }
 
             context.stack.popPose();

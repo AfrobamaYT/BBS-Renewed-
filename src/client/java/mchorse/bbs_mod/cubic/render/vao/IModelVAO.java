@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.cubic.render.vao;
 
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass;
 
 /**
  * Ein hochgeladenes Modell-Netz, das sich selbst in einen Zeichendurchgang legen kann.

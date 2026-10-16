@@ -130,21 +130,43 @@ public class UIKachelListe extends UIDataPathList
         return this;
     }
 
+    /**
+     * Scrub-Streifen je Eintrag: {@code felder} Bilder nebeneinander in einer Textur
+     * (Storyboard wie bei YouTube/Jellyfin). Beim Darueberfahren waehlt der x-Anteil der Maus
+     * das Feld; {@code null} vom Lieferanten = kein Streifen, das Standbild bleibt.
+     */
+    private Function<DataPath, Link> streifen;
+    private final Map<String, Link> streifenLinks = new HashMap<>();
+    private int streifenFelder = 1;
+
+    public UIKachelListe streifen(int felder, Function<DataPath, Link> streifen)
+    {
+        this.streifenFelder = Math.max(1, felder);
+        this.streifen = streifen;
+
+        return this;
+    }
+
     private Texture standbild(DataPath pfad)
     {
-        if (this.bild == null || pfad.folder)
+        return this.textur(this.bild, this.bilder, pfad);
+    }
+
+    private Texture textur(Function<DataPath, Link> lieferant, Map<String, Link> links, DataPath pfad)
+    {
+        if (lieferant == null || pfad.folder)
         {
             return null;
         }
 
         String schluessel = pfad.toString();
 
-        if (!this.bilder.containsKey(schluessel))
+        if (!links.containsKey(schluessel))
         {
-            this.bilder.put(schluessel, this.bild.apply(pfad));
+            links.put(schluessel, lieferant.apply(pfad));
         }
 
-        Link link = this.bilder.get(schluessel);
+        Link link = links.get(schluessel);
 
         return link == null ? null : BBSModClient.getTextures().getTexture(link);
     }
@@ -243,6 +265,7 @@ public class UIKachelListe extends UIDataPathList
          * bliebe sonst hinter einem zwischengespeicherten null haengen und erschiene erst nach
          * einem Neustart — ein stiller Fehlschlag, der wie „das Bild wird nicht gefunden" aussieht. */
         this.bilder.clear();
+        this.streifenLinks.clear();
 
         File wurzel = this.wurzel == null ? null : this.wurzel.get();
 
@@ -390,38 +413,20 @@ public class UIKachelListe extends UIDataPathList
         context.batcher.box(vx, vy, vex, vey, Colors.A100 | NanoDesign.EDITOR);
 
         Texture standbild = this.standbild(element);
-        Form form = standbild != null ? null : this.formHolen(element);
+        Texture streifen = ueber ? this.textur(this.streifen, this.streifenLinks, element) : null;
+        Form form = standbild != null || streifen != null ? null : this.formHolen(element);
 
-        if (standbild != null)
+        if (streifen != null)
         {
-            /* Mittig beschnitten: das Standbild ist 16:9, die Kachel nicht. Verzerren waere
-             * schlimmer als beschneiden — ein Gesicht soll ein Gesicht bleiben. */
-            float tb = standbild.width;
-            float th = standbild.height;
-            float kachelSeite = (float) (vex - vx) / Math.max(1F, vey - vy);
-            float bildSeite = tb / Math.max(1F, th);
-            float u1 = 0F;
-            float v1 = 0F;
-            float u2 = tb;
-            float v2 = th;
+            float anteil = Math.clamp((context.mouseX - vx) / (float) Math.max(1, vex - vx), 0F, 0.9999F);
+            float feldB = streifen.width / (float) this.streifenFelder;
 
-            if (bildSeite > kachelSeite)
-            {
-                float ausschnittB = th * kachelSeite;
-
-                u1 = (tb - ausschnittB) * 0.5F;
-                u2 = u1 + ausschnittB;
-            }
-            else
-            {
-                float ausschnittH = tb / kachelSeite;
-
-                v1 = (th - ausschnittH) * 0.5F;
-                v2 = v1 + ausschnittH;
-            }
-
-            context.batcher.texturedBox(standbild, Colors.WHITE, vx, vy, vex - vx, vey - vy,
-                u1, v1, u2, v2, standbild.width, standbild.height);
+            this.ausschnitt(context, streifen, (int) (anteil * this.streifenFelder) * feldB, feldB, vx, vy, vex, vey);
+            context.batcher.box(vx, vey - 2, vx + Math.round(anteil * (vex - vx)), vey, Colors.A100 | NanoDesign.BERNSTEIN);
+        }
+        else if (standbild != null)
+        {
+            this.ausschnitt(context, standbild, 0F, standbild.width, vx, vy, vex, vey);
         }
         else if (form == null)
         {
@@ -457,6 +462,38 @@ public class UIKachelListe extends UIDataPathList
         {
             context.batcher.outline(kx, ky, kx + kb, ky + kh, Colors.A100 | NanoDesign.BLAU);
         }
+    }
+
+    /**
+     * Ein Bild (oder ein Feld eines Streifens ab {@code u0}, {@code quelleB} breit) mittig
+     * beschnitten in die Flaeche: das Bild ist 16:9, die Kachel nicht. Verzerren waere
+     * schlimmer als beschneiden — ein Gesicht soll ein Gesicht bleiben.
+     */
+    private void ausschnitt(UIContext context, Texture t, float u0, float quelleB, int vx, int vy, int vex, int vey)
+    {
+        float th = t.height;
+        float kachelSeite = (float) (vex - vx) / Math.max(1F, vey - vy);
+        float u1 = u0;
+        float v1 = 0F;
+        float u2 = u0 + quelleB;
+        float v2 = th;
+
+        if (quelleB / Math.max(1F, th) > kachelSeite)
+        {
+            float ausschnittB = th * kachelSeite;
+
+            u1 = u0 + (quelleB - ausschnittB) * 0.5F;
+            u2 = u1 + ausschnittB;
+        }
+        else
+        {
+            float ausschnittH = quelleB / kachelSeite;
+
+            v1 = (th - ausschnittH) * 0.5F;
+            v2 = v1 + ausschnittH;
+        }
+
+        context.batcher.texturedBox(t, Colors.WHITE, vx, vy, vex - vx, vey - vy, u1, v1, u2, v2, t.width, t.height);
     }
 
     /** Liefert die geladene Form oder {@code null}, solange sie unterwegs ist. */

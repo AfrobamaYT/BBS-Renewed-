@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.text;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -20,7 +21,6 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.undo.UndoManager;
 import org.joml.Vector2d;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1081,7 +1081,7 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
             return false;
         }
 
-        if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+        if (context.isPressed(InputConstants.KEY_ESCAPE))
         {
             context.unfocus();
 
@@ -1145,7 +1145,7 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
     protected boolean handleKeys(UIContext context, TextEditUndo undo, boolean ctrl, boolean shift)
     {
         /* Undo/redo */
-        if (ctrl && context.isPressed(GLFW.GLFW_KEY_Z))
+        if (ctrl && context.isPressed(InputConstants.KEY_Z))
         {
             boolean result = this.undo.undo(this);
 
@@ -1156,7 +1156,7 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
 
             return result;
         }
-        else if (ctrl && context.isPressed(GLFW.GLFW_KEY_Y))
+        else if (ctrl && context.isPressed(InputConstants.KEY_Y))
         {
             boolean result = this.undo.redo(this);
 
@@ -1168,17 +1168,17 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
             return result;
         }
         /* Select all */
-        else if (ctrl && context.isPressed(GLFW.GLFW_KEY_A))
+        else if (ctrl && context.isPressed(InputConstants.KEY_A))
         {
             this.selectAll();
 
             return true;
         }
         /* Cursor and navigation */
-        else if (context.isHeld(GLFW.GLFW_KEY_UP) || context.isHeld(GLFW.GLFW_KEY_DOWN) || context.isHeld(GLFW.GLFW_KEY_RIGHT) || context.isHeld(GLFW.GLFW_KEY_LEFT))
+        else if (context.isHeld(InputConstants.KEY_UP) || context.isHeld(InputConstants.KEY_DOWN) || context.isHeld(InputConstants.KEY_RIGHT) || context.isHeld(InputConstants.KEY_LEFT))
         {
-            int x = context.isHeld(GLFW.GLFW_KEY_RIGHT) ? 1 : (context.isHeld(GLFW.GLFW_KEY_LEFT) ? -1 : 0);
-            int y = context.isHeld(GLFW.GLFW_KEY_UP) ? -1 : (context.isHeld(GLFW.GLFW_KEY_DOWN) ? 1 : 0);
+            int x = context.isHeld(InputConstants.KEY_RIGHT) ? 1 : (context.isHeld(InputConstants.KEY_LEFT) ? -1 : 0);
+            int y = context.isHeld(InputConstants.KEY_UP) ? -1 : (context.isHeld(InputConstants.KEY_DOWN) ? 1 : 0);
 
             if (x != 0 && ctrl)
             {
@@ -1198,7 +1198,7 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
 
             return true;
         }
-        else if (context.isPressed(GLFW.GLFW_KEY_HOME))
+        else if (context.isPressed(InputConstants.KEY_HOME))
         {
             this.checkSelection(shift);
             this.moveCursorToLineStart();
@@ -1207,7 +1207,7 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
 
             return true;
         }
-        else if (context.isPressed(GLFW.GLFW_KEY_END))
+        else if (context.isPressed(InputConstants.KEY_END))
         {
             this.checkSelection(shift);
             this.moveCursorToLineEnd();
@@ -1217,11 +1217,11 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
             return true;
         }
         /* Copy, cut and paste */
-        else if (ctrl && (context.isPressed(GLFW.GLFW_KEY_C) || context.isPressed(GLFW.GLFW_KEY_X)) && this.isSelected())
+        else if (ctrl && (context.isPressed(InputConstants.KEY_C) || context.isPressed(InputConstants.KEY_X)) && this.isSelected())
         {
             Window.setClipboard(this.getSelectedText());
 
-            if (context.isPressed(GLFW.GLFW_KEY_X))
+            if (context.isPressed(InputConstants.KEY_X))
             {
                 this.deleteSelection();
                 this.deselect();
@@ -1234,9 +1234,9 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
                 this.playSound("copy");
             }
 
-            return context.isPressed(GLFW.GLFW_KEY_X);
+            return context.isPressed(InputConstants.KEY_X);
         }
-        else if (ctrl && context.isPressed(GLFW.GLFW_KEY_V))
+        else if (ctrl && context.isPressed(InputConstants.KEY_V))
         {
             String pasted = Window.getClipboard().replaceAll("\r", "");
 
@@ -1250,7 +1250,7 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
             return true;
         }
         /* Text input */
-        else if (context.isPressed(GLFW.GLFW_KEY_TAB))
+        else if (context.isPressed(InputConstants.KEY_TAB))
         {
             this.keyTab(shift, undo.ready());
             undo.post(undo.postText, this.cursor, this.selection);
@@ -1258,7 +1258,7 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
 
             return true;
         }
-        else if (context.isHeld(GLFW.GLFW_KEY_ENTER))
+        else if (context.isHeld(InputConstants.KEY_RETURN))
         {
             this.keyNewLine(undo.ready());
             undo.post(undo.postText, this.cursor, this.selection);
@@ -1266,9 +1266,9 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
 
             return true;
         }
-        else if (context.isHeld(GLFW.GLFW_KEY_BACKSPACE) || context.isHeld(GLFW.GLFW_KEY_DELETE))
+        else if (context.isHeld(InputConstants.KEY_BACKSPACE) || context.isHeld(InputConstants.KEY_DELETE))
         {
-            boolean delete = context.isHeld(GLFW.GLFW_KEY_DELETE);
+            boolean delete = context.isHeld(InputConstants.KEY_DELETE);
 
             if (this.isSelected())
             {
@@ -1343,9 +1343,9 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
     @Override
     public void render(UIContext context)
     {
-        if (this.isEnabled() && (this.focused || this.area.isInside(context)))
+        if (this.isEnabled() && this.area.isInside(context))
         {
-            context.requestCursor(GLFW.GLFW_IBEAM_CURSOR);
+            context.requestCursor(Window.CURSOR_TEXT);
         }
 
         this.handleLogic(context);

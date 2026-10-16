@@ -1,7 +1,7 @@
 package com.afrobama.blendertransform;
 
-import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import mchorse.bbs_mod.graphics.Zeichenbereich;
 import mchorse.bbs_mod.graphics.Zeichenziel;
 

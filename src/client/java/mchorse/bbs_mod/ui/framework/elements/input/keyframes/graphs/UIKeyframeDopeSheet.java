@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mcstudio.nano.NanoDesign;
@@ -12,6 +12,7 @@ import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeElement;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeGroup;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.KeyframeEinfuegen;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.shapes.IKeyframeShapeRenderer;
@@ -589,21 +590,21 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     public void selectKeyframe(Keyframe keyframe)
     {
         this.clearSelection();
-
         UIKeyframeSheet sheet = this.getSheet(keyframe);
 
         if (sheet != null)
         {
             sheet.selection.add(keyframe);
             this.pickKeyframe(keyframe);
-
-            double x = keyframe.getTick();
-            Integer sheetY = this.sheetYCache.get(sheet);
-            int y = (sheetY == null ? 0 : sheetY) + TOP_MARGIN;
-
-            this.keyframes.getXAxis().shiftIntoMiddle(x);
-            this.dopeSheet.scrollTo((int) (y - (this.dopeSheet.area.h - this.trackHeight) / 2));
+            this.keyframes.getXAxis().shiftIntoMiddle(keyframe.getTick());
+            this.zeigen(sheet);
         }
+    }
+
+    /** Scrolls the track into the middle of the rows; the time axis stays. */
+    void zeigen(UIKeyframeSheet sheet)
+    {
+        this.dopeSheet.scrollTo((int) (this.sheetYCache.getOrDefault(sheet, 0) + TOP_MARGIN - (this.dopeSheet.area.h - this.trackHeight) / 2));
     }
 
     @Override
@@ -711,7 +712,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
             this.keyframes.getXAxis().setShift(this.keyframes.getXAxis().getShift() - offsetX);
         }
-        else if (Window.isShiftPressed())
+        else if ((Window.isShiftPressed() || context.mouseX < this.keyframes.graphArea.x) && !Window.isCtrlPressed()) /* over the track names the wheel scrolls the list, as Blender's channel region (it zoomed time; 2026-10-15) */
         {
             this.dopeSheet.mouseScroll(context);
         }
@@ -729,7 +730,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         }
         else if (context.mouseWheel != 0D)
         {
-            this.keyframes.getXAxis().zoomAnchor(Scale.getAnchorX(context, this.keyframes.graphArea), Math.copySign(this.keyframes.getXAxis().getZoomFactor(), context.mouseWheel));
+            this.keyframes.getXAxis().animateZoom(Scale.getAnchorX(context, this.keyframes.graphArea), context.mouseWheel, Scale.radTempo());
         }
     }
 
@@ -877,13 +878,13 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 }
             }
         }
-        else if (Window.isCtrlPressed())
+        else if (Window.isCtrlPressed() && !KeyframeEinfuegen.amAbspielkopf(this.keyframes))
         {
             UIKeyframeSheet sheet = this.getSheet(context.mouseY);
 
             if (sheet != null)
             {
-                float tick = (float) this.keyframes.fromGraphX(context.mouseX);
+                float tick = KeyframeEinfuegen.anlegenAmAbspielkopf(this.keyframes) ? this.keyframes.getTick() : (float) this.keyframes.fromGraphX(context.mouseX);
 
                 if (!Window.isShiftPressed())
                 {
@@ -893,19 +894,19 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 this.renderPreviewKeyframe(context, sheet, tick, Colors.WHITE);
             }
         }
-        else if (Window.isAltPressed() && !Window.isShiftPressed())
+        else if (Window.isAltPressed() && KeyframeEinfuegen.dupliziert(this.keyframes, context))
         {
             List<UIKeyframeSheet> sheets = new ArrayList<>();
+            boolean atPlayhead = KeyframeEinfuegen.amAbspielkopf(this.keyframes);
+            float tick = KeyframeEinfuegen.duplikatTick(this.keyframes, context);
 
-            for (UIKeyframeSheet sheet : this.getInteractiveSheets())
+            /* At the playhead (BBS FS e06a02d36) every track keeps its own keys */
+            for (UIKeyframeSheet sheet : atPlayhead ? this.getSheets() : this.getInteractiveSheets())
             {
-                if (sheet.selection.hasAny())
-                {
-                    sheets.add(sheet);
-                }
+                if (sheet.selection.hasAny()) sheets.add(sheet);
             }
 
-            if (sheets.size() == 1)
+            if (sheets.size() == 1 && !atPlayhead)
             {
                 UIKeyframeSheet current = sheets.get(0);
                 UIKeyframeSheet hovered = this.getSheet(context.mouseY);
@@ -917,12 +918,9 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
                 List<Keyframe> selected = current.selection.getSelected();
 
-                for (int i = 0; i < selected.size(); i++)
+                for (Keyframe keyframe : selected)
                 {
-                    Keyframe first = selected.get(0);
-                    Keyframe keyframe = selected.get(i);
-
-                    this.renderPreviewKeyframe(context, hovered, Math.round(this.keyframes.fromGraphX(context.mouseX)) + (keyframe.getTick() - first.getTick()), Colors.YELLOW);
+                    this.renderPreviewKeyframe(context, hovered, tick + (keyframe.getTick() - selected.get(0).getTick()), Colors.YELLOW);
                 }
             }
             else
@@ -941,13 +939,11 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
                 for (UIKeyframeSheet sheet : sheets)
                 {
-                    List<Keyframe> selected = sheet.selection.getSelected();
+                    if (!this.isVisible(sheet)) continue;
 
-                    for (int i = 0; i < selected.size(); i++)
+                    for (Keyframe keyframe : sheet.selection.getSelected())
                     {
-                        Keyframe keyframe = selected.get(i);
-
-                        this.renderPreviewKeyframe(context, sheet, Math.round(this.keyframes.fromGraphX(context.mouseX)) + (keyframe.getTick() - min), Colors.YELLOW);
+                        this.renderPreviewKeyframe(context, sheet, tick + (keyframe.getTick() - min), Colors.YELLOW);
                     }
                 }
             }
@@ -982,7 +978,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
         BufferBuilder builder = null;
 
-        context.batcher.clip(area.x, rulerBottom, area.ex(), area.ey(), context);
+        context.batcher.clip(area.x, rulerBottom, area.w, area.ey() - rulerBottom, context);
         this.renderElements(context, builder, matrix, area, this.elements, 0, this.getDopeSheetY());
         this.renderOutOfRangeShading(context, builder, matrix, area);
         context.batcher.unclip(context);
@@ -1128,7 +1124,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         context.batcher.box(area.x, by, area.ex(), by + bh, surface);
 
-        int toenung = sheet == this.lastSheet ? Colors.setA(0x4772B3, 0.12F)
+        int toenung = sheet == this.lastSheet ? Colors.setA(0x4772B3, 0.12F) : DopeSheetSpalte.live(sheet, this.keyframes.getTick()) ? Colors.setA(sheet.color, 0.08F)
             : hover ? BBSSettings.color(BBSSettings.raisedSurface(), Colors.A25) : 0;
 
         if (toenung != 0)
@@ -1183,10 +1179,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             }
 
             /* Render keyframe handles (inner) */
-            for (int j = 0; j < keyframes.size(); j++)
-            {
-                this.fuelleMarker(context, ecken, matrix, sheet, j, my);
-            }
+            this.flaecheSchmuck().fuellungen(context, ecken, matrix, sheet, my);
 
         }, flaeche(area));
     }
@@ -1196,7 +1189,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     void fuelleMarker(UIContext context, VertexConsumer builder, Matrix4f matrix, UIKeyframeSheet sheet, int j, int my)
     {
         Keyframe frame = (Keyframe) sheet.channel.getKeyframes().get(j);
-        int kc = frame.getColor() != null ? frame.getColor().getRGBColor() : 0xCFCFCF;
+        int kc = Colors.mulRGB(frame.getColor() != null ? frame.getColor().getRGBColor() : 0xCFCFCF, frame.isEnabled() ? 1F : 0.4F);
         int mx = DopeSheetFlaeche.randKlemme(this.keyframes.toGraphX(frame.getTick()), this.keyframes.graphArea);
         boolean gewaehlt = sheet.selection.has(j);
         int mc = (gewaehlt ? NanoDesign.BERNSTEIN : kc) | Colors.A100;
@@ -1268,7 +1261,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         int rulerBottom = TimelineRulerRenderer.getRulerBottom(area);
         Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
 
-        context.batcher.clip(area.x, rulerBottom, area.ex(), area.ey(), context);
+        context.batcher.clip(area.x, rulerBottom, area.w, area.ey() - rulerBottom, context);
 
         /* Eingereiht statt sofort gezeichnet -- Begruendung und Schalter stehen in
          * renderSheet. Diese Zeichnung liegt GANZ OBEN (topmost), also genau die Sorte, die

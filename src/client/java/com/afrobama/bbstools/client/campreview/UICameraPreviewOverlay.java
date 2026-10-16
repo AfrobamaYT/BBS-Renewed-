@@ -50,6 +50,13 @@ public class UICameraPreviewOverlay extends UIElement
     @Override
     public void render(UIContext context)
     {
+        /* Over BBS' DaVinci Resolve tab the camera preview windows showed as empty black frames
+         * (owner, 2026-10-15); the tab has the picture itself. */
+        if (com.davincilink.DavinciTabState.shownNow())
+        {
+            return;
+        }
+
         super.render(context);
     }
 
@@ -62,6 +69,10 @@ public class UICameraPreviewOverlay extends UIElement
     @Override
     public boolean subMouseClicked(UIContext context)
     {
+        if (com.davincilink.DavinciTabState.shownNow())
+        {
+            return false;                    // hidden over the Resolve tab: the clicks are Resolve's
+        }
         java.util.List<mchorse.bbs_mod.ui.framework.elements.IUIElement> kids = this.getChildren();
         for (int i = kids.size() - 1; i >= 0; i--)
         {
@@ -77,6 +88,10 @@ public class UICameraPreviewOverlay extends UIElement
     @Override
     public boolean subMouseScrolled(UIContext context)
     {
+        if (com.davincilink.DavinciTabState.shownNow())
+        {
+            return false;                    // hidden over the Resolve tab: the clicks are Resolve's
+        }
         java.util.List<mchorse.bbs_mod.ui.framework.elements.IUIElement> kids = this.getChildren();
         for (int i = kids.size() - 1; i >= 0; i--)
         {

@@ -90,6 +90,7 @@ public final class AufnahmeBildtaktLogik
             letzteBildzeit = jetztMs;
         }
 
+        /* Capture the requested starting tick before advancing to the next video frame. */
         takte = rekorder.getCounter() == 0 ? 0F : 20F / (float) BBSRendering.getVideoFrameRate();
         rest += takte;
 

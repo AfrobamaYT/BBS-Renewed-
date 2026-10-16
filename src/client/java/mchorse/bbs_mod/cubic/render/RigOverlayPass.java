@@ -1,12 +1,12 @@
 package mchorse.bbs_mod.cubic.render;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.pipeline.BlendFunction;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
@@ -31,6 +31,37 @@ public final class RigOverlayPass
 
     private RigOverlayPass()
     {}
+
+    /**
+     * Whether a shader pack composites this frame -- Iris, or Vitrail with a pack loaded. Vitrail
+     * shaded the controls like world geometry: grey, half lit, their colour gone, the face
+     * controls not in the picture at all (measured 2026-10-14 with Somber: magenta controls
+     * left no magenta pixel).
+     */
+    public static boolean packAktiv()
+    {
+        if (mchorse.bbs_mod.client.BBSRendering.isIrisShadersEnabled())
+        {
+            return true;
+        }
+
+        try
+        {
+            java.lang.reflect.Field aktiv = Class.forName("dev.vitrail.render.PackChain").getDeclaredField("active");
+
+            aktiv.setAccessible(true);
+
+            return aktiv.get(null) != null;
+        }
+        catch (ClassNotFoundException keinVitrail)
+        {
+            return false;
+        }
+        catch (ReflectiveOperationException fehler)
+        {
+            throw new IllegalStateException("Vitrail changed: cannot tell whether its pack is active", fehler);
+        }
+    }
 
     public static void clear()
     {
@@ -87,7 +118,7 @@ public final class RigOverlayPass
             .withVertexShader(Identifier.withDefaultNamespace("core/position_color"))
             .withFragmentShader(Identifier.withDefaultNamespace("core/position_color"))
             .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
-            .withPrimitiveTopology(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES)
+            .withPrimitiveTopology(com.mojang.renderpearl.api.pipeline.PrimitiveTopology.TRIANGLES)
             .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
             .withBindGroupLayout(BindGroupLayouts.PROJECTION)
             .withCull(false)

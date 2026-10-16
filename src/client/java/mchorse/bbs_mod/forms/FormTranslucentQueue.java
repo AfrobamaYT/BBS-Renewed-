@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.forms;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import mchorse.bbs_mod.graphics.GehaltenesNetz;
 import mchorse.bbs_mod.graphics.SofortZeichner;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -9,7 +9,7 @@ import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.cubic.render.vao.BOBJModelVAO;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import mchorse.bbs_mod.cubic.render.vao.IModelVAO;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAOPipeline;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAORenderer;
@@ -49,6 +49,8 @@ public class FormTranslucentQueue
     public static final int PASS_TRANSLUCENT = 2;
 
     private static final List<DrawCommand> commands = new ArrayList<>();
+    private static final org.slf4j.Logger DRAW_LOG = org.slf4j.LoggerFactory.getLogger("bbs-form-translucency");
+    private static final Map<Class<?>, String> reportedFailures = new java.util.IdentityHashMap<>();
     /** Freigegebene, unveraenderliche Pose-Snapshots je VAO; nur der Render-Thread greift zu. */
     private static final Map<BOBJModelVAO, ArrayDeque<Matrix4f[]>> armatureSnapshots = new WeakHashMap<>();
     private static boolean active;
@@ -246,6 +248,56 @@ public class FormTranslucentQueue
         active = wasActive;
     }
 
+    /** Transfer eligible retained meshes to the native window; its caller owns their release. */
+    public static List<NetzBefehl> takeVitrailMeshes()
+    {
+        return takeEligibleVitrailMeshes(true);
+    }
+
+    private static List<NetzBefehl> takeEligibleVitrailMeshes(boolean drawing)
+    {
+        boolean entityActive = !drawing || mchorse.bbs_mod.integrations.vitrail.VitrailRetainedMesh.active();
+        boolean particleActive = !drawing || mchorse.bbs_mod.integrations.vitrail.VitrailRetainedParticles.active();
+        if (!entityActive && !particleActive) return List.of();
+        List<NetzBefehl> result = new ArrayList<>();
+        for (DrawCommand command : commands)
+        {
+            if (command instanceof NetzBefehl mesh)
+            {
+                RenderPipeline pipeline = mesh.shader.get();
+                boolean entity = entityActive
+                    && mchorse.bbs_mod.integrations.vitrail.VitrailRetainedMesh.eligible(pipeline);
+                boolean particles = particleActive
+                    && mchorse.bbs_mod.integrations.vitrail.VitrailRetainedParticles.eligible(pipeline);
+                if (entity || particles) result.add(mesh);
+            }
+        }
+        commands.removeAll(result);
+        return result;
+    }
+
+    /** A native frame reset drops its owned commands instead of drawing expired transforms. */
+    public static void discardVitrailMeshes()
+    {
+        releaseVitrailMeshes(takeEligibleVitrailMeshes(false));
+    }
+
+    public static void releaseVitrailMeshes(List<NetzBefehl> meshes)
+    {
+        Throwable failure = null;
+        for (NetzBefehl mesh : meshes)
+        {
+            try { mesh.release(); }
+            catch (RuntimeException | Error error)
+            {
+                if (failure == null) failure = error;
+                else if (failure != error) failure.addSuppressed(error);
+            }
+        }
+        if (failure instanceof RuntimeException error) throw error;
+        if (failure instanceof Error error) throw error;
+    }
+
     /**
      * Draw all deferred translucent commands, far to near, without depth writes. Deactivates
      * the queue — later draws (the first-person hand) fall back to single-pass rendering.
@@ -293,7 +345,12 @@ public class FormTranslucentQueue
                 command.draw();
             }
             catch (Exception e)
-            {}
+            {
+                String failure = e.getClass().getName() + ":" + e.getMessage();
+                if (!failure.equals(reportedFailures.put(command.getClass(), failure)))
+                    DRAW_LOG.error("Deferred form draw {} failed; repeated identical failures are suppressed",
+                        command.getClass().getSimpleName(), e);
+            }
             finally
             {
                 command.release();
@@ -588,6 +645,7 @@ public class FormTranslucentQueue
         private final Matrix3f normalMat;
         private final Runnable preDraw;
         private final Runnable postDraw;
+        private final com.mojang.renderpearl.api.commands.RenderPass.RenderArea area;
 
         /** Der geteilte halbdurchsichtige Durchgang: nur die durchscheinenden Texel, ohne Tiefenschreiben. */
         public NetzBefehl(GehaltenesNetz netz, Supplier<RenderPipeline> shader, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
@@ -607,6 +665,7 @@ public class FormTranslucentQueue
             this.normalMat = normalMat;
             this.preDraw = preDraw;
             this.postDraw = postDraw;
+            this.area = mchorse.bbs_mod.graphics.Zeichenbereich.aktiv();
         }
 
         @Override
@@ -627,13 +686,13 @@ public class FormTranslucentQueue
                 this.preDraw.run();
             }
 
-            GpuBuffer block = ModelVAORenderer.blockFuer(
+            com.mojang.renderpearl.api.buffers.GpuBufferSlice block = ModelVAORenderer.blockScheibeFuer(
                 this.normalMat != null ? this.normalMat : new Matrix3f(),
                 net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
                 this.passMode, 0);
 
             this.netz.zeichnen(pipeline, this.modelView, null,
-                this.texture == null ? null : SofortZeichner.entityTextur(this.texture), null,
+                this.texture == null ? null : SofortZeichner.modellTextur(this.texture), null,
                 (durchgang) -> durchgang.setUniform(ModelVAOPipeline.MODELL_BLOCK, block));
 
             if (this.postDraw != null)
@@ -646,6 +705,24 @@ public class FormTranslucentQueue
         public void release()
         {
             this.netz.close();
+        }
+
+        /** Same captured geometry and callbacks, recorded by the stock pack entity producer. */
+        public void drawVitrail()
+        {
+            if (this.preDraw != null) this.preDraw.run();
+            try
+            {
+                RenderPipeline pipeline = this.shader.get();
+                if (mchorse.bbs_mod.integrations.vitrail.VitrailRetainedParticles.eligible(pipeline))
+                    mchorse.bbs_mod.integrations.vitrail.VitrailRetainedParticles.draw(this.netz, this.modelView, this.texture, this.area);
+                else mchorse.bbs_mod.integrations.vitrail.VitrailRetainedMesh.draw(this.netz,
+                    pipeline, this.modelView, this.texture, this.area);
+            }
+            finally
+            {
+                if (this.postDraw != null) this.postDraw.run();
+            }
         }
     }
 }

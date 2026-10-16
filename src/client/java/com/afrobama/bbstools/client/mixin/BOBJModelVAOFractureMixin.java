@@ -2,11 +2,13 @@ package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.client.blender.MixinBruecke;
 
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass;
 
 import mchorse.bbs_mod.cubic.render.vao.BOBJModelVAO;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
@@ -29,7 +31,8 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * nachfolger: 26.2 kennt kein rohes GL mehr, der VAO legt seine puffer an eine pipeline und
  * schickt EINEN zug ab ({@code zeichnen(RenderPass)} -> {@code pass.draw(...)}). Damit faellt
  * die erste injektion ersatzlos weg — sie deckte einen zweig ab, den es nicht mehr gibt —,
- * und die zweite haengt jetzt an diesem einen zug. Inhaltlich verliert das nichts, im
+ * und die zweite haengt jetzt an diesem einen zug. Seit dem Vitrail-Port liegt dieser
+ * in BOBJDrawInputs.draw; dessen owner ist die urspruengliche VAO. Inhaltlich verliert das nichts, im
  * gegenteil: {@code BOBJModelSimpleVAO} erbt {@code zeichnen} und ist damit mit abgedeckt.</p>
  *
  * <p>Die argumentfolge von {@code RenderPass.draw} ist
@@ -43,17 +46,18 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * render3D HEAD/TAIL). Ist er null (z.B. preview-render ausserhalb der actor-pipeline), faellt
  * die logik auf "kein filter" zurueck und das modell rendert normal.</p>
  */
-@Mixin(value = BOBJModelVAO.class, remap = false)
+@Mixin(targets = "mchorse.bbs_mod.cubic.render.vao.BOBJDrawInputs", remap = false)
 public abstract class BOBJModelVAOFractureMixin
 {
+    @Shadow @Final private BOBJModelVAO owner;
     /**
      * Der einzige zeichen-zug des modells. Ist kein knochen fracturiert, laeuft er unveraendert
      * durch (ein zug, kein aufwand); sonst zerlegt ihn die logik in laeufe, die die
      * fracturierten knochen ueberspringen.
      */
-    @Redirect(method = "zeichnen",
+    @Redirect(method = "draw",
               at = @At(value = "INVOKE",
-                       target = "Lcom/mojang/blaze3d/systems/RenderPass;draw(IIII)V"))
+                       target = "Lcom/mojang/renderpearl/api/commands/RenderPass;draw(IIII)V"))
     private void bbstools$bedingtZeichnen(RenderPass pass, int eckenZahl, int instanzen,
         int ersteEcke, int ersteInstanz)
     {
@@ -61,7 +65,7 @@ public abstract class BOBJModelVAOFractureMixin
          * com.afrobama.blendertransform.BOBJModelVAOFractureLogik und ist damit
          * hotswapbar — siehe MixinBruecke-javadoc.
          *
-         * `this` geht als nacktes Object hinueber, nicht mehr als BOBJModelVAOAccessor: die
+         * Die urspruengliche VAO (`owner`) geht als Object hinueber, nicht als BOBJModelVAOAccessor: die
          * logik hat den accessor-typ ohnehin nur entgegengenommen und sofort auf BOBJModelVAO
          * zurueckgecastet. Ein CHECKCAST auf ein accessor-interface im heissesten zeichenpfad
          * ist ein risiko ohne gegenwert — faellt der accessor-mixin aus, flaeche das hier pro
@@ -78,7 +82,7 @@ public abstract class BOBJModelVAOFractureMixin
          * jedem fehler `null` — und meldet den fehler EINMAL laut ueber BrueckenMeldung. Nur
          * dann holen wir den zug hier nach. */
         Object gezeichnet = MixinBruecke.rufe("BOBJModelVAOFractureLogik", "bedingtZeichnen",
-            this, pass, eckenZahl, instanzen, ersteEcke, ersteInstanz);
+            this.owner, pass, eckenZahl, instanzen, ersteEcke, ersteInstanz);
 
         if (!(gezeichnet instanceof Boolean b) || !b)
         {

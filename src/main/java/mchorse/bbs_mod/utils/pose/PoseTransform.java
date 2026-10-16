@@ -21,6 +21,10 @@ public class PoseTransform extends Transform
     public float fix;
     public final Color color = new Color().set(Colors.WHITE);
     public float lighting;
+    /** The bone's color overlay, alpha its strength, neutral at 0 (BBS FS f95662b30) */
+    public final Color overlay = new Color(1F, 1F, 1F, 0F);
+    /** A hidden bone (BBS FS fce301787): stepped, it switches at a key instead of fading. */
+    public boolean visible = true;
     /** Keyframeable custom properties of this bone, not shared model state. */
     public final Map<String, Float> rigProperties = new HashMap<>();
 
@@ -32,6 +36,8 @@ public class PoseTransform extends Transform
         this.fix = 0F;
         this.color.set(Colors.WHITE);
         this.lighting = 0F;
+        this.overlay.set(1F, 1F, 1F, 0F);
+        this.visible = true;
         this.rigProperties.clear();
     }
 
@@ -48,6 +54,8 @@ public class PoseTransform extends Transform
             this.color.a = Lerps.lerp(this.color.a, pose.color.a, a);
 
             this.lighting = Lerps.lerp(this.lighting, pose.lighting, a);
+            this.overlay.set(Lerps.lerp(this.overlay.r, pose.overlay.r, a), Lerps.lerp(this.overlay.g, pose.overlay.g, a), Lerps.lerp(this.overlay.b, pose.overlay.b, a), Lerps.lerp(this.overlay.a, pose.overlay.a, a));
+            if (a >= 1F) this.visible = pose.visible;
             this.blendRig(this, pose,
                 key -> Lerps.lerp(rigValue(this, key, pose), rigValue(pose, key, this), a));
         }
@@ -76,6 +84,13 @@ public class PoseTransform extends Transform
             );
 
             this.lighting = (float) interp.interpolate(IInterp.context.set(preA1.lighting, a1.lighting, b1.lighting, postB1.lighting, x));
+            this.overlay.set(
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preA1.overlay.r, a1.overlay.r, b1.overlay.r, postB1.overlay.r, x)), 0F, 1F),
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preA1.overlay.g, a1.overlay.g, b1.overlay.g, postB1.overlay.g, x)), 0F, 1F),
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preA1.overlay.b, a1.overlay.b, b1.overlay.b, postB1.overlay.b, x)), 0F, 1F),
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preA1.overlay.a, a1.overlay.a, b1.overlay.a, postB1.overlay.a, x)), 0F, 1F)
+            );
+            this.visible = x < 1F ? a1.visible : b1.visible;
             this.blendRig(a1, b1, key -> interp.interpolate(IInterp.context.set(
                 rigValue(preA1, key, a1), rigValue(a1, key, b1),
                 rigValue(b1, key, a1), rigValue(postB1, key, b1), x)));
@@ -103,6 +118,13 @@ public class PoseTransform extends Transform
             );
 
             this.lighting = (float) AutoBezier.get(preA1.lighting, a1.lighting, b1.lighting, postB1.lighting, pt, at, bt, qt, clamped, x);
+            this.overlay.set(
+                (float) MathUtils.clamp(AutoBezier.get(preA1.overlay.r, a1.overlay.r, b1.overlay.r, postB1.overlay.r, pt, at, bt, qt, clamped, x), 0F, 1F),
+                (float) MathUtils.clamp(AutoBezier.get(preA1.overlay.g, a1.overlay.g, b1.overlay.g, postB1.overlay.g, pt, at, bt, qt, clamped, x), 0F, 1F),
+                (float) MathUtils.clamp(AutoBezier.get(preA1.overlay.b, a1.overlay.b, b1.overlay.b, postB1.overlay.b, pt, at, bt, qt, clamped, x), 0F, 1F),
+                (float) MathUtils.clamp(AutoBezier.get(preA1.overlay.a, a1.overlay.a, b1.overlay.a, postB1.overlay.a, pt, at, bt, qt, clamped, x), 0F, 1F)
+            );
+            this.visible = x < 1F ? a1.visible : b1.visible;
             this.blendRig(a1, b1, key -> AutoBezier.get(
                 rigValue(preA1, key, a1), rigValue(a1, key, b1),
                 rigValue(b1, key, a1), rigValue(postB1, key, b1), pt, at, bt, qt, clamped, x));
@@ -117,8 +139,8 @@ public class PoseTransform extends Transform
         if (obj instanceof PoseTransform poseTransform)
         {
             result = result && this.fix == poseTransform.fix;
-            result = result && this.color.equals(poseTransform.color);
-            result = result && this.lighting == poseTransform.lighting;
+            result = result && this.color.equals(poseTransform.color) && this.overlay.equals(poseTransform.overlay);
+            result = result && this.lighting == poseTransform.lighting && this.visible == poseTransform.visible;
             result = result && this.rigProperties.equals(poseTransform.rigProperties);
         }
 
@@ -148,7 +170,9 @@ public class PoseTransform extends Transform
         {
             this.fix = poseTransform.fix;
             this.color.copy(poseTransform.color);
+            this.overlay.copy(poseTransform.overlay);
             this.lighting = poseTransform.lighting;
+            this.visible = poseTransform.visible;
             this.rigProperties.putAll(poseTransform.rigProperties);
         }
 
@@ -165,6 +189,8 @@ public class PoseTransform extends Transform
             this.fix += pose.fix;
             this.color.mul(pose.color);
             this.lighting += pose.lighting;
+            mchorse.bbs_mod.utils.colors.OverlayBlend.stack(this.overlay, pose.overlay);
+            this.visible &= pose.visible;
             this.rigProperties.putAll(pose.rigProperties);
         }
     }
@@ -177,6 +203,8 @@ public class PoseTransform extends Transform
         data.putFloat("fix", this.fix);
         data.putInt("color", this.color.getARGBColor());
         data.putFloat("lighting", this.lighting);
+        if (this.overlay.a > 0F) data.putInt("overlay", this.overlay.getARGBColor());
+        if (!this.visible) data.putBool("visible", false);
         if (!this.rigProperties.isEmpty())
         {
             MapType properties = new MapType();
@@ -193,6 +221,8 @@ public class PoseTransform extends Transform
         this.fix = data.getFloat("fix");
         this.color.set(data.getInt("color", Colors.WHITE));
         this.lighting = data.getFloat("lighting");
+        this.overlay.set(data.getInt("overlay", 0x00FFFFFF));
+        this.visible = data.getBool("visible", true);
         this.rigProperties.clear();
         MapType properties = data.getMap("rig");
 

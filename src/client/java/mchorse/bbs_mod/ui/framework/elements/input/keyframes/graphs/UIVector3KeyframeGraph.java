@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.graphics.line.LineBuilder;

@@ -56,7 +56,7 @@ import mchorse.bbs_mod.utils.pose.PoseTransform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.GameRenderer;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -204,24 +204,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     private void applyPose(Pose targetPose, Pose pose)
     {
-        for (Map.Entry<String, PoseTransform> entry : pose.transforms.entrySet())
-        {
-            PoseTransform poseTransform = targetPose.get(entry.getKey());
-            PoseTransform value = entry.getValue();
-
-            if (!Operation.equals(value.fix, 0))
-            {
-                poseTransform.translate.lerp(value.translate, value.fix);
-                poseTransform.scale.lerp(value.scale, value.fix);
-                poseTransform.lerpRotation(value, value.fix);
-            }
-            else
-            {
-                poseTransform.translate.add(value.translate);
-                poseTransform.scale.add(value.scale).sub(1, 1, 1);
-                poseTransform.addRotation(value);
-            }
-        }
+        targetPose.ueberlagern(pose);
     }
 
     public void resetAnimator()
@@ -263,7 +246,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             return;
         }
 
-        this.animator = model.isProcedural() ? new ProceduralAnimator() : new Animator();
+        this.animator = model.cemAnimation != null ? new mchorse.bbs_mod.cubic.jem.CemAnimator(model.cemAnimation, new mchorse.bbs_mod.cubic.jem.CemVanillaStage(model.cemAnimation.jem), this.form) : model.isProcedural() ? new ProceduralAnimator() : new Animator(); /* a .jem's live program is its animator stage (BBS FS dc150bb3e) */
         this.animator.setup(model, actionsConfig, false);
 
         this.lastConfigs = new ActionsConfig();
@@ -302,7 +285,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             stack.pushPose();
 
-            Matrix4f uiMatrix = getUIMatrix(context, x1, y1, x2, y2);
+            Matrix4f uiMatrix = mchorse.bbs_mod.ui.framework.elements.input.keyframes.KeyVorschauFokus.matrix(this.form, getUIMatrix(context, x1, y1, x2, y2), context, x1, y1, x2, y2); /* G6 key preview zoom */
 
             this.applyTransforms(uiMatrix, context.getTransition());
 
@@ -371,7 +354,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 
         // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
-        // 26.2: setup/teardownOverlayColor entfaellt -- das Overlay ist kein globaler Zustand mehr, sondern Sampler1 des Zeichenaufrufs (SofortZeichner bindet alle drei).
 
         PoseStack newStack = new PoseStack();
 
@@ -571,7 +553,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             stack.pushPose();
             MatrixStackUtils.multiply(stack, matrix);
             MatrixStackUtils.applyTransform(stack, armorSlot.transform);
-            stack.mulPose(Axis.XP.rotationDegrees(180F));
+            stack.rotate(Axis.XP.rotationDegrees(180F));
 
             /* 26.2: der Hijack ist ersatzlos entfallen. Er tat nichts anderes, als je gezeichneter
              * RenderType-Ebene (RenderLayerMixin haengt an RenderType#setupRenderState) den globalen
@@ -625,8 +607,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
                 stack.pushPose();
                 MatrixStackUtils.multiply(stack, matrix);
-                stack.mulPose(Axis.XP.rotationDegrees(90F));
-                stack.mulPose(Axis.YP.rotationDegrees(180F));
+                stack.rotate(Axis.XP.rotationDegrees(90F));
+                stack.rotate(Axis.YP.rotationDegrees(180F));
                 stack.translate(0F, 0.125F, 0F);
                 MatrixStackUtils.applyTransform(stack, armorSlot.transform);
 
@@ -738,7 +720,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 }
 
                 model.model.resetPose();
-                matrices.mulPose(Axis.YP.rotation(MathUtils.PI));
+                matrices.rotate(Axis.YP.rotation(MathUtils.PI));
                 MatrixStackUtils.applyTransform(matrices, slot.transform);
 
                 BBSModClient.getTextures().bindTexture(texture);
@@ -795,10 +777,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             }
             this.evaluateChannels(context.entity, model, context.getTransition());
 
-            context.stack.mulPose(Axis.YP.rotation(MathUtils.PI));
+            context.stack.rotate(Axis.YP.rotation(MathUtils.PI));
             if (context.world != null)
             {
-                context.world.mulPose(Axis.YP.rotation(MathUtils.PI));
+                context.world.rotate(Axis.YP.rotation(MathUtils.PI));
             }
 
             BBSModClient.getTextures().bindTexture(texture);
@@ -915,52 +897,39 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     public void renderBodyParts(FormRenderingContext context)
     {
         context.stack.pushPose();
-        if (context.world != null)
+        if (context.world != null) context.world.pushPose();
+        try
         {
-            context.world.pushPose();
-        }
-
-        for (BodyPart part : this.form.parts.getAllTyped())
-        {
-            Matrix4f matrix = this.bones.get(part.bone.get()).matrix();
-
-            context.stack.pushPose();
-            if (context.world != null)
+            for (BodyPart part : this.form.parts.getAllTyped())
             {
-                context.world.pushPose();
-            }
-
-            if (matrix != null)
-            {
-                MatrixStackUtils.multiply(context.stack, matrix);
-                if (context.world != null)
+                Matrix4f matrix = part.filterBoneMatrix(this.bones.get(part.bone.get()).matrix()); /* only what the part inherits (BBS FS 14f2ef586) */
+                context.stack.pushPose();
+                if (context.world != null) context.world.pushPose();
+                try
                 {
-                    MatrixStackUtils.multiply(context.world, matrix);
+                    if (matrix != null)
+                    {
+                        MatrixStackUtils.multiply(context.stack, matrix);
+                        if (context.world != null) MatrixStackUtils.multiply(context.world, matrix);
+                    }
+                    else
+                    {
+                        context.stack.rotate(Axis.YP.rotation(MathUtils.PI));
+                        if (context.world != null) context.world.rotate(Axis.YP.rotation(MathUtils.PI));
+                    }
+                    this.renderBodyPart(part, context);
+                }
+                finally
+                {
+                    context.stack.popPose();
+                    if (context.world != null) context.world.popPose();
                 }
             }
-            else
-            {
-                context.stack.mulPose(Axis.YP.rotation(MathUtils.PI));
-                if (context.world != null)
-                {
-                    context.world.mulPose(Axis.YP.rotation(MathUtils.PI));
-                }
-            }
-
-            this.renderBodyPart(part, context);
-
-            context.stack.popPose();
-            if (context.world != null)
-            {
-                context.world.popPose();
-            }
         }
-
-        this.bones.clear();
-        context.stack.popPose();
-        if (context.world != null)
+        finally
         {
-            context.world.popPose();
+            this.bones.clear(); context.stack.popPose();
+            if (context.world != null) context.world.popPose();
         }
     }
 
@@ -992,7 +961,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
              * local pass doesn't carry, so the config/`ik`-track solve runs (controllers
              * keyed into the pose are already baked in and reached). */
             model.form = this.form;
-            stack.mulPose(Axis.YP.rotation(MathUtils.PI));
+            stack.rotate(Axis.YP.rotation(MathUtils.PI));
             this.captureMatrices(model);
         }
 
@@ -1023,7 +992,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             if (form != null)
             {
-                Matrix4f matrix = this.bones.get(part.bone.get()).matrix();
+                Matrix4f matrix = part.filterBoneMatrix(this.bones.get(part.bone.get()).matrix()); /* only what the part inherits (BBS FS 14f2ef586) */
 
                 stack.pushPose();
 
@@ -1033,7 +1002,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 }
                 else
                 {
-                    stack.mulPose(Axis.YP.rotation(MathUtils.PI));
+                    stack.rotate(Axis.YP.rotation(MathUtils.PI));
                 }
 
                 MatrixStackUtils.applyTransform(stack, part.transform.get());
@@ -1129,7 +1098,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             this.evaluateChannels(entity, model, transition);
         }
 
-        stack.mulPose(Axis.YP.rotation(MathUtils.PI));
+        stack.rotate(Axis.YP.rotation(MathUtils.PI));
         this.captureMatrices(model);
 
         Vector3f result = null;

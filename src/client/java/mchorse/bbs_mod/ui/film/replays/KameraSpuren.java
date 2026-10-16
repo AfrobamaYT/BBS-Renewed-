@@ -13,9 +13,7 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Die Kamera-Clips als Balken in der Zeitleiste des Replay-Editors — sehen, auswählen,
@@ -109,6 +107,23 @@ public class KameraSpuren implements SpurZeiger
             this.balken.set(x, y, breite, hoehe);
 
             KameraSpurBalken.zeichne(context, this.kamera.clips, clip, this.balken, clip == gewaehlt);
+
+            /* The trim bracket of the camera timeline (UIClips#renderClips): the grab worked
+             * here, its bracket was never drawn (owner, 2026-10-14). Same zones as griffModus. */
+            Area b = new Area(x, y, breite, hoehe);
+            int m = this.gezogen == clip ? this.modus
+                : !b.isInside(context) || Window.isCtrlPressed() || b.w <= KANTE * 3 ? NICHTS
+                : context.mouseX <= b.x + KANTE ? LINKS : context.mouseX >= b.ex() - KANTE ? RECHTS : NICHTS;
+            int farbe = this.gezogen == clip ? mchorse.bbs_mod.utils.colors.Colors.WHITE : mchorse.bbs_mod.utils.colors.Colors.A50;
+
+            if (m == LINKS)
+            {
+                context.batcher.icon(mchorse.bbs_mod.ui.utils.icons.Icons.CLIP_HANLDE_LEFT, farbe, b.x, b.my(), 0F, 0.5F);
+            }
+            else if (m == RECHTS)
+            {
+                context.batcher.icon(mchorse.bbs_mod.ui.utils.icons.Icons.CLIP_HANLDE_RIGHT, farbe, b.ex(), b.my(), 1F, 0.5F);
+            }
         }
     }
 
@@ -117,6 +132,11 @@ public class KameraSpuren implements SpurZeiger
     @Override
     public boolean klick(UIContext context)
     {
+        if (context.mouseButton == 1 && an() && this.ansicht.graphArea.isInside(context))
+        {
+            return this.menue(context);
+        }
+
         if (context.mouseButton != 0 || !an() || !this.ansicht.graphArea.isInside(context))
         {
             return false;
@@ -160,6 +180,44 @@ public class KameraSpuren implements SpurZeiger
         /* Ein Zug ist eine Bearbeitung für sich — sonst verschmilzt er im Rückgängig-Stapel
          * mit dem, was der Nutzer davor getan hat. */
         this.kamera.markLastUndoNoMerging();
+
+        return true;
+    }
+
+    /**
+     * Right click on a bar: enable/disable and remove, the two actions the camera timeline offers
+     * that could only be reached by switching back to it (owner, 2026-10-14). The clip gets
+     * selected first, so both run through the camera timeline's own selection.
+     */
+    private boolean menue(UIContext context)
+    {
+        Clip clip = this.treffer(context.mouseX, context.mouseY);
+
+        if (clip == null)
+        {
+            return false;
+        }
+
+        this.kamera.clips.pickClip(clip);
+        context.replaceContextMenu((menu) ->
+        {
+            menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.DISABLED, mchorse.bbs_mod.ui.UIKeys.CAMERA_TIMELINE_KEYS_ENABLED, () ->
+            {
+                clip.enabled.set(!clip.enabled.get());
+                this.kamera.fillData();
+            });
+            menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.REMOVE, mchorse.bbs_mod.ui.UIKeys.CAMERA_TIMELINE_CONTEXT_REMOVE_CLIPS,
+                mchorse.bbs_mod.utils.colors.Colors.NEGATIVE, () ->
+            {
+                Clips clips = this.clips();
+
+                if (clips != null)
+                {
+                    clips.remove(clip);
+                    this.kamera.clips.pickClip(null);
+                }
+            });
+        });
 
         return true;
     }
@@ -234,21 +292,11 @@ public class KameraSpuren implements SpurZeiger
      */
     private int zeile(Clips clips, Clip clip)
     {
-        int eigene = clip.layer.get();
-        Set<Integer> darueber = new HashSet<>();
-
-        for (Clip anderer : clips.get())
-        {
-            int seine = anderer.layer.get();
-
-            if (seine > eigene)
-            {
-                darueber.add(seine);
-            }
-        }
-
-        /* So viele Zeilen, wie es BENUTZTE Ebenen über dieser gibt — die oberste bekommt 0. */
-        return darueber.size();
+        /* Row == layer, as the camera head rows are built (SpurGruppen: one "Camera n" per layer,
+         * Camera 1 = layer 0). This counted the used layers ABOVE instead, so the order ran the
+         * other way: a tracker on layer 0 under thirteen voice-over layers sat in the last row and
+         * "Camera 1" showed a voice-over (owner, 2026-10-14). */
+        return clip.layer.get();
     }
 
     private Clips clips()
@@ -281,7 +329,9 @@ public class KameraSpuren implements SpurZeiger
     {
         Clips clips = this.clips();
 
-        if (clips == null)
+        /* Not in the ruler band: a scrolled dope sheet lifts the bars' hit box under it, and a click
+         * meant for the playhead picked the camera clip instead (2026-10-16) */
+        if (clips == null || mouseY < this.ansicht.graphArea.y + mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.IUIKeyframeGraph.TOP_MARGIN)
         {
             return null;
         }

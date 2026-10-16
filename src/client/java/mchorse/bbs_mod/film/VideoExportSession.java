@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.film;
 
+import com.mojang.renderpearl.api.textures.GpuTexture;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.audio.MinecraftSoundCapture;
@@ -14,6 +15,8 @@ import mchorse.bbs_mod.utils.VideoRecorder;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Owns the lifecycle of a single video export: the optional warm-up delay,
@@ -52,7 +55,7 @@ public abstract class VideoExportSession
 
     public static boolean laeuftExport()
     {
-        return laufendeExporte > 0 || mchorse.bbs_mod.client.ExportFrameCallbacks.hasPending();
+        return laufendeExporte > 0;
     }
 
     /** Haelt {@link #laufendeExporte} an JEDEM zustandswechsel synchron. */
@@ -76,7 +79,7 @@ public abstract class VideoExportSession
     protected long warmupEndsAtMs;
 
     protected File audioFile;
-    protected int textureId;
+    protected Supplier<GpuTexture> textureSource;
     protected int width;
     protected int height;
 
@@ -135,14 +138,19 @@ public abstract class VideoExportSession
      * (which may abort or set {@link #audioFile}); on success either records
      * immediately or enters the warm-up delay.
      */
-    protected final boolean begin(int textureId, int width, int height, long delayMs)
+    protected final boolean begin(GpuTexture texture, int width, int height, long delayMs)
+    {
+        return this.begin(() -> texture, width, height, delayMs);
+    }
+
+    protected final boolean begin(Supplier<GpuTexture> textureSource, int width, int height, long delayMs)
     {
         if (this.isExporting() || this.getRecorder().isRecording())
         {
             return false;
         }
 
-        this.textureId = textureId;
+        this.textureSource = Objects.requireNonNull(textureSource);
         this.width = width;
         this.height = height;
         this.audioFile = null;
@@ -227,7 +235,7 @@ public abstract class VideoExportSession
 
         try
         {
-            recorder.startRecording(movieName, muxAudioFile, this.textureId, this.width, this.height);
+            recorder.startRecording(movieName, muxAudioFile, this.textureSource.get(), this.width, this.height);
         }
         catch (Exception e)
         {
@@ -294,7 +302,7 @@ public abstract class VideoExportSession
             {
                 /* With a post pass ahead the file isn't final yet - the completion
                  * sound and the folder opening wait until the audio is merged */
-                recorder.stopRecording(!postPass);
+                recorder.stopRecording(!postPass && this.finishEffects());
             }
             catch (Exception e)
             {}
@@ -303,7 +311,11 @@ public abstract class VideoExportSession
         if (postPass)
         {
             this.finishCapturedSounds(capture, recordedFrames);
-            recorder.playFinishEffects();
+
+            if (this.finishEffects())
+            {
+                recorder.playFinishEffects();
+            }
         }
         else if (this.deferredAudioFile != null)
         {
@@ -462,7 +474,7 @@ public abstract class VideoExportSession
         this.setzeZustand(State.IDLE);
         this.warmupEndsAtMs = 0L;
         this.audioFile = null;
-        this.textureId = 0;
+        this.textureSource = null;
         this.width = 0;
         this.height = 0;
         this.movieName = null;
@@ -488,6 +500,12 @@ public abstract class VideoExportSession
      * to abort before anything is applied.
      */
     protected abstract boolean prepare();
+
+    /** Completion sound and folder opening; off for renders nobody asked to watch. */
+    protected boolean finishEffects()
+    {
+        return true;
+    }
 
     /**
      * Apply the capture target (e.g. switch the renderer to the export size).
@@ -520,6 +538,12 @@ public abstract class VideoExportSession
     }
 
     /** Invoked right after the recorder starts (e.g. resume playback). */
+    /** Base name of the video being recorded, null until recording starts; still set in teardown. */
+    protected String getRecordingName()
+    {
+        return this.movieName;
+    }
+
     protected abstract void onRecordingStarted();
 
     /** Whether the recording has reached its natural end. */

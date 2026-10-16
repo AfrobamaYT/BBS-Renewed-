@@ -35,4 +35,10 @@ public class StringKeyframeFactory implements IKeyframeFactory<String>
     {
         return a;
     }
+
+    @Override
+    public boolean isStepped()
+    {
+        return true;
+    }
 }

@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.utils;
 
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 
 import java.util.Deque;
@@ -69,6 +70,32 @@ public final class LeererSchnitt
         int py = Math.max(0, Math.min(y, Math.max(0, sh - 1)));
 
         return new ScreenRectangle(px, py, 1, 1);
+    }
+
+    /** Die Oberflaeche in den Koordinaten, in denen Batcher2D schneidet. */
+    public static ScreenRectangle bildschirm(GuiGraphicsExtractor context)
+    {
+        return new ScreenRectangle(0, 0, context.guiWidth(), context.guiHeight());
+    }
+
+    /**
+     * Was von einem Schnitt auf dem Bildschirm liegt; leer, wenn nichts.
+     *
+     * <h2>⛔ Auch ausserhalb des Fensters ist leer (2026-10-11, Aufgabe 113)</h2>
+     *
+     * <p>26.3s {@code GuiRenderer.enableScissor} rechnet die Breite als
+     * {@code max(0, min(rechts * skala, fensterbreite) - links * skala)} (Bytecode gelesen). Ein
+     * Schnitt ganz rechts neben dem Fenster wird dort 0 breit und wirft am Bildende
+     * {@code Scissor size must be >0, was 0x36}. Genau das taten Wellenformen von Ton-Clips, die
+     * in einer langen Zeitleiste rechts ausserhalb lagen. Die Leer-Pruefung in Batcher2D entging
+     * es, weil das Rechteck in GUI-Koordinaten nicht leer ist; eine jdb-Beobachtung von
+     * {@code ScreenRectangle.width} fand kein einziges Rechteck mit Breite 0.</p>
+     */
+    public static ScreenRectangle sichtbar(ScreenRectangle rect, ScreenRectangle bildschirm)
+    {
+        ScreenRectangle sichtbar = bildschirm.intersection(rect);
+
+        return sichtbar == null ? ScreenRectangle.empty() : sichtbar;
     }
 
     private LeererSchnitt()

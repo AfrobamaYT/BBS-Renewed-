@@ -14,6 +14,8 @@
 package com.afrobama.bbstools.client.render.texture;
 
 import com.afrobama.bbstools.debug.IFeatureDebugger;
+import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.graphics.GpuBackend;
 
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
@@ -61,7 +63,13 @@ public final class BBSToolsTextureEnhancer implements IFeatureDebugger
      */
     public void enhance(int textureGlId)
     {
-        if (!ENABLED || textureGlId <= 0) return;
+        if (!ENABLED) return;
+        RenderSystem.assertOnRenderThread();
+        if (!GpuBackend.isOpenGl())
+        {
+            throw new IllegalStateException("BBSToolsTextureEnhancer.enhance(int) requires a real OpenGL texture; use Texture's native sampler on Vulkan");
+        }
+        if (textureGlId <= 0) throw new IllegalArgumentException("Texture enhancement requires a positive real OpenGL name");
         probeOnce();
 
         try

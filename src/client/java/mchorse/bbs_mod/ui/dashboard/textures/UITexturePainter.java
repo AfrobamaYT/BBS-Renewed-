@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.dashboard.textures;
 
+import org.lwjgl.sdl.SDLMouse;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
@@ -37,7 +38,6 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.resources.Pixels;
 import org.joml.Vector2i;
-import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
 import java.util.HashMap;
@@ -251,7 +251,7 @@ public class UITexturePainter extends UIElement
             this.content.resize();
             this.optionsDraggable.resize();
         });
-        this.optionsDraggable.cursors(GLFW.GLFW_HRESIZE_CURSOR, GLFW.GLFW_HRESIZE_CURSOR);
+        this.optionsDraggable.cursors(SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE, SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE);
         this.optionsDraggable.relative(this.optionsHost).x(1F).y(0.5F).w(6).h(40).anchor(0.5F, 0.5F);
 
         this.primary = new UIColor((c) -> {}).noLabel().withAlpha();
@@ -318,7 +318,7 @@ public class UITexturePainter extends UIElement
             this.content.resize();
             this.modelPreviewDraggable.resize();
         });
-        this.modelPreviewDraggable.cursors(GLFW.GLFW_HRESIZE_CURSOR, GLFW.GLFW_HRESIZE_CURSOR);
+        this.modelPreviewDraggable.cursors(SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE, SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE);
         this.modelPreviewDraggable.relative(this.modelPreviewHost).x(0F).y(0.5F).w(6).h(40).anchor(0.5F, 0.5F);
         this.modelPreviewDraggable.setVisible(false);
     }

@@ -15,7 +15,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.util.LightCoordsUtil;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAOPipeline;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -69,11 +69,13 @@ public class CubicVAORenderer extends CubicCubeRenderer
             }
         }
 
-        if (groupVaos == null || groupVaos.isEmpty() || !group.visible)
+        if (groupVaos == null || groupVaos.isEmpty() || !group.isVisible())
         {
             return false;
         }
 
+        /* The bone's overlay over the form's; picking keeps the plain one (BBS FS f95662b30) */
+        int overlay = this.stencilMap == null ? mchorse.bbs_mod.forms.renderers.utils.FormUeberlagerung.knochen(this.model.form, group.overlay, this.overlay) : this.overlay;
         float r = this.r * group.color.r;
         float g = this.g * group.color.g;
         float b = this.b * group.color.b;
@@ -113,6 +115,8 @@ public class CubicVAORenderer extends CubicCubeRenderer
                 /* No per-material override — the draw uses the form's base texture bound earlier. */
                 texture = BBSModClient.getTextures().getLastBound();
             }
+            if (mchorse.bbs_mod.client.renderer.NativeMorphCapture.suppresses(this.pipeline, entry.getValue(),
+                ModelVAORenderer.captureModelView(stack), r, g, b, a, light, overlay, 0, texture, 0F)) continue;
 
             if (FormTranslucentQueue.needsSplit(this.pipeline, this.stencilMap, texture, a))
             {
@@ -122,9 +126,9 @@ public class CubicVAORenderer extends CubicCubeRenderer
                 /* Erster Durchgang: nur die undurchsichtigen Texel, die schreiben Tiefe.
                  * Die Durchgangsart reist als Parameter mit, statt vorher gesetzt und
                  * danach zurueckgestellt zu werden. */
-                ModelVAORenderer.render(this.pipeline, entry.getValue(), modelView, normalMat, r, g, b, a, light, this.overlay, FormTranslucentQueue.PASS_OPAQUE);
+                ModelVAORenderer.render(this.pipeline, entry.getValue(), modelView, normalMat, r, g, b, a, light, overlay, FormTranslucentQueue.PASS_OPAQUE);
 
-                FormTranslucentQueue.add(new FormTranslucentQueue.ModelVAOCommand(entry.getValue(), texture, modelView, normalMat, r, g, b, a, light, this.overlay, this.model.isCulling()));
+                FormTranslucentQueue.add(new FormTranslucentQueue.ModelVAOCommand(entry.getValue(), texture, modelView, normalMat, r, g, b, a, light, overlay, this.model.isCulling()));
             }
             else if (FormTranslucentQueue.needsWholeDefer(this.pipeline, this.stencilMap, a))
             {
@@ -134,15 +138,18 @@ public class CubicVAORenderer extends CubicCubeRenderer
                 Matrix3f normalMat = new Matrix3f(stack.last().normal());
                 RenderPipeline pipeline = this.pipeline;
 
-                FormTranslucentQueue.add(new FormTranslucentQueue.ModelVAOCommand(entry.getValue(), () -> pipeline, FormTranslucentQueue.PASS_SINGLE, true, texture, modelView, normalMat, r, g, b, a, light, this.overlay, this.model.isCulling()));
+                FormTranslucentQueue.add(new FormTranslucentQueue.ModelVAOCommand(entry.getValue(), () -> pipeline, FormTranslucentQueue.PASS_SINGLE, true, texture, modelView, normalMat, r, g, b, a, light, overlay, this.model.isCulling()));
             }
             else
             {
                 /* Der Weg des Auswahl-Durchgangs: needsSplit und needsWholeDefer verlangen
                  * beide stencilMap == null, beim Picken landet der Zug also immer hier.
-                 * light traegt den KNOCHEN-Index (oben gesetzt), die Kennung den GRUND-Index
-                 * der Form -- der Shader addiert beide (picker_models.fsh:43). */
-                ModelVAORenderer.render(this.pipeline, entry.getValue(), stack, r, g, b, a, light, this.overlay, texture, this.stencilMap == null ? 0 : this.stencilMap.aktuelleBasis);
+                 * light traegt den KNOCHEN-Index (oben gesetzt). Der Shader addiert zur Kennung
+                 * nur den Knochenteil je Ecke (picker_models.fsh:43), und den schreibt ModelVAO
+                 * als Nullen -- jeder Klick auf ein Wuerfelmodell traf darum den ersten Knochen
+                 * (gemessen 2026-10-15: Kennung 20 = anchor ueber Kopf, Armen und Beinen).
+                 * Ein Wuerfelknochen ist genau ein Zug, also gehoert er hier in die Kennung. */
+                ModelVAORenderer.render(this.pipeline, entry.getValue(), stack, r, g, b, a, light, overlay, texture, this.stencilMap == null ? 0 : this.stencilMap.aktuelleBasis + light);
             }
         }
 

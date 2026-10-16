@@ -33,8 +33,8 @@ public final class KameraLogik
      */
     public static double[] stellung(float teilTick)
     {
-        if (mchorse.bbs_mod.client.Erweiterungen.vorschauRendert())
-            return mchorse.bbs_mod.client.Erweiterungen.vorschau.stellung();
+        if (com.blenderbridge.camera.RenderCameraPreview.isRendering())
+            return com.blenderbridge.camera.RenderCameraPreview.position();
         CameraController regler = BBSModClient.getCameraController();
 
         regler.setup(regler.camera, teilTick);
@@ -64,8 +64,8 @@ public final class KameraLogik
      */
     public static Float blickwinkel(boolean weltFov, float vanilla)
     {
-        if (mchorse.bbs_mod.client.Erweiterungen.vorschauRendert())
-            return mchorse.bbs_mod.client.Erweiterungen.vorschau.blickwinkel();
+        if (com.blenderbridge.camera.RenderCameraPreview.isRendering())
+            return com.blenderbridge.camera.RenderCameraPreview.fov();
         GunZoom zoom = BBSModClient.getGunZoom();
 
         if (zoom != null)

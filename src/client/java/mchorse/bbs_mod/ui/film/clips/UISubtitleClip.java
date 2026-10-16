@@ -9,20 +9,15 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
-import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
+import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.Direction;
 
 public class UISubtitleClip extends UIClip<SubtitleClip>
 {
-    public UITrackpad x;
-    public UITrackpad y;
-    public UITrackpad size;
-    public UITrackpad anchorX;
-    public UITrackpad anchorY;
+    public mchorse.bbs_mod.ui.film.clips.widgets.UIPlacement placement;
     public UIColor color;
     public UIToggle textShadow;
-    public UITrackpad windowX;
-    public UITrackpad windowY;
     public UIColor background;
     public UITrackpad backgroundOffset;
     public UITrackpad shadow;
@@ -30,6 +25,9 @@ public class UISubtitleClip extends UIClip<SubtitleClip>
     public UIPropTransform transform;
     public UITrackpad lineHeight;
     public UITrackpad maxWidth;
+    public UIButton pickFont;
+    public mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon openFontFolder;
+    public UITrackpad fontSize;
     public UIButton pickImage;
     public UIToggle imageRight;
     public UITrackpad imageScale;
@@ -44,23 +42,9 @@ public class UISubtitleClip extends UIClip<SubtitleClip>
     {
         super.registerUI();
 
-        this.x = new UITrackpad((v) -> this.editor.editMultiple(this.clip.x, (value) -> value.set(v.intValue())));
-        this.x.integer();
-        this.y = new UITrackpad((v) -> this.editor.editMultiple(this.clip.y, (value) -> value.set(v.intValue())));
-        this.y.integer();
+        /* One placement, as on the image and video clips (BBS FS 7f19dfbd5) */
+        this.placement = new mchorse.bbs_mod.ui.film.clips.widgets.UIPlacement(new mchorse.bbs_mod.camera.data.Placement(SubtitleClip.DEFAULT_SCALE), (p) -> this.editor.editMultiple(this.clip.placement, (value) -> value.set(p.copy())));
 
-        this.size = new UITrackpad((v) -> this.editor.editMultiple(this.clip.size, (value) ->
-        {
-            value.set(v.floatValue());
-        }));
-        this.anchorX = new UITrackpad((v) -> this.editor.editMultiple(this.clip.anchorX, (value) ->
-        {
-            value.set(v.floatValue());
-        }));
-        this.anchorY = new UITrackpad((v) -> this.editor.editMultiple(this.clip.anchorY, (value) ->
-        {
-            value.set(v.floatValue());
-        }));
         this.color = new UIColor((c) -> this.editor.editMultiple(this.clip.color, (value) ->
         {
             value.set(c);
@@ -69,15 +53,6 @@ public class UISubtitleClip extends UIClip<SubtitleClip>
         this.textShadow = new UIToggle(UIKeys.CAMERA_PANELS_SUBTITLE_TEXT_SHADOW, (b) -> this.editor.editMultiple(this.clip.textShadow, (value) ->
         {
             value.set(b.getValue());
-        }));
-
-        this.windowX = new UITrackpad((v) -> this.editor.editMultiple(this.clip.windowX, (value) ->
-        {
-            value.set(v.floatValue());
-        }));
-        this.windowY = new UITrackpad((v) -> this.editor.editMultiple(this.clip.windowY, (value) ->
-        {
-            value.set(v.floatValue());
         }));
 
         this.background = new UIColor((c) -> this.editor.editMultiple(this.clip.background, (value) ->
@@ -116,6 +91,25 @@ public class UISubtitleClip extends UIClip<SubtitleClip>
             value.set(v.intValue());
         }));
         this.maxWidth.limit(0).integer().tooltip(UIKeys.CAMERA_PANELS_SUBTITLE_MAX_WIDTH, Direction.BOTTOM);
+        /* A TrueType font from the assets' fonts folder and its size (BBS FS fd189d58f) */
+        mchorse.bbs_mod.l10n.keys.IKey pick = mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.camera.panels.subtitle.font_pick");
+
+        this.pickFont = new UIButton(pick, (b) ->
+        {
+            mchorse.bbs_mod.ui.framework.elements.overlay.UIStringOverlayPanel panel = mchorse.bbs_mod.ui.framework.elements.overlay.UIStringOverlayPanel.links(pick, true, mchorse.bbs_mod.fonts.FontManager.getFontLinks(), (l) -> this.editor.editMultiple(this.clip.font, (value) -> value.set(l)));
+
+            mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay.addOverlay(this.getContext(), panel.set(this.clip.font.get()));
+        });
+        this.openFontFolder = new mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon(mchorse.bbs_mod.ui.utils.icons.Icons.FOLDER, (b) ->
+        {
+            java.io.File folder = mchorse.bbs_mod.fonts.FontManager.getFolder();
+
+            folder.mkdirs();
+            mchorse.bbs_mod.ui.utils.UIUtils.openFolder(folder);
+        });
+        this.fontSize = new UITrackpad((v) -> this.editor.editMultiple(this.clip.fontSize, (value) -> value.set(v.intValue())));
+        this.fontSize.limit(mchorse.bbs_mod.fonts.FontManager.MIN_SIZE, mchorse.bbs_mod.fonts.FontManager.MAX_SIZE, true).tooltip(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.camera.panels.subtitle.font_size"), Direction.BOTTOM);
+
         this.pickImage = new UIButton(UIKeys.CAMERA_PANELS_SUBTITLE_IMAGE_PICK, (b) ->
         {
             UITexturePicker.open(this.getContext(), this.clip.image.get(), (l) -> this.editor.editMultiple(this.clip.image, (value) -> value.set(l)));
@@ -131,14 +125,13 @@ public class UISubtitleClip extends UIClip<SubtitleClip>
     {
         super.registerPanels();
 
-        this.panels.add(this.section(UIKeys.CAMERA_PANELS_SUBTITLE_OFFSET, UI.row(this.x, this.y)));
-        this.panels.add(this.section(UIKeys.CAMERA_PANELS_SUBTITLE_SIZE, this.size, this.color, this.textShadow));
-        this.panels.add(this.section(UIKeys.CAMERA_PANELS_SUBTITLE_ANCHOR, UI.row(this.anchorX, this.anchorY)));
-        this.panels.add(this.section(UIKeys.CAMERA_PANELS_SUBTITLE_WINDOW, UI.row(this.windowX, this.windowY)));
+        this.panels.add(this.section(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.camera.panels.subtitle.text"), this.color, this.textShadow));
+        this.panels.add(this.section(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.camera.panels.placement.title"), this.placement.fields()));
         this.panels.add(this.section(UIKeys.CAMERA_PANELS_SUBTITLE_BACKGROUND, this.background, this.backgroundOffset));
         this.panels.add(this.section(UIKeys.CAMERA_PANELS_SUBTITLE_SHADOW, this.shadow, this.shadowOpaque));
         this.panels.add(this.section(UIKeys.CAMERA_PANELS_SUBTITLE_TRANSFORM, this.transform));
         this.panels.add(this.section(UIKeys.CAMERA_PANELS_SUBTITLE_CONSTRAINT, UI.row(this.lineHeight, this.maxWidth)));
+        this.panels.add(this.section(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.camera.panels.subtitle.font"), UI.row(this.pickFont, this.openFontFolder), this.fontSize));
         this.panels.add(this.section(UIKeys.CAMERA_PANELS_SUBTITLE_IMAGE, this.pickImage, this.imageRight, this.imageScale));
     }
 
@@ -147,21 +140,16 @@ public class UISubtitleClip extends UIClip<SubtitleClip>
     {
         super.fillData();
 
-        this.x.setValue(this.clip.x.get());
-        this.y.setValue(this.clip.y.get());
-        this.size.setValue(this.clip.size.get());
-        this.anchorX.setValue(this.clip.anchorX.get());
-        this.anchorY.setValue(this.clip.anchorY.get());
+        this.placement.setPlacement(this.clip.placement.get());
         this.color.setColor(this.clip.color.get());
         this.textShadow.setValue(this.clip.textShadow.get());
-        this.windowX.setValue(this.clip.windowX.get());
-        this.windowY.setValue(this.clip.windowY.get());
         this.background.setColor(this.clip.background.get());
         this.backgroundOffset.setValue(this.clip.backgroundOffset.get());
         this.shadow.setValue(this.clip.shadow.get());
         this.shadowOpaque.setValue(this.clip.shadowOpaque.get());
         this.transform.setTransform(this.clip.transform.get());
         this.lineHeight.setValue(this.clip.lineHeight.get());
+        this.fontSize.setValue(this.clip.fontSize.get());
         this.maxWidth.setValue(this.clip.maxWidth.get());
         this.imageRight.setValue(this.clip.imageRight.get());
         this.imageScale.setValue(this.clip.imageScale.get());

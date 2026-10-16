@@ -1,135 +1,46 @@
-# BBS Renewed — Minecraft 26.2
+# BBS Renewed — Minecraft 26.3
 
-A fork of the BBS animation mod for Minecraft (Fabric), ported to **26.2** and extended with
-tools that bring animation work in Minecraft closer to what Blender and traditional sequencers
-can do.
+BBS Renewed is a Fabric fork of McHorse's BBS animation mod, built on BBS FS and BBS CML
+Edition. It extends the film editor, animation tools, rigs and rendering workflow.
 
-<!-- Screenshots go here, e.g.  ![The film editor](docs/images/editor.png)  — files in docs/images/ -->
+## Install
 
----
+1. Install Minecraft **26.3**, Java **25** and Fabric Loader **0.19.5 or newer**.
+2. Put **Fabric API for 26.3** and `bbs-2.5.0-26.3.jar` in your `mods` directory.
+3. For video export, install [ffmpeg](https://ffmpeg.org/download.html) and select its
+   executable or containing directory in BBS's video recording settings.
 
-## What sets this fork apart
+Use the matching Minecraft version. Keep a backup of existing worlds and films when moving
+an animation project to a new Minecraft version. The development companion is not required.
 
-**Blender's real IK solver instead of a home-grown one.** BBS's own solver was removed
-(3,619 lines) and replaced with Blender's, translated from its C++ source. Any Blender rig can
-be imported; BBS runs Blender's constraint graph at runtime. Measured: **706 of 706 bones match
-Blender exactly**, largest IK deviation 7e-06. Rigify, mixamo_rig and Auto-Rig Pro all pass.
+## Changes and verification
 
-**Controls modelled on Blender.** Move, rotate and scale compute the way Blender does — mouse
-distance to the pivot, mirroring when you cross it, Shift slowing to 1/30 — with the full visual
-feedback: a cursor per mode, a dashed line from the pivot, anchored axis lines, an orange origin
-point.
+The current 26.3 snapshot includes OpenGL/Vulkan rendering, the Regie workspace, texture
+editor, updated animation controls, held-prop recording fixes, Blender integration and the
+Resolve link. See the [changelog](CHANGELOG.md) and [release record](docs/RELEASE-26.3.md)
+for the exact scope and verification. The older feature inventory is historical.
 
-**The editor runs smoothly.** From 3 to 43 frames per second.
+## Build from source
 
-The full list is in the [changelog](CHANGELOG.md).
+Run Gradle with Java 25:
 
-## Installation
-
-1. Minecraft **26.2** with the **Fabric Loader** ([fabricmc.net/use](https://fabricmc.net/use/)).
-   The official launcher brings the required Java 25.
-2. Put **[Fabric API](https://modrinth.com/mod/fabric-api)** for 26.2 and the BBS Renewed jar
-   into the `mods` folder.
-3. For video export, set up [ffmpeg](#ffmpeg).
-
-Before every release the jar is started the way players get it, on Windows and Linux
-([workflow](.github/workflows/produktionstest.yml)): world, BBS dashboard, screenshot.
-Also tested together, with world, film editor, playback and scrubbing and without a crash or
-mixin conflict: Sodium 0.9.2, Iris 1.11.4 with a shader pack, Sodium Extra, Reese's Sodium
-Options, Lithium, FerriteCore, ImmediatelyFast, Entity Culling, Entity Texture Features,
-Entity Model Features, Not Enough Animations, 3D Skin Layers, Continuity and Mod Menu.
-
-## Honesty about the state
-
-The tree keeps an audited feature inventory: **[`docs/FEATURES-RELEASE.md`](docs/FEATURES-RELEASE.md)**.
-Every feature is marked individually — *done*, *partial*, *skeleton only* or *unverified* — with
-the evidence behind it.
-
-As of 2026-08-23, measured against the tree rather than estimated:
-
-| | |
-|---|---|
-| Features inventoried | **91** — 71 done, 8 partial, 1 skeleton only, 10 unverified |
-| Own code on top of the upstreams | **202,884 lines of Java** across 916 files |
-| Methods with an empty body | 57 of 5,833 (**1.0 %**) |
-| Own classes with no caller | **3 of 804** |
-| Acceptance records | 32, all evidenced, **0 open symptoms** |
-
-Anything not measured is listed as *unverified* there and is not sold as finished here. Known
-gaps are in the [changelog](CHANGELOG.md#bekannte-lücken).
-
-## Repository layout
-
-| Folder | Contents |
-|---|---|
-| `src/main`, `src/client` | The mod. Own code lives under `com.afrobama.*` and `com.mcstudio.*`; extensions to the original under `mchorse.bbs_mod.*`. |
-| `src/gametest` | Screenshot comparison tests via Fabric's comparison API. They never run in the shipped mod. |
-| `blender/io_export_bobj` | The Blender add-on that exports models and rigs to BBS (BOBJ). |
-| `icons/` | The fork's own SVG icons, source of the vector interface. |
-| `docs/` | Feature inventory and images. |
-
-## ffmpeg
-
-Video export runs through [ffmpeg](https://ffmpeg.org/download.html), which is not bundled with
-the mod. Install it once, then point BBS at it under **Settings → Video recording → Encoder
-path**:
-
-- **Windows:** download a build from the ffmpeg download page and unpack it. As the encoder path,
-  enter either `ffmpeg.exe` itself or the unpacked folder — BBS also finds `bin\ffmpeg.exe`
-  inside it.
-- **Linux:** install the `ffmpeg` package of your distribution. The default path `ffmpeg` then
-  works as is.
-- **macOS:** `brew install ffmpeg`, then enter the path that `which ffmpeg` prints.
-
-## Building
-
-Minecraft 26.2 requires **Java 25**, so Gradle itself has to run on it:
-
-```
+```sh
 ./gradlew build
 ```
 
-If your default JDK is older, point Gradle at a Java 25 installation without editing the
-repository — either export `JAVA_HOME`, or add a line to your personal
-`~/.gradle/gradle.properties`:
+The public build includes all six frozen native renderer libraries and verifies their source
+fingerprints and checksums. Native sources and build instructions are in
+[`native/nanovg-vulkan`](native/nanovg-vulkan). An optional Physics Mod Pro integration is
+compiled only when its separately obtained JAR is present; that JAR is not distributed here.
 
-```
-org.gradle.java.home=/path/to/jdk-25
-```
+## Credits and licence
 
-The key values live in `gradle.properties`: `minecraft_version=26.2`, `loader_version`,
-`fabric_version`, `mod_version`.
+- [McHorse](https://github.com/mchorse/bbs-mod): the original BBS mod.
+- [Wemppy](https://github.com/Wemppy4/bbs-fs): BBS FS.
+- [ElGatoPro300](https://github.com/ElGatoPro300/bbs-mod-cml-edition): BBS CML Edition.
+- MichaelCreeper_: the inherited Alex/Steve Bends models.
+- Afrobama and the other contributors credited in the source.
 
-**Optional dependency.** Three mixins and one bridge class compile against Physics Mod Pro,
-which is "all rights reserved" and therefore not part of this repository. Without it the build
-simply leaves those four files out and drops their mixin configuration — everything else builds
-and runs unchanged. With the jar in `libs/`, the physics integration compiles in as well.
-
-## Origins and licence
-
-This fork builds on:
-
-- **BBS mod** by [McHorse](https://github.com/mchorse) — the original mod
-- **bbs-fs** by [Wemppy4](https://github.com/Wemppy4)
-- **bbs-mod-cml-edition** by [ElGatoPro300](https://github.com/ElGatoPro300)
-
-**The combined BBS CML Edition package is released under GPL-2.0-or-later.** The IK solver
-under `cubic/ik/blender/` is translated line by line from Blender's GPL source. On
-2026-09-15 the project therefore deliberately chose a GPL-compatible combined release instead
-of separating the solver merely to preserve an MIT licence for the whole package.
-
-Inherited MIT files retain their MIT notices and remain reusable individually under MIT.
-Any new direct Blender source port must pass the provenance and licensing gate in
-[`BLENDER-PORT-GATE.md`](BLENDER-PORT-GATE.md); the SPDX licence of those exact sources may
-require a stricter GPL version for a future release.
-
-Rights holders are McHorse, Wemppy, ElGatoPro300 and Afrobama; further contributors are in the
-git history (`git shortlog -sn`). All **MIT** notices stay where they are — removing them
-forfeits the licence.
-
-> ⛔ **Assets are explicitly excluded.** Textures, models, sounds, fonts and icons do **not**
-> fall under this repository's GPL. They keep the rights of their respective authors; reusing
-> the code under the GPL grants **no** rights to the assets.
-
-Which part is under which licence, which Blender files were translated and which third-party
-components ship along is set out in full in [`LICENSE.md`](LICENSE.md).
+The combined mod is **GPL-2.0-or-later**. Original MIT notices, Blender source provenance,
+third-party licences and asset credits remain in place. See [LICENSE.md](LICENSE.md),
+[COPYING](COPYING) and the [release record](docs/RELEASE-26.3.md).

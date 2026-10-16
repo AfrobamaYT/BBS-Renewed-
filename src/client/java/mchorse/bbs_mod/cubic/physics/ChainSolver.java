@@ -204,7 +204,7 @@ final class ChainSolver
         }
     }
 
-    static void step(Level world, int age, float transition, IModel model, List<String> ids, ModelPhysicsCache.CompiledChain chain, float gravityMul, float dampingValue, float stiffnessValue, ModelPhysicsConfig.Wind wind, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Vector3f anchorPosition, Quaternionf anchorRotation, Quaternionf parentRotation, Vector3f targetPosition, List<PivotFrame> chainFrames, ChainState state)
+    static void step(Level world, int age, float transition, IModel model, List<String> ids, ModelPhysicsCache.CompiledChain chain, float gravityMul, float dampingValue, float stiffnessValue, ModelPhysicsConfig.Wind wind, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Vector3f anchorPosition, Quaternionf anchorRotation, Quaternionf parentRotation, Vector3f targetPosition, List<PivotFrame> chainFrames, PhysicsCarrier carrier, ChainState state)
     {
         Vector3f newAnchor = anchorPosition;
         Quaternionf newAnchorRotation = anchorRotation;
@@ -306,7 +306,6 @@ final class ChainSolver
         Vector3f stepAnchor = new Vector3f();
         Quaternionf stepAnchorRotation = new Quaternionf();
         Vector3f vel = new Vector3f();
-
         Vector3f poseDir = new Vector3f();
         Vector3f curDir = new Vector3f();
 
@@ -316,6 +315,7 @@ final class ChainSolver
          * tick's shape is snapshot after the sub-steps in its. renderInterpolate blends the two local
          * shapes by the sub-tick transition. */
         copyPositions(state.settledLocal, state.settledPrevLocal);
+        PhysicsCarrier.Fahrt fahrt = PhysicsCarrier.fahrt(carrier, state, age);
 
         for (int s = 0; s < steps; s++)
         {
@@ -330,6 +330,7 @@ final class ChainSolver
             state.anchorRotation.set(stepAnchorRotation);
             state.pos[0].set(stepAnchor);
             state.prev[0].set(stepAnchor);
+            if (fahrt != null) fahrt.schritt(state, progress); /* the carrier's share of motion, BBS FS 89b786ca6 */
 
             /* Verlet integration of the free points: inertia carried from the previous step plus
              * gravity. The anchor's motion never forces the points — it reaches the chain only through

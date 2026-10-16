@@ -39,7 +39,9 @@ public final class BBSToolsMod implements ModInitializer
         registriereActionClips();
 
         /* Custom-payload registration + server handler for
-         *  BuilderActionPacket. Must register codec before any world loads. */
+         *  BuilderActionPacket (used by /crowdmassbuild — the
+         *  CrowdInstance port of /buildschematic that scales to 100k
+         *  builders). Must register codec before any world loads. */
         com.afrobama.bbstools.network.BBSToolsNetworkInit.init();
 
         /* AUTONOMIE 2026-07-27: damage-hitbox (keyframed schaden-AABB fuer kampf-animationen).
@@ -49,14 +51,14 @@ public final class BBSToolsMod implements ModInitializer
         com.afrobama.bbstools.hitbox.DamageHitbox.register();
         com.afrobama.bbstools.ragdoll.RagdollSwap.register();
 
-        /* /bbstools needs an explicit dispatcher pass-through. */
+        /* /mobarmy + /bbstools need an explicit dispatcher pass-through. */
         net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback.EVENT.register(
             (dispatcher, registry, env) ->
             {
                 BBSToolsStatusCommand.register(dispatcher);
             });
 
-        LOG.info("BBSTools commands registered: /ragdolly");
+        LOG.info("BBSTools commands registered: /mobarmy, /buildschematic, /ragdolly");
     }
 
     /**

@@ -1,10 +1,10 @@
 // Coded by Afrobama/Claude — fix F8 conflict between BBS axes-toggle + editor cam
 package com.afrobama.bbstools.client.keybinds;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,20 +71,20 @@ public final class AxesToggleKeyFix
             List<Integer> ks = combo.keys;
             if (ks == null) return;
 
-            if (ks.contains(GLFW.GLFW_KEY_LEFT_CONTROL) || ks.contains(GLFW.GLFW_KEY_RIGHT_CONTROL))
+            if (ks.contains(InputConstants.KEY_LCONTROL) || ks.contains(InputConstants.KEY_RCONTROL))
             {
                 /* Already has Ctrl — either user-rebound or already fixed. */
                 return;
             }
 
-            if (!ks.contains(GLFW.GLFW_KEY_F8))
+            if (!ks.contains(InputConstants.KEY_F8))
             {
                 /* User rebound to something else entirely — don't touch. */
                 return;
             }
 
             List<Integer> rebuilt = new ArrayList<>(ks);
-            rebuilt.add(GLFW.GLFW_KEY_LEFT_CONTROL);
+            rebuilt.add(InputConstants.KEY_LCONTROL);
             combo.keys = rebuilt;
 
             LOG.info("Rebound BBS TRANSFORMATIONS_TOGGLE_AXES from F8 to Ctrl+F8 (resolves conflict with EDITOR_CAM_CYCLE)");

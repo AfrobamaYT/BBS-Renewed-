@@ -23,28 +23,31 @@ public class UIShapeKeys extends UIElement
 
     public UIShapeKeys()
     {
-        this.list = new UIStringList((l) -> this.pick(l.get(0), false));
-        this.list.background().h(this.list.scroll.scrollItemSize * 6);
+        /* Several keys at once: the value goes into all picked (BBS FS f3b221643) */
+        this.list = new UIStringList((l) -> this.pick(l.isEmpty() ? null : l.get(0), false));
+        this.list.multi().background().h(this.list.scroll.scrollItemSize * 6);
         this.list.cancelScrollEdge();
-        this.list.context(() -> new UIDataContextMenu(ShapeKeysManager.INSTANCE, group, () -> this.shapeKeys.toData(), (data) ->
+        this.list.context(() -> presetMenu(group, () -> this.shapeKeys.toData(), (data) ->
         {
             String current = this.list.getCurrentFirst();
 
             this.changedShapeKeys(() -> this.shapeKeys.fromData(data));
-            this.pick(current, true);
-        }).tooltips("_CopyShapeKeys",
-            UIKeys.SHAPE_KEYS_CONTEXT_COPY,
-            UIKeys.SHAPE_KEYS_CONTEXT_PASTE,
-            UIKeys.SHAPE_KEYS_CONTEXT_RESET,
-            UIKeys.SHAPE_KEYS_CONTEXT_SAVE,
-            UIKeys.SHAPE_KEYS_CONTEXT_NAME
-        ));
+            this.pick(current, false);
+        }));
         this.value = new UITrackpad((v) -> this.setValue(v.floatValue()));
         this.title = UI.label(UIKeys.SHAPE_KEYS_TITLE);
 
         this.column().vertical().stretch();
 
         this.add(this.title, this.list, this.value);
+    }
+
+    /** The shape key presets of a group; the shape key controllers offer the same (BBS FS 7a049804a) */
+    public static UIDataContextMenu presetMenu(String group, java.util.function.Supplier<mchorse.bbs_mod.data.types.MapType> source, java.util.function.Consumer<mchorse.bbs_mod.data.types.MapType> apply)
+    {
+        return new UIDataContextMenu(ShapeKeysManager.INSTANCE, group, source, apply).tooltips("_CopyShapeKeys",
+            UIKeys.SHAPE_KEYS_CONTEXT_COPY, UIKeys.SHAPE_KEYS_CONTEXT_PASTE, UIKeys.SHAPE_KEYS_CONTEXT_RESET,
+            UIKeys.SHAPE_KEYS_CONTEXT_SAVE, UIKeys.SHAPE_KEYS_CONTEXT_NAME);
     }
 
     public void setShapeKeys(String group, Set<String> keys, ShapeKeys shapeKeys)
@@ -76,12 +79,16 @@ public class UIShapeKeys extends UIElement
 
     protected void setValue(float v)
     {
-        this.shapeKeys.shapeKeys.put(this.list.getCurrentFirst(), v);
+        for (String key : this.list.getCurrent())
+        {
+            this.shapeKeys.shapeKeys.put(key, v);
+        }
     }
 
     private void pick(String key, boolean select)
     {
-        this.value.setValue(this.shapeKeys.shapeKeys.computeIfAbsent(key, (k) -> 0F));
+        this.value.setEnabled(key != null);
+        this.value.setValue(key == null ? 0F : this.shapeKeys.shapeKeys.getOrDefault(key, 0F));
 
         if (select)
         {

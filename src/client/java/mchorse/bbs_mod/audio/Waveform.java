@@ -1,210 +1,67 @@
 package mchorse.bbs_mod.audio;
 
-import mchorse.bbs_mod.graphics.texture.Texture;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
+import mchorse.bbs_mod.graphics.texture.Texture;
+import mchorse.bbs_mod.utils.resources.Pixels;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.resources.Pixels;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import mchorse.bbs_mod.audio.ColorCode;
-import java.util.ArrayList;
-import java.util.List;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/** Audio waveforms: sampled envelopes drawn per pixel column, cached preview tiles (BBS FS 82f6f7616, 07159d44d, Wemppy4/bbs-fs, MIT) */
 public class Waveform
 {
-    public float[] average;
-    public float[] maximum;
-
-    private List<Texture> sprites = new ArrayList<>();
-    private int w;
-    private int h;
+    private static final int PREVIEW_TILE_WIDTH = 512;
+    private static final int PREVIEW_TILE_LIMIT = 8;
+    private WaveformEnvelope envelope;
+    private List<ColorCode> colorCodes;
+    private float[] cues;
     private int pixelsPerSecond;
+    private int height;
     private float duration;
+    private final Map<Integer, Texture> previewTiles = new LinkedHashMap<>(16, 0.75F, true);
 
     public void generate(Wave data, List<ColorCode> colorCodes, int pixelsPerSecond, int height)
     {
-        if (data.getBytesPerSample() != 2)
-        {
-            throw new IllegalStateException("Waveform generation doesn't support non 16-bit audio data!");
-        }
-
         this.populate(data, pixelsPerSecond, height);
         this.render(colorCodes, data.getCues());
     }
 
+    /** Update annotations without rebuilding the audio envelope. */
     public void render(List<ColorCode> colorCodes, float[] cues)
     {
-        this.delete();
-
-        int maxTextureSize = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE) / 2;
-        int count = (int) Math.ceil(this.w / (double) maxTextureSize);
-        int offset = 0;
-        float time = 0;
-        ColorCode code = this.getColorCode(colorCodes, time);
-        Color tmp = new Color();
-
-        for (int t = 0; t < count; t++)
-        {
-            Texture texture = new Texture();
-            int width = Math.min(this.w - offset, maxTextureSize);
-
-            Pixels pixels = Pixels.fromSize(width, this.h);
-
-            for (int i = offset, j = 0, c = Math.min(offset + width, this.average.length); i < c; i++, j++)
-            {
-                float average = this.average[i];
-                float maximum = this.maximum[i];
-
-                int maxHeight = (int) (maximum * this.h);
-                int avgHeight = (int) (average * (this.h - 1)) + 1;
-
-                int color = Colors.WHITE;
-                boolean background = false;
-
-                if (code != null && !code.isInside(time)) code = null;
-                if (code == null) code = this.getColorCode(colorCodes, time);
-                if (code != null)
-                {
-                    color = Colors.setA(code.color, 1F);
-                    background = true;
-                }
-
-                if (this.hasCue(cues, time))
-                {
-                    pixels.drawRect(j, 0, 1, this.h, Colors.ACTIVE | Colors.A75);
-                }
-
-                if (avgHeight > 0)
-                {
-                    if (background)
-                    {
-                        tmp.set(color);
-
-                        for (int k = 0; k < this.h; k++)
-                        {
-                            tmp.a = 0.125F + 0.25F * (k / (float) this.h);
-
-                            pixels.setColor(j, k, tmp);
-                        }
-                    }
-
-                    pixels.drawRect(j, this.h / 2 - maxHeight / 2, 1, maxHeight, color);
-                    pixels.drawRect(j, this.h / 2 - avgHeight / 2, 1, avgHeight, Colors.mulRGB(color, 0.8F));
-                }
-
-                time += 1 / (float) this.pixelsPerSecond;
-            }
-
-            pixels.rewindBuffer();
-
-            texture.bind();
-            texture.uploadTexture(pixels);
-            texture.setFilter(GL11.GL_NEAREST);
-            texture.setParameter(GL11.GL_TEXTURE_WRAP_S, GL13.GL_CLAMP_TO_BORDER);
-            texture.unbind();
-
-            this.sprites.add(texture);
-
-            offset += maxTextureSize;
-        }
-    }
-
-    private boolean hasCue(float[] cues, float time)
-    {
-        if (cues == null)
-        {
-            return false;
-        }
-
-        for (float cue : cues)
-        {
-            if (time >= cue && time - cue < 1.5F / this.pixelsPerSecond)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private ColorCode getColorCode(List<ColorCode> colorCodes, float time)
-    {
-        if (colorCodes == null)
-        {
-            return null;
-        }
-
-        for (ColorCode colorCode : colorCodes)
-        {
-            if (colorCode.isInside(time))
-            {
-                return colorCode;
-            }
-        }
-
-        return null;
+        this.clearPreviewTiles();
+        this.colorCodes = colorCodes;
+        this.cues = cues;
     }
 
     public void populate(Wave data, int pixelsPerSecond, int height)
     {
-        this.pixelsPerSecond = pixelsPerSecond;
-        this.w = (int) (data.getDuration() * pixelsPerSecond);
-        this.h = height;
-        this.average = new float[this.w];
-        this.maximum = new float[this.w];
-
-        int region = data.getScanRegion(pixelsPerSecond);
-
-        for (int i = 0; i < this.w; i ++)
-        {
-            int offset = i * region;
-            int count = 0;
-            float average = 0;
-            float maximum = 0;
-
-            for (int j = 0; j < region; j += 2 * data.numChannels)
-            {
-                if (offset + j + 1 >= data.data.length)
-                {
-                    break;
-                }
-
-                byte a = data.data[offset + j];
-                byte b = data.data[offset + j + 1];
-                float sample = a + (b << 8);
-
-                maximum = Math.max(maximum, Math.abs(sample));
-                average += Math.abs(sample);
-                count++;
-            }
-
-            average /= count;
-            average /= 0xffff / 2;
-            maximum /= 0xffff / 2;
-
-            this.average[i] = average;
-            this.maximum[i] = maximum;
-        }
-
+        this.clearPreviewTiles();
+        this.envelope = new WaveformEnvelope(data);
+        this.pixelsPerSecond = Math.max(1, pixelsPerSecond);
+        this.height = height;
         this.duration = data.getDuration();
     }
 
     public void delete()
     {
-        for (Texture sprite : this.sprites)
-        {
-            sprite.delete();
-        }
-
-        this.sprites.clear();
+        this.clearPreviewTiles();
+        this.envelope = null;
+        this.colorCodes = null;
+        this.cues = null;
     }
 
     public boolean isCreated()
     {
-        return !this.sprites.isEmpty();
+        return this.envelope != null;
     }
 
+    /** Preview scale only; waveform detail is determined by the visible pixels. */
     public int getPixelsPerSecond()
     {
         return this.pixelsPerSecond;
@@ -212,12 +69,12 @@ public class Waveform
 
     public int getWidth()
     {
-        return this.w;
+        return (int) Math.ceil(this.duration * this.pixelsPerSecond);
     }
 
     public int getHeight()
     {
-        return this.h;
+        return this.height;
     }
 
     public float getDuration()
@@ -225,42 +82,222 @@ public class Waveform
         return this.duration;
     }
 
-    public List<Texture> getSprites()
+    /** The recording and film preview use a fixed scale, so reuse small texture tiles while playback scrolls. */
+    public void renderPreview(Batcher2D batcher, int color, int x, int y, int w, int h, float startTime, float endTime)
     {
-        return this.sprites;
-    }
+        if (this.envelope == null || w <= 0 || h <= 0 || !(endTime > startTime))
+        {
+            return;
+        }
 
-    /**
-     * Draw the waveform out of multiple sprites of desired cropped region
-     */
-    public void render(Batcher2D batcher, int color, int x, int y, int w, int h, float startTime, float endTime)
-    {
-        float pixelsPerSecond = w / (endTime - startTime);
-        float xOffset = x - (startTime * pixelsPerSecond);
-        float timeOffset = 0F;
+        double pixelsPerScreenSecond = w / (endTime - (double) startTime);
+        int visibleFirst = (int) Math.max(0L, -(long) x);
+        int visibleLast = (int) Math.min(w, (long) net.minecraft.client.Minecraft.getInstance().getWindow().getWidth() - x);
+
+        if (visibleLast <= visibleFirst)
+        {
+            return;
+        }
+
+        double visibleStartTime = startTime + visibleFirst / pixelsPerScreenSecond;
+        double visibleEndTime = startTime + visibleLast / pixelsPerScreenSecond;
+        int first = Math.max(0, (int) Math.floor(visibleStartTime * this.pixelsPerSecond / PREVIEW_TILE_WIDTH));
+        int last = (int) Math.floor(Math.min(this.duration, visibleEndTime) * this.pixelsPerSecond / PREVIEW_TILE_WIDTH);
 
         batcher.clip(x, y, w, h, 0, 0);
 
-        for (Texture sprite : this.sprites)
+        for (int tile = first; tile <= last; tile++)
         {
-            float duration = sprite.width / (float) this.pixelsPerSecond;
-            float timeEnd = timeOffset + duration;
+            double tileStart = tile * (double) PREVIEW_TILE_WIDTH / this.pixelsPerSecond;
 
-            float spriteW = duration * pixelsPerSecond;
-            float u1 = 0F;
-            float u2 = sprite.width;
-
-            if (timeOffset >= endTime)
+            if (tileStart >= this.duration || tileStart >= endTime)
             {
                 break;
             }
 
-            batcher.texturedBox(sprite, color, xOffset, y, spriteW, h, u1, 0, u2, sprite.height, sprite.width, sprite.height);
+            Texture texture = this.getPreviewTile(tile);
+            float drawX = (float) (x + (tileStart - startTime) * pixelsPerScreenSecond);
+            float drawW = (float) (PREVIEW_TILE_WIDTH * pixelsPerScreenSecond / this.pixelsPerSecond);
 
-            timeOffset = timeEnd;
-            xOffset += spriteW;
+            batcher.texturedBox(texture, color, drawX, y, drawW, h, 0, 0, PREVIEW_TILE_WIDTH, this.height);
         }
 
         batcher.unclip(0, 0);
+    }
+
+    private Texture getPreviewTile(int index)
+    {
+        Texture cached = this.previewTiles.get(index);
+
+        if (cached != null)
+        {
+            return cached;
+        }
+
+        Pixels pixels = Pixels.fromSize(PREVIEW_TILE_WIDTH, this.height);
+        WaveformEnvelope.Range range = new WaveformEnvelope.Range();
+        Color background = new Color();
+        int firstColumn = index * PREVIEW_TILE_WIDTH;
+
+        for (int x = 0; x < PREVIEW_TILE_WIDTH; x++)
+        {
+            double from = (firstColumn + x) / (double) this.pixelsPerSecond;
+
+            if (from >= this.duration)
+            {
+                break;
+            }
+
+            this.envelope.sample(from, from + 1D / this.pixelsPerSecond, range);
+            int columnColor = Colors.WHITE;
+
+            if (this.colorCodes != null)
+            {
+                for (ColorCode code : this.colorCodes)
+                {
+                    if (code.isInside((float) from))
+                    {
+                        columnColor = code.color | 0xff000000;
+                        background.set(columnColor);
+
+                        for (int row = 0; row < this.height; row++)
+                        {
+                            background.a = 0.125F + 0.25F * row / this.height;
+                            pixels.setColor(x, row, background);
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            if (this.cues != null)
+            {
+                for (float cue : this.cues)
+                {
+                    if (cue >= from && cue < from + 1D / this.pixelsPerSecond)
+                    {
+                        pixels.drawRect(x, 0, 1, this.height, Colors.ACTIVE | Colors.A75);
+                        break;
+                    }
+                }
+            }
+
+            int peak = range.maximum > 0 ? Math.max(1, Math.round(range.maximum * this.height)) : 0;
+            int average = range.average > 0 ? Math.max(1, Math.round(range.average * this.height)) : 0;
+
+            if (peak > 0) pixels.drawRect(x, (this.height - peak) / 2, 1, peak, columnColor);
+            if (average > 0) pixels.drawRect(x, (this.height - average) / 2, 1, average, Colors.mulRGB(columnColor, 0.8F));
+        }
+
+        pixels.rewindBuffer();
+        Texture texture = Texture.textureFromPixels(pixels, GL11.GL_NEAREST);
+        pixels.delete();
+        this.previewTiles.put(index, texture);
+
+        if (this.previewTiles.size() > PREVIEW_TILE_LIMIT)
+        {
+            Integer oldest = this.previewTiles.keySet().iterator().next();
+            this.previewTiles.remove(oldest).delete();
+        }
+
+        return texture;
+    }
+
+    private void clearPreviewTiles()
+    {
+        for (Texture texture : this.previewTiles.values())
+        {
+            texture.delete();
+        }
+
+        this.previewTiles.clear();
+    }
+
+    public void render(Batcher2D batcher, int color, int x, int y, int w, int h, float startTime, float endTime)
+    {
+        if (!BBSSettings.audioWaveformDetailed.get())
+        {
+            this.renderPreview(batcher, color, x, y, w, h, startTime, endTime);
+
+            return;
+        }
+
+        if (this.envelope == null || w <= 0 || h <= 0 || !(endTime > startTime))
+        {
+            return;
+        }
+
+        double secondsPerPixel = (endTime - (double) startTime) / w;
+        /* Physical width also covers BBS's custom GUI scale. Limit CPU work
+         * when a zoomed timeline extends far beyond the screen. */
+        int first = (int) Math.max(0L, -(long) x);
+        int last = (int) Math.min(w, (long) net.minecraft.client.Minecraft.getInstance().getWindow().getWidth() - x);
+        float center = y + h / 2F;
+        WaveformEnvelope.Range range = new WaveformEnvelope.Range();
+        SpaltenNetz netz = new SpaltenNetz(); /* all columns as one GUI element, see SpaltenNetz */
+
+        batcher.clip(x, y, w, h, 0, 0);
+
+        for (int i = first; i < last; i++)
+        {
+            double from = startTime + i * secondsPerPixel;
+            double to = from + secondsPerPixel;
+
+            if (to <= 0 || from >= this.duration)
+            {
+                continue;
+            }
+
+            this.envelope.sample(from, to, range);
+            int columnColor = color;
+
+            if (this.colorCodes != null)
+            {
+                for (ColorCode code : this.colorCodes)
+                {
+                    if (code.isInside((float) Math.max(0, from)))
+                    {
+                        columnColor = tint(code.color | 0xff000000, color);
+                        netz.box(x + i, y, x + i + 1, y + h,
+                            Colors.mulA(columnColor, 0.125F), Colors.mulA(columnColor, 0.375F));
+                        break;
+                    }
+                }
+            }
+
+            if (this.cues != null)
+            {
+                for (float cue : this.cues)
+                {
+                    if (cue >= from && cue < to)
+                    {
+                        netz.box(x + i, y, x + i + 1, y + h, tint(Colors.ACTIVE | Colors.A75, color));
+                        break;
+                    }
+                }
+            }
+
+            float peak = range.maximum * h / 2F;
+            float average = range.average * h / 2F;
+
+            netz.box(x + i, center - peak, x + i + 1, center + peak, columnColor);
+            netz.box(x + i, center - average, x + i + 1, center + average, Colors.mulRGB(columnColor, 0.8F));
+        }
+
+        netz.einreichen(batcher, x, y, w, h);
+        batcher.unclip(0, 0);
+    }
+
+    private static int tint(int a, int b)
+    {
+        int result = 0;
+
+        for (int shift = 0; shift <= 24; shift += 8)
+        {
+            result |= (((a >>> shift) & 255) * ((b >>> shift) & 255) / 255) << shift;
+        }
+
+        return result;
     }
 }

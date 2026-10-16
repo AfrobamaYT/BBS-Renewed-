@@ -8,6 +8,12 @@ import java.util.Objects;
 
 public interface IKeyframeFactory <T>
 {
+    /** Values that jump instead of blending (a toggle, a string, an item): no motion shift there. */
+    public default boolean isStepped()
+    {
+        return false;
+    }
+
     public T fromData(BaseType data);
 
     public BaseType toData(T value);

@@ -20,8 +20,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * ({@code BBSRendering.isCustomSize()}) so the recorded film captures
  * everything as if editor mode were off.</p>
  *
- * <p>Note: other mixins may hit the same
- * inject point with different conditions. Both call
+ * <p>Note: stacks with {@link MobArmyTickSkipMixin} — they hit the same
+ * inject point but with different conditions. Both call
  * {@link CallbackInfo#cancel()}; whichever fires first wins. Both want
  * the same outcome (skip vanilla tick), so the stacking is harmless.</p>
  */

@@ -1,0 +1,146 @@
+package mchorse.bbs_mod.cubic.jem;
+
+import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.renderers.mob.MobStandIn;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
+
+import java.util.Map;
+
+/**
+ * The vanilla stage of a CEM model: the game's own model of the entity, posed for the frame by the
+ * game's own code, read back as the program's starting values.
+ *
+ * <p>A pack keeps most vanilla parts empty and reads them — the fox's body is pitched flat by vanilla
+ * and never by the pack, the hoglin measures its attack off a head vanilla holds at fifty degrees, the
+ * evoker tells a cast by the flag vanilla sets on its arms. Nothing short of vanilla's
+ * {@code setupAnim} answers those, so this runs it on a {@link MobStandIn} of the entity's kind, kept
+ * in step with the actor, through the model the world's entities of that kind draw with. The parts are
+ * then read under the names the pack uses ({@link CemPartNames}).</p>
+ *
+ * <p>There is no stage for a file that names no entity the game has, or outside a world: the program
+ * then starts from the rest pose. From BBS FS 6d7aa0fd1 (Wemppy4/bbs-fs, MIT); 26.3 poses a model
+ * from a render state the dispatcher extracts, where 1.21 took the entity.</p>
+ */
+public class CemVanillaStage implements ICemVanillaStage
+{
+    private static final String PLAYER = "player";
+    private static final String PLAYER_SLIM = "player_slim";
+
+    private final String entity;
+    private final boolean baby;
+    private final boolean player;
+    private final boolean slim;
+    private final CemPartNames names;
+
+    private final MobStandIn standIn = new MobStandIn();
+    private final CemVanillaSeed seed = new CemVanillaSeed();
+    private Entity last;
+
+    /** @param jem the model file's name, {@code cold_cow_baby}: the entity, and whether it is young or a slim player */
+    public CemVanillaStage(String jem)
+    {
+        this.entity = CemNames.entity(jem);
+        this.baby = CemNames.baby(jem);
+        this.player = this.entity.equals(PLAYER) || this.entity.equals(PLAYER_SLIM);
+        this.slim = this.entity.equals(PLAYER_SLIM);
+        this.names = CemPartNames.of(this.entity);
+    }
+
+    /** The stand-in, dressed as the file asks the first time it appears */
+    private Entity entity()
+    {
+        Entity entity = this.standIn.ensure(this.player ? PLAYER : this.entity, "", this.slim, this.player);
+
+        if (entity != null && entity != this.last)
+        {
+            this.last = entity;
+
+            if (this.baby && entity instanceof Mob mob) mob.setBaby(true);
+        }
+
+        return entity;
+    }
+
+    @Override
+    public void tick(IEntity source)
+    {
+        if (this.entity() != null) this.standIn.tick(source);
+    }
+
+    @Override
+    public CemVanillaSeed seed(IEntity source, float transition)
+    {
+        Entity entity = this.entity();
+
+        if (entity == null)
+        {
+            return null;
+        }
+
+        EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+
+        if (!(dispatcher.getRenderer(entity) instanceof LivingEntityRenderer<?, ?, ?> renderer)
+            || !(dispatcher.extractEntity(entity, transition) instanceof LivingEntityRenderState state))
+        {
+            return null;
+        }
+
+        @SuppressWarnings("unchecked")
+        EntityModel<LivingEntityRenderState> model = (EntityModel<LivingEntityRenderState>) renderer.getModel();
+
+        model.setupAnim(state);
+
+        for (Map.Entry<String, ModelPart> root : model.root().children.entrySet())
+        {
+            this.read(root.getKey(), root.getValue(), 0F, 0F, 0F);
+        }
+
+        return this.seed;
+    }
+
+    /**
+     * Note a part and everything under it, under the pack's name for it and — where that differs —
+     * vanilla's, since a pack sometimes uses the vanilla one. {@code ox/oy/oz} is the parent's absolute
+     * pivot, carried down the walk.
+     */
+    private void read(String name, ModelPart part, float ox, float oy, float oz)
+    {
+        float ax = ox + part.x;
+        float ay = oy + part.y;
+        float az = oz + part.z;
+        String optifine = this.names.optifine(name);
+
+        fill(this.seed.part(optifine), part, ax, ay, az);
+
+        if (!optifine.equals(name)) fill(this.seed.part(name), part, ax, ay, az);
+
+        for (Map.Entry<String, ModelPart> child : part.children.entrySet())
+        {
+            this.read(child.getKey(), child.getValue(), ax, ay, az);
+        }
+    }
+
+    private static void fill(CemVanillaSeed.Part slot, ModelPart part, float ax, float ay, float az)
+    {
+        slot.tx = part.x;
+        slot.ty = part.y;
+        slot.tz = part.z;
+        slot.ax = ax;
+        slot.ay = ay;
+        slot.az = az;
+        slot.rx = part.xRot;
+        slot.ry = part.yRot;
+        slot.rz = part.zRot;
+        slot.sx = part.xScale;
+        slot.sy = part.yScale;
+        slot.sz = part.zScale;
+        slot.visible = part.visible;
+    }
+}

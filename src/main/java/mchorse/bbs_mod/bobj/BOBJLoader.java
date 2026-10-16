@@ -525,6 +525,17 @@ public class BOBJLoader
                 return;
             }
 
+            /* The skin takes four influences. Keep the four largest, as glTF and game engines
+             * do: the mesh writer took the first four in file order after normalising all of
+             * them, so Moggity_Arm_Left_Rigify had 10318 vertices left with too little weight
+             * (down to 8.7 %, 3753 without their largest) and stretched toward the origin as
+             * soon as the root moved (owner's report, 2026-10-14). */
+            if (this.weights.size() > 4)
+            {
+                this.weights.sort((a, b) -> Float.compare(b.factor, a.factor));
+                this.weights.subList(4, this.weights.size()).clear();
+            }
+
             float weight = 0;
 
             for (Weight w : this.weights)

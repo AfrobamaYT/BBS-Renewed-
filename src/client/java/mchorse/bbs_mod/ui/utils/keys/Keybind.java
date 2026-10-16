@@ -1,9 +1,9 @@
 package mchorse.bbs_mod.ui.utils.keys;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.Objects;
 import java.util.function.IntPredicate;
@@ -164,6 +164,11 @@ public class Keybind
     {
         this.getroffen = null;
 
+        if (com.mcstudio.nano.NanoTextFokus.tippt())
+        {
+            return false;
+        }
+
         if (this.passt(this.combo, keyCode, keyAction, inside))
         {
             this.getroffen = this.combo;
@@ -280,9 +285,11 @@ public class Keybind
                 continue;
             }
 
-            /* isHeld prueft ALLE tasten des laengeren combos, haupttaste eingeschlossen —
-             * die ist gerade gedrueckt, sonst waeren wir nicht hier. */
-            if (anderes.isHeld(gedrueckt))
+            /* isHeld prueft ALLE tasten des laengeren combos. Die haupttaste ist gerade gedrueckt
+             * (ihr ereignis laeuft) und zaehlt darum als gehalten: nach dem aktuellen zustand war
+             * sie bei kurzem antippen schon wieder oben (druecken und loslassen im selben bild),
+             * und blankes M schlug Umschalt+Strg+M (gemessen 3 von 6). */
+            if (anderes.isHeld(k -> k == haupt || gedrueckt.test(k)))
             {
                 return true;
             }
@@ -297,17 +304,17 @@ public class Keybind
      */
     private boolean hasExtraModifier(KeyCombo combo)
     {
-        if (Window.isShiftPressed() && !comboHas(combo, GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT))
+        if (KeyCombo.isKeyDown(InputConstants.KEY_LSHIFT) && !comboHas(combo, InputConstants.KEY_LSHIFT, InputConstants.KEY_RSHIFT))
         {
             return true;
         }
 
-        if (Window.isCtrlPressed() && !comboHas(combo, GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL))
+        if (KeyCombo.isKeyDown(InputConstants.KEY_LCONTROL) && !comboHas(combo, InputConstants.KEY_LCONTROL, InputConstants.KEY_RCONTROL))
         {
             return true;
         }
 
-        return Window.isAltPressed() && !comboHas(combo, GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT);
+        return KeyCombo.isKeyDown(InputConstants.KEY_LALT) && !comboHas(combo, InputConstants.KEY_LALT, InputConstants.KEY_RALT);
     }
 
     private static boolean comboHas(KeyCombo combo, int left, int right)

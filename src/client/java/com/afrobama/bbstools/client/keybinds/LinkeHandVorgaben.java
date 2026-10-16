@@ -1,6 +1,7 @@
 // Coded by Afrobama/Claude — die ausgelieferten Linke-Hand-Preset-Layouts
 package com.afrobama.bbstools.client.keybinds;
 
+import org.lwjgl.sdl.SDLScancode;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,26 +28,29 @@ final class LinkeHandVorgaben
     static Map<String, int[]> buildLeftHandLayout()
     {
         Map<String, int[]> m = new LinkedHashMap<>();
-        m.put("next", new int[]{69});                          /* E */
-        m.put("prev", new int[]{81});                          /* Q */
-        m.put("jump_forward", new int[]{84});                  /* T */
-        m.put("jump_backward", new int[]{82});                 /* R */
-        m.put("next_clip", new int[]{69, 340});                /* Shift+E */
-        m.put("prev_clip", new int[]{81, 340});                /* Shift+Q */
-        m.put("clip_select_after", new int[]{84, 340});        /* Shift+T */
-        m.put("clip_select_before", new int[]{82, 340});       /* Shift+R */
-        m.put("clip_duration", new int[]{71});                 /* G */
-        m.put("clip_enable", new int[]{66});                   /* B */
-        m.put("looping", new int[]{70, 340});                  /* Shift+F */
-        m.put("looping_set_max", new int[]{50});               /* 2 */
-        m.put("looping_set_min", new int[]{49});               /* 1 */
-        m.put("fade_in", new int[]{67, 340});                  /* Shift+C */
-        m.put("fade_out", new int[]{86, 340});                 /* Shift+V */
-        m.put("redo", new int[]{82, 341});                     /* Ctrl+R */
-        m.put("delete", new int[]{88, 342});                   /* Alt+X */
-        m.put("confirm", new int[]{32, 341});                  /* Ctrl+Space */
-        m.put("keybinds", new int[]{298});                     /* F9 — Tab interferes with focus, F9 is rarely used */
-        m.put("keybind_editor", new int[]{298, 340});          /* Shift+F9 */
+        m.put("next", new int[]{SDLScancode.SDL_SCANCODE_E});                          /* E */
+        m.put("prev", new int[]{SDLScancode.SDL_SCANCODE_Q});                          /* Q */
+        m.put("jump_forward", new int[]{SDLScancode.SDL_SCANCODE_T});                  /* T */
+        m.put("jump_backward", new int[]{SDLScancode.SDL_SCANCODE_R});                 /* R */
+        m.put("next_clip", new int[]{SDLScancode.SDL_SCANCODE_E, SDLScancode.SDL_SCANCODE_LSHIFT});                /* Shift+E */
+        m.put("prev_clip", new int[]{SDLScancode.SDL_SCANCODE_Q, SDLScancode.SDL_SCANCODE_LSHIFT});                /* Shift+Q */
+        m.put("clip_select_after", new int[]{SDLScancode.SDL_SCANCODE_T, SDLScancode.SDL_SCANCODE_LSHIFT});        /* Shift+T */
+        m.put("clip_select_before", new int[]{SDLScancode.SDL_SCANCODE_R, SDLScancode.SDL_SCANCODE_LSHIFT});       /* Shift+R */
+        m.put("clip_duration", new int[]{SDLScancode.SDL_SCANCODE_G});                 /* G */
+        m.put("clip_enable", new int[]{SDLScancode.SDL_SCANCODE_B});                   /* B */
+        m.put("looping", new int[]{SDLScancode.SDL_SCANCODE_F, SDLScancode.SDL_SCANCODE_LSHIFT});                  /* Shift+F */
+        m.put("looping_set_max", new int[]{SDLScancode.SDL_SCANCODE_2});               /* 2 */
+        m.put("looping_set_min", new int[]{SDLScancode.SDL_SCANCODE_1});               /* 1 */
+        m.put("fade_in", new int[]{SDLScancode.SDL_SCANCODE_C, SDLScancode.SDL_SCANCODE_LSHIFT});                  /* Shift+C */
+        m.put("fade_out", new int[]{SDLScancode.SDL_SCANCODE_V, SDLScancode.SDL_SCANCODE_LSHIFT});                 /* Shift+V */
+        m.put("redo", new int[]{SDLScancode.SDL_SCANCODE_R, SDLScancode.SDL_SCANCODE_LCTRL});                     /* Ctrl+R */
+        /* Start Recording is Ctrl+R by default -- the same keys as redo here, so redo started a
+         * recording/render (audit item 10). Owner's choice 2026-10-13: Ctrl+Shift+R. */
+        m.put("start_recording", new int[]{SDLScancode.SDL_SCANCODE_R, SDLScancode.SDL_SCANCODE_LCTRL, SDLScancode.SDL_SCANCODE_LSHIFT}); /* Ctrl+Shift+R */
+        m.put("delete", new int[]{SDLScancode.SDL_SCANCODE_X, SDLScancode.SDL_SCANCODE_LALT});                   /* Alt+X */
+        m.put("confirm", new int[]{SDLScancode.SDL_SCANCODE_SPACE, SDLScancode.SDL_SCANCODE_LCTRL});                  /* Ctrl+Space */
+        m.put("keybinds", new int[]{SDLScancode.SDL_SCANCODE_F9});                     /* F9 — Tab interferes with focus, F9 is rarely used */
+        m.put("keybind_editor", new int[]{SDLScancode.SDL_SCANCODE_F9, SDLScancode.SDL_SCANCODE_LSHIFT});          /* Shift+F9 */
         return m;
     }
 
@@ -89,29 +93,29 @@ final class LinkeHandVorgaben
         /* --- Maus: null Handbewegung, vorher komplett ungenutzt --- */
         m.put("insert_frame", new int[]{MOUSE_4});              /* Mouse4 — haeufigste Aktion beim Animieren, lag auf I */
         m.put("toggle_control", new int[]{MOUSE_5});            /* Mouse5 — lag auf H */
-        m.put("toggle_onion_skin", new int[]{MOUSE_4, 340});    /* Shift+Mouse4 — lag auf O */
-        m.put("toggle_motion_path", new int[]{MOUSE_5, 340});   /* Shift+Mouse5 — lag auf M */
-        m.put("prev_replay", new int[]{MOUSE_4, 341});          /* Ctrl+Mouse4 — lag auf Bild-auf */
-        m.put("next_replay", new int[]{MOUSE_5, 341});          /* Ctrl+Mouse5 — lag auf Bild-ab */
+        m.put("toggle_onion_skin", new int[]{MOUSE_4, SDLScancode.SDL_SCANCODE_LSHIFT});    /* Shift+Mouse4 — lag auf O */
+        m.put("toggle_motion_path", new int[]{MOUSE_5, SDLScancode.SDL_SCANCODE_LSHIFT});   /* Shift+Mouse5 — lag auf M */
+        m.put("prev_replay", new int[]{MOUSE_4, SDLScancode.SDL_SCANCODE_LCTRL});          /* Ctrl+Mouse4 — lag auf Bild-auf */
+        m.put("next_replay", new int[]{MOUSE_5, SDLScancode.SDL_SCANCODE_LCTRL});          /* Ctrl+Mouse5 — lag auf Bild-ab */
 
         /* --- Flug: lag komplett auf den Pfeiltasten --- */
-        m.put("flight_pan_left", new int[]{65, 342});           /* Alt+A */
-        m.put("flight_pan_right", new int[]{68, 342});          /* Alt+D */
-        m.put("flight_tilt_up", new int[]{87, 342});            /* Alt+W */
-        m.put("flight_tilt_down", new int[]{83, 342});          /* Alt+S */
+        m.put("flight_pan_left", new int[]{SDLScancode.SDL_SCANCODE_A, SDLScancode.SDL_SCANCODE_LALT});           /* Alt+A */
+        m.put("flight_pan_right", new int[]{SDLScancode.SDL_SCANCODE_D, SDLScancode.SDL_SCANCODE_LALT});          /* Alt+D */
+        m.put("flight_tilt_up", new int[]{SDLScancode.SDL_SCANCODE_W, SDLScancode.SDL_SCANCODE_LALT});            /* Alt+W */
+        m.put("flight_tilt_down", new int[]{SDLScancode.SDL_SCANCODE_S, SDLScancode.SDL_SCANCODE_LALT});          /* Alt+S */
 
         /* Weicht fuer flight_pan_left auf Alt+A. Die WASD-Symmetrie im Flug ist mehr wert als
          * die kurze Belegung eines einzelnen Kamera-Befehls. */
-        m.put("add_at_tick", new int[]{65, 342, 340, 341});     /* Alt+Shift+Strg+A */
+        m.put("add_at_tick", new int[]{SDLScancode.SDL_SCANCODE_A, SDLScancode.SDL_SCANCODE_LALT, SDLScancode.SDL_SCANCODE_LSHIFT, SDLScancode.SDL_SCANCODE_LCTRL});     /* Alt+Shift+Strg+A */
 
         /* --- Keyframe-Arbeit: lag auf [ ] und Pos1 --- */
-        m.put("select_prev", new int[]{90, 342});               /* Alt+Z */
-        m.put("select_next", new int[]{84, 342});               /* Alt+T */
-        m.put("maximize", new int[]{71, 342});                  /* Alt+G */
+        m.put("select_prev", new int[]{SDLScancode.SDL_SCANCODE_Z, SDLScancode.SDL_SCANCODE_LALT});               /* Alt+Z */
+        m.put("select_next", new int[]{SDLScancode.SDL_SCANCODE_T, SDLScancode.SDL_SCANCODE_LALT});               /* Alt+T */
+        m.put("maximize", new int[]{SDLScancode.SDL_SCANCODE_G, SDLScancode.SDL_SCANCODE_LALT});                  /* Alt+G */
 
         /* --- Clip-Ebene: lag auf Alt+Pfeil --- */
-        m.put("clip_layer_up", new int[]{86, 342});             /* Alt+V */
-        m.put("clip_layer_down", new int[]{70, 342});           /* Alt+F */
+        m.put("clip_layer_up", new int[]{SDLScancode.SDL_SCANCODE_V, SDLScancode.SDL_SCANCODE_LALT});             /* Alt+V */
+        m.put("clip_layer_down", new int[]{SDLScancode.SDL_SCANCODE_F, SDLScancode.SDL_SCANCODE_LALT});           /* Alt+F */
 
         return m;
     }

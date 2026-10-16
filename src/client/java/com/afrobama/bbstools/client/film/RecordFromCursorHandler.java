@@ -77,7 +77,7 @@ public final class RecordFromCursorHandler
         for (Integer k : combo.keys)
         {
             if (k == null) return false;
-            if (!InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), k)) return false;
+            if (!InputConstants.isKeyDown(k)) return false;
         }
         return true;
     }

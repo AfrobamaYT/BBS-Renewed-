@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -10,7 +11,6 @@ import mchorse.bbs_mod.ui.utils.UIConstants;
 import mchorse.bbs_mod.ui.utils.keys.KeyAction;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.utils.colors.Colors;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 
@@ -141,7 +141,7 @@ public class UIKeybind extends UIElement
     {
         if (this.reading)
         {
-            if (!this.escape && context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+            if (!this.escape && context.isPressed(InputConstants.KEY_ESCAPE))
             {
                 this.combo.keys.clear();
                 this.finish();

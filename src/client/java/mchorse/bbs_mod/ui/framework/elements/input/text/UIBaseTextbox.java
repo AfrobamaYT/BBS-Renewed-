@@ -1,11 +1,11 @@
 package mchorse.bbs_mod.ui.framework.elements.input.text;
 
+import org.lwjgl.sdl.SDLMouse;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.IFocusedUIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.text.utils.Textbox;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
-import org.lwjgl.glfw.GLFW;
 
 public abstract class UIBaseTextbox extends UIElement implements IFocusedUIElement
 {
@@ -74,9 +74,9 @@ public abstract class UIBaseTextbox extends UIElement implements IFocusedUIEleme
 
     protected void requestTextCursor(UIContext context)
     {
-        if (this.isEnabled() && (this.isFocused() || this.area.isInside(context)))
+        if (this.isEnabled() && this.area.isInside(context))
         {
-            context.requestCursor(GLFW.GLFW_IBEAM_CURSOR);
+            context.requestCursor(SDLMouse.SDL_SYSTEM_CURSOR_TEXT);
         }
     }
 }

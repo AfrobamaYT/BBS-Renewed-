@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformStraehne;
@@ -81,6 +82,17 @@ public class UITransformHandler extends UIElement
     }
 
     /**
+     * A running edit whose panel is hidden takes Enter, Escape and typed numbers (R X 90) as the
+     * visible panel does. From FilmTasten, ahead of the tree: this overlay handler alone came too
+     * late -- Escape went to the panel tree, digits and Enter to the film's shortcuts, and the
+     * edit could not be ended by key at all (measured with the Film settings tab open).
+     */
+    public static boolean verborgenNehmen(UIPropTransform transform, UIContext context)
+    {
+        return transform != null && transform.isEditing() && !aufSchirm(transform) && transform.subKeyPressed(context);
+    }
+
+    /**
      * ⛔ ENTER/ESC auch OHNE sichtbares Panel (Umzug 2026-08-24): die Bearbeitung soll im
      * Kamera-Blick laufen, ohne den alten Pose-Editor aufzuschalten. Dessen subKeyPressed
      * sieht verborgen keine Taste — der Handler haengt im Overlay und sieht sie immer.
@@ -91,13 +103,13 @@ public class UITransformHandler extends UIElement
     {
         if (this.transform.isEditing() && !aufSchirm(this.transform))
         {
-            if (context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER))
+            if (context.isPressed(InputConstants.KEY_RETURN))
             {
                 this.transform.acceptChanges();
 
                 return true;
             }
-            else if (context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE))
+            else if (context.isPressed(InputConstants.KEY_ESCAPE))
             {
                 this.transform.rejectChanges();
 
@@ -207,6 +219,20 @@ public class UITransformHandler extends UIElement
             {
                 TransformStraehne.zeichnen(context, zug != null ? zug : this.transform.drag, !helpline);
             }
+        }
+
+        /* Typed numbers: the panel draws them at the cursor in its own render, which a hidden panel
+         * never runs -- the input went unseen (Blender shows it in the header). */
+        if (editing && !aufSchirm(this.transform) && this.transform.numeric.isActive())
+        {
+            mchorse.bbs_mod.ui.framework.elements.input.drag.TransformOp op = this.transform.getOp();
+            boolean drehen = op == mchorse.bbs_mod.ui.framework.elements.input.drag.TransformOp.ROTATE;
+            String achse = this.transform.getAxis() == null ? "" : " " + this.transform.getAxis().name()
+                + (this.transform.getAxis2() == null ? "" : this.transform.getAxis2().name());
+            String text = (drehen ? "Rotate" : op == mchorse.bbs_mod.ui.framework.elements.input.drag.TransformOp.SCALE ? "Scale" : "Move")
+                + achse + "  " + this.transform.numeric.display() + (drehen ? "°" : "");
+
+            context.batcher.textCard(text, context.mouseX + 12, context.mouseY + 12, mchorse.bbs_mod.utils.colors.Colors.WHITE, mchorse.bbs_mod.utils.colors.Colors.A50);
         }
     }
 }

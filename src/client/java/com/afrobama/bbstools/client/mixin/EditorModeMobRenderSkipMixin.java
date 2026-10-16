@@ -44,7 +44,7 @@ public abstract class EditorModeMobRenderSkipMixin
 {
     @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
     private void bbstools$skipMobRenderInEditorMode(Entity entity, Frustum frustum,
-                                                     double x, double y, double z,
+                                                     double x, double y, double z, float partialTick,
                                                      CallbackInfoReturnable<Boolean> cir)
     {
         if (MixinBruecke.rufeUndAbbrechen("EditorModeMobRenderSkipLogik", "ueberspringen", entity))

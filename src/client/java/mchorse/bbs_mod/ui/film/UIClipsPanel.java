@@ -53,6 +53,35 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
          * (liegt also oben) und bekommt den Klick zuerst. Sie gibt jeden Klick weiter, der
          * keinen Marker trifft. Siehe UIMarkerLane. */
         this.clips.add(new UIMarkerLane(this.clips, this).full(this.clips));
+
+        /* Zeitfenster der Regiehilfe als Band unter dem Lineal — nur in der Kamera-Zeitleiste. */
+        if (factory == mchorse.bbs_mod.BBSMod.getFactoryCameraClips())
+        {
+            this.clips.add(new mchorse.bbs_mod.ui.film.regie.UIRegieSpur(this.clips, this, panel).full(this.clips));
+        }
+    }
+
+    /**
+     * Sichtbaren Zeitbereich ueber jedes Resize halten — dasselbe tut UIKeyframes.resize fuer
+     * Dope Sheet und Graph.
+     *
+     * <p>⛔ WOFUER (Nutzerbefund 2026-10-13): UI-Scale 2 -> 1 bei offenem Film, und die
+     * Kamera-Zeitleiste zeigte 0..1120 statt 0..559 Ticks. Der Zoom steht in UI-Einheiten je
+     * Tick; bei halbem Scale passt doppelt so viel Zeit hinein. Blender haelt beim Aendern
+     * der Resolution Scale den sichtbaren Bereich.</p>
+     */
+    @Override
+    public void resize()
+    {
+        double min = this.clips.scale.getMinValue();
+        double max = this.clips.scale.getMaxValue();
+
+        super.resize();
+
+        if (max > min)
+        {
+            this.clips.scale.view(min, max);
+        }
     }
 
     public UIClipsPanel target(UIElement target)
@@ -221,12 +250,6 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
             if (this.panel.clip == clip)
             {
                 this.panel.fillData();
-                this.showDockPanel();
-
-                if (this.target != null && this.target.getParent() instanceof UIPropertiesNano props)
-                {
-                    props.kameraKategorie();
-                }
 
                 return;
             }
@@ -278,7 +301,6 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
             }
             this.panel.fillData();
             this.panel.setVisible(this.propertiesVisible);
-            this.showDockPanel();
             this.panel.restoreScroll();
 
             /* Kamera-Kategorie nach vorn, sonst bleibt der frische Clip unsichtbar. */
@@ -301,18 +323,6 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
         this.resize();
 
         this.filmPanel.pickClip(clip, this);
-    }
-
-    /** Camera and action editors share the dock; only the newly selected panel is visible. */
-    private void showDockPanel()
-    {
-        if (this.target != null && this.target.getParent() instanceof UIPropertiesNano)
-        {
-            for (UIClip child : this.target.getChildren(UIClip.class))
-            {
-                child.setVisible(child == this.panel);
-            }
-        }
     }
 
     /** Re-applies edit panel position (e.g. after layout lock toggle). */
@@ -347,6 +357,18 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
 
     @Override
     public void setCursor(int tick)
+    {
+        this.filmPanel.setCursor(tick);
+    }
+
+    @Override
+    public float getCursor(float transition)
+    {
+        return this.filmPanel.getCursor(transition);
+    }
+
+    @Override
+    public void setCursor(float tick)
     {
         this.filmPanel.setCursor(tick);
     }

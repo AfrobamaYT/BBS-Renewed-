@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.utils.vorschau;
 
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.renderers.FormRenderType;
@@ -116,7 +116,7 @@ public class VorschauModellRenderer extends PictureInPictureRenderer<VorschauMod
          *
          * Farbe bleibt unangetastet (Optional.empty()) -- die kommt von Vanillas
          * Bild-im-Bild-Durchgang. */
-        try (com.mojang.blaze3d.systems.RenderPass leeren = com.mojang.blaze3d.systems.RenderSystem
+        try (com.mojang.renderpearl.api.commands.RenderPass leeren = com.mojang.blaze3d.systems.RenderSystem
             .getDevice().createCommandEncoder().createRenderPass(
                 () -> "bbs-vorschau-tiefe-leeren", farbe, java.util.Optional.empty(),
                 tiefe, java.util.OptionalDouble.of(0.0)))
@@ -135,8 +135,10 @@ public class VorschauModellRenderer extends PictureInPictureRenderer<VorschauMod
                 .camera(zustand.kamera())
                 .modelRenderer();
 
-            mchorse.bbs_mod.forms.FormSammler.mitSammler(sammler,
-                () -> FormUtilsClient.render(zustand.form(), kontext));
+            /* With the collector this picture in picture is handed: mob, block and item forms
+             * submit their orders there and drew nothing in the form editor without it (same
+             * cause as the model block, task 122). */
+            mchorse.bbs_mod.forms.FormSammler.mitSammler(sammler, () -> FormUtilsClient.render(zustand.form(), kontext));
         }
         finally
         {

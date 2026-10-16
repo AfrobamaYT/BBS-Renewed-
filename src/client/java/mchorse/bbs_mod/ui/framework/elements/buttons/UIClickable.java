@@ -1,9 +1,9 @@
 package mchorse.bbs_mod.ui.framework.elements.buttons;
 
+import org.lwjgl.sdl.SDLMouse;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.utils.UIUtils;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 
@@ -77,7 +77,7 @@ public abstract class UIClickable <T> extends UIElement
 
         if (this.isEnabled() && (this.hover || this.pressed))
         {
-            context.requestCursor(GLFW.GLFW_HAND_CURSOR);
+            context.requestCursor(SDLMouse.SDL_SYSTEM_CURSOR_POINTER);
         }
 
         this.renderSkin(context);

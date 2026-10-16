@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.utils.vorschau;
 
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.graphics.Messpunkt;
 import mchorse.bbs_mod.graphics.Zeichenziel;
@@ -302,7 +302,7 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
 
             /* MESSUNG (2026-08-04): liegt ueberhaupt Inhalt in der Sammeltextur? Die Probe
              * liest nur, wenn sie angefordert wurde -- sonst kostet sie einen Vergleich. */
-            if (farbe instanceof com.mojang.blaze3d.opengl.GlTextureView ansicht)
+            if (farbe instanceof com.mojang.renderpearl.backend.opengl.GlTextureView ansicht)
             {
                 var tex = ansicht.texture();
 

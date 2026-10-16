@@ -105,10 +105,9 @@ public class UIReplaysEditorUtils
 
     public static <T> Keyframe<T> ensureKeyframe(UIKeyframeSheet sheet, float tick)
     {
-        if (sheet == null)
-        {
-            return null;
-        }
+        if (sheet == null) return null;
+
+        tick = sheet.channel.getSourceTick(tick); /* inside a keyframe loop: the source pass's key */
 
         for (Keyframe<T> keyframe : (List<Keyframe<T>>) sheet.channel.getKeyframes())
         {
@@ -141,7 +140,7 @@ public class UIReplaysEditorUtils
             value = (T) sheet.channel.getFactory().createEmpty();
         }
 
-        int index = sheet.channel.insert(tick, value);
+        int index = mchorse.bbs_mod.ui.film.GestenKeys.einfuegen(sheet, tick, value); /* a cancelled gesture takes it back */
         Keyframe<T> keyframe = (Keyframe<T>) sheet.channel.get(index);
 
         if (template != null && template != keyframe)
@@ -173,7 +172,7 @@ public class UIReplaysEditorUtils
         }
     }
 
-    public static <T> void forEachRecordedKeyframe(UIKeyframes editor, Keyframe<?> keyframe, int tick, Consumer<Keyframe<T>> consumer)
+    public static <T> void forEachRecordedKeyframe(UIKeyframes editor, Keyframe<?> keyframe, float tick, Consumer<Keyframe<T>> consumer)
     {
         if (editor == null || keyframe == null)
         {
@@ -1183,10 +1182,10 @@ public class UIReplaysEditorUtils
         boolean select = context.mouseButton == 0 || (context.mouseButton == 2 && Window.isCtrlPressed());
         boolean insert = context.mouseButton == 1;
 
-        if (!select && !insert)
-        {
-            return false;
-        }
+        if (!select && !insert) return false;
+
+        /* A bone picked in the viewport: the timeline leaves the camera clips for the dope sheet (ZeitleisteZweig.posieren) */
+        if (select && pair.b != null && !pair.b.isEmpty()) mchorse.bbs_mod.ui.film.ZeitleisteZweig.posieren(mchorse.bbs_mod.BBSModClient.getDashboard().getPanels().getPanel(mchorse.bbs_mod.ui.film.UIFilmPanel.class));
 
         /* Shift keeps the hierarchy menu; Ctrl now falls straight through to the pick,
          * where the modifier turns the selection additive (multi-bone). */

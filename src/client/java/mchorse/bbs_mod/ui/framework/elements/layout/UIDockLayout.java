@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.layout;
 
+import org.lwjgl.sdl.SDLMouse;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.settings.values.ui.EditorLayoutNode;
@@ -16,7 +17,6 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 
 import org.joml.Vector2i;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -771,16 +771,16 @@ public class UIDockLayout extends UIElement
     {
         if (index < 0 || index >= this.splitterHandleInfos.size())
         {
-            return GLFW.GLFW_ARROW_CURSOR;
+            return SDLMouse.SDL_SYSTEM_CURSOR_DEFAULT;
         }
 
         EditorLayoutNode.SplitterHandleInfo info = this.splitterHandleInfos.get(index);
 
         return this.isInsideSplitterIntersection(index, mouseX, mouseY)
-            ? GLFW.GLFW_CROSSHAIR_CURSOR
+            ? SDLMouse.SDL_SYSTEM_CURSOR_CROSSHAIR
             : info.horizontal
-            ? GLFW.GLFW_VRESIZE_CURSOR
-            : GLFW.GLFW_HRESIZE_CURSOR;
+            ? SDLMouse.SDL_SYSTEM_CURSOR_NS_RESIZE
+            : SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE;
     }
 
     private boolean isInsideSplitterIntersection(int index, int mouseX, int mouseY)
@@ -1117,7 +1117,7 @@ public class UIDockLayout extends UIElement
             this.applyPanelDropResult(this.draggingPanelId, this.dropTargetPanelId, this.dropTargetZone);
             this.clearPanelDragState();
         });
-        handle.hoverOnly().cursors(GLFW.GLFW_HAND_CURSOR, GLFW.GLFW_HAND_CURSOR).rendering((context) -> this.renderPanelDragHandle(context, handle));
+        handle.hoverOnly().cursors(SDLMouse.SDL_SYSTEM_CURSOR_POINTER, SDLMouse.SDL_SYSTEM_CURSOR_POINTER).rendering((context) -> this.renderPanelDragHandle(context, handle));
 
         return handle;
     }
@@ -1361,7 +1361,7 @@ public class UIDockLayout extends UIElement
 
             if (this.area.isInside(context))
             {
-                context.requestCursor(GLFW.GLFW_HAND_CURSOR);
+                context.requestCursor(SDLMouse.SDL_SYSTEM_CURSOR_POINTER);
             }
 
             int tabSize = this.getTabSize();

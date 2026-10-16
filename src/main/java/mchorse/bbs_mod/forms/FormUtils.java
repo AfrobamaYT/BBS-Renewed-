@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.forms;
 
+import com.mojang.logging.LogUtils;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
@@ -26,6 +27,8 @@ import java.util.List;
 
 public class FormUtils
 {
+    private static final org.slf4j.Logger LOGGER = LogUtils.getLogger();
+
     public static final String PATH_SEPARATOR = "/";
 
     private static final List<String> path = new ArrayList<>();
@@ -87,6 +90,7 @@ public class FormUtils
         {
             tracks.add(mobForm.pose);
             tracks.add(mobForm.poseOverlay);
+            tracks.addAll(mobForm.additionalOverlays);
         }
         else
         {
@@ -140,12 +144,23 @@ public class FormUtils
 
     public static Form fromData(MapType data)
     {
+        if (data == null)
+        {
+            return null;
+        }
+
         try
         {
-            return data == null ? null : BBSMod.getForms().fromData(data);
+            return BBSMod.getForms().fromData(data);
         }
         catch (Exception e)
-        {}
+        {
+            /* A form id this build has no class for comes back as a stand-in now (see
+             * UnknownForm), so what reaches here is data that is genuinely broken. That still
+             * ends in a lost form — but it no longer ends in silence, which is how a
+             * switched-off addon used to eat a scene. */
+            LOGGER.error("Failed to read a form out of {}!", data, e);
+        }
 
         return null;
     }
@@ -308,6 +323,9 @@ public class FormUtils
         return properties;
     }
 
+    /** Client hook: whether a visible property is a track of this form; CEM states are only for models with a CEM program (BBS FS 807ee6105) */
+    public static java.util.function.BiPredicate<Form, BaseValue> spurFilter = (form, value) -> true;
+
     public static void collectPropertyPaths(Form form, List<String> properties, String prefix)
     {
         if (form == null)
@@ -317,7 +335,7 @@ public class FormUtils
 
         for (BaseValue property : form.getAll())
         {
-            if (property.isVisible())
+            if (property.isVisible() && spurFilter.test(form, property))
             {
                 properties.add(StringUtils.combinePaths(prefix, property.getId()));
             }

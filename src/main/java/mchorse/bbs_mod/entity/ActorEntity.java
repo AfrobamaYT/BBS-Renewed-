@@ -116,8 +116,6 @@ public class ActorEntity extends LivingEntity implements IEntityFormProvider, IP
     {
         super.tick();
 
-        this.updateSwingTime();
-
         if (this.form != null)
         {
             this.form.update(this.entity);

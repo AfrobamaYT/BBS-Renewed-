@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.ui.film;
 
 import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.film.markers.TimerCueActions;
+import mchorse.bbs_mod.settings.EditorZustaende;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
@@ -14,16 +14,14 @@ import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
 import mchorse.bbs_mod.utils.pose.Transform;
 
-/** Edit-triggered keying, separate from continuous replay recording. Defaults off. */
+/** Edit-triggered keying, separate from continuous replay recording. Defaults off; the switch survives a restart (EditorZustaende). */
 public final class FilmAutoKey
 {
-    private static boolean enabled;
-
     private FilmAutoKey() {}
 
     public static boolean isEnabled()
     {
-        return enabled;
+        return EditorZustaende.autoKey.get();
     }
 
     private static UIFilmPanel panel()
@@ -34,7 +32,7 @@ public final class FilmAutoKey
     public static boolean isEnabled(UIKeyframes view)
     {
         UIFilmPanel panel = panel();
-        return enabled && panel != null && panel.replayEditor.keyframeEditor != null
+        return (EditorZustaende.autoKey.get() || KnochenklickHalt.gilt(panel)) && panel != null && panel.replayEditor.keyframeEditor != null
             && panel.replayEditor.keyframeEditor.view == view;
     }
 
@@ -58,23 +56,18 @@ public final class FilmAutoKey
     public static boolean isEditing(UIElement element)
     {
         UIFilmPanel panel = owner(element);
-
-        return enabled && panel != null && !staticHelper(panel);
-    }
-
-    private static boolean staticHelper(UIFilmPanel panel)
-    {
-        return TimerCueActions.isStaticEndpoint(panel.getData(), panel.replayEditor.getReplay());
+        return panel != null && (EditorZustaende.autoKey.get() || KnochenklickHalt.gilt(panel));
     }
 
     public static int pickTick(UIKeyframes view, int closest, int current)
     {
-        return isEnabled(view) ? current : closest;
+        if (!EditorZustaende.autoKey.get()) KnochenklickHalt.setzen(current, closest); /* C3: a bone click never moves the playhead */
+        return current;
     }
 
     public static void toggle()
     {
-        enabled = !enabled;
+        EditorZustaende.autoKey.set(!EditorZustaende.autoKey.get());
         UIFilmPanel panel = panel();
         if (panel != null && panel.replayEditor.keyframeEditor != null && panel.replayEditor.keyframeEditor.editor != null)
         {
@@ -92,7 +85,7 @@ public final class FilmAutoKey
             return fallback;
         }
         UIFilmPanel panel = owner(element);
-        if (panel == null || panel.getController().isTransformRecording() || staticHelper(panel))
+        if (panel == null || panel.getController().isTransformRecording())
         {
             return fallback;
         }
@@ -114,9 +107,9 @@ public final class FilmAutoKey
             int prefix = sheet.id.lastIndexOf('/') + 1;
             bone = selected.a.substring(Math.min(prefix, selected.a.length()));
         }
-        if (enabled)
+        if (EditorZustaende.autoKey.get() || KnochenklickHalt.gilt(panel))
         {
-            int tick = panel.getCursor();
+            float tick = panel.getCursor(0F);
             value = null;
             for (Object entry : sheet.channel.getKeyframes())
             {

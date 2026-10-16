@@ -60,8 +60,8 @@ public final class ClipViewportFramebuffers
         {
             try
             {
-                fb = new TextureTarget("bbstools-clip-viewport", DEFAULT_W, DEFAULT_H, true,
-                    com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
+                fb = new TextureTarget("bbstools-clip-viewport", DEFAULT_W, DEFAULT_H,
+                    com.mojang.renderpearl.api.GpuFormat.RGBA8_UNORM, com.mojang.renderpearl.api.GpuFormat.D32_FLOAT);
                 /* 26.2: setClearColor ist entfallen -- die Loeschfarbe wird beim Loeschen
                  * mitgegeben, nicht am Ziel geparkt (CameraPreviewRenderHook tut das). */
 

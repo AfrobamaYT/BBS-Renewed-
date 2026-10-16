@@ -2,7 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.utils.vorschau;
 
 import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.forms.FormSammler;
 import mchorse.bbs_mod.graphics.Messpunkt;
@@ -10,6 +10,7 @@ import mchorse.bbs_mod.graphics.Projektion;
 import mchorse.bbs_mod.graphics.Sammelpass;
 import mchorse.bbs_mod.graphics.Zeichenziel;
 import mchorse.bbs_mod.ui.utils.Gizmo;
+import mchorse.bbs_mod.ui.utils.GizmoGimbal;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import org.joml.Matrix4fStack;
@@ -43,15 +44,15 @@ import java.lang.reflect.Field;
  * {@link VorschauModellRenderer} und {@link MiniaturSammelRenderer} -- beim naechsten ohnehin
  * faelligen Boot durch ein Zugriffs-Mixin ersetzen.
  */
-public class GizmoRenderer extends PictureInPictureRenderer<GizmoZustand>
+public class GizmoRenderer extends PictureInPictureRenderer<GizmoBildZustand>
 {
     private static Field farbFeld;
     private static Field tiefenFeld;
 
     @Override
-    public Class<GizmoZustand> getRenderStateClass()
+    public Class<GizmoBildZustand> getRenderStateClass()
     {
-        return GizmoZustand.class;
+        return GizmoBildZustand.class;
     }
 
     @Override
@@ -61,7 +62,7 @@ public class GizmoRenderer extends PictureInPictureRenderer<GizmoZustand>
     }
 
     @Override
-    protected void renderToTexture(GizmoZustand zustand, PoseStack stapel, SubmitNodeCollector sammler)
+    protected void renderToTexture(GizmoBildZustand zustand, PoseStack stapel, SubmitNodeCollector sammler)
     {
         GpuTextureView farbe = feld(true);
         GpuTextureView tiefe = feld(false);
@@ -87,9 +88,11 @@ public class GizmoRenderer extends PictureInPictureRenderer<GizmoZustand>
 
         Projektion.setzen(zustand.projektion(), ProjectionType.ORTHOGRAPHIC);
         Zeichenziel.setzen(farbe, tiefe);
+        GizmoGimbal.Lage vorher = GizmoGimbal.sichern();
 
         try
         {
+            GizmoGimbal.anwenden(zustand.ausrichtung());
             /* ⛔ EIGENER SAMMLER. In dieser Phase ist der Sammler des UI-Durchlaufs laengst
              * geschlossen; greift irgendetwas im Zeichenweg danach, wirft
              * FormSammler.pflicht() "Kein Sammler angemeldet" -- in JEDEM Bild.
@@ -118,6 +121,7 @@ public class GizmoRenderer extends PictureInPictureRenderer<GizmoZustand>
         }
         finally
         {
+            GizmoGimbal.anwenden(vorher);
             /* ⛔ IMMER freigeben. Bliebe das Ziel stehen, zeichnete alles Folgende -- Welt
              * eingeschlossen -- in diese Gizmo-Textur (die Falle von 06fbc62e0). */
             Zeichenziel.freigeben();

@@ -91,7 +91,7 @@ public final class RecordFromKeyframesHandler
         for (Integer k : combo.keys)
         {
             if (k == null) return false;
-            if (!InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), k)) return false;
+            if (!InputConstants.isKeyDown(k)) return false;
         }
         return true;
     }
@@ -110,7 +110,7 @@ public final class RecordFromKeyframesHandler
 
         for (int i = 1; i < combo.keys.size(); i++)
         {
-            if (!InputConstants.isKeyDown(mc.getWindow(), combo.keys.get(i)))
+            if (!mchorse.bbs_mod.graphics.window.Window.isKeyPressed(combo.keys.get(i)))
             {
                 return false;
             }

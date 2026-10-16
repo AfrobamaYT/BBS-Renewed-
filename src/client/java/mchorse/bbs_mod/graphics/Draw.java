@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.graphics;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -175,8 +175,8 @@ public class Draw
         stack.pushPose();
 
         stack.translate(x1, y1, z1);
-        stack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(angle.yaw));
-        stack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(angle.pitch));
+        stack.rotate(com.mojang.math.Axis.YP.rotationDegrees(angle.yaw));
+        stack.rotate(com.mojang.math.Axis.XP.rotationDegrees(angle.pitch));
 
         fillBox(builder, stack, -thickness / 2, -thickness / 2, 0, thickness / 2, thickness / 2, (float) distance, r, g, b, a, vierecke);
 
@@ -283,8 +283,8 @@ public class Draw
 
         stack.pushPose();
 
-        if (axis == Axis.X) stack.mulPose(com.mojang.math.Axis.ZP.rotation(MathUtils.PI / 2F));
-        if (axis == Axis.Z) stack.mulPose(com.mojang.math.Axis.XP.rotation(MathUtils.PI / 2F));
+        if (axis == Axis.X) stack.rotate(com.mojang.math.Axis.ZP.rotation(MathUtils.PI / 2F));
+        if (axis == Axis.Z) stack.rotate(com.mojang.math.Axis.XP.rotation(MathUtils.PI / 2F));
 
         float tubeR = thickness * 0.5F;
         Matrix4f mat = stack.last().pose();

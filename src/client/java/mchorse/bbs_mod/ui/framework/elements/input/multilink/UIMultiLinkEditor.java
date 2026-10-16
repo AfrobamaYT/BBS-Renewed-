@@ -19,7 +19,7 @@ import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.resources.FilteredLink;
 import net.minecraft.client.renderer.GameRenderer;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 
 public class UIMultiLinkEditor extends UICanvasEditor
 {

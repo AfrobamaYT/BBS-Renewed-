@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
 import com.afrobama.bbstools.client.blender.MixinBruecke;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import net.minecraft.client.gui.render.GuiItemAtlas;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import org.spongepowered.asm.mixin.Final;

@@ -17,6 +17,17 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 
+/* Help menu (2026-10-14) */
+import com.mojang.blaze3d.Blaze3D;
+import java.net.URI;
+import java.util.Locale;
+import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.settings.EditorZustaende;
+import mchorse.bbs_mod.ui.Keys;
+import mchorse.bbs_mod.ui.hilfe.Guides;
+import mchorse.bbs_mod.ui.hilfe.HilfeErststart;
+import mchorse.bbs_mod.ui.utils.Tutorials;
+
 /**
  * Topbar im neuen Designsystem: Wortmarke, Menuezeile, die acht Arbeitsbereiche als BENANNTE
  * Reiter, und rechts der geladene Film als Chip (Blender-Muster: Workspace-Tabs in der Topbar).
@@ -52,6 +63,7 @@ public class UITopbarNano extends UIElement
 	private final List<String> namen = new ArrayList<>();
 	private int letzterAktiv = -2;
 	private String letzterFilm = "";
+	private String letzteZusatzReiter = "";
 
 	public UITopbarNano(UIDashboardPanels panels)
 	{
@@ -88,10 +100,13 @@ public class UITopbarNano extends UIElement
 		int aktiv = this.panels.panels.indexOf(this.panels.panel);
 		String film = this.filmName();
 
-		if (aktiv != this.letzterAktiv || !film.equals(this.letzterFilm))
+		String zusatz = TopbarReiter.state();
+
+		if (aktiv != this.letzterAktiv || !film.equals(this.letzterFilm) || !zusatz.equals(this.letzteZusatzReiter))
 		{
 			this.letzterAktiv = aktiv;
 			this.letzterFilm = film;
+			this.letzteZusatzReiter = zusatz;
 			this.flaeche.neuMalen();
 		}
 
@@ -107,19 +122,37 @@ public class UITopbarNano extends UIElement
 		/* Rechte Seite ZUERST vermessen, damit die Reiter nicht darunter laufen. */
 		float rechtsGrenze = this.zeichneRechts(vg, b, h, mausX, mausY, f, k);
 
-		/* Wortmarke links — schlicht, keine Bildmarke */
+		/* Add-on tabs (TopbarReiter) always show their name: they sit right of the panel tabs,
+		 * so their room is taken before the panel tabs decide which of them lose the text. */
+		for (TopbarReiter reiter : TopbarReiter.ALL)
+		{
+			if (reiter.visible().getAsBoolean())
+			{
+				rechtsGrenze -= NanoDesign.breite(reiter.name().get(), 11.5F * k) + 23F * k;
+			}
+		}
+
+		/* Logo links (owner 2026-10-13: the BBS Renewed logo instead of the word); the word stays
+		 * as the fallback when the image cannot load. */
 		float basis = h / 2F + 3.8F * k;
+		float logo = h - 6F * k;
+		float x;
 
-		NanoStifte.text(vg, NanoDesign.BOLD, 11.5F * k, 9F * k, basis, NanoDesign.ORANGE, "BBS", null);
-
-		float x = 9F * k + NanoDesign.breite("BBS", 11.5F * k) + 9F * k;
+		if (NanoBilder.symbol(vg, "bbs_logo", 8F * k + logo / 2F, h / 2F, logo, 1F))
+		{
+			x = 8F * k + logo + 9F * k;
+		}
+		else
+		{
+			NanoStifte.text(vg, NanoDesign.BOLD, 11.5F * k, 9F * k, basis, NanoDesign.ORANGE, "BBS", null);
+			x = 9F * k + NanoDesign.breite("BBS", 11.5F * k) + 9F * k;
+		}
 
 		/* Menuezeile. Lokal, nicht als statisches Feld — sonst steht sie nach einem Hotswap
 		 * auf null (statische Initialisierer laufen beim Redefine nicht). */
-		/* ⛔ „Help" ist RAUS. Es gibt in diesem Baum keine Dokumentation, keinen About-Dialog
-		 * und keinen Wiki-Link — das Menue haette nur leer aufgehen koennen. Ein Eintrag ohne
-		 * Ziel ist dieselbe Attrappe, die diese fuenf Menues vorher waren. */
-		for (String menue : new String[] {"File", "Edit", "Render", "Window"})
+		/* „Help" ist wieder da (2026-10-14), jetzt mit Zielen: McHorses Guides im Spiel, die
+		 * Kurzvideos, die Tastenliste. Vorher war es raus, weil es nur leer aufgegangen waere. */
+		for (String menue : new String[] {"File", "Edit", "Render", "Window", "Help"})
 		{
 			float mb = NanoDesign.breite(menue, 10.5F * k) + 13F * k;
 			boolean ueber = f.istHover("tbm" + menue);
@@ -135,6 +168,12 @@ public class UITopbarNano extends UIElement
 			final String name = menue;
 
 			f.zone("tbm" + menue, x, 0, mb, h, () -> this.oeffneMenue(name));
+
+			/* After Later on the first-run hint: an orange dot on Help until the menu is opened */
+			if (menue.equals("Help") && mchorse.bbs_mod.ui.hilfe.HilfeErststart.punkt())
+			{
+				NanoStifte.kreis(vg, x + mb - 4F * k, 9F * k, 3F * k, NanoDesign.ORANGE);
+			}
 
 			x += mb;
 		}
@@ -219,7 +258,7 @@ public class UITopbarNano extends UIElement
 			boolean ohneText = ohneTextJe[i];
 			float rb = this.reiterBreite(vg, voll, ohneText, k);
 
-			boolean an = i == aktiv;
+			boolean an = i == aktiv && !TopbarReiter.anyActive();
 			boolean ueber = mausX >= x && mausX < x + rb && mausY >= h - reiterH && mausY < h;
 
 			if (an)
@@ -276,9 +315,49 @@ public class UITopbarNano extends UIElement
 			{
 				if (idx < this.panels.panels.size())
 				{
+					TopbarReiter.ALL.forEach((reiter) ->
+					{
+						if (reiter.active().getAsBoolean())
+						{
+							reiter.leave().run();
+						}
+					});
 					this.panels.setPanel(this.panels.panels.get(idx));
 					this.flaeche.neuMalen();
 				}
+			});
+
+			x += rb + 1F * k;
+		}
+
+		int zusatzNr = 0;
+
+		for (TopbarReiter reiter : TopbarReiter.ALL)
+		{
+			if (!reiter.visible().getAsBoolean())
+			{
+				continue;
+			}
+
+			String name = reiter.name().get();
+			float rb = NanoDesign.breite(name, 11.5F * k) + 22F * k;
+			boolean an = reiter.active().getAsBoolean();
+
+			if (an)
+			{
+				NanoStifte.flaeche(vg, x, h - reiterH, rb, reiterH, 4F * k, NanoDesign.KOPF);
+				NanoStifte.flaeche(vg, x, h - 5F * k, rb, 5F * k, 0F, NanoDesign.KOPF);
+			}
+			else if (mausX >= x && mausX < x + rb && mausY >= h - reiterH && mausY < h)
+			{
+				NanoStifte.flaeche(vg, x, h - reiterH + 1F * k, rb, reiterH - 2F * k, 4F * k, 0x242424);
+			}
+
+			NanoStifte.text(vg, NanoDesign.SANS, 11.5F * k, x + 11F * k, basis, an ? NanoDesign.TXT : NanoDesign.TXT_DIM, name, null);
+			f.zone("zusatz" + zusatzNr++, x, 0, rb, h, () ->
+			{
+				reiter.open().run();
+				this.flaeche.neuMalen();
 			});
 
 			x += rb + 1F * k;
@@ -489,6 +568,8 @@ public class UITopbarNano extends UIElement
 						 * Reiter oeffnet, und ein Eintrag ohne Ziel waere wieder eine Attrappe. */
 						menu.action(Icons.SPHERE, IKey.raw("Render Animation"),
 							UIRenderReiterNano::rendernStarten);
+						menu.action(Icons.FILM, com.davincilink.DavinciProxy.RENDER,
+							() -> com.davincilink.DavinciProxy.render(panel));
 					}
 				}
 				case "Window" ->
@@ -503,9 +584,75 @@ public class UITopbarNano extends UIElement
 							panel::layoutZuruecksetzen);
 					}
 				}
+				case "Help" ->
+				{
+					HilfeErststart.hilfeGeoeffnet();
+
+					Guides.Guide guide = Guides.alle().get(0);
+					int kontext = Guides.kontextKapitel(guide);
+
+					if (kontext >= 0)
+					{
+						Guides.Kapitel c = guide.kapitel().get(kontext);
+
+						menu.gruppe(IKey.raw("For " + c.titel().toLowerCase(Locale.ROOT)));
+						menu.action(Icons.HELP, IKey.raw("Tutorial · " + c.titel() + "  (chapter " + (kontext + 1) + ", " + Guides.zeit(c.sekunde()) + ")"),
+							() -> Guides.oeffnen(this.getContext(), guide, c.sekunde())).taste(Keys.HILFE);
+						menu.trenner();
+					}
+
+					int stelle = EditorZustaende.hilfeStelle.get();
+
+					menu.action(Icons.PLAY, IKey.raw(stelle > 30 ? "Video tutorial  (resume at " + Guides.zeit(stelle) + ")" : "Video tutorial  (2 h 07)"),
+						() -> Guides.weiter(this.getContext(), guide));
+
+					for (Guides.Guide andere : Guides.alle().subList(1, Guides.alle().size()))
+					{
+						menu.action(Icons.PLAY, IKey.raw(andere.titel() + "  (older BBS)"), () -> Guides.oeffnen(this.getContext(), andere, 0));
+					}
+
+					menu.trenner();
+					menu.gruppe(IKey.raw("Short clips"));
+
+					for (Guides.Kurz kurz : Guides.kurzvideos())
+					{
+						if (Tutorials.link(kurz.id()) != null)
+						{
+							menu.action(Icons.PLAY, IKey.raw(kurz.titel()), () -> Tutorials.open(kurz.id()));
+						}
+					}
+
+					menu.trenner();
+					menu.action(Icons.KEY_CAP, IKey.raw("Keyboard shortcuts"), this.getContext()::toggleKeybinds).taste(Keys.KEYBINDS);
+					menu.action(Icons.LINK, IKey.raw("Community on Discord"), () -> Blaze3D.openUri(URI.create(Guides.community())));
+					menu.action(Icons.HELP, IKey.raw("Show welcome hint again"), () -> HilfeErststart.zeigen(BBSModClient.getDashboard()));
+				}
 				default -> { }
 			}
 		});
+	}
+
+	/** The bar redraws only on its own changes; the Help dot changes from outside. */
+	public void neuMalen()
+	{
+		this.flaeche.neuMalen();
+	}
+
+	/** Where the Help label is, in GUI px (x, y, w, h), or null before the bar was drawn: the
+	 * first-run hint hangs from it. Same conversion as /ui/zonen. */
+	public float[] hilfeLabel()
+	{
+		int i = this.flaeche.zonenNamen().indexOf("tbmHelp");
+
+		if (i < 0 || i >= this.flaeche.zonenMasse().size())
+		{
+			return null;
+		}
+
+		float[] m = this.flaeche.zonenMasse().get(i);
+		float k = Math.max(1F, this.flaeche.skala());
+
+		return new float[] {this.flaeche.area.x + m[0] / k, this.flaeche.area.y + m[1] / k, m[2] / k, m[3] / k};
 	}
 
 	/** Eintrag zum BBS-Originalnamen, oder null wenn der Bereich nicht im Entwurf steht. */

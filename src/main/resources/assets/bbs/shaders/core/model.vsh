@@ -1,10 +1,11 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
-#moj_import <minecraft:light.glsl>
-#moj_import <minecraft:fog.glsl>
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
-#moj_import <minecraft:sample_lightmap.glsl>
+#include <minecraft:light.glsl>
+#include <minecraft:fog.glsl>
+#include <minecraft:dynamictransforms.glsl>
+#include <minecraft:projection.glsl>
+#include <minecraft:sample_lightmap.glsl>
 
 /* ⛔ DIESER BLOCK IST EIN VERTRAG MIT ModelVAORenderer.schreibeBlock — Reihenfolge und
  * Groesse muessen dort und hier gleich sein, und kein Compiler prueft das.
@@ -25,18 +26,18 @@ layout(std140) uniform ModelInfo {
 uniform sampler2D Sampler1;
 uniform sampler2D Sampler2;
 
-in vec3 Position;
-in vec2 UV0;
-in vec3 Normal;
+layout(location = 0) in vec3 Position;
+layout(location = 2) in vec2 UV0;
+layout(location = 1) in vec3 Normal;
 
-out float sphericalVertexDistance;
-out float cylindricalVertexDistance;
-out vec4 vertexColor;
-out vec4 unlitColor;
-out float emissionMix;
-out vec4 lightMapColor;
-out vec4 overlayColor;
-out vec2 texCoord0;
+layout(location = 0) out float sphericalVertexDistance;
+layout(location = 1) out float cylindricalVertexDistance;
+layout(location = 2) out vec4 vertexColor;
+layout(location = 3) out vec4 unlitColor;
+layout(location = 4) out float emissionMix;
+layout(location = 5) out vec4 lightMapColor;
+layout(location = 6) out vec4 overlayColor;
+layout(location = 7) out vec2 texCoord0;
 
 void main()
 {

@@ -1,11 +1,13 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
 import mchorse.bbs_mod.camera.utils.TimeUtils;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.events.UITrackpadDragEndEvent;
 import mchorse.bbs_mod.ui.framework.elements.events.UITrackpadDragStartEvent;
@@ -35,6 +37,9 @@ public abstract class UIKeyframeFactory <T> extends UIElement
     private static final Map<IKeyframeFactory, Integer> SCROLLS = new HashMap<>();
 
     public UIScrollView scroll;
+    public UIToggle enabled;
+    public UITrackpad motionShift;
+    private boolean schubZieht;
     public UITrackpad tick;
     public UITrackpad duration;
     public UIIcon interp;
@@ -108,16 +113,26 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         this.scroll.scroll.cancelScrolling();
         this.scroll.full(this);
 
+        this.enabled = new UIToggle(IKey.EMPTY, b -> mchorse.bbs_mod.ui.framework.elements.input.keyframes.KeyframeTypen.aktivieren(this.editor, b.getValue()));
+        this.enabled.setValue(keyframe.isEnabled());
+        this.enabled.wh(26, UIConstants.CONTROL_HEIGHT).tooltip(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.keyframes.enabled"));
+
         this.tick = new UITrackpad(this::setTick);
         this.tick.tooltip(UIKeys.KEYFRAMES_TICK);
         this.tick.getEvents().register(UITrackpadDragStartEvent.class, (e) -> this.editor.cacheKeyframes());
         this.tick.getEvents().register(UITrackpadDragEndEvent.class, (e) -> this.editor.submitKeyframes());
         this.duration = new UITrackpad((v) -> this.setDuration(v.floatValue()));
         this.duration.limit(0, Float.MAX_VALUE).tooltip(UIKeys.KEYFRAMES_FORCED_DURATION);
+        /* Motion shift of every selected key, in percent of the transition (BBS FS 8f64c66b4, 44276bbdd) */
+        this.motionShift = new UITrackpad((v) -> mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeMotionShift.setzen(this.editor, v.floatValue() / 100F, !this.schubZieht));
+        this.motionShift.limit(-49, 49).tooltip(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.keyframes.motion_shift"));
+        this.motionShift.getEvents().register(UITrackpadDragStartEvent.class, (e) -> { this.schubZieht = true; this.editor.cacheKeyframes(); });
+        this.motionShift.getEvents().register(UITrackpadDragEndEvent.class, (e) -> { this.schubZieht = false; this.editor.submitKeyframes(); this.editor.getGraph().pickSelected(); });
+        this.motionShift.setValue(keyframe.getMotionShift() * 100F);
+        this.motionShift.setEnabled(keyframe.supportsMotionShift());
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            Interpolation interp = new Interpolation("interp", this.keyframe.getInterpolation().getMap());
-            interp.copy(this.keyframe.getInterpolation());
+            Interpolation interp = this.keyframe.getInterpolation();
             UIInterpolationContextMenu menu = new UIInterpolationContextMenu(interp);
 
             this.getContext().replaceContextMenu(menu.callback(() -> this.editor.getGraph().setInterpolation(interp)));
@@ -175,7 +190,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         this.shape.tooltip(UIKeys.KEYFRAMES_CHANGE_SHAPE);
 
         this.scroll.add(UI.column(0, 0, 0,
-            UI.row(UIConstants.MARGIN, 0, 0, this.interp, this.tick, this.duration),
+            UI.row(UIConstants.MARGIN, 0, 0, this.interp, this.enabled, this.tick, this.duration, this.motionShift),
             UI.row(UIConstants.MARGIN, 0, 0, this.shape, this.color).marginTop(UIConstants.SECTION_GAP)
         ));
 
@@ -210,6 +225,9 @@ public abstract class UIKeyframeFactory <T> extends UIElement
 
     public void update()
     {
+        this.enabled.setValue(this.keyframe.isEnabled());
+        this.motionShift.setValue(this.keyframe.getMotionShift() * 100F);
+        this.motionShift.setEnabled(this.keyframe.supportsMotionShift());
         this.tick.setValue(TimeUtils.toTime(this.keyframe.getTick()));
     }
 

@@ -168,6 +168,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 	{
 		this.flaeche = new NanoFlaeche(this::zeichnen);
 		this.flaeche.beimZiehen(this::ziehen);
+		this.flaeche.beimTippen(this::tippen);
 		this.flaeche.relative(this).x(0).y(0).w(1F).h(1F);
 		this.add(this.flaeche);
 		this.h(330);
@@ -188,6 +189,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			return;
 		}
 
+		NanoFeldEingabe.abbrechen(this.flaeche); /* the click opened typing; a drag scrubs instead */
 		String kanal = zoneId.substring(5);
 		int tick = panel.getCursor();
 		/* Feinfuehlig: 100 Pixel Zug = 1 Einheit; Winkel gröber. */
@@ -223,6 +225,18 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		double alt = ziel.interpolate(tick, 0D);
 
 		ziel.insert(tick, alt + schritt);
+		this.stand = "";
+		this.flaeche.neuMalen();
+	}
+
+	/** Typed into a field (NanoFeldEingabe): Enter writes the value as a keyframe at the playhead */
+	private void tippen(String fokus, char c)
+	{
+		Double wert = NanoFeldEingabe.tippen(fokus, c);
+		Replay replay = this.angeheftet != null ? this.angeheftet : gewaehltesReplay();
+
+		if (wert != null && replay != null && filmPanel() != null) NanoFeldEingabe.schreiben(replay, filmPanel().getCursor(), fokus.substring(5), wert);
+
 		this.stand = "";
 		this.flaeche.neuMalen();
 	}
@@ -348,7 +362,10 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		String values = "|" + replay.keyframes.x.interpolate(tick, 0D)
 			+ "|" + replay.keyframes.y.interpolate(tick, 0D)
 			+ "|" + replay.keyframes.z.interpolate(tick, 0D)
-			+ "|" + replay.enabled.get();
+			+ "|" + replay.enabled.get()
+			/* G7: a key added or removed at the cursor changes the colours, not the values */
+			+ "|" + KeyZustand.von(replay.keyframes.x, tick) + KeyZustand.von(replay.keyframes.y, tick)
+			+ KeyZustand.von(replay.keyframes.z, tick) + KeyZustand.von(replay.properties.get("transform"), tick);
 
 		if (form != null)
 		{
@@ -374,8 +391,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			: replay.getName() + "|" + tick + "|" + this.schiene
 				+ "|" + this.auf(0) + this.auf(1) + this.auf(2) + this.auf(3) + this.auf(4))
 			+ (this.angeheftet != null ? "|pin" : "")
-			+ this.transformStand(replay, tick)
-			+ "|" + (panel == null || panel.getData() == null ? "" : panel.getData().getId());
+			+ this.transformStand(replay, tick);
 
 		if (!jetzt.equals(this.stand))
 		{
@@ -430,7 +446,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		NanoStifte.flaeche(vg, 0, 0, b, h, NanoDesign.R_AREA * k, NanoDesign.REGION);
 
 		/* Kopf mit Editor-Typ-Waehler und Brotkrume */
-		float nachKopf = NanoBausteine.kopfzeile(vg, b, k, "props");
+        float nachKopf = EditorTypAuswahl.kopf(vg, b, k, "props", f, this, "replayProps");
 
 		Replay gewaehlt = gewaehltesReplay();
 		UIFilmPanel panel = filmPanel();
@@ -511,15 +527,16 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		if (this.schiene == 4 || this.schiene == 5)
 		{
 			UIFilmPanel fp = filmPanel();
+			/* The clip host carries the camera AND the action clip fields (action clips mode). */
 			boolean leer = this.schiene == 4
-				? this.clipHost().getChildren(mchorse.bbs_mod.ui.film.clips.UIClip.class).stream().noneMatch(UIElement::isVisible)
+				? fp == null || fp.cameraEditor.getClip() == null && fp.actionEditor.getClip() == null
 				: fp == null || fp.replayEditor == null || fp.replayEditor.keyframeEditor == null
 					|| fp.replayEditor.keyframeEditor.editor == null;
 
 			if (leer)
 			{
 				NanoStifte.text(vg, NanoDesign.SANS, 11F * k, schieneB + 6F * k, oben + 23F * k,
-					NanoDesign.TXT_OFF, this.schiene == 4 ? "No clip selected" : "No keyframe selected", null);
+					NanoDesign.TXT_OFF, this.schiene == 4 ? "No camera clip selected" : "No keyframe selected", null);
 			}
 
 			return;
@@ -573,24 +590,27 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			double px = replay.keyframes.x.interpolate(tick, 0D);
 			double py = replay.keyframes.y.interpolate(tick, 0D);
 			double pz = replay.keyframes.z.interpolate(tick, 0D);
+			/* Spalte 6: Key-Zustand am Cursor (G7) — Ort je Achse, Drehung/Groesse im transform-Kanal */
+			String kx = KeyZustand.von(replay.keyframes.x, tick), ky = KeyZustand.von(replay.keyframes.y, tick);
+			String kz = KeyZustand.von(replay.keyframes.z, tick), kt = KeyZustand.von(replay.properties.get("transform"), tick);
 
 			if (tf == null)
 			{
 				return new String[][]{
-					{"Location X", zahl(px), "x", "x", "loc"},
-					{"Y", zahl(py), "y", "y", "loc"},
-					{"Z", zahl(pz), "z", "z", "loc"},
+					{"Location X", zahl(px), "x", "x", "loc", kx},
+					{"Y", zahl(py), "y", "y", "loc", ky},
+					{"Z", zahl(pz), "z", "z", "loc", kz},
 				};
 			}
 
 			return new String[][]{
-				{"Location X", zahl(px), "x", "x", "loc"},
-				{"Y", zahl(py), "y", "y", "loc"},
-				{"Z", zahl(pz), "z", "z", "loc"},
-				{"Rotation X", winkel(Math.toDegrees(tf.rotate.x)), "x", "rx", "rot"},
-				{"Y", winkel(Math.toDegrees(tf.rotate.y)), "y", "ry", "rot"},
-				{"Z", winkel(Math.toDegrees(tf.rotate.z)), "z", "rz", "rot"},
-				{"Scale", zahl(tf.scale.x), "", "sx", ""},
+				{"Location X", zahl(px), "x", "x", "loc", kx},
+				{"Y", zahl(py), "y", "y", "loc", ky},
+				{"Z", zahl(pz), "z", "z", "loc", kz},
+				{"Rotation X", winkel(Math.toDegrees(tf.rotate.x)), "x", "rx", "rot", kt},
+				{"Y", winkel(Math.toDegrees(tf.rotate.y)), "y", "ry", "rot", kt},
+				{"Z", winkel(Math.toDegrees(tf.rotate.z)), "z", "rz", "rot", kt},
+				{"Scale", zahl(tf.scale.x), "", "sx", "", kt},
 			};
 		});
 
@@ -749,13 +769,14 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 				&& daten[i + 1][4].equals(gr) && !gr.isEmpty();
 			int lage = vorGleich && nachGleich ? 2 : vorGleich ? 3 : nachGleich ? 1 : 0;
 
-			NanoBausteine.feld(vg, x + 6F * k, yy, b - 12F * k, k, zeile[0], zeile[1], achse, -1F, lage);
+			NanoBausteine.feld(vg, x + 6F * k, yy, b - 12F * k, k, zeile[0], zeile.length > 3 && !zeile[3].isEmpty() ? NanoFeldEingabe.anzeige(f, "feld:" + zeile[3], zeile[1]) : zeile[1], achse, -1F, lage,
+				KeyZustand.grund(zeile.length > 5 ? zeile[5] : ""));
 
 			/* Zahlenfelder sind schrubbbar: die Zone traegt den Kanalnamen. */
 			if (zeile.length > 3 && !zeile[3].isEmpty())
 			{
-				f.zone("feld:" + zeile[3], x + 6F * k, yy, b - 12F * k, NanoDesign.H_WIDGET * k, () -> {},
-					"Drag left/right to change; writes a keyframe at the playhead", "");
+				f.zone("feld:" + zeile[3], x + 6F * k, yy, b - 12F * k, NanoDesign.H_WIDGET * k, () -> NanoFeldEingabe.starten(f, "feld:" + zeile[3]),
+					"Click to type a value, drag left/right to change; writes a keyframe at the playhead", "");
 			}
 
 			/* Innerhalb einer Gruppe 1 px Fuge, zwischen Gruppen 4. */

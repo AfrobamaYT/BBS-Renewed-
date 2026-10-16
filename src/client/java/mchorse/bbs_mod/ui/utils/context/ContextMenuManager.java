@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.utils.context;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -9,7 +10,6 @@ import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.ui.utils.keys.Keybind;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -158,17 +158,17 @@ public class ContextMenuManager
             {
                 IKey label = UIKeys.CONTEXT_MENU_KEY.format(action.label);
                 int mod = i % 10;
-                int key = i == 9 ? GLFW.GLFW_KEY_0 : GLFW.GLFW_KEY_1 + mod;
+                int key = i == 9 ? InputConstants.KEY_0 : InputConstants.KEY_1 + mod;
 
                 KeyCombo combo;
 
                 if (i >= 20)
                 {
-                    combo = new KeyCombo(label, key, GLFW.GLFW_KEY_LEFT_CONTROL);
+                    combo = new KeyCombo(label, key, InputConstants.KEY_LCONTROL);
                 }
                 else if (i >= 10)
                 {
-                    combo = new KeyCombo(label, key, GLFW.GLFW_KEY_LEFT_SHIFT);
+                    combo = new KeyCombo(label, key, InputConstants.KEY_LSHIFT);
                 }
                 else
                 {

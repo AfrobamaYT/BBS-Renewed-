@@ -26,6 +26,8 @@ public class UIMobFormPanel extends UIFormPanel<MobForm>
     public UIToggle slim;
     public UISearchList<String> mobID;
     public UITextarea<TextLine> mobNBT;
+    /** The mob's pose, bone by bone, as a model form has it (BBS FS e341fa733) */
+    public mchorse.bbs_mod.ui.forms.editors.panels.widgets.UIModelPoseEditor poseEditor;
 
     static
     {
@@ -63,7 +65,10 @@ public class UIMobFormPanel extends UIFormPanel<MobForm>
         this.mobNBT.background().h(160);
         this.mobNBT.wrap();
 
-        this.options.add(this.pick, this.slim, this.mobID, this.mobNBT);
+        this.poseEditor = new mchorse.bbs_mod.ui.forms.editors.panels.widgets.UIModelPoseEditor();
+        this.poseEditor.transform.barBackground();
+
+        this.options.add(this.pick, this.slim, this.poseEditor, this.mobID, this.mobNBT);
     }
 
     @Override
@@ -74,5 +79,20 @@ public class UIMobFormPanel extends UIFormPanel<MobForm>
         this.slim.setValue(this.form.slim.get());
         this.mobID.list.setCurrentScroll(this.form.mobID.get());
         this.mobNBT.setText(this.form.mobNBT.get());
+
+        /* The mob id is the pose group, so a chicken's presets don't show under a zombie; vanilla's
+         * part names are left_/right_ already, which is what the pose's mirror rule matches */
+        this.poseEditor.setValuePose(form.pose);
+        this.poseEditor.setPose(form.pose.get(), form.mobID.get());
+        this.poseEditor.fillGroups(mchorse.bbs_mod.forms.FormUtilsClient.getRenderer(form).getBones(), true);
+        this.options.resize();
+    }
+
+    @Override
+    public void pickBone(String bone)
+    {
+        super.pickBone(bone);
+
+        this.poseEditor.selectBone(bone);
     }
 }

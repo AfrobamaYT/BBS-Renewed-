@@ -32,6 +32,8 @@ public class UIColor extends UIElement
         this.picker.wh(200, 85);
 
         this.direction(Direction.BOTTOM).h(UIConstants.CONTROL_HEIGHT);
+        /* Presets: the quick way past the picker; in the context menu, beside what the host adds (BBS FS 7aa8cf2a4) */
+        this.context((menu) -> menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.COLOR, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.color.presets"), this::presetsOeffnen));
     }
 
     public UIColor withTarget(UIElement target)
@@ -99,6 +101,19 @@ public class UIColor extends UIElement
         }
 
         return super.subMouseClicked(context);
+    }
+
+    private void presetsOeffnen()
+    {
+        UIContext context = this.getContext();
+        mchorse.bbs_mod.ui.framework.elements.input.color.UIColorPresets presets = new mchorse.bbs_mod.ui.framework.elements.input.color.UIColorPresets(this.picker);
+
+        this.picker.removeFromParent();
+        presets.anchor(1 - this.direction.anchorX, 1 - this.direction.anchorY);
+        (this.target == null ? context.menu.overlay : this.target).add(presets);
+        presets.xy(context.globalX(this.area.x(this.direction.anchorX) + 2 * this.direction.factorX), context.globalY(this.area.y(this.direction.anchorY) + 2 * this.direction.factorY));
+        presets.bounds(context.menu.main, 2);
+        presets.resize();
     }
 
     @Override

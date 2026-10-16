@@ -15,7 +15,7 @@
 // would pre-size from a manifest scan; for now, geometric growth handles
 // any size.
 //
-// VERTEX FORMAT: matches the GPU-instanced renderer's 24-byte
+// VERTEX FORMAT: matches CrowdIrisGpuInstancedRenderer's 24-byte
 // per-vertex layout exactly — pos(12) + uv(8) + boneId(4). Caller passes
 // raw FloatBuffer-of-floats matching that interleave; we appendBytes.
 //
@@ -40,7 +40,7 @@ public final class BBSCrowdMeshAtlas
 {
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/perf/multidraw-atlas");
 
-    /** Per-vertex stride (must match the GPU-instanced renderer). */
+    /** Per-vertex stride (must match CrowdIrisGpuInstancedRenderer). */
     private static final int VERTEX_STRIDE_BYTES = 24;
 
     /** Bytes per index (GL_UNSIGNED_INT). */

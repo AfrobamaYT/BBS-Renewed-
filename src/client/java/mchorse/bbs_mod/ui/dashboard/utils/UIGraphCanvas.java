@@ -89,7 +89,12 @@ public class UIGraphCanvas extends UICanvas
             }
 
             context.batcher.box(this.area.x, y, this.area.ex(), y + 1, Colors.setA(Colors.WHITE, 0.25F));
-            context.batcher.text(String.valueOf(min + j * mult), this.area.x + 4, y + 4);
+
+            /* The top row belongs to the x-axis labels; a y-label there printed over them. */
+            if (y + 4 >= this.area.y + 16)
+            {
+                context.batcher.text(String.valueOf(min + j * mult), this.area.x + 4, y + 4);
+            }
         }
     }
 

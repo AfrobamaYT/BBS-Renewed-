@@ -14,7 +14,6 @@ import mchorse.bbs_mod.camera.CameraUtils;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.resources.Link;
@@ -56,7 +55,7 @@ import mchorse.bbs_mod.utils.pose.Transform;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -74,6 +73,8 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     public static boolean toggleRendering;
 
     public UIScrollView scrollView;
+    private ModelBlockKoerper koerper;
+    final ModelBlockVerlauf verlauf = new ModelBlockVerlauf(this);
     public UIElement editor;
     public UIModelBlockEntityList modelBlocks;
     public UINestedEdit pickEdit;
@@ -117,7 +118,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
                 Vec3 hit = blockHitResult.getLocation();
                 BlockPos pos = this.modelBlock.getBlockPos();
 
-                this.modelBlock.getProperties().getTransform().translate.set(hit.x - pos.getX() - 0.5F, hit.y - pos.getY(), hit.z - pos.getZ() - 0.5F);
+                this.verlauf.aendern(null, () -> this.modelBlock.getProperties().getTransform().translate.set(hit.x - pos.getX() - 0.5F, hit.y - pos.getY(), hit.z - pos.getZ() - 0.5F));
                 this.fillData();
             }
         }).active(() -> this.modelBlock != null);
@@ -136,10 +137,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             {
                 this.pickEdit.setForm(f);
 
-                if (this.modelBlock != null)
-                {
-                    this.modelBlock.getProperties().setForm(f);
-                }
+                if (this.modelBlock != null) this.verlauf.aendern(null, () -> this.modelBlock.getProperties().setForm(f));
             });
 
             palette.immersive();
@@ -174,11 +172,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         });
         this.pickEdit.keybinds();
 
-        this.enabled = new UIToggle(UIKeys.CAMERA_PANELS_ENABLED, (b) -> this.modelBlock.getProperties().setEnabled(b.getValue()));
-        this.shadow = new UIToggle(UIKeys.MODEL_BLOCKS_SHADOW, (b) -> this.modelBlock.getProperties().setShadow(b.getValue()));
+        this.enabled = new UIToggle(UIKeys.CAMERA_PANELS_ENABLED, (b) -> this.verlauf.aendern(null, () -> this.modelBlock.getProperties().setEnabled(b.getValue())));
+        this.shadow = new UIToggle(UIKeys.MODEL_BLOCKS_SHADOW, (b) -> this.verlauf.aendern(null, () -> this.modelBlock.getProperties().setShadow(b.getValue())));
         this.global = new UIToggle(UIKeys.MODEL_BLOCKS_GLOBAL, (b) ->
         {
-            this.modelBlock.getProperties().setGlobal(b.getValue());
+            this.verlauf.aendern(null, () -> this.modelBlock.getProperties().setGlobal(b.getValue()));
 
             /* 26.2: allChanged() heisst jetzt invalidateCompiledGeometry(...) und bekommt die
              * vier Dinge, die es frueher selbst am Weltzeichner fand: Welt, Optionen, Kamera
@@ -194,15 +192,16 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
                 mc.levelRenderer.invalidateCompiledGeometry(mc.level, mc.options, mc.gameRenderer.mainCamera(), mc.getBlockColors());
             }
         });
-        this.lookAt = new UIToggle(UIKeys.CAMERA_PANELS_LOOK_AT, (b) -> this.modelBlock.getProperties().setLookAt(b.getValue()));
+        this.lookAt = new UIToggle(UIKeys.CAMERA_PANELS_LOOK_AT, (b) -> this.verlauf.aendern(null, () -> this.modelBlock.getProperties().setLookAt(b.getValue())));
 
         this.transform = new UIPropTransform();
         this.transform.enableHotkeys();
         this.transform.hotkeyDrag(this::buildGizmoDrag);
+        this.transform.callbacks(this.verlauf::transformAnfang, this.verlauf::transformEnde, this.verlauf.undo::markLastUndoNoMerging);
 
         this.editor = UI.column(this.pickEdit, this.enabled, this.shadow, this.global, this.lookAt, this.transform);
 
-        this.scrollView = UI.scrollView(UIConstants.MARGIN, UIConstants.SCROLL_PADDING, this.modelBlocks, this.editor);
+        this.scrollView = UI.scrollView(UIConstants.MARGIN, UIConstants.SCROLL_PADDING, this.modelBlocks, this.editor, (this.koerper = new ModelBlockKoerper(this)).section, this.koerper.ausruestung.section);
         this.scrollView.scroll.opposite().cancelScrolling();
         this.scrollView.relative(this).w(200).h(1F);
 
@@ -210,7 +209,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.keys().register(Keys.MODEL_BLOCKS_TELEPORT, this::teleport);
 
-        this.add(this.scrollView, new mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable((ctx) -> mchorse.bbs_mod.ui.dashboard.panels.UIAuswahlLeer.zeichnen(ctx, this.area, this.modelBlock == null, mchorse.bbs_mod.ui.utils.icons.Icons.BLOCK, "No model block selected", "Pick one from the list on the left")));
+        this.add(this.scrollView, new mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable((ctx) -> mchorse.bbs_mod.ui.dashboard.panels.UIAuswahlLeer.zeichnen(ctx, this.area, this.modelBlock == null, mchorse.bbs_mod.ui.utils.icons.Icons.BLOCK, "No model block selected", "Pick one from the list on the left")), this.verlauf.tasten.full(this));
     }
 
     private void teleport()
@@ -402,14 +401,14 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
          * and stencil (both read Gizmo#lastRenderMatrix) draw at the right place. */
         stack.pushPose();
         this.applyGizmoOrigin(stack, cameraPos);
-        /* Reorient into the active space (GLOBAL world axes / VIEW screen axes);
-         * LOCAL keeps the block rotation applied above. The block's transform
-         * composes straight onto the world, so its parent frame IS the world
-         * frame — PARENT maps to GLOBAL here (bone editors instead keep their
-         * placement frame, which carries the real parent frame). One capture
-         * feeds both the visual and the pick stencil, so they stay in lockstep. */
+        /* A block's parent is the world; GIMBAL additionally needs its full channel rotation.
+         * One capture feeds both the visual and the pick stencil. */
         TransformSpace space = this.transform.getSpace();
 
+        if (space == TransformSpace.GIMBAL)
+        {
+            mchorse.bbs_mod.ui.utils.GizmoGimbal.merken(false, new Matrix4f(), new Matrix4f(this.modelBlock.getProperties().getTransform().createRotationMatrix()));
+        }
         /* This gizmo edits the BLOCK's own transform, which composes straight
          * onto the world, so GLOBAL keeps meaning the plain world axes (null) —
          * turning the block must not turn the frame its own rotation is edited
@@ -571,19 +570,16 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
     public void fill(ModelBlockEntity modelBlock, boolean select)
     {
-        if (modelBlock != null)
-        {
-            this.toSave.add(modelBlock);
-        }
-
         this.modelBlock = modelBlock;
 
         if (modelBlock != null)
         {
+            this.toSave.add(modelBlock);
             this.fillData();
         }
 
         this.editor.setVisible(modelBlock != null);
+        this.koerper.fill(modelBlock);
 
         if (select)
         {
@@ -603,7 +599,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.lookAt.setValue(properties.isLookAt());
     }
 
-    private void save(ModelBlockEntity modelBlock)
+    void save(ModelBlockEntity modelBlock)
     {
         if (modelBlock != null)
         {
@@ -758,14 +754,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
                 context.poseStack().pushPose();
                 context.poseStack().translate(blockPos.getX() - pos.x, blockPos.getY() - pos.y, blockPos.getZ() - pos.z);
 
-                if (this.hovered == entity || entity == this.modelBlock)
-                {
-                    Draw.renderBox(context.poseStack(), 0D, 0D, 0D, 1D, 1D, 1D, 0, 0.5F, 1F);
-                }
-                else
-                {
-                    Draw.renderBox(context.poseStack(), 0D, 0D, 0D, 1D, 1D, 1D);
-                }
+                ModelBlockKoerper.umriss(context.poseStack(), entity, this.hovered == entity || entity == this.modelBlock);
 
                 context.poseStack().popPose();
             }
@@ -809,9 +798,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
     private AABB getHitbox(ModelBlockEntity closest)
     {
-        BlockPos pos = closest.getBlockPos();
-
-        return new AABB(pos.getX(), pos.getY(), pos.getZ(), 1D, 1D, 1D);
+        return ModelBlockKoerper.trefferBox(closest);
     }
 
     public boolean isEditing(ModelBlockEntity entity)

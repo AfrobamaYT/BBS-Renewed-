@@ -18,6 +18,9 @@ public class Keyframe <T> extends BaseValue
 {
     private float tick;
     private T value;
+    private boolean enabled = true;
+    /** Displacement of the transition's midpoint from 0.5, in normalized time (BBS FS 8f64c66b4). */
+    private float motionShift;
 
     public float lx = 5;
     public float ly;
@@ -71,6 +74,54 @@ public class Keyframe <T> extends BaseValue
     public IKeyframeFactory<T> getFactory()
     {
         return this.factory;
+    }
+
+    /** A disabled key stays stored and editable but playback skips it (BBS FS 341d8c886). */
+    public boolean isEnabled()
+    {
+        return this.enabled;
+    }
+
+    public void setEnabled(boolean enabled)
+    {
+        if (this.enabled == enabled) return;
+
+        this.preNotify();
+        this.enabled = enabled;
+        this.postNotify();
+    }
+
+    public float getMotionShift()
+    {
+        return this.motionShift;
+    }
+
+    public void setMotionShift(float shift)
+    {
+        this.setMotionShift(shift, true);
+    }
+
+    public void setMotionShift(float shift, boolean dirty)
+    {
+        float value = Float.isFinite(shift) ? Math.max(-0.49F, Math.min(0.49F, shift)) : 0F;
+        if (value == this.motionShift) return;
+        if (dirty) this.preNotify();
+        this.motionShift = value;
+        if (dirty) this.postNotify();
+    }
+
+    public boolean supportsMotionShift()
+    {
+        /* Model animation keys have no factory: CubicModelAnimator evaluates their Molang directly. */
+        return (this.factory == null || !this.factory.isStepped()) && !this.interp.has(Interpolations.CONST);
+    }
+
+    /** Smooth monotonic time warp: endpoints stay fixed and f(0.5 + shift) = 0.5. */
+    public float remapMotion(float progress)
+    {
+        if (this.motionShift == 0F || progress <= 0F || progress >= 1F || !this.supportsMotionShift()) return progress;
+        double midpoint = 0.5D + this.motionShift;
+        return (float) (progress * (1D - midpoint) / (midpoint + (1D - 2D * midpoint) * progress));
     }
 
     public float getTick()
@@ -295,6 +346,8 @@ public class Keyframe <T> extends BaseValue
     public void copy(Keyframe<T> keyframe)
     {
         this.tick = keyframe.tick;
+        this.enabled = keyframe.enabled;
+        this.motionShift = keyframe.motionShift;
         this.duration = keyframe.duration;
         /* MERGE 2026-07-27: die drei CML-flags mitkopieren, s. felddeklaration. */
         this.spectrum = keyframe.spectrum;
@@ -327,6 +380,8 @@ public class Keyframe <T> extends BaseValue
         if (obj instanceof Keyframe<?> kf)
         {
             return this.tick == kf.tick
+                && this.enabled == kf.enabled
+                && this.motionShift == kf.motionShift
                 && Objects.equals(this.value, kf.value)
                 && this.lx == kf.lx
                 && this.ly == kf.ly
@@ -349,6 +404,8 @@ public class Keyframe <T> extends BaseValue
         MapType data = new MapType();
 
         data.putFloat("tick", this.tick);
+        if (!this.enabled) data.putBool("enabled", false);
+        if (this.motionShift != 0F) data.putFloat("motion_shift", this.motionShift);
         data.put("value", this.factory.toData(this.value));
 
         if (this.duration != 0F) data.putFloat("duration", this.duration);
@@ -398,6 +455,8 @@ public class Keyframe <T> extends BaseValue
 
         this.shape = BBSSettings.getDefaultKeyframeShape();
         this.color = null;
+        this.enabled = !map.has("enabled") || map.getBool("enabled");
+        this.setMotionShift(map.getFloat("motion_shift"), false);
 
         if (map.has("tick")) this.tick = map.getFloat("tick");
         if (map.has("duration")) this.duration = map.getFloat("duration");
@@ -435,6 +494,8 @@ public class Keyframe <T> extends BaseValue
 
     public void copyOverExtra(Keyframe<?> a)
     {
+        this.setEnabled(a.isEnabled());
+        this.setMotionShift(a.getMotionShift());
         this.getInterpolation().copy(a.getInterpolation());
         this.setShape(a.getShape());
         this.setColor(a.getColor() != null ? a.getColor().copy() : null);

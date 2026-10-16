@@ -12,6 +12,8 @@ import java.util.function.Consumer;
 public class RunnerCameraController extends CameraWorkCameraController
 {
     public int ticks;
+    /** Where between this tick and the next the paused playhead stands (BBS FS 096836ac2) */
+    private float bruch;
 
     private Position manual;
     private UIFilmPanel panel;
@@ -47,6 +49,20 @@ public class RunnerCameraController extends CameraWorkCameraController
         this.setPlaying(!this.context.playing);
 
         this.ticks = ticks;
+        this.bruch = 0F;
+    }
+
+    public void setCursor(float tick)
+    {
+        tick = Math.max(0F, tick);
+        this.ticks = (int) tick;
+        this.bruch = tick - this.ticks;
+    }
+
+    /** The paused playhead's part of a tick; 0 while playing, the game's partial tick runs then */
+    public float getBruch()
+    {
+        return this.context.playing ? 0F : this.bruch;
     }
 
     public void setManual(Position manual)
@@ -125,9 +141,11 @@ public class RunnerCameraController extends CameraWorkCameraController
             /* Pausiert ist der Partial-Tick 0 — ausser eine Sub-Tick-Fahrt (WeltbildFahrt mit
              * fps != 20) erzwingt den Rest t−⌊t⌋, damit der Welt-Frame ZWISCHEN zwei Ticks
              * liegt. Ohne Fahrt liefert SubTick.oder(0F) genau die alte Null. */
-            this.apply(free ? null : camera, this.ticks, this.context.playing ? transition : com.mcstudio.see.SubTick.oder(0F));
+            this.apply(free ? null : camera, this.ticks, this.context.playing ? transition : com.mcstudio.see.SubTick.oder(this.bruch));
         }
 
-        this.panel.getController().handleCamera(camera, transition);
+        this.panel.getController().handleCamera(camera,
+            this.context.playing || this.panel.getController().isControlling()
+                ? transition : com.mcstudio.see.SubTick.oder(this.bruch));
     }
 }

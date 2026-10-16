@@ -1,11 +1,11 @@
 package mchorse.bbs_mod.cubic.render.vao;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -255,8 +255,8 @@ public class ModelVAORenderer
          * wenn der Durchgang aus einer Vorschau heraus laeuft und Zeichenziel gleichzeitig
          * auf deren Textur zeigt (UIPickableFormRenderer). Kennungsfarben in der Vorschau
          * waeren sichtbarer Farbmuell UND ein leerer Auswahl-Puffer. */
-        com.mojang.blaze3d.textures.GpuTextureView farbZiel;
-        com.mojang.blaze3d.textures.GpuTextureView tiefenZiel;
+        com.mojang.renderpearl.api.textures.GpuTextureView farbZiel;
+        com.mojang.renderpearl.api.textures.GpuTextureView tiefenZiel;
 
         if (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null)
         {
@@ -318,7 +318,7 @@ public class ModelVAORenderer
         /* Den ZURUECKGEGEBENEN Block binden, nicht ein globales Feld: seit dem Ringpuffer
          * ist es je Zeichenaufruf ein anderer. */
         ModelDrawBatch.beforeUniformWrite();
-        GpuBuffer block = blockFuer(normalMat, light, overlay, passMode, kennung, emission);
+        GpuBufferSlice block = blockScheibeFuer(normalMat, light, overlay, passMode, kennung, emission);
 
         /* Messfuehler 2026-08-02: der Auswahlpuffer traegt Alpha (100928 Punkte gemessen),
          * aber RGB = 0 — die Kennung kommt also nicht an, obwohl der Durchgang laeuft.
@@ -371,13 +371,15 @@ public class ModelVAORenderer
             return;
         }
 
-        try (RenderPass durchgang = bereich == null
-            ? schreiber.createRenderPass(
-                name, farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty())
-            : schreiber.createRenderPass(
-                name, farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty(), bereich))
+        /* Buffer uploads must finish before the immediate render pass opens. */
+        GpuBufferSlice uiLighting = mchorse.bbs_mod.client.BBSRendering.isRenderingWorld()
+            ? null : mchorse.bbs_mod.graphics.UiLicht.scheibe();
+
+        try (mchorse.bbs_mod.graphics.DrawPassLease lease = mchorse.bbs_mod.graphics.DrawPassLease.open(
+            schreiber, name, farbZiel, tiefenZiel, bereich))
         {
-            durchgang.setPipeline(pipeline);
+            RenderPass durchgang = lease.pass();
+            durchgang.setPipeline(RenderSystem.getCompiledPipeline(lease.pipeline(pipeline)));
 
             RenderSystem.bindDefaultUniforms(durchgang);
 
@@ -395,9 +397,9 @@ public class ModelVAORenderer
              * blieben wirkungslos (gemessen 2026-08-10, Helligkeit 0,415 unveraendert): der
              * globale Stand ist bis hierher wieder ueberschrieben. Nur die Bindung am
              * Durchgang selbst haelt. Siehe UiLicht. */
-            if (!mchorse.bbs_mod.client.BBSRendering.isRenderingWorld())
+            if (uiLighting != null)
             {
-                durchgang.setUniform("Lighting", mchorse.bbs_mod.graphics.UiLicht.scheibe());
+                durchgang.setUniform("Lighting", uiLighting);
             }
 
             /* ⛔ OHNE DIESE BINDUNG ZEICHNET DAS MODELL WEISS. Die Pipeline deklariert
@@ -405,7 +407,7 @@ public class ModelVAORenderer
              * Aufruf davor. */
             if (textur != null)
             {
-                durchgang.bindTexture("Sampler0", textur.view(), textur.sampler());
+                durchgang.setUniform("Sampler0", textur.view(), textur.sampler());
 
                 /* ⚠️ ALLE DREI SAMPLER, die die Pipeline deklariert. Sampler1 (Overlay) und
                  * Sampler2 (Lichtkarte) liest der Shader per texelFetch; eine Bindegruppe,
@@ -415,11 +417,12 @@ public class ModelVAORenderer
                  * overlayTexture), abgelesen an TextureSetup.singleTextureWithLightmap. */
                 net.minecraft.client.renderer.GameRenderer spielZeichner =
                     Minecraft.getInstance().gameRenderer;
-                com.mojang.blaze3d.textures.GpuSampler glatt = RenderSystem.getSamplerCache()
-                    .getClampToEdge(com.mojang.blaze3d.textures.FilterMode.LINEAR);
+                com.mojang.renderpearl.api.textures.GpuSampler glatt = RenderSystem.getSamplerCache()
+                    .getClampToEdge(com.mojang.renderpearl.api.textures.FilterMode.LINEAR);
 
-                durchgang.bindTexture("Sampler1", spielZeichner.overlayTexture().getTextureView(), glatt);
-                durchgang.bindTexture("Sampler2", spielZeichner.lightmap(), glatt);
+                /* Vanilla's overlay plus the forms' overlay colors (FormUeberlagerung); read by texelFetch, so unfiltered */
+                durchgang.setUniform("Sampler1", mchorse.bbs_mod.forms.renderers.utils.FormUeberlagerung.view(), glatt);
+                durchgang.setUniform("Sampler2", spielZeichner.lightmap(), glatt);
             }
 
             IrisModelBuffers.draw(modelVAO, durchgang, pipeline, light, overlay);
@@ -442,6 +445,18 @@ public class ModelVAORenderer
     public static GpuBuffer blockFuer(Matrix3f normalMat, int light, int overlay, int passMode, int kennung)
     {
         return blockFuer(normalMat, light, overlay, passMode, kennung, 0F);
+    }
+
+    /** Native per-draw slice; it remains valid only through the current command submit. */
+    public static GpuBufferSlice blockScheibeFuer(Matrix3f normalMat, int light, int overlay, int passMode, int kennung)
+    {
+        return blockScheibeFuer(normalMat, light, overlay, passMode, kennung, 0F);
+    }
+
+    public static GpuBufferSlice blockScheibeFuer(Matrix3f normalMat, int light, int overlay,
+        int passMode, int kennung, float emission)
+    {
+        return ModelUniformBlock.upload(normalMat, light, overlay, passMode, kennung, emission);
     }
 
     public static GpuBuffer blockFuer(Matrix3f normalMat, int light, int overlay, int passMode, int kennung, float emission)

@@ -77,4 +77,10 @@ public class IntegerKeyframeFactory implements IKeyframeFactory<Integer>
     {
         return (int) y;
     }
+
+    @Override
+    public boolean isStepped()
+    {
+        return true;
+    }
 }

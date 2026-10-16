@@ -7,7 +7,7 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.OrbitCamera;
 import mchorse.bbs_mod.camera.controller.OrbitCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.events.register.RegisterDashboardPanelsEvent;
+import mchorse.bbs_mod.api.client.events.RegisterDashboardPanelsEvent;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
@@ -222,6 +222,7 @@ public class UIDashboard extends UIBaseMenu
         }
 
         BBSModClient.getCameraController().add(this.camera);
+        mchorse.bbs_mod.ui.hilfe.HilfeErststart.vielleichtZeigen(this);
     }
 
     @Override
@@ -232,6 +233,7 @@ public class UIDashboard extends UIBaseMenu
         if (nextMenu != this)
         {
             this.panels.close();
+            mchorse.bbs_mod.ui.hilfe.Guides.dashboardZu();
         }
 
         this.orbit.reset();

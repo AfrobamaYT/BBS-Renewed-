@@ -105,6 +105,8 @@ public abstract class UIClip <T extends Clip> extends UIElement
         register(RemapperClip.class, UIRemapperClip::new);
         register(AudioClientClip.class, UIAudioClip::new);
         register(SubtitleClip.class, UISubtitleClip::new);
+        register(mchorse.bbs_mod.camera.clips.misc.ImageClip.class, UIImageClip::new);
+        register(mchorse.bbs_mod.camera.clips.misc.VideoClientClip.class, UIVideoClip::new);
         register(CurveClientClip.class, UICurveClip::new);
         register(DollyZoomClip.class, UIDollyZoomClip::new);
 

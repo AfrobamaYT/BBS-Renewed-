@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.model_editor;
 
+import org.lwjgl.sdl.SDLMouse;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
@@ -67,7 +68,6 @@ import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseManager;
 import mchorse.bbs_mod.utils.presets.PresetManager;
 import org.joml.Vector3f;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -95,7 +95,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
     public UIFormRenderer renderer;
     public UIDraggable splitter;
 
-    private final ModelForm form = new ModelForm();
+    final ModelForm form = new ModelForm();
 
     /** The model id whose instance we're waiting on; models load asynchronously, so the fill is deferred. */
     private String pendingId;
@@ -126,6 +126,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
 
     /* The sections, built once and refilled — see the class docs. */
     private UISection generalSection;
+    private ModelEditorZusaetze zusaetze;
     private UISection itemsSection;
     private UISection armorSection;
     private UISection firstPersonSection;
@@ -190,7 +191,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
 
         this.general = UI.scrollView(UIConstants.MARGIN, UIConstants.SCROLL_PADDING);
 
-        this.renderer = new UIFormRenderer();
+        this.renderer = new ProzeduralAbschnitt.Vorschau();
         this.renderer.form = this.form;
 
         this.splitter = new UIDraggable((context) ->
@@ -198,7 +199,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
             this.splitWidth = MathUtils.clamp(context.mouseX - this.editor.area.x, 160, this.editor.area.w - 160);
             this.layoutPanes();
             this.resize();
-        }).cursors(GLFW.GLFW_HRESIZE_CURSOR, GLFW.GLFW_HRESIZE_CURSOR);
+        }).cursors(SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE, SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE);
 
         this.layoutPanes();
 
@@ -548,6 +549,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
         this.generalSection = this.section(UIKeys.FORMS_EDITORS_GENERAL, true);
         this.generalBody = this.body();
         this.generalSection.fields.add(this.generalBody);
+        ((ProzeduralAbschnitt.Vorschau) this.renderer).bewegung = (this.zusaetze = new ModelEditorZusaetze(this)).prozedural::vorschau;
 
         this.itemsSection = this.section(UIKeys.MODEL_EDITOR_ITEMS, false);
         this.itemsMainBody = this.body();
@@ -621,7 +623,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
 
         this.sections = new UISection[]
         {
-            this.generalSection,
+            this.generalSection, this.zusaetze.prozedural.section, this.zusaetze.formSchluessel.section,
             this.itemsSection,
             this.armorSection,
             this.firstPersonSection,
@@ -635,7 +637,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
         this.general.add(this.sections);
     }
 
-    private UISection section(IKey title, boolean defaultExpanded)
+    UISection section(IKey title, boolean defaultExpanded)
     {
         UISection section = new UISection(title);
 
@@ -645,7 +647,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
     }
 
     /** A vertical container inside a section that gets emptied and refilled on its own. */
-    private UIElement body()
+    UIElement body()
     {
         UIElement body = new UIElement();
 
@@ -700,6 +702,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
         try
         {
             this.fillGeneral();
+            this.zusaetze.fill(config, this.bound);
             this.fillItems();
             this.fillArmor();
             this.fillFirstPerson();
@@ -719,17 +722,9 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
 
     private void clearBodies()
     {
-        this.generalBody.removeAll();
-        this.itemsMainBody.removeAll();
-        this.itemsOffBody.removeAll();
-        this.armorBody.removeAll();
-        this.firstPersonBody.removeAll();
-        this.lookAtBody.removeAll();
-        this.sneakingBody.removeAll();
-        this.flippedBody.removeAll();
-        this.pickingBody.removeAll();
-        this.weldsBody.removeAll();
-        this.bonesBody.removeAll();
+        for (UIElement body : new UIElement[] {this.generalBody, this.itemsMainBody, this.itemsOffBody, this.armorBody, this.firstPersonBody,
+            this.lookAtBody, this.sneakingBody, this.flippedBody, this.pickingBody, this.weldsBody, this.bonesBody}) body.removeAll();
+        this.zusaetze.fill(null, null);
 
         this.general.resize();
     }
@@ -738,7 +733,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
      * Re-layout the settings pane after a body changed height, keeping the scroll inside its new bounds.
      * Suppressed while every section is being refilled at once, so that costs one layout pass, not nine.
      */
-    private void resizeGeneral()
+    void resizeGeneral()
     {
         if (this.bulkFill)
         {
@@ -761,7 +756,6 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
 
         this.generalBody.removeAll();
         this.generalBody.add(
-            this.toggleRefresh(UIKeys.MODEL_EDITOR_PROCEDURAL, config.procedural),
             this.toggle(UIKeys.MODEL_EDITOR_CULLING, config.culling),
             this.toggleRefresh(UIKeys.MODEL_EDITOR_ON_CPU, config.onCpu),
             this.labeledRow(UIKeys.MODEL_EDITOR_UI_SCALE, this.floatField(config.uiScale)),
@@ -1320,7 +1314,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
         return entry;
     }
 
-    private UIButton bonePicker(Supplier<String> get, Consumer<String> set, Runnable onChange)
+    UIButton bonePicker(Supplier<String> get, Consumer<String> set, Runnable onChange)
     {
         UIButton[] ref = new UIButton[1];
         UIButton button = new UIButton(this.boneLabel(get.get()), (b) ->
@@ -1569,7 +1563,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
         }
     }
 
-    private UIElement labeledRow(IKey label, UIElement widget)
+    UIElement labeledRow(IKey label, UIElement widget)
     {
         return UI.labelRow(label, widget);
     }
@@ -1580,7 +1574,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
     }
 
     /** A toggle for a setting that changes the render path/baked geometry (procedural, on_cpu) — refreshes. */
-    private UIToggle toggleRefresh(IKey label, ValueBoolean value)
+    UIToggle toggleRefresh(IKey label, ValueBoolean value)
     {
         return new UIToggle(label, value.get(), (t) ->
         {
@@ -1616,7 +1610,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
         }
     }
 
-    private UITrackpad floatField(ValueFloat value)
+    UITrackpad floatField(ValueFloat value)
     {
         UITrackpad trackpad = new UITrackpad((v) -> value.set(v.floatValue()));
 
@@ -1626,7 +1620,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
         return trackpad;
     }
 
-    private UITextbox stringField(ValueString value)
+    UITextbox stringField(ValueString value)
     {
         UITextbox textbox = new UITextbox(10000, value::set);
 
@@ -1640,7 +1634,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
         return new UIButton(UIKeys.TEXTURE_PICK_TEXTURE, (b) -> UITexturePicker.open(this.getContext(), value.get(), value::set));
     }
 
-    private UITrackpad component(ValueVector3f value, int axis)
+    UITrackpad component(ValueVector3f value, int axis)
     {
         UITrackpad trackpad = new UITrackpad((v) ->
         {

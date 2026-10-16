@@ -2,8 +2,8 @@
 package com.afrobama.bbstools.client.campreview;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -88,8 +88,8 @@ public class UICameraPreviewWindow extends UIElement
                 /* Close button. */
                 if (context.mouseX >= this.closeBtnX() && context.mouseX < this.closeBtnX() + BUTTON_W)
                 {
-                    if (mchorse.bbs_mod.client.Erweiterungen.vorschauGehoert(this.preview.id))
-                        mchorse.bbs_mod.client.Erweiterungen.vorschau.schliessen();
+                    if (com.blenderbridge.camera.RenderCameraPreview.owns(this.preview.id))
+                        com.blenderbridge.camera.RenderCameraPreview.dismiss();
                     else
                     {
                         CameraPreviewRegistry.remove(this.preview.id);

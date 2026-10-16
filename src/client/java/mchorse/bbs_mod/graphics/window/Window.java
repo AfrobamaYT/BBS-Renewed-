@@ -1,13 +1,14 @@
 package mchorse.bbs_mod.graphics.window;
 
+import org.lwjgl.sdl.SDLMouse;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.sdl.SDLError;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import com.mojang.blaze3d.platform.InputConstants;
 import java.nio.ByteBuffer;
@@ -17,19 +18,16 @@ import java.util.Map;
 
 public class Window
 {
+    public static final int CURSOR_DEFAULT = SDLMouse.SDL_SYSTEM_CURSOR_DEFAULT;
+    public static final int CURSOR_TEXT = SDLMouse.SDL_SYSTEM_CURSOR_TEXT;
+    public static final int CURSOR_POINTER = SDLMouse.SDL_SYSTEM_CURSOR_POINTER;
+    public static final int CURSOR_CROSSHAIR = SDLMouse.SDL_SYSTEM_CURSOR_CROSSHAIR;
+    public static final int CURSOR_EW_RESIZE = SDLMouse.SDL_SYSTEM_CURSOR_EW_RESIZE;
+    public static final int CURSOR_NS_RESIZE = SDLMouse.SDL_SYSTEM_CURSOR_NS_RESIZE;
     private static int verticalScroll;
     private static long lastScroll;
     private static final Map<Integer, Long> standardCursors = new HashMap<>();
     private static int currentCursorShape = -1;
-
-    private static final GLFWErrorCallback clipboardErrorPrint = GLFWErrorCallback.createPrint(System.err);
-    private static final GLFWErrorCallback clipboardErrorCallback = GLFWErrorCallback.create((error, description) ->
-    {
-        if (error != GLFW.GLFW_FORMAT_UNAVAILABLE)
-        {
-            clipboardErrorPrint.invoke(error, description);
-        }
-    });
 
     public static long getWindow()
     {
@@ -54,7 +52,48 @@ public class Window
 
     public static boolean isMouseButtonPressed(int mouse)
     {
-        return GLFW.glfwGetMouseButton(getWindow(), mouse) == GLFW.GLFW_PRESS;
+        return isNativeMouseButtonPressed(nativeMouseButton(mouse));
+    }
+
+    public static boolean isNativeMouseButtonPressed(int button)
+    {
+        return button > 0 && button <= 32
+            && (SDLMouse.nSDL_GetMouseState(0L, 0L) & (1 << (button - 1))) != 0;
+    }
+
+    public static int nativeMouseButton(int button)
+    {
+        return switch (button)
+        {
+            case 0 -> InputConstants.MOUSE_BUTTON_LEFT;
+            case 1 -> InputConstants.MOUSE_BUTTON_RIGHT;
+            case 2 -> InputConstants.MOUSE_BUTTON_MIDDLE;
+            default -> button + 1;
+        };
+    }
+
+    public static int legacyMouseButton(int button)
+    {
+        return switch (button)
+        {
+            case InputConstants.MOUSE_BUTTON_LEFT -> 0;
+            case InputConstants.MOUSE_BUTTON_RIGHT -> 1;
+            case InputConstants.MOUSE_BUTTON_MIDDLE -> 2;
+            default -> button - 1;
+        };
+    }
+
+    public static void getCursorPosition(double[] x, double[] y)
+    {
+        try (MemoryStack stack = MemoryStack.stackPush())
+        {
+            java.nio.FloatBuffer nativeX = stack.mallocFloat(1);
+            java.nio.FloatBuffer nativeY = stack.mallocFloat(1);
+
+            SDLMouse.SDL_GetMouseState(nativeX, nativeY);
+            x[0] = nativeX.get(0);
+            y[0] = nativeY.get(0);
+        }
     }
 
     /* ⛔ MODIFIKATOREN LAUFEN DURCH DEN UEBERNAHME-HALTER (2026-08-04 verdrahtet).
@@ -87,27 +126,17 @@ public class Window
 
     public static boolean isKeyPressed(int key)
     {
-        return InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), key);
+        if (mchorse.bbs_mod.ui.utils.keys.LegacyKeyboardKeys.isUnmapped(key))
+        {
+            return false;
+        }
+
+        return InputConstants.isKeyDown(key);
     }
 
     public static String getClipboard()
     {
-        GLFWErrorCallback previous = GLFW.glfwSetErrorCallback(clipboardErrorCallback);
-
-        try
-        {
-            String string = GLFW.glfwGetClipboardString(getWindow());
-
-            return string == null ? "" : string;
-        }
-        catch (Exception e)
-        {}
-        finally
-        {
-            GLFW.glfwSetErrorCallback(previous);
-        }
-
-        return "";
+        return Minecraft.getInstance().keyboardHandler.getClipboard();
     }
 
     public static MapType getClipboardMap()
@@ -130,24 +159,27 @@ public class Window
         return DataToString.listFromString(getClipboard());
     }
 
+    /**
+     * ⛔ NOT through {@code KeyboardHandler.setClipboard}: Mojang's ClipboardManager encodes the
+     * text on LWJGL's thread-local MemoryStack (64 KiB by default). A copied preset or film part
+     * is larger than that, and the copy crashed the game with "OutOfMemoryError: Out of stack
+     * space" in SDL_SetClipboardText (owner's instance, crash-2026-10-13_21.03.38). The text
+     * goes on the native heap instead, for any size.
+     */
     public static void setClipboard(String string)
     {
-        if (string.length() > 1024)
+        java.nio.ByteBuffer text = org.lwjgl.system.MemoryUtil.memUTF8(string == null ? "" : string);
+
+        try
         {
-            byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
-            ByteBuffer buffer = MemoryUtil.memAlloc(bytes.length + 1);
-
-            buffer.put(bytes);
-            buffer.put((byte) 0);
-            buffer.flip();
-
-            GLFW.glfwSetClipboardString(getWindow(), buffer);
-
-            MemoryUtil.memFree(buffer);
+            if (!org.lwjgl.sdl.SDLClipboard.SDL_SetClipboardText(text))
+            {
+                System.err.println("[clipboard] SDL_SetClipboardText failed: " + org.lwjgl.sdl.SDLError.SDL_GetError());
+            }
         }
-        else
+        finally
         {
-            GLFW.glfwSetClipboardString(getWindow(), string);
+            org.lwjgl.system.MemoryUtil.memFree(text);
         }
     }
 
@@ -175,14 +207,12 @@ public class Window
 
     public static void moveCursor(int x, int y)
     {
-        GLFW.glfwSetCursorPos(getWindow(), x, y);
+        SDLMouse.SDL_WarpMouseInWindow(getWindow(), x, y);
     }
 
     public static void setStandardCursor(int shape)
     {
-        long window = getWindow();
-
-        if (GLFW.glfwGetInputMode(window, GLFW.GLFW_CURSOR) == GLFW.GLFW_CURSOR_DISABLED)
+        if (SDLMouse.SDL_GetWindowRelativeMouseMode(getWindow()))
         {
             currentCursorShape = -1;
 
@@ -194,14 +224,17 @@ public class Window
             return;
         }
 
-        long cursor = standardCursors.computeIfAbsent(shape, GLFW::glfwCreateStandardCursor);
+        long cursor = standardCursors.computeIfAbsent(shape, SDLMouse::SDL_CreateSystemCursor);
 
-        GLFW.glfwSetCursor(window, cursor);
+        if (cursor == 0L || !SDLMouse.SDL_SetCursor(cursor))
+        {
+            throw new IllegalStateException("Cannot set BBS cursor: " + SDLError.SDL_GetError());
+        }
         currentCursorShape = shape;
     }
 
     public static void resetCursor()
     {
-        setStandardCursor(GLFW.GLFW_ARROW_CURSOR);
+        setStandardCursor(SDLMouse.SDL_SYSTEM_CURSOR_DEFAULT);
     }
 }

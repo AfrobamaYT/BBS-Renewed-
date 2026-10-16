@@ -383,7 +383,7 @@ public final class VeilSkinnedBatch implements AutoCloseable
             return;
         }
 
-        vertexArray.setDrawMode(com.mojang.blaze3d.vertex.com.mojang.blaze3d.PrimitiveTopology.TRIANGLES);
+        vertexArray.setDrawMode(com.mojang.blaze3d.vertex.com.mojang.renderpearl.api.pipeline.PrimitiveTopology.TRIANGLES);
         vertexArray.setIndexCount(vertexCount, VertexArray.IndexType.INT);
         /* Non-indexed draw: VertexArray.drawInstancedWithRenderType uses
          * the configured drawMode + indexCount internally — for TRIANGLES

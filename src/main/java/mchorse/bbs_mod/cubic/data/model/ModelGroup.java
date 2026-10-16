@@ -23,10 +23,13 @@ public class ModelGroup implements IMapSerializable
     public List<ModelCube> cubes = new ArrayList<>();
     public List<ModelMesh> meshes = new ArrayList<>();
     public boolean visible = true;
+    /** Hidden by the current pose (BBS FS fce301787); reset with the pose. */
+    public boolean poseVisible = true;
     public int index = -1;
 
     public float lighting = 0F;
     public Color color = new Color().set(1F, 1F, 1F);
+    public final Color overlay = new Color(1F, 1F, 1F, 0F);
     public Transform initial = new Transform();
     public Transform current = new Transform();
 
@@ -60,8 +63,10 @@ public class ModelGroup implements IMapSerializable
 
     public void reset()
     {
+        this.poseVisible = true;
         this.lighting = 0F;
         this.color.set(1F, 1F, 1F);
+        this.overlay.set(1F, 1F, 1F, 0F);
         this.current.copy(this.initial);
         this.orient = null;
         this.offset = null;
@@ -171,5 +176,10 @@ public class ModelGroup implements IMapSerializable
 
             data.put("meshes", list);
         }
+    }
+
+    public boolean isVisible()
+    {
+        return this.visible && this.poseVisible;
     }
 }

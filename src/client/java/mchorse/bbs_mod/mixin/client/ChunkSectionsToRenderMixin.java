@@ -39,7 +39,10 @@ public class ChunkSectionsToRenderMixin
      * Warteschlange ab, bevor der Hauptdurchgang die Formen ueberhaupt gezeichnet hat.</p>
      */
     @Inject(method = "renderGroup", at = @At("HEAD"))
-    public void onRenderGroup(ChunkSectionLayerGroup gruppe, com.mojang.blaze3d.textures.GpuSampler abtaster, CallbackInfo info)
+    public void onRenderGroup(ChunkSectionLayerGroup gruppe,
+        com.mojang.renderpearl.api.commands.RenderPass pass,
+        com.mojang.renderpearl.api.textures.GpuSampler abtaster,
+        com.mojang.renderpearl.api.textures.GpuTextureView textur, boolean tiefenpass, CallbackInfo info)
     {
         MixinBruecke.rufe("ChunkSectionsToRenderLogik", "renderGroup", gruppe);
     }
@@ -61,7 +64,10 @@ public class ChunkSectionsToRenderMixin
      * mit Sodium haben will, braucht einen zweiten Haken in dessen Renderer.</p>
      */
     @Inject(method = "renderGroup", at = @At("HEAD"), cancellable = true)
-    public void bbs$gelaendeVerbergen(ChunkSectionLayerGroup gruppe, com.mojang.blaze3d.textures.GpuSampler abtaster, CallbackInfo info)
+    public void bbs$gelaendeVerbergen(ChunkSectionLayerGroup gruppe,
+        com.mojang.renderpearl.api.commands.RenderPass pass,
+        com.mojang.renderpearl.api.textures.GpuSampler abtaster,
+        com.mojang.renderpearl.api.textures.GpuTextureView textur, boolean tiefenpass, CallbackInfo info)
     {
         if (com.afrobama.blendertransform.ChromaHimmelLogik.gelaendeVerbergen())
         {

@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.film;
 
+import mchorse.bbs_mod.settings.EditorZustaende;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 
 /**
@@ -19,43 +20,30 @@ public final class ZeitleisteZweig
 	{
 	}
 
-	/** Three-click loop input; tick zero is a valid start, not an unset marker. */
-	public static final class LoopInput
+	/** Koerper zum Modus zeigen: 0/1 = Replay-Dope-Sheet, 2 = Kamera-Clips. */
+	/** Action clips as a timeline mode where the camera clips sit (Blender: Action Editor); inside
+	 *  the replay editor the Nano timeline covered them. */
+	public static UIClipsPanel aktionenEditor(UIFilmPanel panel)
 	{
-		private mchorse.bbs_mod.film.Film film;
-		private boolean pending;
+		UIClipsPanel editor = new UIClipsPanel(panel, mchorse.bbs_mod.BBSMod.getFactoryActionClips()).target(panel.editArea);
+		editor.relative(panel.main).x(0).y(26).w(1F).h(1F, -26).setVisible(false);
+		return editor;
+	}
 
-		public void klick(UIFilmPanel panel, int cursor)
+	public static void aktionenZeigen(UIFilmPanel panel, boolean sichtbar, boolean mainActive)
+	{
+		panel.actionEditor.setVisible(sichtbar);
+		panel.actionEditor.setTimelineVisible(mainActive && sichtbar);
+	}
+
+	public static void aktionenModus(UIFilmPanel panel)
+	{
+		if (panel.zeitleisteNano instanceof UIZeitleisteNano z)
 		{
-			if (this.film != panel.getData())
-			{
-				this.film = panel.getData();
-				this.pending = false;
-			}
-
-			UIClips clips = panel.cameraEditor.clips;
-
-			if (clips.loopMin != clips.loopMax && clips.loopMax != 0)
-			{
-				clips.loopMin = 0;
-				clips.loopMax = 0;
-				this.pending = false;
-			}
-			else if ((this.pending || clips.loopMin != 0) && clips.loopMax == 0 && cursor > clips.loopMin)
-			{
-				clips.setLoopMax();
-				this.pending = false;
-			}
-			else
-			{
-				clips.setLoopMin();
-				clips.loopMax = 0;
-				this.pending = true;
-			}
+			z.modusUmschalten(3);
 		}
 	}
 
-	/** Koerper zum Modus zeigen: 0/1 = Replay-Dope-Sheet, 2 = Kamera-Clips. */
 	public static void anwenden(UIFilmPanel panel, int modus)
 	{
 		if (panel == null || panel.getData() == null)
@@ -63,7 +51,19 @@ public final class ZeitleisteZweig
 			return;
 		}
 
-		UIElement ziel = modus == 2 ? panel.cameraEditor : panel.replayEditor;
+		UIElement ziel = modus == 3 ? panel.actionEditor
+			: modus == 2 ? panel.cameraEditor : panel.replayEditor;
+
+		/* Kamera- und Action-Clips teilen den Clip-Wirt im Dock: der verborgene Zweig gibt frei. */
+		if (ziel != panel.cameraEditor && panel.cameraEditor.getClip() != null)
+		{
+			panel.cameraEditor.pickClip(null);
+		}
+
+		if (ziel != panel.actionEditor && panel.actionEditor.getClip() != null)
+		{
+			panel.actionEditor.pickClip(null);
+		}
 
 		/* isVisible() ist die eigene Flagge des Panels; updateMainEditorVisibility setzt
 		 * sie exakt fuer den aktiven Zweig — als Wechsel-Pruefung reicht sie, und sie
@@ -72,6 +72,32 @@ public final class ZeitleisteZweig
 		if (!ziel.isVisible())
 		{
 			panel.showPanel(ziel);
+		}
+	}
+
+	/** Undo keeps the editor you chose (Blender). It used to restore the shown editor from a stale UI
+	 *  snapshot: undoing a key jumped to the camera clips while the menu still read "Dope Sheet"
+	 *  (measured 2026-10-15). Without the Nano timeline the old restore stays. */
+	/** A bone picked to pose: the timeline leaves the camera clips for the dope sheet, so the key the
+	 *  pose writes is in view (BBS FS's pickReplay shows the replay editor the same way). Before, the
+	 *  key went in unseen (speed test T4, 2026-10-16). */
+	public static void posieren(UIFilmPanel panel)
+	{
+		if (panel != null && panel.zeitleisteNano instanceof UIZeitleisteNano z && z.modus == 2)
+		{
+			z.modusUmschalten(2);
+		}
+	}
+
+	public static void zeigen(UIFilmPanel panel, int index)
+	{
+		if (panel.zeitleisteNano instanceof UIZeitleisteNano z)
+		{
+			anwenden(panel, z.modus);
+		}
+		else
+		{
+			panel.showPanel(index);
 		}
 	}
 
@@ -108,6 +134,7 @@ public final class ZeitleisteZweig
 		/* Das Dock lebt unabhaengig vom Zweig — die Kategorie-Schiene regelt, was zu
 		 * sehen ist; propertiesVisible haelt nur noch den Kein-Film-Fall dunkel. */
 		panel.cameraEditor.setPropertiesVisible(cameraVisible || replayVisible || mainActive);
+		panel.actionEditor.setPropertiesVisible(cameraVisible || replayVisible || mainActive);
 		panel.replayEditor.setPropertiesVisible(cameraVisible || replayVisible || mainActive);
 	}
 
@@ -127,31 +154,29 @@ public final class ZeitleisteZweig
 
 	/** Magnet fuer das Key-Ziehen. INVERTIERT gespeichert: ein per Hotswap neues
 	 *  static-Feld startet mit false — so ist der Magnet nach einem Swap AN (Default). */
-	private static boolean magnetAus;
 
 	public static boolean istMagnet()
 	{
-		return !magnetAus;
+		return !EditorZustaende.zeitleisteMagnetAus.get();
 	}
 
 	public static void magnetToggle()
 	{
-		magnetAus = !magnetAus;
+		EditorZustaende.zeitleisteMagnetAus.set(!EditorZustaende.zeitleisteMagnetAus.get());
 	}
 
 	/** „Only selected bone" (Blenders Only Show Selected): filtert die Pose-Bone-Zeilen
 	 *  des Dope Sheets auf den im Keyframe-Editor aktiven Knochen. Zustand statisch —
 	 *  die Editoren werden je Replay-Wechsel neu gebaut, der Filter soll ueberleben. */
-	private static boolean nurBone;
 
 	public static boolean istBoneFilter()
 	{
-		return nurBone;
+		return EditorZustaende.zeitleisteNurBone.get();
 	}
 
 	public static void boneFilterToggle(UIFilmPanel panel)
 	{
-		nurBone = !nurBone;
+		EditorZustaende.zeitleisteNurBone.set(!EditorZustaende.zeitleisteNurBone.get());
 		boneFilterAnwenden(panel);
 	}
 
@@ -196,7 +221,7 @@ public final class ZeitleisteZweig
 
 		String suche = kanalSuche().toLowerCase();
 
-		if (!nurBone && suche.isEmpty())
+		if (!EditorZustaende.zeitleisteNurBone.get() && suche.isEmpty())
 		{
 			if (dope.zusatzFilter != null)
 			{
@@ -207,14 +232,14 @@ public final class ZeitleisteZweig
 			return;
 		}
 
-		String kennung = (nurBone ? "b|" : "|") + suche;
+		String kennung = (EditorZustaende.zeitleisteNurBone.get() ? "b|" : "|") + suche;
 
 		if (dope.zusatzFilter instanceof KanalFilter alt && alt.kennung.equals(kennung))
 		{
 			return;
 		}
 
-		dope.zusatzFilter = new KanalFilter(kennung, nurBone, suche, panel.replayEditor);
+		dope.zusatzFilter = new KanalFilter(kennung, EditorZustaende.zeitleisteNurBone.get(), suche, panel.replayEditor);
 		/* Ohne Neuvermessung bleibt der Scrollbereich der VOLLEN Liste stehen und der
 		 * alte Offset haengt unter dem geschrumpften Inhalt. */
 		dope.updateScrollSize();
@@ -282,7 +307,7 @@ public final class ZeitleisteZweig
 			return;
 		}
 
-		if (panel.zeitleisteNano instanceof UIZeitleisteNano z && z.modus == 2)
+		if (panel.zeitleisteNano instanceof UIZeitleisteNano z && z.modus >= 2)
 		{
 			z.modus = 1;
 			z.auffrischen();

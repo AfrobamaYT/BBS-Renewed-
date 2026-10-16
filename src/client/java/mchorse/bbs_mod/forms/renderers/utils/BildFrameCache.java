@@ -9,7 +9,7 @@ package mchorse.bbs_mod.forms.renderers.utils;
  * beim Rigify-Menschen bis zu 220 volle Aufbauten pro Bild. Gemessen waren 23 von 30
  * Render-Stapelabzuegen unter diesem Pfad, der Editor lief mit 3 FPS.
  *
- * <p>Static-Holder statt neuem Parameter: die Zielmethode liegt
+ * <p>Static-Holder statt neuem Parameter, wie {@code RegionClamp}: die Zielmethode liegt
  * in einer 1552-Zeilen-Klasse, die laut Monolith-Waechter nur noch schrumpfen darf, und
  * ein reiner Body-Edit ist ausserdem hotswapbar.
  *

@@ -38,7 +38,7 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -198,7 +198,7 @@ public final class FastPathRenderer
          * that vanilla does inside render3D line 625. */
         PoseStack stack = new PoseStack();
         stack.mulPose(s.worldMatrix);
-        stack.mulPose(Axis.YP.rotation((float) MathUtils.PI));
+        stack.rotate(Axis.YP.rotation((float) MathUtils.PI));
 
         if (BBSPerfConfig.ENABLE_FAST_PATH_DIRECT)
         {

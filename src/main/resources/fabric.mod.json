@@ -38,14 +38,20 @@
   "icon": "assets/bbs/icon.png",
   "environment": "*",
   "entrypoints": {
+    "preLaunch": [
+      "com.afrobama.bbstools.preload.LinuxFontBinding"
+    ],
     "main": [
       "mchorse.bbs_mod.BBSMod",
       "com.afrobama.bbstools.BBSToolsMod"
     ],
     "client": [
       "mchorse.bbs_mod.BBSModClient",
-      "mchorse.bbs_mod.film.markers.TimerGroundClient",
-      "com.afrobama.bbstools.client.BBSToolsModClient"
+      "com.afrobama.bbstools.client.BBSToolsModClient",
+      "com.blenderbridge.BlenderBridgeClient",
+      "com.davincilink.DavinciLinkClient",
+      "mchorse.bbs_mod.ui.texturstudio.TexturStudioStart",
+      "mchorse.bbs_mod.ui.utils.renderers.InputRendererStart"
     ]
   },
   "mixins": [
@@ -60,14 +66,34 @@
       "environment": "client"
     },
     {
+      "config": "blenderbridge.mixins.json",
+      "environment": "client"
+    },
+    {
       "config": "bbstools.physicsmod.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "bbs.vitrail.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "bbs.vitrail.attachments.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "bbs.vitrail.geometry.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "bbs.vitrail.render.mixins.json",
       "environment": "client"
     }
   ],
   "accessWidener": "bbs.accesswidener",
   "depends": {
-    "fabricloader": ">=0.16.14",
-    "minecraft": "~26.2",
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
     "java": ">=25",
     "fabric-api": "*"
   }

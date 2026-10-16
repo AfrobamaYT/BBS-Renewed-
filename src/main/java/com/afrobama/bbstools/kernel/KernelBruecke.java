@@ -389,7 +389,7 @@ public final class KernelBruecke
      *   &#64;Inject(method = "tick", at = &#64;At("HEAD"), cancellable = true)
      *   private void bbs$skip(CallbackInfo ci)
      *   {
-     *       if (KernelBruecke.rufeUndAbbrechen("BeispielLogik", "sollUeberspringen", this)) ci.cancel();
+     *       if (KernelBruecke.rufeUndAbbrechen("MobArmyLogik", "sollUeberspringen", this)) ci.cancel();
      *   }
      * </pre>
      *

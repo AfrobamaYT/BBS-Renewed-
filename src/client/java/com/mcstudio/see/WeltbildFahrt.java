@@ -12,7 +12,7 @@ import java.io.File;
  * /shot_world_seq (v1), dessen Off-Schedule-renderLevel auf 26.2 den Folgeframe toetet.
  *
  * <p>MECHANIK: pro Tick zwei Schritte — (a) auf dem Render-Thread {@code UIFilmPanel.setCursor(tick)}
- * (derselbe Scrub wie Timeline-Drag), (b) {@link WorldShot#fangen} vom Aufrufer-Thread:
+ * (derselbe Scrub wie Timeline-Drag/PlayheadSync), (b) {@link WorldShot#fangen} vom Aufrufer-Thread:
  * scharfstellen und den NAECHSTEN echten Frame am Ende des Level-Passes abgreifen. Zwischen Scrub und
  * Fang liegt damit immer eine echte Frame-Grenze; die Pose des Ticks steht, wenn gefangen wird.
  * Der ganze Sweep laeuft auf dem HTTP-Thread — der Render-Thread wird nie blockiert.</p>
@@ -22,8 +22,8 @@ import java.io.File;
  * sein, sonst Fehler statt stiller Falschrender.</p>
  *
  * <p>EHRLICHE GRENZE (geerbt von v1, dort dokumentiert): die KAMERA folgt dem Scrub sicher je Tick;
- * ob jede Replay-KOERPERpose im selben Frame nachzieht, ist nicht zugesichert. Fuer einen
- * Welt-Hintergrund (Welt + Kamera) reicht das.</p>
+ * ob jede Replay-KOERPERpose im selben Frame nachzieht, ist nicht zugesichert. Fuer den Composite-
+ * Hintergrund (Welt + Kamera) reicht das; die Modelle kommen aus Blender.</p>
  */
 public final class WeltbildFahrt
 {
@@ -69,12 +69,6 @@ public final class WeltbildFahrt
 	 */
 	public static String fahren(String basis, int start, int frames, String wunschFilm, int fps)
 	{
-		return fahren(basis, start, frames, wunschFilm, fps, false);
-	}
-
-	/** Composite exports use video settings; diagnostic captures retain preview size. */
-	public static String fahren(String basis, int start, int frames, String wunschFilm, int fps, boolean export)
-	{
 		if (fps <= 0)
 		{
 			return "{\"error\":\"fps muss > 0 sein (bekommen: " + fps + ")\"}";
@@ -116,16 +110,6 @@ public final class WeltbildFahrt
 
 		try
 		{
-			if (export)
-			{
-				RenderThread.submit(() ->
-				{
-					UIFilmPanel.applyExportSizeToBBS();
-
-					return "";
-				});
-			}
-
 			for (int i = 0; i < frames; i++)
 			{
 				final int index = start + i;
@@ -133,16 +117,14 @@ public final class WeltbildFahrt
 				final int tick = zaehler / fps;
 				float rest = (zaehler % fps) / (float) fps;
 
-				/* Rest VOR dem Scrub setzen (volatile, vom Fahrt-Thread): der Scrub laeuft am
-				 * Tick-Ende auf dem Render-Thread, der Fang wartet auf den NAECHSTEN echten Frame
-				 * — der sieht Tick und Rest zusammen. Bewusst NICHT in der Lambda unten: deren
-				 * Fang-Menge und -Signatur bleiben so identisch zur geladenen Fassung (Skill
-				 * /hotswap: Lambda-Menge aendern bricht den Swap still). */
-				SubTick.setzen(rest);
-
-				/* Scrub auf dem Render-Thread; der Rueckgabewert ist egal, submit synchronisiert. */
+				/* Rest UND Scrub zusammen auf dem Render-Thread setzen, zwischen zwei Frames. Vorher
+				 * schrieb die Fahrt den Rest aus IHREM Thread mitten in einen laufenden Frame:
+				 * Vitrail sah die Pose zwischen Einsammeln und Zeichnen wechseln und brach mit "Late
+				 * native form/entity/pose changed" ab (zwei Abstuerze 2026-10-14, 11:18 und 11:35). */
+				WeltbildFahrtRest.vormerken(rest);
 				RenderThread.submit(() ->
 				{
+					WeltbildFahrtRest.anwenden();
 					panel.setCursor(tick);
 
 					return "";
@@ -155,9 +137,12 @@ public final class WeltbildFahrt
 				{
 					geschrieben++;
 				}
-				else if (ersterFehler == null)
+				else
 				{
+					/* Erster Fehler bricht ab: ohne Abbruch wartete die Fahrt jeden Frame erneut in
+					 * denselben Timeout (108 Frames, ~18 min, 0 Bilder) und meldete erst am Ende. */
 					ersterFehler = json;
+					break;
 				}
 			}
 		}
@@ -165,7 +150,7 @@ public final class WeltbildFahrt
 		{
 			/* Erst den Rest loesen, dann den Cursor zurueck — der Editor scrubbt danach wieder
 			 * mit Partial-Tick 0, wie vor der Fahrt. */
-			SubTick.loesen();
+			WeltbildFahrtRest.loesen();
 			klammer.zuruecknehmen(cursorVorher);
 		}
 
@@ -198,7 +183,7 @@ public final class WeltbildFahrt
 	/** peekDashboard, NICHT getDashboard — letzteres baut als Nebenwirkung ein Dashboard. */
 	private static UIFilmPanel film()
 	{
-		UIDashboard dashboard = mchorse.bbs_mod.BBSModClient.getDashboardIfCreated();
+		UIDashboard dashboard = com.blenderbridge.BBSCompat.peekDashboard();
 
 		if (dashboard == null)
 		{

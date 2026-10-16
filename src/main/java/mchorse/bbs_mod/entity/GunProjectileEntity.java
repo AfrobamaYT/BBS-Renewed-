@@ -239,7 +239,7 @@ public class GunProjectileEntity extends Projectile implements IEntityFormProvid
             {
                 this.onHit(hitResult);
 
-                this.hurtMarked = true;
+                this.syncVelocity = true;
             }
 
             v = this.getDeltaMovement();

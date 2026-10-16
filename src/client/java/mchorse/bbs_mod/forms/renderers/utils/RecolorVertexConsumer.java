@@ -107,6 +107,14 @@ public class RecolorVertexConsumer implements VertexConsumer
         return this;
     }
 
+    @Override
+    public VertexConsumer setUv3(float u, float v)
+    {
+        this.consumer.setUv3(u, v);
+
+        return this;
+    }
+
     /** Nur fuer Linienzuege; die Umfaerbung hat daran nichts zu tun. */
     @Override
     public VertexConsumer setLineWidth(float breite)

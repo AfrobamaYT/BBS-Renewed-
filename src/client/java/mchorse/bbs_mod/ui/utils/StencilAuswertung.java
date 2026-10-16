@@ -125,8 +125,14 @@ final class StencilAuswertung
             /* Blenders Klick-Toleranz (view3d_select: 14->9->5px-Kaskade um den Cursor):
              * Gizmo-Handles gewinnen, dann der exakte Pixel, dann die NAECHSTE beliebige
              * Kennung im Radius — sonst sind duenne Wire-Widgets und schmale Marker nur
-             * pixelgenau klickbar und fuehlen sich tot an. */
-            index = nearestHandle != 0 ? nearestHandle : (centerId != 0 ? centerId : nearestAny);
+             * pixelgenau klickbar und fuehlen sich tot an.
+             *
+             * Aber nur ueber LEERER Flaeche: liegt der Zeiger auf einem Knochen oder einer Form,
+             * entscheidet der exakte Pixel (die Ringe sind im Auswahlpuffer ohnehin dicker als
+             * sichtbar). Sonst zogen die Ringe beim Hoechstwert 40, den das Spiel des Besitzers
+             * hat, 100 % eines posierten Darstellers an sich und kein Knochen war klickbar
+             * (gemessen 2026-10-15, Raster ueber den Darsteller). */
+            index = nearestHandle != 0 && centerId == 0 ? nearestHandle : (centerId != 0 ? centerId : nearestAny);
 
             /* Messfuehler 2026-08-02, zweiter Anlauf: das Leseziel stimmt inzwischen
              * (gebunden=29=eigener), der Index bleibt 0. Diese Zeile trennt die zwei

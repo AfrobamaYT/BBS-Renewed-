@@ -144,4 +144,11 @@ public final class VektorGlyphAtlas
     {
         return this.texture;
     }
+
+    public void schliessen()
+    {
+        if (this.texture != null) { this.texture.delete(); this.texture = null; }
+        if (this.bild != null) { MemoryUtil.memFree(this.bild); this.bild = null; }
+        this.glyphen.clear();
+    }
 }

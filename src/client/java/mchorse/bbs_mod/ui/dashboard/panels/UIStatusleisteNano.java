@@ -212,8 +212,11 @@ public class UIStatusleisteNano extends UIElement
 			x += NanoDesign.breite(hw[1], 10.5F * k) + 16F * k;
 		}
 
-		/* F3 als Chip — die einzige Taste, die der Entwurf hier zeigt */
-		float f3B = NanoDesign.breite("F3", 9.5F * k) + 10F * k;
+		/* Die Taste der Befehlssuche als Chip. Hier stand fest "F3" -- F3 oeffnet aber Vanillas
+		 * Debug-Overlay, die Suche liegt auf Strg+P (Audit 2026-10-13, Befund 15). Gezeigt wird
+		 * die echte Belegung, auch nach einer Umbelegung im Keybind-Editor. */
+		String taste = mchorse.bbs_mod.ui.Keys.BEFEHLS_PALETTE.getKeyCombo();
+		float f3B = NanoDesign.breite(taste, 9.5F * k) + 10F * k;
 
 		NanoStifte.widget(vg, x, h / 2F - 6.5F * k, f3B, 13F * k, 3F * k, 0x2C2C2C, k);
 
@@ -221,20 +224,32 @@ public class UIStatusleisteNano extends UIElement
 		 * `h / 2F + 3F * k` — ein Naeherungswert fuer den Abstand Mitte→Grundlinie, der bei
 		 * dieser Schriftgroesse zu gross war: „F3" sass sichtbar zu tief im Chip. `textMitte`
 		 * setzt NVG_ALIGN_MIDDLE|CENTER und trifft die Mitte exakt, in beiden Achsen. */
-		NanoStifte.textMitte(vg, NanoDesign.BOLD, 9.5F * k, x + f3B / 2F, h / 2F, 0xC6C6C6, "F3");
+		NanoStifte.textMitte(vg, NanoDesign.BOLD, 9.5F * k, x + f3B / 2F, h / 2F, 0xC6C6C6, taste);
 		x += f3B + 6F * k;
 		NanoStifte.text(vg, NanoDesign.SANS, 10.5F * k, x, y, NanoDesign.TXT_DIM, "Command search", null);
 		/* In x einrechnen — die Platzpruefung des rechten Texts mass sonst gegen das x VOR
 		 * dieser Beschriftung und liess beide uebereinanderlaufen (Akte 36). */
 		x += NanoDesign.breite("Command search", 10.5F * k);
 
+		/* Help (2026-10-14, spec section 4): its key stays in sight, beside the command search */
+		String hilfe = mchorse.bbs_mod.ui.Keys.HILFE.getKeyCombo();
+		float hb = NanoDesign.breite(hilfe, 9.5F * k) + 10F * k;
+
+		x += 16F * k;
+		NanoStifte.widget(vg, x, h / 2F - 6.5F * k, hb, 13F * k, 3F * k, 0x2C2C2C, k);
+		NanoStifte.textMitte(vg, NanoDesign.BOLD, 9.5F * k, x + hb / 2F, h / 2F, 0xC6C6C6, hilfe);
+		x += hb + 6F * k;
+		NanoStifte.text(vg, NanoDesign.SANS, 10.5F * k, x, y, NanoDesign.TXT_DIM, "Help", null);
+		x += NanoDesign.breite("Help", 10.5F * k);
+
 		/* Rechts: Speicherstand und Dateipfad — was der Entwurf dort zeigt. */
 		UIFilmPanel panel = filmPanel();
-		String rechts = "BBS 26.2";
+		String version = "BBS " + net.minecraft.SharedConstants.getCurrentVersion().name();
+		String rechts = version;
 
 		if (panel != null && panel.getData() != null)
 		{
-			rechts = "films/" + panel.getData().getId() + ".bbs     BBS 26.2";
+			rechts = "films/" + panel.getData().getId() + ".bbs     " + version;
 		}
 
 		float rb = NanoDesign.breite(rechts, 10.5F * k);

@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.cubic.render.vao;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import org.lwjgl.system.MemoryUtil;
 
@@ -54,10 +54,24 @@ public class ModelVAO implements IModelVAO
     private GpuBuffer licht;
 
     private int ecken;
+    private GpuBuffer vitrailCorners;
 
     public ModelVAO(ModelVAOData data)
     {
         this.upload(data);
+    }
+
+    /** With a pick id per vertex in place of the zeros (see MobPickNetz) */
+    public ModelVAO(ModelVAOData data, float[] licht)
+    {
+        this.upload(data, licht);
+    }
+
+    public void upload(ModelVAOData data, float[] licht)
+    {
+        this.upload(data);
+        this.licht.close();
+        this.licht = puffer("bbs-modell-licht", licht);
     }
 
     public void delete()
@@ -67,6 +81,11 @@ public class ModelVAO implements IModelVAO
 
     private void schliessen()
     {
+        if (this.vitrailCorners != null)
+        {
+            this.vitrailCorners.close();
+            this.vitrailCorners = null;
+        }
         if (this.position != null)
         {
             IrisModelBuffers.close(this.position);
@@ -128,7 +147,8 @@ public class ModelVAO implements IModelVAO
              * genau deshalb einen Messlauf gekostet. Massgeblich ist nicht, wie der Puffer
              * entsteht, sondern ob er je wieder beschrieben wird. */
             return RenderSystem.getDevice().createBuffer(() -> name,
-                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, roh);
+                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_COPY_SRC
+                    | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER, roh);
         }
         finally
         {
@@ -171,5 +191,13 @@ public class ModelVAO implements IModelVAO
     public int eckenZahl()
     {
         return this.ecken;
+    }
+
+    public mchorse.bbs_mod.integrations.vitrail.VitrailMeshInputs vitrailInputs()
+    {
+        if (this.vitrailCorners == null)
+            this.vitrailCorners = mchorse.bbs_mod.integrations.vitrail.VitrailCornerBuffer.create(this.ecken);
+        return mchorse.bbs_mod.integrations.vitrail.VitrailMeshInputs.model(this.vitrailCorners, this.ecken,
+            this.ecken, this.position, this.normale, this.texturUV, null);
     }
 }

@@ -81,8 +81,7 @@ public final class CameraFrustumMeshRenderer
             mchorse.bbs_mod.ui.film.UIFilmPanel panel = mchorse.bbs_mod.BBSModClient.getDashboard()
                 .getPanel(mchorse.bbs_mod.ui.film.UIFilmPanel.class);
 
-            int feld = panel.preview.getViewport().w * (int) net.minecraft.client.Minecraft
-                .getInstance().getWindow().getGuiScale();
+            int feld = Math.round(panel.preview.getViewport().w * mchorse.bbs_mod.BBSModClient.getGUIScale());
             int puffer = mchorse.bbs_mod.client.BBSRendering.getVideoWidth();
 
             if (feld <= 0 || puffer <= 0)
@@ -185,8 +184,8 @@ public final class CameraFrustumMeshRenderer
          *  the user is currently viewing from. */
         stack.pushPose();
         stack.translate(a.pose[0] - camX, a.pose[1] - camY, a.pose[2] - camZ);
-        stack.mulPose(Axis.YP.rotationDegrees(-(float) a.pose[3]));
-        stack.mulPose(Axis.XP.rotationDegrees((float) a.pose[4]));
+        stack.rotate(Axis.YP.rotationDegrees(-(float) a.pose[3]));
+        stack.rotate(Axis.XP.rotationDegrees((float) a.pose[4]));
 
         /* Der Sammler kopiert die AKTUELLE Pose (javap:
          *  CustomFeatureRenderer$Submit ist ein Record ueber PoseStack$Pose,

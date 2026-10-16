@@ -7,7 +7,7 @@
 // CPU-bake math without per-job allocations.
 //
 // STRIDE: vertex stride in bytes (defaults to 54 — the Iris-extended
-// entity format the wrapped renderer bakes into). Total off-heap
+// entity format CrowdIrisWrappedRenderer bakes into). Total off-heap
 // size = STRIDE * 4096 = 216 KiB / worker. With max-10 workers that's
 // ~2 MiB pool-wide off-heap — negligible.
 //
@@ -29,7 +29,7 @@ public final class BBSEntityBuildContext implements AutoCloseable
     /** Off-heap scratch — direct ByteBuffer wrapping a memAlloc'd block. */
     public final ByteBuffer scratch;
 
-    /** Bone-pivot scratch — 6 floats per bone slot. */
+    /** Bone-pivot scratch — 6 floats per CrowdMeshLoader.BONE_COUNT slot. */
     public final float[] boneAng = new float[6];
 
     /** Reusable per-job transform matrix. */

@@ -101,7 +101,7 @@ public class UIUtils
     public static int[] viewportArea(Area area)
     {
         Minecraft mc = Minecraft.getInstance();
-        float scale = (float) mc.getWindow().getGuiScale();
+        float scale = mchorse.bbs_mod.BBSModClient.getGUIScale();
 
         int vx = Math.round(area.x * scale);
         int vy = Math.round(mc.getWindow().getHeight() - (area.y + area.h) * scale);

@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
 import com.afrobama.bbstools.client.blender.MixinBruecke;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -8,7 +9,9 @@ import com.mojang.blaze3d.vertex.VertexSorting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.state.OptionsRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.state.level.PlayerRenderState;
 import org.joml.Matrix4f;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -172,6 +175,33 @@ public class GameRendererMixin
     }
 
     /**
+     * {@code render3dHud} @HEAD — nach der Welt UND nach dem Composite eines Shaderpacks
+     * (Vitrail haengt sein {@code PackChain.draw} direkt hinter {@code LevelRenderer.render}),
+     * aber vor Handprojektion und Tiefenloeschung. Was bei END_MAIN gezeichnet wird, ueberschreibt
+     * das Composite (gemessen 2026-10-11).
+     */
+    @Inject(method = "render3dHud", at = @At("HEAD"), require = 1)
+    private void onBeforeHud3d(CameraRenderState kamera, PlayerRenderState spieler, OptionsRenderState optionen,
+        boolean hud, CallbackInfo info)
+    {
+        MixinBruecke.rufe("SpielRendererLogik", "nachDerWelt", kamera);
+    }
+
+    /**
+     * 26.3: Hand, Bildschirmeffekte und Debug-Fadenkreuz lesen das FELD {@code mainRenderTarget},
+     * nicht die oben umgelenkte Methode. Im Editor landete die Tracker-Hand darum in Mojangs
+     * Fensterziel statt in BBS' Puffer und blieb unsichtbar (gemessen 2026-10-12: Puffer 1460x658,
+     * Feld 1908x1028). require = 5: vier Lesestellen in render3dHud, eine in renderItemInHand.
+     */
+    @ModifyExpressionValue(method = {"render3dHud", "renderItemInHand"}, require = 5, at = @At(value = "FIELD",
+        target = "Lnet/minecraft/client/renderer/GameRenderer;mainRenderTarget:Lcom/mojang/blaze3d/pipeline/RenderTarget;",
+        opcode = Opcodes.GETFIELD))
+    private RenderTarget bbs$handZiel(RenderTarget original) throws Throwable
+    {
+        return (RenderTarget) MixinBruecke.rufePflicht("SpielRendererLogik", "himmelsziel", original);
+    }
+
+    /**
      * ⛔ EINHAENGUNG ZURUECK AUF DIE FORM DER VORLAGE (2026-08-02).
      *
      * <p>Hier stand eine FIELD-Injektion auf {@code Options.hideGui} — spezifischer als
@@ -192,8 +222,22 @@ public class GameRendererMixin
      * soll der Start LAUT scheitern statt still ein Feature zu verlieren.</p>
      */
     @Inject(method = "render", at = @At("HEAD"), require = 1)
-    private void onBeforeHudRendering(DeltaTracker tickCounter, boolean tick, CallbackInfo info)
+    private void onBeforeHudRendering(CallbackInfo info)
     {
         MixinBruecke.rufe("SpielRendererLogik", "vorDemBildschirm");
+    }
+
+    @Inject(method = "render", require = 1, at = @At(value = "INVOKE",
+        target = "Lnet/minecraft/client/gui/render/GuiRenderer;render()V", shift = At.Shift.BEFORE))
+    private void bbs$beforeGuiDraw(CallbackInfo callback) throws Throwable
+    {
+        MixinBruecke.rufePflicht("SpielRendererLogik", "vorGuiZeichnen");
+    }
+
+    @Inject(method = "render", require = 1, at = @At(value = "INVOKE",
+        target = "Lnet/minecraft/client/gui/render/GuiRenderer;render()V", shift = At.Shift.AFTER))
+    private void bbs$afterGuiDraw(CallbackInfo callback) throws Throwable
+    {
+        MixinBruecke.rufePflicht("SpielRendererLogik", "nachGuiZeichnen");
     }
 }

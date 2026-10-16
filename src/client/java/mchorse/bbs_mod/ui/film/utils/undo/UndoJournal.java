@@ -49,10 +49,10 @@ import java.util.zip.CRC32;
  * <p>Zusaetzlich wird ueber eine Nachbardatei geschrieben und erst danach umbenannt, damit ein
  * Absturz waehrend des Schreibens nicht die bereits gueltige alte Historie zerstoert.</p>
  *
- * <p>Serialisiert werden {@link ValueChangeUndo} und {@link CompoundUndo} daraus — zusammen ist das
- * die VOLLSTAENDIGE Undo-Historie der Film-Bearbeitung: {@code UIFormUndoHandler.submitUndo} legt
- * genau diese beiden Arten in den Manager (Zeilen 157 und 161), und kein anderer Aufrufer schreibt
- * in den Undo-Manager des Films. Beide tragen nur BBS-eigene Datentypen ({@link DataPath},
+ * <p>Serialisiert werden {@link ValueChangeUndo}, {@link FormPropertyChangeUndo},
+ * {@link AnimationChannelPresenceUndo} und {@link CompoundUndo} daraus. Die letzten beiden
+ * Domain-Arten erhalten genaue Form-Eigenschaften und zuvor abwesende Animationsspuren.
+ * Die Checkpoints tragen nur BBS-eigene Datentypen ({@link DataPath},
  * {@link BaseType}, {@link MapType}), also genau das, was BBS ohnehin in die Film-{@code .dat}
  * schreibt. Die Undo-Arten des Pixel-Editors und der Textfelder haengen an eigenen, getrennten
  * Managern und kommen hier nie an.</p>
@@ -91,6 +91,8 @@ public final class UndoJournal
     private static final String KEY_CHILDREN = "c";
     private static final String TYPE_VALUE_CHANGE = "vc";
     private static final String TYPE_COMPOUND = "cu";
+    private static final String TYPE_CHANNEL_PRESENCE = "acp";
+    private static final String TYPE_FORM_PROPERTY = "fpc";
 
     /**
      * Gelesene Historie samt Cursor-Position.
@@ -186,8 +188,8 @@ public final class UndoJournal
 
                 if (data == null)
                 {
-                    /* Sollte nicht vorkommen: die Film-Historie kennt nur ValueChangeUndo und
-                     * CompoundUndo daraus (UIFormUndoHandler.submitUndo, Zeilen 157/161). Wenn hier
+                    /* The native history codec handles value, Form and track-presence checkpoints
+                     * and compounds thereof. If another domain adds a new kind here,
                      * doch etwas anderes liegt, WUERDE stilles Auslassen die Historie um einen
                      * Schritt verkuerzen — deshalb laut melden statt schlucken. */
                     LOG.warn("Undo-Eintrag vom Typ {} ist nicht speicherbar und faellt aus der Historie",
@@ -399,6 +401,20 @@ public final class UndoJournal
             return data;
         }
 
+        if (undo instanceof AnimationChannelPresenceUndo presence)
+        {
+            MapType data = presence.toData();
+            data.putString(KEY_TYPE, TYPE_CHANNEL_PRESENCE);
+            return data;
+        }
+
+        if (undo instanceof FormPropertyChangeUndo property)
+        {
+            MapType data = property.toData();
+            data.putString(KEY_TYPE, TYPE_FORM_PROPERTY);
+            return data;
+        }
+
         if (!(undo instanceof ValueChangeUndo))
         {
             return null;
@@ -406,7 +422,7 @@ public final class UndoJournal
 
         ValueChangeUndo change = (ValueChangeUndo) undo;
 
-        if (change.name == null || change.oldValue == null || change.newValue == null)
+        if (change.name == null)
         {
             return null;
         }
@@ -418,6 +434,10 @@ public final class UndoJournal
         data.putBool(KEY_FOLDER, change.name.folder);
         data.put(KEY_OLD, change.oldValue);
         data.put(KEY_NEW, change.newValue);
+        /* ValueForm uses null for an absent form. Keep that native value distinct from
+         * missing/corrupt checkpoint data when a form is first assigned or removed. */
+        if (change.oldValue == null) data.putBool("old_null", true);
+        if (change.newValue == null) data.putBool("new_null", true);
 
         if (change.uiBefore != null)
         {
@@ -468,6 +488,16 @@ public final class UndoJournal
             return undos.isEmpty() ? null : new CompoundUndo<>(undos);
         }
 
+        if (TYPE_CHANNEL_PRESENCE.equals(data.getString(KEY_TYPE)))
+        {
+            return AnimationChannelPresenceUndo.fromData(data);
+        }
+
+        if (TYPE_FORM_PROPERTY.equals(data.getString(KEY_TYPE)))
+        {
+            return FormPropertyChangeUndo.fromData(data);
+        }
+
         if (!TYPE_VALUE_CHANGE.equals(data.getString(KEY_TYPE)))
         {
             return null;
@@ -477,7 +507,16 @@ public final class UndoJournal
 
         path.folder = data.getBool(KEY_FOLDER, false);
 
-        ValueChangeUndo undo = new ValueChangeUndo(path, data.get(KEY_OLD), data.get(KEY_NEW));
+        if ((!data.has(KEY_OLD) && !data.getBool("old_null"))
+            || (!data.has(KEY_NEW) && !data.getBool("new_null"))
+            || (data.has(KEY_OLD) && data.getBool("old_null"))
+            || (data.has(KEY_NEW) && data.getBool("new_null")))
+        {
+            throw new IllegalArgumentException("Value checkpoint is missing its native before/after data");
+        }
+        ValueChangeUndo undo = new ValueChangeUndo(path,
+            data.getBool("old_null") ? null : data.get(KEY_OLD),
+            data.getBool("new_null") ? null : data.get(KEY_NEW));
 
         if (data.has(KEY_UI_BEFORE) && data.get(KEY_UI_BEFORE) instanceof MapType)
         {

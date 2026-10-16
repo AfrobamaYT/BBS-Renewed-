@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.cubic;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import mchorse.bbs_mod.graphics.GehaltenesNetz;
 import mchorse.bbs_mod.graphics.SofortZeichner;
@@ -11,7 +11,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.bobj.BOBJBone;
@@ -50,7 +50,7 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.pose.Pose;
 import net.minecraft.client.Minecraft;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -101,6 +101,7 @@ public class ModelInstance implements IModelInstance
 
     public transient Matrix4f lastBaseTransform;
     public transient Form form;
+    public transient mchorse.bbs_mod.cubic.jem.CemAnimation cemAnimation;
 
     public ModelInstance(String id, IModel model, Animations animations, Link texture)
     {
@@ -115,6 +116,12 @@ public class ModelInstance implements IModelInstance
     public IModel getModel()
     {
         return this.model;
+    }
+
+    @Override
+    public java.util.Map<String, String> getProceduralBones()
+    {
+        return this.config.proceduralBones.get();
     }
 
     @Override
@@ -546,7 +553,7 @@ public class ModelInstance implements IModelInstance
              * Zwischenspeicher, den sich alle teilten; jetzt gehoert der Speicher dem
              * Aufruf und wird am Ende wieder freigegeben. */
             eckenSpeicher = new ByteBufferBuilder(4096);
-            builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.ENTITY);
+            builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, mchorse.bbs_mod.integrations.vitrail.VitrailImmediateModels.format());
         }
 
         try
@@ -578,19 +585,23 @@ public class ModelInstance implements IModelInstance
      */
     private void drawImmediate(BufferBuilder builder, RenderPipeline shader, PoseStack stack, Matrix3f normalMat, StencilMap stencilMap, Texture texture, float alpha)
     {
+        /* CPU and hybrid corners belong to the same native frame as the model's VAOs. */
+        if (mchorse.bbs_mod.integrations.vitrail.VitrailImmediateModels.retain(builder, stack, texture, this.isCulling(), stencilMap)) return;
         boolean split = FormTranslucentQueue.needsSplit(shader, stencilMap, texture, alpha);
         boolean whole = !split && FormTranslucentQueue.needsWholeDefer(shader, stencilMap, alpha);
 
         if (!split && !whole)
         {
-            /* Ein Durchgang, kein Aufschieben: Tiefe schreiben, Cull nach Modelleinstellung.
-             * build() gibt null zurueck, wenn nichts gezeichnet wurde -- SofortZeichner
-             * kommt damit zurecht und zeichnet dann nichts. */
+            /* Direct geometry keeps the model's culling and depth policy. */
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.sofortzug");
 
             SofortZeichner.zeichnen(ModelVAOPipeline.waehlenVerschraenkt(this.isCulling(), true), builder.build(),
                 new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
-                texture == null ? null : SofortZeichner.entityTextur(texture), null);
+                texture == null ? null : SofortZeichner.modellTextur(texture), null,
+                (durchgang) -> durchgang.setUniform(ModelVAOPipeline.MODELL_BLOCK,
+                    ModelVAORenderer.blockScheibeFuer(normalMat != null ? normalMat : new Matrix3f(),
+                        net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                        FormTranslucentQueue.PASS_SINGLE, 0)));
 
             return;
         }
@@ -613,9 +624,9 @@ public class ModelInstance implements IModelInstance
             /* Undurchsichtiger Teildurchgang: Tiefe schreiben, Cull nach Modelleinstellung.
              * Beides steckt jetzt in der Pipeline statt im globalen Zustand. */
             netz.zeichnen(ModelVAOPipeline.waehlenVerschraenkt(this.isCulling(), true), modelView, null,
-                texture == null ? null : SofortZeichner.entityTextur(texture), null,
+                texture == null ? null : SofortZeichner.modellTextur(texture), null,
                 (durchgang) -> durchgang.setUniform(ModelVAOPipeline.MODELL_BLOCK,
-                    ModelVAORenderer.blockFuer(normalMat != null ? normalMat : new Matrix3f(),
+                    ModelVAORenderer.blockScheibeFuer(normalMat != null ? normalMat : new Matrix3f(),
                         net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
                         FormTranslucentQueue.PASS_OPAQUE, 0)));
         }
@@ -638,7 +649,7 @@ public class ModelInstance implements IModelInstance
     {
         for (ModelGroup group : model.getAllGroups())
         {
-            if (!group.visible || (group.cubes.isEmpty() && group.meshes.isEmpty()))
+            if (!group.isVisible() || (group.cubes.isEmpty() && group.meshes.isEmpty()))
             {
                 continue;
             }
@@ -689,7 +700,7 @@ public class ModelInstance implements IModelInstance
                  * Aufruf statt einem geteilten Tesselator. */
                 try (ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096))
                 {
-                    BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.ENTITY);
+                    BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, mchorse.bbs_mod.integrations.vitrail.VitrailImmediateModels.format());
                     CubicRenderer.processRenderModel(renderProcessor, builder, stack, model);
                     this.drawImmediate(builder, shader, stack, null, stencilMap, BBSModClient.getTextures().getLastBound(), color.a);
                 }
@@ -702,7 +713,7 @@ public class ModelInstance implements IModelInstance
             if (!vaos.isEmpty())
             {
                 stack.pushPose();
-                stack.mulPose(Axis.YP.rotationDegrees(180F));
+                stack.rotate(Axis.YP.rotationDegrees(180F));
 
                 model.getArmature().setupMatrices();
 
@@ -740,6 +751,8 @@ public class ModelInstance implements IModelInstance
                             + " basis=" + (stencilMap == null ? -1 : stencilMap.aktuelleBasis)
                             + " objectIndex=" + (stencilMap == null ? -1 : stencilMap.objectIndex));
 
+                        if (mchorse.bbs_mod.client.renderer.NativeMorphCapture.suppresses(shader, vao, ModelVAORenderer.captureModelView(stack),
+                            color.r, color.g, color.b, color.a, light, overlay, 0, texture, emission)) continue;
                         mchorse.bbs_mod.cubic.render.vao.ModelDrawBatch.beforeMeshUpdate(vao);
                         vao.updateMesh(stencilMap, keys,
                             ModelVAOPipeline.gpuVariante(shader) != null);

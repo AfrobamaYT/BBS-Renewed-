@@ -59,14 +59,6 @@ public class WorldFilmController extends BaseFilmController
     }
 
     @Override
-    public void startRenderFrame(float transition)
-    {
-        super.startRenderFrame(transition);
-        mchorse.bbs_mod.film.markers.TimerCuePreview.apply(this.film, this.entities, this.getTick(),
-            this instanceof Recorder recorder ? recorder.countdown : 0);
-    }
-
-    @Override
     public void render(LevelRenderContext context)
     {
         super.render(context);
@@ -95,6 +87,7 @@ public class WorldFilmController extends BaseFilmController
     @Override
     public void shutdown()
     {
+        super.shutdown();
         this.context.shutdown();
     }
 }

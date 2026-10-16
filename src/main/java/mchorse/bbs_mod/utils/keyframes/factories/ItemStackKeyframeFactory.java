@@ -58,4 +58,10 @@ public class ItemStackKeyframeFactory implements IKeyframeFactory<ItemStack>
     {
         return a;
     }
+
+    @Override
+    public boolean isStepped()
+    {
+        return true;
+    }
 }

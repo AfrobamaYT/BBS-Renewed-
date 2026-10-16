@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.text.utils;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -10,7 +11,6 @@ import mchorse.bbs_mod.ui.utils.StringGroupMatcher;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -456,6 +456,13 @@ public class Textbox
 
     public void setFocused(boolean focused)
     {
+        /* Fokus immer neu anmelden: Gui.setScreen schaltet die Texteingabe bei jedem
+         * Bildschirmwechsel bedingungslos ab, das Feld bliebe sonst fokussiert und stumm. */
+        if (this.focused != focused || focused)
+        {
+            net.minecraft.client.Minecraft.getInstance().textInputManager().onTextInputFocusChange(this, focused);
+        }
+
         this.focused = focused;
     }
 
@@ -479,7 +486,9 @@ public class Textbox
                     this.selection = lastSelection < 0 ? this.cursor : lastSelection;
                 }
 
-                this.focused = true;
+                /* Ueber setFocused, nicht direkt: nur dort meldet sich das Feld bei Minecrafts
+                 * Texteingabe an (SDL). Direkt gesetzt kam beim Tippen nach einem Klick nichts an. */
+                this.setFocused(true);
                 this.lastX = x;
                 this.holding = true;
                 this.moveCursorTo(this.getIndexAt(x));
@@ -489,7 +498,7 @@ public class Textbox
         }
         else
         {
-            this.focused = false;
+            this.setFocused(false);
         }
     }
 
@@ -551,13 +560,13 @@ public class Textbox
         boolean ctrl = Window.isCtrlPressed();
         boolean shift = Window.isShiftPressed();
 
-        if (ctrl && (context.isPressed(GLFW.GLFW_KEY_C) || context.isPressed(GLFW.GLFW_KEY_X)))
+        if (ctrl && (context.isPressed(InputConstants.KEY_C) || context.isPressed(InputConstants.KEY_X)))
         {
             if (selecting)
             {
                 Window.setClipboard(this.getSelectedText());
 
-                if (context.isPressed(GLFW.GLFW_KEY_X))
+                if (context.isPressed(InputConstants.KEY_X))
                 {
                     this.deleteSelection();
                     this.acceptText();
@@ -566,7 +575,7 @@ public class Textbox
                 return true;
             }
         }
-        else if (ctrl && context.isPressed(GLFW.GLFW_KEY_V))
+        else if (ctrl && context.isPressed(InputConstants.KEY_V))
         {
             String clipboard = Window.getClipboard();
 
@@ -578,7 +587,7 @@ public class Textbox
 
             return true;
         }
-        else if (ctrl && context.isPressed(GLFW.GLFW_KEY_A))
+        else if (ctrl && context.isPressed(InputConstants.KEY_A))
         {
             this.selection = 0;
             this.cursor = this.text.length();
@@ -586,19 +595,19 @@ public class Textbox
 
             return true;
         }
-        else if (context.isPressed(GLFW.GLFW_KEY_HOME))
+        else if (context.isPressed(InputConstants.KEY_HOME))
         {
             this.handleShift(shift);
             this.moveCursorToStart();
         }
-        else if (context.isPressed(GLFW.GLFW_KEY_END))
+        else if (context.isPressed(InputConstants.KEY_END))
         {
             this.handleShift(shift);
             this.moveCursorToEnd();
         }
-        else if (context.isHeld(GLFW.GLFW_KEY_LEFT) || context.isHeld(GLFW.GLFW_KEY_RIGHT))
+        else if (context.isHeld(InputConstants.KEY_LEFT) || context.isHeld(InputConstants.KEY_RIGHT))
         {
-            int offset = context.isHeld(GLFW.GLFW_KEY_LEFT) ? -1 : 1;
+            int offset = context.isHeld(InputConstants.KEY_LEFT) ? -1 : 1;
 
             if (ctrl)
             {
@@ -614,7 +623,7 @@ public class Textbox
                 this.moveCursorBy(offset);
             }
         }
-        else if (context.isHeld(GLFW.GLFW_KEY_BACKSPACE) || context.isHeld(GLFW.GLFW_KEY_DELETE))
+        else if (context.isHeld(InputConstants.KEY_BACKSPACE) || context.isHeld(InputConstants.KEY_DELETE))
         {
             if (this.isSelected())
             {
@@ -623,7 +632,7 @@ public class Textbox
 
                 return true;
             }
-            else if (context.isHeld(GLFW.GLFW_KEY_DELETE) && this.cursor < this.text.length())
+            else if (context.isHeld(InputConstants.KEY_DELETE) && this.cursor < this.text.length())
             {
                 this.moveCursorBy(1);
                 this.deleteCharacter();
@@ -631,7 +640,7 @@ public class Textbox
 
                 return true;
             }
-            else if (context.isHeld(GLFW.GLFW_KEY_BACKSPACE))
+            else if (context.isHeld(InputConstants.KEY_BACKSPACE))
             {
                 this.deleteCharacter();
                 this.acceptText();

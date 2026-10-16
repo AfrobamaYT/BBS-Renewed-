@@ -117,6 +117,10 @@ final class DopeSheetSpalte
 			context.batcher.box(area.x, y, area.x + w, y + (int) this.dope.trackHeight,
 				Colors.setA(0x4772B3, 0.32F));
 		}
+		else if (live(sheet, this.dope.keyframes.getTick()))
+		{
+			context.batcher.box(area.x, y, area.x + w, y + (int) this.dope.trackHeight, Colors.setA(sheet.color, 0.25F));
+		}
 
 		List keys = sheet.channel.getKeyframes();
 		String zaehler = String.valueOf(keys.size());
@@ -218,5 +222,15 @@ final class DopeSheetSpalte
 
 		context.batcher.text(font.limitToWidth(titel, Math.max(0, rechts - textX)),
 			textX, my - font.getHeight() / 2, textColor);
+	}
+
+	/**
+	 * The hotbar cell the replay's selected slot points at under the playhead is the one in effect
+	 * right now: its row is lit in its own colour, here and across the keys (BBS FS e31fa8d83).
+	 */
+	static boolean live(UIKeyframeSheet sheet, float tick)
+	{
+		return sheet.id.startsWith("hotbar_slot_") && sheet.channel.getParent() instanceof mchorse.bbs_mod.film.replays.ReplayKeyframes k
+			&& sheet.id.equals("hotbar_slot_" + (mchorse.bbs_mod.film.replays.HandAusHotbar.slot(k, tick) + 1));
 	}
 }

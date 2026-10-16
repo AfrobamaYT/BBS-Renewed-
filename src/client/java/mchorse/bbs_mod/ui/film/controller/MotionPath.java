@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.ui.film.controller;
 
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
@@ -86,7 +86,8 @@ public class MotionPath
      * always-applied actions don't perturb the sampled bone path. */
     private static final String[] ACTION_KEYS = {
         "idle", "running", "sprinting", "crouching", "crouching_idle", "dying", "falling",
-        "swipe", "jump", "jump_alt", "hurt", "land", "shoot", "consume", "base_pre", "base_post"
+        "swipe", "jump", "jump_alt", "hurt", "land", "shoot", "consume", "base_pre", "base_post",
+        "swimming", "swimming_idle", "riding", "riding_idle", "flying", "flying_idle"
     };
 
     public static void render(LevelRenderContext context, ValueMotionPath config, UIFilmController controller, Replay replay, Pair<String, Boolean> bone, float currentTick)
@@ -641,7 +642,7 @@ public class MotionPath
 
     private static float lastTick(KeyframeChannel<?> channel)
     {
-        return channel.isEmpty() ? -Float.MAX_VALUE : channel.get(channel.getKeyframes().size() - 1).getTick();
+        return channel.isEmpty() ? -Float.MAX_VALUE : (float) channel.getLength();
     }
 
     private static String signature(Replay replay, String bonePath)

@@ -1,4 +1,6 @@
 {
+    "block.bbs.model.tooltip.convert": "Alt + right click on a block — turn it into a model block",
+    "bbs.ui.keys.legacy_unavailable": "%s (legacy binding; unavailable in SDL)",
     "block.bbs.model": "Model block",
     "block.bbs.trigger": "Trigger block",
     "block.bbs.chroma_red": "Red chroma",

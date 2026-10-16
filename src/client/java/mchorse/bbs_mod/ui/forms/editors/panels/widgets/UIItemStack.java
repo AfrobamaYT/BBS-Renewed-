@@ -1,8 +1,10 @@
 package mchorse.bbs_mod.ui.forms.editors.panels.widgets;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.function.Consumer;
 
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -25,6 +27,15 @@ public class UIItemStack extends UIElement
     private Consumer<ItemStack> callback;
     private ItemStack stack;
     private boolean opened;
+
+    private mchorse.bbs_mod.ui.utils.icons.Icon placeholder;
+
+    public UIItemStack placeholder(mchorse.bbs_mod.ui.utils.icons.Icon icon)
+    {
+        this.placeholder = icon;
+
+        return this;
+    }
 
     public UIItemStack(Consumer<ItemStack> callback)
     {
@@ -102,7 +113,15 @@ public class UIItemStack extends UIElement
 
         if (!empty)
         {
+            PoseStack matrices = context.batcher.pose();
+            matrices.pushPose();
             context.batcher.getContext().item(this.stack, this.area.x + (slot - 16) / 2, this.area.my() - 8);
+            matrices.popPose();
+        }
+        else if (this.placeholder != null)
+        {
+            /* A ghost icon while empty, like vanilla's armor slots (BBS FS 996eb0adc) */
+            context.batcher.icon(this.placeholder, Colors.A50 | Colors.WHITE, this.area.x + (slot - 16) / 2, this.area.my() - 8);
         }
 
         FontRenderer font = context.batcher.getFont();

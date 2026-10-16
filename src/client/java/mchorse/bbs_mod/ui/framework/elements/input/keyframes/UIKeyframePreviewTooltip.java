@@ -60,6 +60,8 @@ public class UIKeyframePreviewTooltip implements ITooltip
     private float poseTick;
     private Object poseValue;
     private Form poseForm;
+    /** What the hovered key changes against the key before it (KeyVorschauFokus), or null */
+    private String poseZeile;
 
     public UIKeyframePreviewTooltip(UIKeyframes keyframes)
     {
@@ -248,7 +250,7 @@ public class UIKeyframePreviewTooltip implements ITooltip
         PerLimbService.PoseBonePath path = keyframe.getFactory() == KeyframeFactories.POSE_TRANSFORM
             ? PerLimbService.parsePoseBonePath(sheet.id)
             : null;
-        String label = path == null ? null : path.bone();
+        String label = this.poseZeile != null ? this.poseZeile : path == null ? null : path.bone();
 
         int w = FORM_SIZE;
         int h = FORM_SIZE;
@@ -262,7 +264,7 @@ public class UIKeyframePreviewTooltip implements ITooltip
         Area area = this.start(context, w, h);
         int x = area.mx() - FORM_SIZE / 2;
 
-        context.batcher.clip(x, area.y, x + FORM_SIZE, area.y + FORM_SIZE, context);
+        context.batcher.clip(x, area.y, FORM_SIZE, FORM_SIZE, context);
         FormUtilsClient.renderUI(form, context, x, area.y, x + FORM_SIZE, area.y + FORM_SIZE);
         context.batcher.unclip(context);
 
@@ -295,8 +297,34 @@ public class UIKeyframePreviewTooltip implements ITooltip
         this.poseTick = keyframe.getTick();
         this.poseValue = factory.copy(value);
         this.poseForm = this.createPoseForm(sheet, factory, value, keyframe);
+        this.poseZeile = this.poseForm == null ? null : this.fokussieren(sheet, keyframe, value);
 
         return this.poseForm;
+    }
+
+    /** G6: frame the bones this key changes against the previous key (rest pose for the first) */
+    private String fokussieren(UIKeyframeSheet sheet, Keyframe keyframe, Object value)
+    {
+        List<? extends Keyframe<?>> keys = sheet.channel.getKeyframes();
+        int i = keys.indexOf(keyframe);
+        Object davor = i > 0 ? keys.get(i - 1).getValue() : null;
+        java.util.Map<String, String> geaendert = new java.util.LinkedHashMap<>();
+        PerLimbService.PoseBonePath path = PerLimbService.parsePoseBonePath(sheet.id);
+
+        if (value instanceof Pose pose)
+        {
+            geaendert = KeyVorschauFokus.geaendert(pose, davor instanceof Pose p ? p : null);
+        }
+        else if (path != null && value instanceof Transform t)
+        {
+            String text = KeyVorschauFokus.unterschied(t, davor instanceof Transform d ? d : null);
+
+            if (text != null) geaendert.put(path.bone(), text);
+        }
+
+        KeyVorschauFokus.setzen(this.poseForm, geaendert.keySet());
+
+        return geaendert.isEmpty() ? null : KeyVorschauFokus.zeile(geaendert);
     }
 
     private Form createPoseForm(UIKeyframeSheet sheet, IKeyframeFactory factory, Object value, Keyframe keyframe)

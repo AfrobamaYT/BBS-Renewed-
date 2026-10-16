@@ -26,6 +26,37 @@ import net.minecraft.world.phys.Vec3;
  */
 public class RigCtrlZeichner
 {
+    /** Line width against Blender's, and the dark halo under each line (pixels added, alpha). */
+    static final float BREITE = 2F;
+    /* Lazy, not a static array initialiser: after a live redefine a new static array field is
+     * null (the initialiser does not run again) and every rig frame would throw. */
+    private static float[] halo;
+
+    /**
+     * 1 up to 4 blocks from the camera, then falling with distance. Lines keep a
+     * fixed pixel width, so a far widget shrank under an unchanged stroke and read as a thick
+     * blob (owner 2026-10-14: "je weiter weg, je dicker"); the extra width and the halo now
+     * taper back toward Blender's plain stroke as the widget gets small.
+     */
+    static float nahFaktor(Matrix4f kombi)
+    {
+        float abstand = (float) Math.sqrt(kombi.m30() * kombi.m30() + kombi.m31() * kombi.m31() + kombi.m32() * kombi.m32());
+
+        return Math.min(1F, 4F / Math.max(abstand, 1E-3F));
+    }
+
+    static float[] halo()
+    {
+        if (halo == null)
+        {
+            halo = new float[] {0F, 0F, 0F};
+        }
+
+        return halo;
+    }
+    static final float HALO_PX = 3F;
+    static final float HALO_ALPHA = 0.6F;
+
     /** Klickziel-Halbbreite bei 5m Abstand — skaliert screen-konstant mit der Distanz. */
     private static final float PICK_HALB = 0.011F;
 
@@ -110,13 +141,26 @@ public class RigCtrlZeichner
             /* `breite` IST Blenders `custom_shape_wire_width` — in Pixeln, so wie Blender
              * es meint. Der frueher hier stehende Faktor 0.11 machte daraus 0.19 px
              * (nachgerechnet), deshalb waren die Controls kaum zu sehen. */
+            /* Blender draws these on a dark grey viewport; Minecraft is bright and busy, often
+             * under a shader pack. Twice Blender's width, the root three times that, and a dark
+             * halo under every line (owner 2026-10-14: root "fast nicht zu erkennen", controls
+             * hard to see under shaders). */
+            float nah = nahFaktor(kombi);
+            float breite = e.breite() * ("root".equals(e.name()) ? 3F : 1F) * Math.max(1F, BREITE * nah);
+            float halo = HALO_PX * nah;
+
             for (float[] linie : e.linien())
             {
-                RigWidgets.kette(wire, kombi, linie, col, a, e.breite());
+                if (halo >= 1F)
+                {
+                    RigWidgets.kette(wire, kombi, linie, halo(), a * HALO_ALPHA, breite + halo);
+                }
+
+                RigWidgets.kette(wire, kombi, linie, col, a, breite);
 
                 if (wireVerdeckt != null)
                 {
-                    RigWidgets.kette(wireVerdeckt, kombi, linie, col, aVerdeckt, e.breite());
+                    RigWidgets.kette(wireVerdeckt, kombi, linie, col, aVerdeckt, breite);
                 }
             }
         }

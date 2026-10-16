@@ -4,7 +4,8 @@ import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.keys.KeyAction;
 import net.minecraft.client.Minecraft;
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLMouse;
+import org.lwjgl.sdl.SDLKeyboard;
 
 /**
  * Tracks whether the user is actively editing (not AFK) for the film's {@code time_spent_active} counter.
@@ -67,41 +68,23 @@ public final class FilmEditorUserActivity
             return true;
         }
 
-        long handle = mc.getWindow().handle();
-
-        for (int b = 0; b <= GLFW.GLFW_MOUSE_BUTTON_LAST; b++)
-        {
-            if (GLFW.glfwGetMouseButton(handle, b) == GLFW.GLFW_PRESS)
-            {
-                return true;
-            }
-        }
-
-        if (context.getKeyAction() != KeyAction.RELEASED && context.getKeyCode() != GLFW.GLFW_KEY_UNKNOWN)
+        if (SDLMouse.nSDL_GetMouseState(0L, 0L) != 0)
         {
             return true;
         }
 
-        for (int key = GLFW.GLFW_KEY_SPACE; key <= GLFW.GLFW_KEY_LAST; key++)
+        if (context.getKeyAction() != KeyAction.RELEASED && context.getKeyCode() != InputConstants.UNKNOWN.getValue())
         {
-            if (key == GLFW.GLFW_KEY_UNKNOWN)
-            {
-                continue;
-            }
+            return true;
+        }
 
-            try
+        java.nio.ByteBuffer keys = SDLKeyboard.SDL_GetKeyboardState();
+
+        for (int key = 0; key < keys.remaining(); key++)
+        {
+            if (keys.get(key) != 0)
             {
-                if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), key))
-                {
-                    return true;
-                }
-            }
-            catch (IndexOutOfBoundsException ignored)
-            {
-                /* PojavLauncher (Android) uses a GLFW implementation with a smaller
-                   key-state buffer than GLFW_KEY_LAST; once an index is out of range,
-                   all higher key codes will fail too, so stop polling. */
-                break;
+                return true;
             }
         }
 

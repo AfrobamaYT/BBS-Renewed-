@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.utils;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -24,10 +24,8 @@ import org.joml.Matrix3x2fStack;
 import org.joml.Matrix3x2fc;
 import org.joml.Matrix4f;
 
-import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import mchorse.bbs_mod.mixin.client.GuiGraphicsExtractorAccessor;
@@ -45,7 +43,8 @@ public class Batcher2D
     private static FontRenderer fontRenderer = new FontRenderer();
 
     private GuiGraphicsExtractor context;
-    private FontRenderer font;
+    /** What text calls draw with; a TrueType label or subtitle swaps it for its own and back (BBS FS b0224f806) */
+    public FontRenderer font;
 
     /** Mirror of the extractor's private scissor stack ({@link #clip}/{@link #unclip} sind
      *  BBS' einzige Eintritte); {@code null} = kein Clipping. */
@@ -147,49 +146,13 @@ public class Batcher2D
     }
 
     /**
-     * Scissor (clip) the screen
+     * Scissor (clip) the screen, in global units. Spiegel und Vanilla im selben Raum, der
+     * Fall des leeren Schnitts: {@link SchnittSpiegel}. {@code sw}/{@code sh} bleiben fuer
+     * die Aufrufer; der Bildschirm kommt dort aus dem Kontext.
      */
     public void clip(int x, int y, int w, int h, int sw, int sh)
     {
-        /* Same nesting rule the extractor applies: the new rect is intersected with the one
-         * already in force, so an inner clip can never widen an outer one. */
-        ScreenRectangle rect = new ScreenRectangle(x, y, w, h);
-        ScreenRectangle current = this.scissors.peek();
-
-        if (current != null)
-        {
-            ScreenRectangle intersection = current.intersection(rect);
-
-            rect = intersection == null ? ScreenRectangle.empty() : intersection;
-        }
-
-        /* ⛔ VANILLA BEKOMMT DASSELBE RECHTECK WIE DER SPIEGEL. Vorher stand dieser Aufruf
-         * GANZ OBEN und reichte das ROHE Rechteck durch, waehrend unten das GESCHNITTENE auf
-         * den eigenen Stapel ging -- zwei verschiedene Schnitte fuer denselben Abschnitt.
-         *
-         * Jeder Renderzustand nennt sein Schnittrechteck aus diesem Spiegel
-         * ({@code scissors.peek()}); ein leeres dort schneidet ALLES weg, was danach
-         * eingereiht wird. Beim Scrollen in einem Dock wandert Inhalt aus dem sichtbaren
-         * Bereich, der Schnitt wird leer -- und mit ihm verschwanden die Knoepfe des ganzen
-         * Docks, in mehreren Docks, weil alle denselben Weg nehmen (vom Nutzer gemeldet).
-         *
-         * Ein leerer Schnitt wird NICHT an Vanilla gereicht: enableScissor mit x2 <= x1
-         * ist nichts, was man einem fremden Zeichner zumutet. Der Spiegel traegt das leere
-         * Rechteck trotzdem -- dort ist es die richtige Aussage ("hier ist nichts sichtbar"),
-         * und die Zustaende lesen es korrekt. */
-        ScreenRectangle anVanilla = rect;
-
-        if (rect.width() <= 0 || rect.height() <= 0)
-        {
-            /* 0x0 an Vanilla ist ein Absturz am Bildende, nicht hier -- warum, steht in
-             * LeererSchnitt. Unser eigener Spiegel behaelt das leere Rechteck: dort ist es
-             * die richtige Aussage, und submit() wirft darauf hin nichts ein. */
-            anVanilla = LeererSchnitt.ersatzPunkt(this.scissors, x, y, sw, sh);
-        }
-
-        this.context.enableScissor(anVanilla.left(), anVanilla.top(), anVanilla.right(), anVanilla.bottom());
-
-        this.scissors.push(rect);
+        SchnittSpiegel.schneiden(this.context, this.scissors, x, y, w, h);
     }
 
     public void unclip(UIContext context)
@@ -482,7 +445,7 @@ public class Batcher2D
 
         /* P3: neugezeichnete Icons kommen aus dem skalenreinen Vektor-Atlas. */
         icon = mchorse.bbs_mod.ui.utils.icons.VektorIcons.ersetze(icon,
-            Math.round((float) Minecraft.getInstance().getWindow().getGuiScale()));
+            (int) Math.ceil(BBSModClient.getGUIScale() - 1E-3F));
 
         if (BBSSettings.isLightTheme())
         {
@@ -578,8 +541,8 @@ public class Batcher2D
         {
             /* Record-Accessor (texure0 — Mojang-Tippfehler); isClosed() entlarvt tote Views. */
             var view = setup.texure0();
-            String tex = view == null ? "?" : ((com.mojang.blaze3d.opengl.GlTexture) view.texture()).glId()
-                + (view.texture().isClosed() ? "-TOT" : "");
+            String tex = view == null ? "?" : (view.texture() instanceof com.mojang.renderpearl.backend.opengl.GlTexture gl ? String.valueOf(gl.glId())
+                : "vk" + System.identityHashCode(view.texture())) + (view.texture().isClosed() ? "-TOT" : ""); /* Vulkan has no GL id */
 
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("batcher.setup." + tex,
                 textureW + "x" + textureH + " @" + (int) x + "," + (int) y + " " + (int) w + "x" + (int) h
@@ -682,7 +645,7 @@ public class Batcher2D
         }
 
         /* P1 Vektor-Text: DER Trichter — alle 128 text()-Aufrufstellen laufen hier durch. */
-        if (mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.zeichnet(label))
+        if (!this.font.isTrueType() && mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.zeichnet(label))
         {
             mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.holen().zeichne(this, label, x, y, color, shadow);
 

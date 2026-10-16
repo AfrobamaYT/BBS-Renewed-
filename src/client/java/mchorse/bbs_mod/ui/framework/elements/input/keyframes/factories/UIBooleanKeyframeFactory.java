@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
@@ -15,6 +16,11 @@ public class UIBooleanKeyframeFactory extends UIKeyframeFactory<Boolean>
 
         this.toggle = new UIToggle(UIKeys.GENERIC_KEYFRAMES_BOOLEAN_TRUE, (b) -> this.setValue(b.getValue()));
         this.toggle.setValue(keyframe.getValue());
+        this.keys().register(Keys.TRANSFORMATIONS_TRANSLATE, () ->
+        {
+            this.setValue(!this.keyframe.getValue());
+            this.toggle.setValue(this.keyframe.getValue());
+        }).category(UIKeys.TRANSFORMS_KEYS_CATEGORY);
 
         this.scroll.add(this.toggle);
     }

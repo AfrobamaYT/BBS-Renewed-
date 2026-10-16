@@ -7,8 +7,6 @@ import mchorse.bbs_mod.forms.ITickable;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.VanillaParticleForm;
 import mchorse.bbs_mod.forms.forms.utils.ParticleSettings;
-import mchorse.bbs_mod.graphics.texture.Texture;
-import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.joml.Matrices;
@@ -34,8 +32,6 @@ import org.joml.Vector3f;
 
 public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleForm> implements ITickable
 {
-    public static final Link PARTICLE_PREVIEW = new Link("minecraft", "textures/particle/flame.png");
-
     private Vector3d pos = new Vector3d();
     private Vector3f vel = new Vector3f();
     private Matrix3f rot = new Matrix3f();
@@ -54,19 +50,10 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
 
     protected void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        Texture texture = context.render.getTextures().getTexture(PARTICLE_PREVIEW);
+        /* A sample of the form's own particle type, not always a flame (BBS FS 72705306b) */
+        int size = Math.min(x2 - x1, y2 - y1) - 4;
 
-        float min = Math.min(texture.width, texture.height);
-        int ow = (x2 - x1) - 4;
-        int oh = (y2 - y1) - 4;
-
-        int w = (int) ((texture.width / min) * ow);
-        int h = (int) ((texture.height / min) * ow);
-
-        int x = x1 + (ow - w) / 2 + 2;
-        int y = y1 + (oh - h) / 2 + 2;
-
-        context.batcher.fullTexturedBox(texture, x, y, w, h);
+        mchorse.bbs_mod.particles.vanilla.VanillaParticlePreview.render(context, this.form.settings.get().particle, (x1 + x2 - size) / 2F, (y1 + y2 - size) / 2F, size, mchorse.bbs_mod.utils.colors.Colors.WHITE);
     }
 
     @Override

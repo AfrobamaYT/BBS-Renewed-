@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework;
 
+import org.lwjgl.sdl.SDLMouse;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.framework.elements.IFocusedUIElement;
@@ -20,7 +21,6 @@ import mchorse.bbs_mod.ui.utils.keys.KeyAction;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -57,7 +57,7 @@ public class UIContext implements IViewportStack
     /* Render states */
     private float transition;
     private long tick;
-    private int cursorShape = GLFW.GLFW_ARROW_CURSOR;
+    private int cursorShape = SDLMouse.SDL_SYSTEM_CURSOR_DEFAULT;
 
     public UIViewportStack viewportStack = new UIViewportStack();
 
@@ -128,6 +128,7 @@ public class UIContext implements IViewportStack
     {
         this.setMouse(mouseX, mouseY);
         this.mouseButton = mouseButton;
+        com.mcstudio.nano.NanoTextFokus.aussenKlick(this);
     }
 
     public void setMouseWheel(int mouseX, int mouseY, double mouseWheel, double mouseWheelHorizontal)
@@ -314,7 +315,7 @@ public class UIContext implements IViewportStack
 
     public void resetCursor()
     {
-        this.cursorShape = GLFW.GLFW_ARROW_CURSOR;
+        this.cursorShape = SDLMouse.SDL_SYSTEM_CURSOR_DEFAULT;
     }
 
     public void applyCursor()
@@ -441,6 +442,7 @@ public class UIContext implements IViewportStack
 
         menu.setMouse(this);
         menu.resize();
+        UIContextMenu.platz.accept(menu);
 
         this.contextMenu = menu;
         this.menu.overlay.add(menu);
@@ -472,6 +474,7 @@ public class UIContext implements IViewportStack
 
         menu.setMouse(this);
         menu.resize();
+        UIContextMenu.platz.accept(menu);
 
         this.contextMenu = menu;
         this.menu.overlay.add(menu);
@@ -592,16 +595,21 @@ public class UIContext implements IViewportStack
     /**
      * Setzt die Flaechenmatrix zum Bildanfang zurueck (Aufrufer: {@code UIBaseMenu.renderMenu}).
      * Ziel ist derselbe Stapel wie in {@link #shiftX(int)}; 1.21.1: {@code loadIdentity()},
-     * 26.1: {@code identity()}.
+     * 26.1: {@code identity()}. Wurzel ist Einheit mal Restfaktor des stufenlosen UI-Scales
+     * ({@link UISkala}) — reines identity() loeschte ihn und liess 1,5 wie 2 aussehen
+     * (gemessen 2026-10-13).
      */
     public void resetMatrix()
     {
-        this.render.batcher.getContext().pose().identity();
+        float rest = UISkala.rest();
+
+        this.render.batcher.getContext().pose().identity().scale(rest, rest);
     }
 
     public void update()
     {
         this.tick += 1;
+        mchorse.bbs_mod.ui.utils.keys.MausTastenWiederholung.tick(this);
 
         this.notifications.update();
     }

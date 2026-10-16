@@ -43,6 +43,10 @@ import java.util.Map;
 public class ModelConfig extends ValueGroup
 {
     public final ValueBoolean procedural = new ValueBoolean("procedural", false);
+    /** Role → bone for the procedural animation; a missing role keeps the old name, an empty one is off (BBS FS f3113ccdd) */
+    public final ValueStringMap proceduralBones = new ValueStringMap("procedural_bones");
+    /** Handles that drive weighted sets of shape keys (BBS FS 7a049804a) */
+    public final ShapeController.Controllers shapeControllers = new ShapeController.Controllers("shape_controllers");
     public final ValueBoolean culling = new ValueBoolean("culling", true);
     public final ValueBoolean onCpu = new ValueBoolean("on_cpu", false);
     public final ValueString poseGroup = new ValueString("pose_group", "");
@@ -86,6 +90,8 @@ public class ModelConfig extends ValueGroup
         super(id);
 
         this.add(this.procedural);
+        this.add(this.proceduralBones);
+        this.add(this.shapeControllers);
         this.add(this.culling);
         this.add(this.onCpu);
         this.add(this.poseGroup);
@@ -124,6 +130,10 @@ public class ModelConfig extends ValueGroup
     @Override
     public void fromData(BaseType data)
     {
+        /* A file without assignments must not keep the previous model's. */
+        if (data.isMap() && !data.asMap().has("procedural_bones")) this.proceduralBones.fromData(new MapType());
+        if (data.isMap() && !data.asMap().has("shape_controllers")) this.shapeControllers.fromData(new mchorse.bbs_mod.data.types.ListType());
+
         super.fromData(data);
 
         this.rebuild();
@@ -133,6 +143,8 @@ public class ModelConfig extends ValueGroup
     protected boolean canPersist(BaseValue value)
     {
         /* Optional blocks stay absent from the file when empty, matching how they were authored. */
+        if (value == this.proceduralBones) return !this.proceduralBones.get().isEmpty();
+        if (value == this.shapeControllers) return !this.shapeControllers.getAllTyped().isEmpty();
         if (value == this.lookAt) return this.lookAt.isActive();
         if (value == this.fpMain) return this.fpMain.isActive();
         if (value == this.fpOffhand) return this.fpOffhand.isActive();

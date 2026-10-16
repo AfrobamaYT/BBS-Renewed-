@@ -216,7 +216,7 @@ public final class FakePlayerSpawner
         {
             LOG.debug("changeGameMode SURVIVAL failed (ignored)", t);
         }
-        player.setInvulnerable(false);
+        player.setPermanentlyInvulnerable(false);
 
         LOG.info("Fake player '{}' fully spawned at {},{},{}", safeName, x, y, z);
         return player;

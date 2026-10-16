@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.forms.renderers.utils;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
@@ -24,8 +24,10 @@ public final class LabelPickQuad
     private LabelPickQuad()
     {}
 
-    public static void render(LabelForm form, FormRenderingContext context, Font font)
+    /** {@code lineHeight}: the label's line step, its own or its font's, so the quad covers a TrueType label too */
+    public static void render(LabelForm form, FormRenderingContext context, FontRenderer fontRenderer, int lineHeight)
     {
+        Font font = fontRenderer.getRenderer();
         Color color = new Color().set(context.color, true);
 
         FormColorBlend.blend(color, form.color.get(), form.additiveColor.get());
@@ -42,7 +44,7 @@ public final class LabelPickQuad
         {
             width = Math.max(width, font.width(line) - 1);
         }
-        int height = Math.max(1, font.lineHeight - 2 + Math.max(0, lines.size() - 1) * 12);
+        int height = Math.max(1, fontRenderer.getHeight() + Math.max(0, lines.size() - 1) * lineHeight);
         int x = (int) (-width * form.anchorX.get());
         int y = (int) (-height * form.anchorY.get());
         float margin = Math.max(0F, form.offset.get());

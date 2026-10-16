@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -25,7 +26,6 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Supplier;
 
@@ -212,7 +212,7 @@ public abstract class UITransform extends UIElement
 
     protected boolean isUniformScale()
     {
-        return this.uniformDrag || Window.isKeyPressed(GLFW.GLFW_KEY_SPACE);
+        return this.uniformDrag || Window.isKeyPressed(InputConstants.KEY_SPACE);
     }
 
     /** Whether the scale row is collapsed to the single linked field (see {@link #toggleUniformScale()}). */
@@ -672,7 +672,7 @@ public abstract class UITransform extends UIElement
     {
         if (this.sx.isDragging() || this.sy.isDragging() || this.sz.isDragging())
         {
-            if (context.isHeld(GLFW.GLFW_KEY_SPACE))
+            if (context.isHeld(InputConstants.KEY_SPACE))
             {
                 return true;
             }

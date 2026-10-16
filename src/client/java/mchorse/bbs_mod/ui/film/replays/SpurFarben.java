@@ -75,6 +75,11 @@ public final class SpurFarben
     private static void setupIcons()
     {
         ICONS.put("x", Icons.X);
+        ICONS.put("swimming", Icons.DROP);
+        ICONS.put("flying", Icons.HELICOPTER);
+        ICONS.put("gliding", Icons.PLANE);
+        ICONS.put("leaning", Icons.ARC);
+        ICONS.put("roll", Icons.ORBIT);
         ICONS.put("y", Icons.Y);
         ICONS.put("z", Icons.Z);
         ICONS.put("pitch", Icons.VERTICAL);

@@ -74,9 +74,35 @@ public class FontRenderer
         if (style.isItalic()) b.append("\u00A7o");
     }
 
+    /** A TrueType font brings its own metrics: vanilla's lineHeight is 9 whichever font draws (BBS FS b0224f806) */
+    private int height = -1;
+
+    /** The font's id in vanilla's font sets, for world text, which is submitted by style; null for the default */
+    public net.minecraft.network.chat.FontDescription description;
+    private int lineHeight = 12;
+
     public void setRenderer(Font renderer)
     {
         this.renderer = renderer;
+    }
+
+    public void setRenderer(Font renderer, int height, int lineHeight)
+    {
+        this.renderer = renderer;
+        this.height = height;
+        this.lineHeight = lineHeight;
+    }
+
+    /** A label's or subtitle's own font, which the vector interface font must not stand in for */
+    public boolean isTrueType()
+    {
+        return this.height >= 0;
+    }
+
+    /** How far apart the baselines of two lines of this font sit */
+    public int getLineHeight()
+    {
+        return this.lineHeight;
     }
 
     public Font getRenderer()
@@ -88,7 +114,7 @@ public class FontRenderer
     {
         /* P1 Vektor-Text: Mass und Bild MUESSEN aus derselben Quelle kommen, sonst
          * reissen Layouts (Kritikwelle, Szenario 1). */
-        if (mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.zeichnet(string))
+        if (!this.isTrueType() && mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.zeichnet(string))
         {
             return mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.holen().breite(string);
         }
@@ -98,13 +124,13 @@ public class FontRenderer
 
     public int getHeight()
     {
-        return this.renderer.lineHeight - 2;
+        return this.height >= 0 ? this.height : this.renderer.lineHeight - 2;
     }
 
     public List<String> wrap(String string, int width)
     {
         /* P1: Umbruch muss mit den Breiten messen, mit denen auch gemalt wird. */
-        if (mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.zeichnet(string))
+        if (!this.isTrueType() && mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.zeichnet(string))
         {
             return mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.holen().umbruch(string, width);
         }

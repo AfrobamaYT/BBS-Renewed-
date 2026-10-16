@@ -177,7 +177,7 @@ public class UIReplayList extends UIList<ReplayListEntry>
                 }
             }
 
-            menu.action(Icons.BLOCK, UIKeys.SCENE_REPLAYS_CONTEXT_FROM_MODEL_BLOCK, this::fromModelBlock);
+            GehaltenerModellblock.eintraege(menu, this, this::fromModelBlock);
 
             if (this.hasReplaySelection())
             {
@@ -1925,7 +1925,7 @@ public class UIReplayList extends UIList<ReplayListEntry>
             }
         });
 
-        if (palette != null) palette.updatable(); /* null: es ist schon eine Palette offen */
+        palette.updatable();
     }
 
     public void addReplay()
@@ -2094,17 +2094,17 @@ public class UIReplayList extends UIList<ReplayListEntry>
         }
 
         Replay replay = film.replays.addReplay();
-
         replay.category.set("");
-
         replay.keyframes.x.insert(0, position.x);
         replay.keyframes.y.insert(0, position.y);
         replay.keyframes.z.insert(0, position.z);
-
-        replay.keyframes.pitch.insert(0, (double) pitch);
-        replay.keyframes.yaw.insert(0, (double) yaw);
-        replay.keyframes.headYaw.insert(0, (double) yaw);
-        replay.keyframes.bodyYaw.insert(0, (double) yaw);
+        if (!Window.isShiftPressed()) /* Shift: no facing, the form keeps its own (BBS FS 4439cc6d1) */
+        {
+            replay.keyframes.pitch.insert(0, (double) pitch);
+            replay.keyframes.yaw.insert(0, (double) yaw);
+            replay.keyframes.headYaw.insert(0, (double) yaw);
+            replay.keyframes.bodyYaw.insert(0, (double) yaw);
+        }
 
         this.refreshReplayList();
         this.update();
@@ -2162,7 +2162,10 @@ public class UIReplayList extends UIList<ReplayListEntry>
         Replay focus = removing.get(0);
         int globalFocus = film.replays.getList().indexOf(focus);
 
-        this.panel.getUndoHandler().deleteReplays(removing);
+        for (Replay replay : removing)
+        {
+            film.replays.remove(replay);
+        }
 
         List<Replay> remaining = film.replays.getList();
 
@@ -2183,7 +2186,6 @@ public class UIReplayList extends UIList<ReplayListEntry>
         }
 
         this.updateFilmEditor();
-        this.panel.save();
     }
 
     @Override

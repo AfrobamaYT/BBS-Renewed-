@@ -55,7 +55,11 @@ public final class ModelFormRendererFastPathLogik
                                      ModelInstance cachedInstance, CrowdRouter.Reason cachedReason)
     {
         Object[] noCancel = { Boolean.FALSE, cachedInstance, cachedReason };
-
+        if (mchorse.bbs_mod.integrations.vitrail.VitrailShadowFrame.collecting()
+            || mchorse.bbs_mod.integrations.vitrail.VitrailActorFrame.collecting()
+            || mchorse.bbs_mod.integrations.vitrail.VitrailActorFrame.replaying()
+            || context != null && mchorse.bbs_mod.client.renderer.NativeMorphCapture.replayingBody(self.getForm(), context.entity))
+            return noCancel;
         /* VIDEO-EXPORT GUARD — see original mixin comment: full model must render during export. */
         try
         {
@@ -68,6 +72,14 @@ public final class ModelFormRendererFastPathLogik
         if (context == null || context.type != FormRenderType.ENTITY)
         {
             return noCancel;
+        }
+
+        boolean nativeCrowd = com.afrobama.bbstools.client.bbs.fastpath.Tier2hInstancedDraw.nativeEnabled();
+        if (nativeCrowd && (context.ui || context.stencilMap != null || mchorse.bbs_mod.graphics.Zeichenziel.eigenes())) return noCancel;
+        if (nativeCrowd && !com.afrobama.bbstools.client.bbs.fastpath.NativeCrowdFrame.collecting())
+        {
+            return new Object[]{com.afrobama.bbstools.client.bbs.fastpath.NativeCrowdFrame.cancels(self.getForm(), context.entity),
+                cachedInstance, cachedReason};
         }
 
         /* COUNT GATE — below the army threshold, ordinary editing stays 100% vanilla. */
@@ -153,6 +165,7 @@ public final class ModelFormRendererFastPathLogik
                 context.getTransition(),
                 context.renderEquipment);
             FastPathBatch.submit(sub);
+            if (nativeCrowd) com.afrobama.bbstools.client.bbs.fastpath.NativeCrowdFrame.capture(sub);
 
             boolean cancel = false;
             if (BBSPerfConfig.ENABLE_FAST_PATH_RENDER)

@@ -1,12 +1,11 @@
 package mchorse.bbs_mod.graphics;
 
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalDouble;
 
 /**
  * Buendelt aufeinanderfolgende {@link GehaltenesNetz}-Zuege mit demselben Ziel in EINEM
@@ -43,6 +42,7 @@ public final class Sammelpass
     private static GpuTextureView offenFarbe;
     private static GpuTextureView offenTiefe;
     private static RenderPass.RenderArea offenBereich;
+    private static Framebuffer.GlPassBinding offenGl;
 
     public static void beginnen()
     {
@@ -78,8 +78,7 @@ public final class Sammelpass
             return null;
         }
 
-        /* Ohne Tiefenanhang nimmt der Durchgang keinen Ausschnitt an (wie in GehaltenesNetz). */
-        RenderPass.RenderArea schluessel = tiefenZiel == null ? null : bereich;
+        RenderPass.RenderArea schluessel = bereich;
 
         if (offen != null && offenFarbe == farbZiel && offenTiefe == tiefenZiel
             && Objects.equals(offenBereich, schluessel))
@@ -89,14 +88,25 @@ public final class Sammelpass
 
         schliessen();
 
-        offen = tiefenZiel == null
-            ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                () -> "bbs-sammelpass", farbZiel, Optional.empty())
-            : schluessel == null
-                ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                    () -> "bbs-sammelpass", farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty())
-                : RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                    () -> "bbs-sammelpass", farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty(), schluessel);
+        RenderPassDescriptor descriptor = Framebuffer.descriptorFor("bbs-sammelpass", farbZiel, tiefenZiel, bereich);
+        if (descriptor == null)
+        {
+            var builder = RenderPassDescriptor.builder(() -> "bbs-sammelpass").withColorAttachment(farbZiel);
+            if (tiefenZiel != null) builder.withDepthAttachment(tiefenZiel);
+            if (bereich != null) builder.withRenderArea(bereich);
+            descriptor = builder.build();
+        }
+        offenGl = Framebuffer.glPassBindingFor(farbZiel, tiefenZiel);
+        try
+        {
+            offen = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor);
+            offenGl.bind();
+        }
+        catch (RuntimeException | Error failure)
+        {
+            offenGl.restore(); offenGl = null;
+            throw failure;
+        }
         offenFarbe = farbZiel;
         offenTiefe = tiefenZiel;
         offenBereich = schluessel;
@@ -107,15 +117,18 @@ public final class Sammelpass
     private static void schliessen()
     {
         RenderPass durchgang = offen;
+        Framebuffer.GlPassBinding gl = offenGl;
 
         offen = null;
         offenFarbe = null;
         offenTiefe = null;
         offenBereich = null;
+        offenGl = null;
 
         if (durchgang != null)
         {
-            durchgang.close();
+            try { durchgang.close(); }
+            finally { if (gl != null) gl.restore(); }
         }
     }
 

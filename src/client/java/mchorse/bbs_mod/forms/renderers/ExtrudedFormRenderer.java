@@ -21,7 +21,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.LightCoordsUtil;
 import org.joml.Matrix3f;
