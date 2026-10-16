@@ -17,6 +17,22 @@ configuration. Local native-development records and machine-specific asset paths
 
 ## Verification
 
+Licence correction, 2026-10-17: Preview 1's GPL copy omitted the final paragraph
+of the application appendix. Preview 2 replaces both `COPYING` and the bundled
+`META-INF/LICENSE-BLENDER-IK.txt` with the complete, unmodified GPL v2 copy from
+[GNU GCC](https://github.com/gcc-mirror/gcc/blob/b3a3ecc460237948d924bca6cb8fe15622e5025b/COPYING), SHA-256
+`231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c`.
+The following frozen hashes and gameplay evidence describe Preview 1. Preview 2's
+artifact comparison is recorded separately; a licence-only change is not a new
+gameplay acceptance run.
+
+Preview 2 product: `05ae129423604889fd75459da1fb3dd45b451c092a25ab930c99b4d862d3606e`.
+Preview 2 sources JAR: `5fa1e0ed50247379b7e64c41a33e17b30afa9844c555772845a804c67950edb2`.
+The rebuild passes the existing build and Blender provenance gates. Comparing every
+decompressed product entry against Preview 1 finds exactly two changed files:
+`COPYING_bbs` and `META-INF/LICENSE-BLENDER-IK.txt`. Both match the pinned complete
+licence above; every class and all remaining resources are byte-identical.
+
 The public build and required server GameTest pass locally on Java 25. The API check also
 passes with `_JAVA_OPTIONS=-Dbbs.release.api_probe=true`, and `apiDump` reproduces the
 original snapshot byte for byte. The native gate checks the ABI, source fingerprint and
