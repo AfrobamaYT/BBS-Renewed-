@@ -3,7 +3,12 @@
 BBS Renewed is a Fabric fork of McHorse's BBS animation mod, built on BBS FS and BBS CML
 Edition. It extends the film editor, animation tools, rigs and rendering workflow.
 
+This 26.3 publication is a **preview** of the current integrated product. Its tested scope
+and remaining limits are recorded in the [release record](docs/RELEASE-26.3.md).
+
 ## Install
+
+[Download the 26.3 preview](https://github.com/AfrobamaYT/BBS-Renewed-/releases/tag/v2.5.0-26.3-rc.1).
 
 1. Install Minecraft **26.3**, Java **25** and Fabric Loader **0.19.5 or newer**.
 2. Put **Fabric API for 26.3** and `bbs-2.5.0-26.3.jar` in your `mods` directory.
@@ -32,6 +37,10 @@ The public build includes all six frozen native renderer libraries and verifies 
 fingerprints and checksums. Native sources and build instructions are in
 [`native/nanovg-vulkan`](native/nanovg-vulkan). An optional Physics Mod Pro integration is
 compiled only when its separately obtained JAR is present; that JAR is not distributed here.
+
+The optional Blender add-on is in `blender/addon/blender_bbs_bridge`. Before starting Blender,
+set `BBS_ASSETS_DIR` to your Minecraft instance's `config/bbs/assets` directory. The release
+uses that instance setting rather than a developer's local asset path.
 
 ## Credits and licence
 

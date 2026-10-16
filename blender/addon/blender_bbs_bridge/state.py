@@ -12,13 +12,8 @@ BBS_PORT = 9880
 
 # Wurzel des BBS-asset-baums = der 'assets'-namespace aus BBS' Link-format
 # ("assets:models/player/alex/alex.png" -> <BBS_ASSETS_DIR>/models/player/alex/alex.png).
-# Nicht hardcodable in den code-pfad gestreut: NUR hier anfassen wenn der checkout umzieht.
-# 2026-08-16 Linux-Umzug: war der Windows-cml-fresh-Pfad (build/resources = nur die
-# EINGEBAUTEN Mod-Assets). Jetzt der Spiel-Asset-Baum von INSTANZ 2 (bbs-neu2/run_2) —
-# dort liegen auch die Nutzer-Modelle (verity_*, rigneu_*). Der Pfad ist instanzgebunden:
-# andere Instanz → anderes run_N/config/bbs/assets.
-BBS_ASSETS_DIR = ("/home/afrobama/Dokumente/Claude-Projects/BBS optimieren"
-                  "/bbs-neu2/run_2/config/bbs/assets")
+# Match the existing public export: configure the assets root for your own instance.
+BBS_ASSETS_DIR = __import__("os").environ.get("BBS_ASSETS_DIR", "")
 
 # ---- verbindungs-state ----
 _sock = None
