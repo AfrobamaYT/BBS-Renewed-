@@ -35,15 +35,26 @@ jobs:
 
       - name: Xvfb and Mesa (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 mesa-utils
 
       - name: Build
         run: ./gradlew build -x test
 
-      - name: Production run with client gametest
+      - name: Production run with client gametest (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 6
         env:
           GALLIUM_DRIVER: llvmpipe
         run: ./gradlew -I .github/produktionstest.gradle produktionstest
+
+      - name: Production run with client gametest (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 6
+        env:
+          GALLIUM_DRIVER: llvmpipe
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          SDL_VIDEODRIVER: x11
+        run: xvfb-run -a -s '-screen 0 1280x720x24 +extension GLX' bash .github/produktionstest-linux.sh
 
       - name: Upload logs and screenshots
         if: always()
@@ -54,5 +65,6 @@ jobs:
             build/produktionstest/logs/
             build/produktionstest/crash-reports/
             build/produktionstest/screenshots/
+            build/produktionstest/diagnostics/
             build/produktionstest/**/screenshots/
           if-no-files-found: warn
