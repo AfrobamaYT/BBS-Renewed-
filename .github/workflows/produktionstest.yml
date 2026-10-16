@@ -35,7 +35,7 @@ jobs:
 
       - name: Xvfb and Mesa (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 mesa-utils
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-utils
 
       - name: Build
         run: ./gradlew build -x test
@@ -54,6 +54,9 @@ jobs:
           GALLIUM_DRIVER: llvmpipe
           LIBGL_ALWAYS_SOFTWARE: '1'
           SDL_VIDEODRIVER: x11
+          # Minecraft 26.3 requests sRGB, which Xvfb's GLX visuals do not provide.
+          # SDL's native EGL context path keeps the actual OpenGL renderer.
+          SDL_VIDEO_FORCE_EGL: '1'
         run: xvfb-run -a -s '-screen 0 1280x720x24 +extension GLX' bash .github/produktionstest-linux.sh
 
       - name: Upload logs and screenshots
@@ -65,6 +68,6 @@ jobs:
             build/produktionstest/logs/
             build/produktionstest/crash-reports/
             build/produktionstest/screenshots/
-            build/produktionstest/diagnostics/
+            build/production-diagnostics/
             build/produktionstest/**/screenshots/
           if-no-files-found: warn
