@@ -59,10 +59,12 @@ public final class ActionRegistryGameTest implements FabricClientGameTest
                 Map<String, Object> row = context.computeOnClient(client -> select(type));
                 rows.add(row);
                 if (!Boolean.TRUE.equals(row.get("selected")) || !Boolean.TRUE.equals(row.get("dataRoundTrip"))
-                    || !Boolean.TRUE.equals(row.get("copyClass")) || !Boolean.TRUE.equals(row.get("hasActionHandler")))
+                    || !Boolean.TRUE.equals(row.get("copyClass")) || !Boolean.TRUE.equals(row.get("hasActionHandler"))
+                    || !Boolean.TRUE.equals(row.get("typeIdPreserved")))
                     failures.add(type.toString());
                 context.waitTicks(2);
-                if (type.toString().startsWith("bbstools:")) context.takeScreenshot("action-registry-" + type.path);
+                if (type.toString().startsWith("bbstools:") || type.toString().equals("bbs:block_animation"))
+                    context.takeScreenshot("action-registry-" + type.toString().replace(':', '-'));
             }
             System.out.println("BBS_ACTION_REGISTRY " + new com.google.gson.Gson().toJson(
                 Map.of("rows", rows, "failures", failures, "scope", "editor selection, native data and method resolution; effects disabled")));
@@ -97,6 +99,7 @@ public final class ActionRegistryGameTest implements FabricClientGameTest
             List<UIClip> controls = panel().getChildren(UIClip.class).stream().filter(ui -> ui.clip == loaded).toList();
             row.put("class", loaded.getClass().getName());
             row.put("savedId", BBSMod.getFactoryActionClips().getType(loaded).toString());
+            row.put("typeIdPreserved", type.equals(BBSMod.getFactoryActionClips().getType(loaded)));
             row.put("dataRoundTrip", retained);
             row.put("copyClass", loaded.copy().getClass() == loaded.getClass());
             row.put("handlerOwner", owner.getName());
