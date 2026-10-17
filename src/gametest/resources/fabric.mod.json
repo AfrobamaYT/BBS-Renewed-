@@ -10,7 +10,9 @@
 			"com.afrobama.bbstools.gametest.BBSClientGameTest",
 			"com.afrobama.bbstools.gametest.FirstAnchorUndoGameTest",
 			"com.afrobama.bbstools.gametest.GuideScaleGameTest",
-			"com.afrobama.bbstools.gametest.StandaloneActorLifecycleGameTest"
+			"com.afrobama.bbstools.gametest.StandaloneActorLifecycleGameTest",
+			"com.afrobama.bbstools.clips.WorldSnapshotGameTest",
+			"com.afrobama.bbstools.gametest.WorldSnapshotEditorGameTest"
 		]
 	},
 	"depends": {

@@ -51,7 +51,8 @@
       "com.blenderbridge.BlenderBridgeClient",
       "com.davincilink.DavinciLinkClient",
       "mchorse.bbs_mod.ui.texturstudio.TexturStudioStart",
-      "mchorse.bbs_mod.ui.utils.renderers.InputRendererStart"
+      "mchorse.bbs_mod.ui.utils.renderers.InputRendererStart",
+      "com.afrobama.bbstools.client.clips.WorldSnapshotClient"
     ]
   },
   "mixins": [
