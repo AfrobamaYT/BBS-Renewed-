@@ -45,8 +45,7 @@ public final class CameraRegistryProbe
                 || !Boolean.TRUE.equals(row.get("typeIdPreserved")) || !Boolean.TRUE.equals(row.get("copyClass")))
                 failures.add(id.toString());
             context.waitTicks(2);
-            if (id.toString().startsWith("bbstools:") || !Boolean.TRUE.equals(row.get("selected")))
-                context.takeScreenshot("camera-registry-" + id.toString().replace(':', '-'));
+            context.takeScreenshot("camera-registry-" + id.toString().replace(':', '-'));
         }
         System.out.println("BBS_CAMERA_REGISTRY " + new com.google.gson.Gson().toJson(Map.of(
             "rows", rows, "failures", failures, "scope", "selection/native data/copy; clips disabled, media and camera evaluation untested")));
