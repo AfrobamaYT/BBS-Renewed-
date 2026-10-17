@@ -90,7 +90,19 @@ if (Test-Path $taskPidFile) {
     }
 }
 $taskMeta = Get-Content -Raw $taskState | ConvertFrom-Json -AsHashtable
+$taskMeta.dumpFiles = @(Get-ChildItem $taskDumpDir -Filter "*.dmp" -File -ErrorAction SilentlyContinue |
+    ForEach-Object { @{ name=$_.Name; bytes=$_.Length } })
+foreach ($taskLogName in @("procdump.stdout.log", "procdump.stderr.log")) {
+    $taskLogPath = Join-Path $taskOutput $taskLogName
+    if (Test-Path $taskLogPath) {
+        $taskBytes = [IO.File]::ReadAllBytes($taskLogPath)
+        $taskText = if ($taskBytes -contains 0) { [Text.Encoding]::Unicode.GetString($taskBytes) }
+            else { [Text.Encoding]::UTF8.GetString($taskBytes) }
+        $taskText | Set-Content -Encoding utf8 (Join-Path $taskOutput ($taskLogName + ".utf8.txt"))
+    }
+}
+Save-CaptureState $taskMeta
 Copy-Item $taskState (Join-Path $taskOutput "procdump-collection.json")
-if (-not $taskMeta.gamePid -or $taskMeta.state -eq "failed") {
+if (-not $taskMeta.gamePid -or $taskMeta.state -eq "failed" -or $taskMeta.dumpFiles.Count -eq 0) {
     throw "Requested native monitoring failed: $($taskMeta.error)"
 }
