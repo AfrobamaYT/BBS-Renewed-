@@ -36,14 +36,14 @@ public class UIRigReiter extends UIElement implements UISeitenleiste.Auffrischba
     {
         this.column(4).vertical().stretch();
 
-        /* Reihenfolge zaehlt: auffrischen() holt die erste Sektion als die des Reglers. */
+        /* Display controls remain available even when the rig has no custom properties. */
         UISection oben = new UISection(IKey.raw("Rig Main Properties"));
         UISection unten = new UISection(IKey.raw("Rig Layers"));
 
         oben.fields.add(this.regler);
         unten.fields.add(this.lagen);
 
-        this.add(oben, unten);
+        this.add(new UIRigDisplay(), oben, unten);
         this.auffrischen();
     }
 
@@ -76,16 +76,14 @@ public class UIRigReiter extends UIElement implements UISeitenleiste.Auffrischba
         /* An der HOEHE messen, nicht an der Kinderzahl: der Regler behaelt beim Leeren
          * Platzhalter-Kinder, seine gerechnete Hoehe faellt aber auf -3. */
         boolean leer = this.regler.getChildren().isEmpty() || this.regler.area.h <= 0;
-        /* ⛔ Die Sektion aus den KINDERN holen, nicht aus einem Feld: ein nachtraeglich
-         * hinzugefuegtes Instanzfeld ist nach einem Hotswap null, und die Bedingung
-         * uebersprang sich dann still (genau so lief der erste Anlauf ins Leere). */
-        UISection oben = this.getChildren().isEmpty() ? null
-            : this.getChildren().get(0) instanceof UISection sec ? sec : null;
+        /* Follow the existing property's parent, including panels built before a hotswap. */
+        UIElement parent = this.regler.getParent();
+        UISection oben = parent != null && parent.getParent() instanceof UISection sec ? sec : null;
 
         if (oben != null && oben.isVisible() == leer)
         {
             oben.setVisible(!leer);
-            this.resize();
+            UIRigLagen.neuEinmessen(this);
         }
     }
 }
