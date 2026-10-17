@@ -76,6 +76,12 @@ public class BBSClientGameTest implements FabricClientGameTest {
 				java.nio.file.Path jar = java.nio.file.Path.of(mchorse.bbs_mod.BBSMod.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 				String digest = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(java.nio.file.Files.readAllBytes(jar)));
 				System.out.println("BBS_PRODUCTION_SHA256 " + digest);
+				String expected = System.getProperty("bbs.ci.expectedProductSha256");
+				String frozen = System.getenv("BBS_PRODUCTION_MOD_DIR");
+				if (frozen != null && !frozen.isBlank() && expected == null)
+					throw new AssertionError("The explicit frozen production input was ignored");
+				if (expected != null && !expected.equals(digest))
+					throw new AssertionError("Loaded product bytes differ from the frozen input: " + digest);
 			}
 			catch (Exception failure)
 			{

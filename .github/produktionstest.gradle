@@ -10,6 +10,8 @@
  * software OpenGL driver draw text slightly differently, so bbs.gametest.aufnehmen only
  * records it for the workflow artifact.
  */
+import java.security.MessageDigest
+
 rootProject {
 	afterEvaluate { p ->
 		def loader = p.extensions.getByName("loom").getClass().getClassLoader()
@@ -31,11 +33,23 @@ rootProject {
 		}
 
 		p.tasks.register("produktionstest", runType) { run ->
-			run.dependsOn(p.tasks.named("jar"), gametestJar)
-			run.mods.from(p.tasks.named("jar").flatMap { it.archiveFile })
-			run.mods.from(fabricApi)
-			run.mods.from(gametestApi)
-			run.mods.from(gametestJar.flatMap { it.archiveFile })
+			def frozenDirectory = System.getenv("BBS_PRODUCTION_MOD_DIR")
+			if (frozenDirectory != null && !frozenDirectory.isBlank()) {
+				def directory = p.file(frozenDirectory)
+				def product = new File(directory, p.tasks.named("jar").get().archiveFile.get().asFile.name)
+				def tests = new File(directory, gametestJar.get().archiveFile.get().asFile.name)
+				if (!product.isFile() || !tests.isFile()) {
+					throw new GradleException("Frozen production input requires the exact product and gametest JARs: " + directory)
+				}
+				def digest = MessageDigest.getInstance("SHA-256").digest(product.bytes).encodeHex().toString()
+				run.mods.setFrom(product, tests, fabricApi, gametestApi)
+				run.jvmArgs.add("-Dbbs.ci.expectedProductSha256=" + digest)
+				println("BBS_FROZEN_PRODUCT " + product + " " + digest)
+			} else {
+				run.dependsOn(p.tasks.named("jar"), gametestJar)
+				run.mods.setFrom(p.tasks.named("jar").flatMap { it.archiveFile }, fabricApi,
+					gametestApi, gametestJar.flatMap { it.archiveFile })
+			}
 			run.runDir = p.file(p.findProperty("bbs.productionRunDir") ?: "build/produktionstest")
 			run.programArgs.addAll(["--width", "1280", "--height", "720",
 				"--graphicsBackend", p.findProperty("bbs.productionGraphics") ?: "opengl"])

@@ -72,3 +72,41 @@ jobs:
             build/production-diagnostics/
             build/produktionstest/**/screenshots/
           if-no-files-found: warn
+
+  frozen-windows:
+    name: Linux artifact on Windows
+    needs: produktionstest
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: ssciwr/setup-mesa-dist-win@v3
+      - name: Download the exact Linux runtime inputs
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: produktionstest-Linux
+          path: build/frozen-linux
+      - name: Test the unchanged Linux product and test mod
+        timeout-minutes: 6
+        env:
+          BBS_PRODUCTION_MOD_DIR: build/frozen-linux/libs
+          GALLIUM_DRIVER: llvmpipe
+        run: ./gradlew --console=plain --init-script=.github/produktionstest.gradle produktionstest
+      - name: Upload frozen-input runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: produktionstest-Frozen-Windows
+          path: |
+            build/produktionstest/logs/
+            build/produktionstest/crash-reports/
+            build/produktionstest/**/screenshots/
+          if-no-files-found: warn
