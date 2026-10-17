@@ -70,6 +70,8 @@ public final class FilmVideoExportGameTest implements FabricClientGameTest
         AtomicReference<Boolean> finished = new AtomicReference<>();
         Path evidence = context.computeOnClient(client -> prepare(client, finished));
         verifyEncoderRootLookup(evidence);
+        Path savedFilm = world.getWorldSave().getSaveDirectory().resolve("bbs/films/ci_video_export.dat");
+        context.waitFor(client -> Files.isRegularFile(savedFilm));
         context.waitTicks(10);
         context.takeScreenshot("film-export-ready");
         double[] point = context.computeOnClient(client ->
@@ -106,14 +108,14 @@ public final class FilmVideoExportGameTest implements FabricClientGameTest
         JsonObject stream = JsonParser.parseString(Files.readString(probe)).getAsJsonObject()
             .getAsJsonArray("streams").get(0).getAsJsonObject();
         Path frames = Files.createDirectories(evidence.resolve("decoded-frames"));
-        execute(List.of("ffmpeg", "-v", "error", "-i", movie.toString(), "-vsync", "0",
-            frames.resolve("frame-%03d.png").toString()), evidence.resolve("decode.log"));
         Map<String, Object> result = Map.of("normalRecordButton", true, "finishedCancelled", finished.get(),
             "editorRestored", restored, "submittedFrames", submitted, "probe", stream,
             "movie", movie.toString(), "visualAcceptance", "Requires inspection of the actual exported motion");
         String json = new com.google.gson.Gson().toJson(result);
         Files.writeString(evidence.resolve("result.json"), json + "\n");
         System.out.println("BBS_FILM_VIDEO_EXPORT " + json);
+        execute(List.of("ffmpeg", "-v", "error", "-i", movie.toString(), "-fps_mode", "passthrough",
+            frames.resolve("frame-%03d.png").toString()), evidence.resolve("decode.log"));
         if (!stream.get("codec_name").getAsString().equals("h264") || stream.get("width").getAsInt() != 320
             || stream.get("height").getAsInt() != 180 || !stream.get("r_frame_rate").getAsString().equals("20/1")
             || stream.get("nb_read_frames").getAsInt() != 20 || submitted != 20)
@@ -171,6 +173,7 @@ public final class FilmVideoExportGameTest implements FabricClientGameTest
         film.camera.addClip(clip);
         BBSModClient.getDashboard().setPanel(panel());
         panel().fill(film);
+        panel().forceSave();
         BBSModClient.getDashboard().copyCurrentEntityCamera();
         panel().setCursor(0);
         panel().recorder.setFinishedListener(finished::set);
