@@ -16,7 +16,13 @@ See WORLD-SNAPSHOT-REPAIR-2026-10-17.md for evidence and full repair acceptance.
 
 ## Frozen inputs and present candidates
 
-- Current snapshot world/UI-tested Linux candidate:
+- Current action-editor repaired Linux candidate:
+  `d7f3f2740ba9e86679dada9ccd2150c869396025053e2021c5dc9b7b91327161`,
+  source30060eb1c. Production run39023007388 passes all three jobs, including
+  unchanged Linux bytes on Windows. Five broken action-editor selections are
+  repaired with native payload/copy/type-ID preservation. Effect execution is
+  separate; see ACTION-REGISTRY-2026-10-17.md.
+- Previous snapshot world/UI-tested Linux candidate:
   `0e25e5031a2bad726928177b3247560a4af1d4f0cf652d8eb223137913a98d7b`,
   source ebdb9b245. Both source-build jobs pass, with readable labels and active
   Actions after reopen. The unchanged-input Windows job fails before tests;
@@ -311,7 +317,7 @@ after removal. Frozen Windows logs load exactly fa96; Windows' own build is
 Raw hashes, runtime records and the no-debugger diagnostic state are retained in
 build/test-evidence/release-audit-20261017/normal-actor-lifecycle-39018217629.json.
 
-## Additional action-picker path under investigation
+## Action-picker failures measured and repaired
 
 Source and packaged class inspection identify four common bbstools IDs mapped
 to data-only action bases: model_fracture, block_destruction, ragdoll_proxy and
@@ -319,9 +325,14 @@ block_animation. BBSToolsModClient registers their implemented client subclasses
 and editor factories under distinct bbs IDs. MapFactory keeps both IDs; UIClips'
 add menu enumerates every key, and UIClip resolves an exact class match.
 The common base bytecode inherits the empty ActionClip.applyClientAction.
-An actual production registry/picker check is still required before calling
-this a reproduced UI/runtime failure. This finding does not imply that the
-implemented bbs client path or the separately owned Physics/Gore work is unbuilt.
+Production run39022116322 now reproduces those four selector failures and the
+missing bbs:block_animation editor, with actual UIClipsPanel NullPointerExceptions.
+Source30060eb1c repairs them; run39023007388 passes the selector/native-data checks
+for every offered action on Linux, Windows and frozen-input Windows. All twelve
+source-build editor images were inspected. Follow-up39023507738 also proves actual
+offset mouse input and saved-film values on both source-build systems; its final
+frozen result is recorded separately. Physics/Gore/animation effects were disabled.
+The implemented bbs effect bodies are not declared unbuilt by this registry bug.
 
 ## Another native failure after the snapshot UI refinement
 
@@ -373,3 +384,17 @@ Receipt: build/test-evidence/release-audit-20261017/postmortem-control-390211358
 SHA2567d1f76e6e32382ebe21b478b249b3c342b868563681ed87e7ddbdcbcfbc54f45.
 Frozen-input receipt: postmortem-frozen-39021135850-receipt.json,
 SHA256f5deb25183798af07fa45a876fc618d560f0282e03de8aba80646a87cba58429.
+
+## BBS-free engine comparison and remaining native diagnosis
+
+The same0xC0000005 exit also occurs in Windows engine control39022532927 with
+Minecraft/Fabric and no BBS mod/classes selected. Its real initial world image
+was inspected; Linux completes the world and all three resource reloads. The
+Windows fault occurs during its first reload. This is a counterexample to a
+blanket BBS-only explanation, not proof that every native failure shares one cause.
+
+First-chance capture39023294185 produces eight decoded, resumed null-access
+contexts but exhausts its limit before the terminal failure. Extended capture
+39023834565 keeps smaller dumps through startup and fails explicitly if coverage
+is exhausted. Exact scope, inputs and receipts are preserved in
+WINDOWS-NATIVE-CONTROL-2026-10-17.md. No native game-crash cause or fix is established.

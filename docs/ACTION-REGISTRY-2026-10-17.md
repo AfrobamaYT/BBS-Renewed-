@@ -36,3 +36,22 @@ These checks do not prove effect rendering, PhysicsMod lifecycle or motion parit
 In particular, the Block Animation single-block rejection, unbounded region loop
 and swallowed render exceptions are separate source findings awaiting real
 effect/capture tests; they must not disappear behind a green registry check.
+
+## Measured repair
+
+Source30060eb1c passes all three jobs of production run39023007388: Linux,
+Windows and the unchanged Linux product on Windows. All twenty offered action
+IDs select their actual editors, retain their input type ID and native payload,
+and copy to the correct client class. The canonical Linux product is
+d7f3f2740ba9e86679dada9ccd2150c869396025053e2021c5dc9b7b91327161;
+Windows' own build is e7d5821ec19eb9a4ae66e06fe0d0c464e8c6f0672ae2064905cff1ccd400a05d.
+All twelve source-build editor images were inspected. Earlier NullPointerExceptions
+are absent from this case. This accepts selection and type/data compatibility,
+not the disabled effects themselves.
+
+Run39023507738 adds an actual Block Animation offset drag and native film save/load.
+Linux and Windows source jobs pass: X changes0 to2.25 through actual mouse input,
+Y remains10, Z remains0, and the saved film retains those values. Both images
+were inspected. The frozen-input Windows result is pending at this record.
+Raw receipts: action-registry-after-39023007388.json and
+block-animation-editor-39023507738.json under the public audit evidence directory.
