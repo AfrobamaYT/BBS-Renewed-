@@ -17,7 +17,14 @@ See WORLD-SNAPSHOT-REPAIR-2026-10-17.md for evidence and full repair acceptance.
 
 ## Frozen inputs and present candidates
 
-- Current unloaded-region repaired Linux candidate:
+- Current encoder-root repaired Linux candidate:
+  `e803654d6aa59776d57e86225b03ce174f6c8daf90464b1f71a698bc510ea74a`,
+  product source1c7874152, final test source08b48d900. Run39030928425 passes all
+  three production jobs, including unchanged Linux bytes on Windows. Exactly
+  FFMpegUtils.class differs frombb6d; all other decompressed entries are identical.
+  Normal one-second export and the real file/bin/root lookup pass on all three;
+  actual videos were inspected. See FILM-VIDEO-EXPORT-2026-10-17.md.
+- Previous unloaded-region repaired Linux candidate:
   `bb6d051f5219ea567738c02f533582360ea2c57ea910c6307527dde26d66c0a3`,
   source4436e82f7. Linux/Windows source jobs pass in39028684189: invalid capture
   is rejected, old effect retained, actual chat feedback verified in data/images.
@@ -476,3 +483,23 @@ Compared with9387, exactly BlockAnimation.class, its AnimatedBlock class and
 BlockAnimationClientClip.class change; all other decompressed entries are equal.
 Raw block-unloaded-product-delta.json has SHA256
 43a09487a482c5ad8c6fbb3f988f081351331013f9fda6f0d7ca3ff1d652e923.
+
+## Actual native first-drag/Undo and normal export
+
+Native case119 passes one saved-anchor/BBS Default/Gimbal-X first drag and
+physical Control-Z with exact authored/widget restoration and actual inspected
+motion. It uses unchangedbb6d/c85; the historical H1 failure is not globally
+closed. All owned processes, display and ports are physically gone and lease119
+released. Scope and durable evidence: NATIVE-X11-H1-119-2026-10-17.md.
+
+The current encoder-root correction also has the one-second normal-export proof
+on all three production jobs, including decoded MP4s with exact frame count.
+This is not audio, failure-path or full export acceptance. See FILM-VIDEO-EXPORT-2026-10-17.md.
+The complete08b48d900 source ZIP has SHA256
+fbb2df1e7f12f97bfa895e73f0e202631b94a901f038d8cb193a2cb23755dc7a.
+Its outside-Git build executes all12 source tasks and produces
+d9d0cae70aafd516499cb871ffd06ac8c92bf0fc6b25306638e15c9ecd408baf.
+Classes/resources match canonicale803 exactly; only the order of the same2452
+Client-Only-Entries in MANIFEST.MF differs. This proves corresponding sources,
+not bitwise reproducibility or another gameplay run. Raw receipt:
+full-source-08b48d900-result.json in the public audit evidence directory.
