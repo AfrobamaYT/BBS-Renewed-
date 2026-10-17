@@ -69,6 +69,7 @@ public final class FilmVideoExportGameTest implements FabricClientGameTest
         });
         AtomicReference<Boolean> finished = new AtomicReference<>();
         Path evidence = context.computeOnClient(client -> prepare(client, finished));
+        verifyEncoderRootLookup(evidence);
         context.waitTicks(10);
         context.takeScreenshot("film-export-ready");
         double[] point = context.computeOnClient(client ->
@@ -117,6 +118,23 @@ public final class FilmVideoExportGameTest implements FabricClientGameTest
             || stream.get("height").getAsInt() != 180 || !stream.get("r_frame_rate").getAsString().equals("20/1")
             || stream.get("nb_read_frames").getAsInt() != 20 || submitted != 20)
             throw new AssertionError("Exported bytes do not contain the requested one-second 320x180/20fps film");
+    }
+
+    private static void verifyEncoderRootLookup(Path evidence) throws Exception
+    {
+        /* A file-lookup fixture only; actual encoding above always runs the installed FFmpeg. */
+        Path root = Files.createDirectories(evidence.resolve("encoder lookup/bin")).getParent();
+        String executable = mchorse.bbs_mod.utils.OS.CURRENT == mchorse.bbs_mod.utils.OS.WINDOWS ? "ffmpeg.exe" : "ffmpeg";
+        Path file = Files.createFile(root.resolve("bin").resolve(executable));
+        java.lang.reflect.Method lookup = mchorse.bbs_mod.utils.FFMpegUtils.class.getDeclaredMethod("findFFMPEG", String.class);
+        lookup.setAccessible(true);
+        for (Path input : List.of(file, file.getParent(), root))
+        {
+            java.io.File found = (java.io.File) lookup.invoke(null, input.toString());
+            if (!found.isFile() || !found.toPath().toRealPath().equals(file.toRealPath()))
+                throw new AssertionError("Configured encoder file/bin/root lookup differs: " + input);
+        }
+        System.out.println("BBS_ENCODER_LOOKUP file/bin/root passed");
     }
 
     private static Path prepare(Minecraft client, AtomicReference<Boolean> finished)
