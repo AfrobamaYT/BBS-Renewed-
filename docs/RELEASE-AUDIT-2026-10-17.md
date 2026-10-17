@@ -5,6 +5,11 @@ no overall release-readiness or older-version parity is established.
 
 ## Frozen inputs and present candidates
 
+- Current production-tested Linux candidate:
+  `fa96dc2487ef22d109dad4cf88ee879d0c8c2e873ac845ebb7bdd4576b8c3073`,
+  built from `db3ae209f`; test-only source `ba80899a8` produces the same product.
+  Cold startup, saved-anchor input and the scoped Guide case pass on Linux and
+  Windows, including unchanged Linux bytes on Windows. This is not full release readiness.
 - Published26.3 Preview2: source `80a1d8924e8aa798cffe7c64c2cfbf9020ed4644`, product
   `05ae129423604889fd75459da1fb3dd45b451c092a25ab930c99b4d862d3606e`.
 - Original integrated parity reference: `cf99f2f828b0d74d1642fac7c5791ad81970d44f`.
@@ -19,8 +24,9 @@ no overall release-readiness or older-version parity is established.
   Subsequent checker/client-test changes do not alter product source behavior.
 - The subsequent standalone-Actor world correction is source `409ab2449`,
   local product `765766e928933292028ae96054c35a7fd0b26aee48f6cf81cc6604a65c70e96e`.
-  Build/boundary and exact tested-class identity pass; its full cold package
-  remains pending. See ACTOR-WORLD-RENDER-2026-10-17.md.
+  Build/boundary and exact tested-class identity pass. Its subsequent canonical
+  fa96 package passes cold production startup and the named client cases;
+  cold standalone-Actor pixels remain separate. See ACTOR-WORLD-RENDER-2026-10-17.md.
 
 The public candidate is not a new published release. Earlier Preview2 gameplay
 results must not be used as acceptance of the changed candidate. New unrelated
@@ -80,7 +86,7 @@ The private matrix/runtime evidence is under
 | Film/data | Create/edit real replay/camera/pose keys, recording, first Undo/Redo, native save/reload without sibling or authored-data loss | Scoped26.2 contracts and handlers pass; first gizmo Undo/H1 and broad26.3 cases remain open. |
 | Animation/timing | Playback, scrubbing, fractional time, loop/ghost/source edits, motion-shift drag/reset, grouped hidden tracks, stepped preview and visible state | The26.2 cold HUD, Default X11 Alt+K and multi-frame loop move pass; resize/Escape/motion-shift/ghost/hidden-group cases remain open. |
 | Models/rigs/props | Cubic/BOBJ, hand/finger/facial controls, held-prop identity, independent hands, quaternion/Euler-pole/gimbal behavior | Named exports/poses have scoped private evidence; broad new-public-artifact acceptance remains open. |
-| Regie | Start/preroll/timing, marker selection/drag/edit/delete, save/reload, Simple/Detailed display at relevant scales | UI-scale2 guide controls are reported clipped; source attempts were reverted. |
+| Regie | Start/preroll/timing, marker selection/drag/edit/delete, save/reload, Simple/Detailed display at relevant scales | The1280x720/scale2 Guide case passes real wheel and marker input on Linux/Windows; broader Regie editing and other sizes remain open. |
 | Materials/rendering | Real material/model pixels and preview/world pass with supported render backends; state restored after preview/picking | Shader/mod combinations and broad rendering regression cases remain open. |
 | Audio/video/export | Actual recording/playback, audio sync and WAV/PCM, exported media inspected with FFprobe and motion/audio readback | No whole-product export acceptance from a launch/solver test. |
 | Blender/Resolve | Actual included bridge workflows, ownership, reconnect/conflict/persistence, exporter package/source identity | Resolve reverse playback and process-restart pending-edit cases remain open; the corrected exporter package identity/licence-only delta passes independent inspection. |
@@ -94,8 +100,10 @@ The private matrix/runtime evidence is under
 2. A separate Resolve Python-process restart may replace a camera title edited
    natively during link loss with an unchanged old BBS snapshot. This is a reported
    pending-edit/reconnect case, not yet an independently reproduced native result.
-3. The Regie guide panel is clipped at UI scale2. Existing attempted layout
-   corrections were reverted; do not treat those commits as a working fix.
+3. The historical Guide clipping report does not reproduce as permanently
+   unreachable fields in the current1280x720/scale2 case: actual scrolling reaches
+   the bottom before/after marker selection. No layout correction was required;
+   earlier attempted/reverted fixes are not the cause of this acceptance.
 4. H1: first gizmo interaction after opening a Film was once not undone. Existing
    later Undo/data contracts do not replace a new exact first-interaction test.
 5. The missing26.2 stepped badge is now fixed for the cold9b58075a7 pair. Actual
@@ -185,3 +193,32 @@ public mchorse.bbs_mod.api classes. Full older-version parity requires their
 functional contracts and real dispatch paths, not just a successful compile.
 StructureForm/StructureRenderer are also absent and must not be fabricated as
 empty compatibility classes. No older release is established by that matrix.
+
+## Actor candidate, Guide input and complete source ZIP
+
+[Run39010351840](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39010351840)
+passes all three cold production jobs with the Actor correction. The canonical
+Linux fa96 JAR differs from1823 only in ActorEntityRenderer and its nested state;
+the renderer is exactly the causally tested d323 class. This accepts the package's
+cold startup and saved-anchor case, not a cold standalone-Actor visual workflow.
+
+[Run39010545176](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39010545176)
+passes all three jobs with the same fa96 product and the Guide case added.
+At1280x720/UI scale2, real wheel input reaches the final Start-facing field.
+Clicking the actual marker attaches its edit fields; further wheel input reaches
+the bottom again. The scroll content correctly expands from346 to471 logical
+pixels. All nine Guide images were inspected. There is no product layout fix.
+Other sizes and full Regie editing/recording acceptance are not inferred.
+Raw records: `build/test-evidence/release-audit-20261017/ci-39010545176-receipts.json`.
+
+The full source ZIP from ba80899a8 has SHA256
+`19e2fdffb6e4cb58f5a3e152a9ba02820efaa579b9dc5a6be59abec1f20a3489`.
+It contains no Git history, private companion source tree or symlinks. Extracted
+outside every Git repository, its fresh source build passes all12 build tasks
+with the existing dependency cache. The resulting product is
+`40630648813e226516572766c91cd09e582e8b2078090f620ab8e449f513809d`.
+Every decompressed entry matches canonical fa96 except MANIFEST.MF. Parsing its
+attributes shows exactly the same2444 Client-Only-Entries with the same frequency,
+in a different order; every other attribute is identical. This is a corresponding
+source/build-input check, not a new gameplay run or a cold dependency download.
+Raw result: `build/test-evidence/release-audit-20261017/full-source-outside-git-result.json`.

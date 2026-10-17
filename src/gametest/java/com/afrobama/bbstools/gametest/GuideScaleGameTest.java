@@ -89,7 +89,7 @@ public final class GuideScaleGameTest implements FabricClientGameTest
         panel.fill(saved);
         dashboard.copyCurrentEntityCamera();
         mchorse.bbs_mod.ui.hilfe.HilfeErststart.hilfeGeoeffnet();
-        var bars = panel.getChildren(UISeitenleiste.class);
+        java.util.List<UISeitenleiste> bars = panel.getChildren(UISeitenleiste.class);
         if (bars.size() != 1) throw new AssertionError("Ambiguous actual viewport sidebar: " + bars.size());
         bars.getFirst().zeige("Guide");
     }
@@ -101,7 +101,7 @@ public final class GuideScaleGameTest implements FabricClientGameTest
 
     private static UIRegieReiter guide()
     {
-        var guides = panel().getChildren(UIRegieReiter.class);
+        java.util.List<UIRegieReiter> guides = panel().getChildren(UIRegieReiter.class);
         if (guides.size() != 1) throw new AssertionError("Require one actual open Guide panel: " + guides.size());
         return guides.getFirst();
     }

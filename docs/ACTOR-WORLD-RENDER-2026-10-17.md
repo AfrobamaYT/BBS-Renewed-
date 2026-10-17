@@ -42,3 +42,11 @@ The A/B/A proof is a class swap on the named baseline, not a cold acceptance
 of the entire new public package. Cold production and broader Actor/render
 workflows remain subject to the release audit. This correction does not
 approve or publish the separate Gore addon or install a user instance.
+
+The subsequent complete production suite passes in all three jobs of
+[run39010351840](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39010351840).
+Canonical Linux product fa96dc2487ef22d109dad4cf88ee879d0c8c2e873ac845ebb7bdd4576b8c3073
+also runs unchanged on Windows. Against the preceding1823 product, only the
+renderer and nested state entries differ; d323 remains the exact renderer.
+This adds cold startup/world/dashboard and saved-anchor input evidence for
+the new package. A cold standalone-Actor visual case remains separate.

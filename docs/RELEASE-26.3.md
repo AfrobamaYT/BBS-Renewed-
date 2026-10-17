@@ -5,7 +5,10 @@ below do not establish full production stability, shader compatibility or cross-
 
 This branch also prepares an unreleased newer program candidate from the cold-tested
 integrated26.3 snapshot `d4e2797cdc5448624151f632f3e2692d695d8d21`. Its actual local
-product is `cded6b7bdb76d48e9cd68aa8bbc55ff16ac4eb1853744013da501da5977921dc`.
+product reference was `cded6b7bdb76d48e9cd68aa8bbc55ff16ac4eb1853744013da501da5977921dc`.
+The subsequent candidate includes the standalone-Actor render correction;
+its canonical Linux product is
+`fa96dc2487ef22d109dad4cf88ee879d0c8c2e873ac845ebb7bdd4576b8c3073`.
 Its scope, current evidence and unresolved release cases are tracked in
 [the continuing audit](RELEASE-AUDIT-2026-10-17.md). The historical preview evidence
 below is not acceptance of that changed candidate; published Preview2 is unchanged.
