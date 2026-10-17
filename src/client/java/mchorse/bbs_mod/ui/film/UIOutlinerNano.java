@@ -362,6 +362,45 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 		super.render(context);
 	}
 
+	/** Reveal a viewport-picked replay in the visible list, including when a search hid it. */
+	public void zeigeReplay(Replay replay)
+	{
+		if (replay == null)
+		{
+			return;
+		}
+		if (!this.suche.isEmpty() && !replay.getName().toLowerCase().contains(this.suche.toLowerCase()))
+		{
+			this.suche = "";
+		}
+		this.auffrischen();
+		int ziel = -1;
+		for (int i = 0; i < this.zeilen.size(); i++)
+		{
+			if (this.zeilen.get(i).replay == replay)
+			{
+				ziel = i;
+				break;
+			}
+		}
+		if (ziel < 0)
+		{
+			return;
+		}
+		int passen = Math.max(1, (int) ((this.flaeche.area.h - 29F) / 20F));
+		this.flaeche.rollGrenze(Math.max(0, this.zeilen.size() - passen));
+		int erste = (int) this.flaeche.rollVersatz();
+		if (ziel < erste)
+		{
+			this.flaeche.rolleZu(ziel);
+		}
+		else if (ziel >= erste + passen)
+		{
+			this.flaeche.rolleZu(ziel - passen + 1);
+		}
+		this.flaeche.neuMalen();
+	}
+
 	/* ================= Zeichnen ================= */
 
 	private void zeichnen(long vg, int b, int h, float mausX, float mausY, NanoFlaeche f)

@@ -23,6 +23,7 @@ public final class GehaltenerPropVerweis
     private static final Map<ModelBlockItemRenderer.Item, Verweis> ITEMS = Collections.synchronizedMap(new WeakHashMap<>());
     public static void merken(ModelBlockItemRenderer.Item item, ItemStack stack)
     {
+        GehaltenerBlockBild.merken(item, stack);
         GehaltenerPropSichtbarkeit.registrieren();
         Verweis link = lesen(stack);
         if (link == null)
@@ -74,14 +75,17 @@ public final class GehaltenerPropVerweis
 
     public static boolean wiederverwenden(UIReplayList list, Replay holder, String bone, ItemStack stack)
     {
+        ItemStack main = mchorse.bbs_mod.film.replays.HandAusHotbar.hand(holder.keyframes, list.panel.getCursor());
+        return wiederverwenden(list, holder, bone, stack, main == null || main.getItem() != mchorse.bbs_mod.BBSMod.MODEL_BLOCK_ITEM);
+    }
+
+    public static boolean wiederverwenden(UIReplayList list, Replay holder, String bone, ItemStack stack, boolean off)
+    {
         Verweis link = lesen(stack);
         Replay prop = ziel(list.panel.getData(), link);
-        ItemStack main = mchorse.bbs_mod.film.replays.HandAusHotbar.hand(holder.keyframes, list.panel.getCursor());
-        boolean off = main == null || main.getItem() != mchorse.bbs_mod.BBSMod.MODEL_BLOCK_ITEM;
         if (prop == null || link.off() != off || !link.holder().equals(holder.uuid.get()) || !link.bone().equals(bone))
             return false;
-        list.panel.replayEditor.setReplay(prop);
-        list.scrollToReplay(prop);
+        GehaltenerBlockPicker.zeigen(list.panel, prop);
         list.panel.getController().createEntities();
         list.panel.replayEditor.updateChannelsList();
         return true;

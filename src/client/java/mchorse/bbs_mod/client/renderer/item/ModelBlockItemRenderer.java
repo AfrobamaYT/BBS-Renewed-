@@ -152,9 +152,11 @@ public class ModelBlockItemRenderer
              * Pipelines ohnehin traegt; das disableDepthTest danach stellte die alte
              * GUI-Annahme wieder her, und die GUI zeichnet inzwischen selbst mit
              * RenderPipelines.GUI/GUI_TEXTURED. */
-            FormUtilsClient.render(form, new FormRenderingContext()
+            FormRenderingContext context = new FormRenderingContext()
                 .set(FormRenderType.fromModelMode(mode), prop != null ? prop : item.formEntity, matrices, light, overlay, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false))
-                .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
+                .camera(Minecraft.getInstance().gameRenderer.mainCamera());
+            GehaltenerBlockBild.erfassen(item, mode, form, context);
+            FormUtilsClient.render(form, context);
 
             matrices.popPose();
         }

@@ -486,6 +486,16 @@ public class NanoFlaeche extends UIElement
 		return this.rollen;
 	}
 
+	public void rolleZu(float versatz)
+	{
+		float vorher = this.rollen;
+		this.rollen = Math.max(0F, Math.min(this.rollGrenze, versatz));
+		if (this.rollen != vorher)
+		{
+			this.neuMalen();
+		}
+	}
+
 	/** Obergrenze setzen — der Zeichner kennt seine Zeilenzahl, die Flaeche nicht. */
 	public void rollGrenze(float grenze)
 	{
@@ -500,8 +510,7 @@ public class NanoFlaeche extends UIElement
 	@Override
 	protected boolean subMouseScrolled(UIContext context)
 	{
-		/* ⛔ Rad ZOOMT, wenn der Zeichner es kann — Blenders Zeitleiste macht das, und die
-		 * alte hier ebenfalls (Scale.zoomAnchor). Nur zu rollen ist der Ruecksschritt. */
+		/* Zoom when supported (Scale.zoomAnchor); otherwise scroll rows. */
 		if (this.zoomHandler != null && this.nimmtEingabe(context))
 		{
 			this.zoomHandler.accept(context.mouseWheel > 0 ? 0.8F : 1.25F);
@@ -515,15 +524,7 @@ public class NanoFlaeche extends UIElement
 			return false;
 		}
 
-		float vorher = this.rollen;
-
-		this.rollen = Math.max(0F, Math.min(this.rollGrenze,
-			this.rollen - (float) context.mouseWheel * 3F));
-
-		if (this.rollen != vorher)
-		{
-			this.neuMalen();
-		}
+		this.rolleZu(this.rollen - (float) context.mouseWheel * 3F);
 
 		return true;
 	}

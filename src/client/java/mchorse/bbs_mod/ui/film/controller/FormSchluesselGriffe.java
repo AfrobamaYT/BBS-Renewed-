@@ -32,7 +32,8 @@ public final class FormSchluesselGriffe
 
     public static boolean klick(UIFilmController controller, UIContext context)
     {
-        return offen(controller) != null && OVERLAY.click(context);
+        return offen(controller) != null && OVERLAY.click(context)
+            || mchorse.bbs_mod.client.renderer.item.GehaltenerBlockPicker.klick(controller.panel, context);
     }
 
     public static boolean loslassen()

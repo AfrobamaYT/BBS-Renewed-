@@ -116,9 +116,56 @@ public final class GehaltenerModellblock
 
     private static void create(UIReplayList list, Replay holder)
     {
+        GehaltenerModellblockFortsetzung.erhalten(list.panel.getData(), holder);
+        create(list, holder, griff(holder, list.panel.getCursor()));
+    }
+
+    public static boolean ausHand(UIReplayList list, Replay holder, boolean links)
+    {
         Film film = list.panel.getData();
-        GehaltenerModellblockFortsetzung.erhalten(film, holder);
-        Griff griff = griff(holder, list.panel.getCursor());
+        if (film == null)
+        {
+            return false;
+        }
+        ItemStack stack = links ? holder.keyframes.offHand.interpolate(list.panel.getCursor(), ItemStack.EMPTY)
+            : mchorse.bbs_mod.film.replays.HandAusHotbar.hand(holder.keyframes, list.panel.getCursor());
+        if (stack == null || stack.getItem() != BBSMod.MODEL_BLOCK_ITEM || slot(holder, links) == null)
+        {
+            return false;
+        }
+        ModelBlockItemRenderer.Item item = ModelBlockItemRenderer.get(stack);
+        ItemDisplayContext mode = links ? ItemDisplayContext.THIRD_PERSON_LEFT_HAND : ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
+        if (item == null || item.entity.getProperties().getForm(mode) == null)
+        {
+            throw new IllegalStateException("The held model block has no form for this hand");
+        }
+        if (list.panel.getUndoHandler() != null)
+        {
+            list.panel.getUndoHandler().submitUndo();
+        }
+        film.preNotify();
+        try
+        {
+            GehaltenerModellblockFortsetzung.erhalten(film, holder);
+            stack = links ? holder.keyframes.offHand.interpolate(list.panel.getCursor(), ItemStack.EMPTY)
+                : mchorse.bbs_mod.film.replays.HandAusHotbar.hand(holder.keyframes, list.panel.getCursor());
+            create(list, holder, new Griff(stack, links));
+            return true;
+        }
+        finally
+        {
+            film.postNotify();
+            if (list.panel.getUndoHandler() != null)
+            {
+                list.panel.getUndoHandler().submitUndo();
+                list.panel.getUndoHandler().getUndoManager().markLastUndoNoMerging();
+            }
+        }
+    }
+
+    private static void create(UIReplayList list, Replay holder, Griff griff)
+    {
+        Film film = list.panel.getData();
         ItemStack stack = griff == null ? null : griff.stack();
         ArmorSlot slot = griff == null ? null : slot(holder, griff.links());
         ModelBlockItemRenderer.Item item = stack == null ? null : ModelBlockItemRenderer.get(stack);
@@ -129,7 +176,7 @@ public final class GehaltenerModellblock
             return;
         }
 
-        if (GehaltenerModellblockFortsetzung.wiederverwenden(list, holder, slot.group, stack))
+        if (mchorse.bbs_mod.client.renderer.item.GehaltenerPropVerweis.wiederverwenden(list, holder, slot.group, stack, griff.links()))
         {
             return;
         }
@@ -155,7 +202,7 @@ public final class GehaltenerModellblock
         form.visible.set(true);
         form.anchor.set(anchor);
         prop.form.set(form);
-        prop.label.set("Held: " + form.getDisplayName());
+        prop.label.set(mchorse.bbs_mod.client.renderer.item.GehaltenerBlockPicker.name(film, form, griff.links()));
         prop.category.set(holder.category.get());
         prop.shadow.set(false);
         handOver(holder, prop, form, stack, griff.links());
@@ -163,8 +210,7 @@ public final class GehaltenerModellblock
 
         list.refreshReplayList();
         list.update();
-        list.panel.replayEditor.setReplay(prop);
-        list.scrollToReplay(prop);
+        mchorse.bbs_mod.client.renderer.item.GehaltenerBlockPicker.zeigen(list.panel, prop);
         list.panel.getController().createEntities();
         list.panel.replayEditor.updateChannelsList();
     }
