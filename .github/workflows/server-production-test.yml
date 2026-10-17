@@ -1,0 +1,41 @@
+name: Dedicated server production test
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/release-26.3-20261016]
+    paths:
+      - .github/workflows/server-production-test.yml
+      - .github/server-production-test.gradle
+      - .github/server-smoke.fabric.mod.json
+      - src/gametest/java/com/afrobama/bbstools/serveraudit/DedicatedSnapshotSmoke.java
+jobs:
+  server:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Real dedicated-server startup and snapshot action
+        timeout-minutes: 6
+        run: sh ./gradlew --console=plain --init-script=.github/server-production-test.gradle serverProductionTest
+      - name: Preserve actual server receipts and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-production-${{ runner.os }}
+          path: |
+            build/libs/bbs-*.jar
+            build/production-diagnostics/server/
+            build/server-production/logs/
+            build/server-production/crash-reports/

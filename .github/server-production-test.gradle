@@ -1,0 +1,37 @@
+/* Actual server launcher, isolated test mod and an explicit receipt gate. */
+rootProject {
+    afterEvaluate { p ->
+        def loader = p.extensions.getByName("loom").getClass().getClassLoader()
+        def runType = loader.loadClass("net.fabricmc.loom.task.prod.ServerProductionRunTask")
+        def api = p.configurations.detachedConfiguration(p.dependencies.create("net.fabricmc.fabric-api:fabric-api:${p.property('fabric_version')}"))
+        api.transitive = false
+        def smoke = p.tasks.register("serverSmokeJar", org.gradle.api.tasks.bundling.Jar) { jar ->
+            jar.from(p.sourceSets.gametest.output) { include("com/afrobama/bbstools/serveraudit/DedicatedSnapshotSmoke*.class") }
+            jar.from(p.file(".github/server-smoke.fabric.mod.json")) { rename { "fabric.mod.json" } }
+            jar.archiveClassifier.set("server-smoke")
+        }
+        p.tasks.register("serverProductionTest", runType) { run ->
+            run.dependsOn(p.tasks.named("jar"), smoke)
+            run.installerVersion.set("1.0.3")
+            run.mods.setFrom(p.tasks.named("jar").flatMap { it.archiveFile }, smoke.flatMap { it.archiveFile }, api)
+            run.runDir.set(p.layout.buildDirectory.dir("server-production"))
+            run.programArgs.add("--nogui")
+            def receipt = p.file("build/production-diagnostics/server/server-smoke.json")
+            run.jvmArgs.addAll(["-Dfabric.noGui=true", "-Xmx2G", "-Djava.awt.headless=true",
+                "-Dbbs.ci.serverReceipt=" + receipt.absolutePath])
+            run.doFirst {
+                def directory = run.runDir.get().asFile
+                directory.mkdirs()
+                /* The project's configureTests already accepts the test EULA. */
+                new File(directory, "eula.txt").text = "eula=true\n"
+                new File(directory, "server.properties").text = "online-mode=false\nserver-ip=127.0.0.1\nlevel-type=minecraft:flat\nmax-tick-time=120000\n"
+                if (receipt.exists() && !receipt.delete()) { throw new GradleException("Cannot clear the old server receipt") }
+            }
+            run.doLast {
+                if (!receipt.isFile() || new groovy.json.JsonSlurper().parse(receipt).success != true) {
+                    throw new GradleException("Dedicated-server smoke did not produce a successful runtime receipt")
+                }
+            }
+        }
+    }
+}
