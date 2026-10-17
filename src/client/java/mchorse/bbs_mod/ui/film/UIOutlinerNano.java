@@ -336,6 +336,11 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 		{
 			this.letztesAktiv = aktiv;
 			this.gewaehlt = this.aktivZeile;
+			if (panel != null && mchorse.bbs_mod.client.renderer.item.GehaltenerBlockPicker.istGehalten(panel, aktiv))
+			{
+				this.zeigeReplay(aktiv);
+				return;
+			}
 		}
 
 		jetzt = jetzt + "#" + this.gewaehlt + "@" + this.aktivZeile;

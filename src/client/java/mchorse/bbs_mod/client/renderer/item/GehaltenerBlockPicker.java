@@ -90,6 +90,31 @@ public final class GehaltenerBlockPicker
         zeigenIn(panel, prop);
     }
 
+    public static boolean istGehalten(UIFilmPanel panel, Replay prop)
+    {
+        if (prop == null || prop.form.get() == null || panel.getData() == null)
+        {
+            return false;
+        }
+        int index = prop.form.get().anchor.get().replay;
+        List<Replay> replays = panel.getData().replays.getList();
+        if (index < 0 || index >= replays.size())
+        {
+            return false;
+        }
+        Replay holder = replays.get(index);
+        for (boolean off : new boolean[] {false, true})
+        {
+            GehaltenerPropDaten.Verweis link = GehaltenerPropDaten.lesen(GehaltenerBlockBild.hand(holder, panel.getCursor(), off));
+            if (link != null && link.off() == off && link.holder().equals(holder.uuid.get())
+                && link.replay().equals(prop.uuid.get()) && link.bone().equals(prop.form.get().anchor.get().attachment))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static void zeigenIn(mchorse.bbs_mod.ui.framework.elements.UIElement root, Replay prop)
     {
         if (root instanceof mchorse.bbs_mod.ui.film.UIOutlinerNano outliner)
