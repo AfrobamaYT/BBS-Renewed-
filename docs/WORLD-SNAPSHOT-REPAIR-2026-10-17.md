@@ -91,9 +91,18 @@ NTSTATUS0xC0000005 (-1073741819). No loaded-product receipt or snapshot case
 is reached there, and the enabled WER/JVM capture still produces no dump/stack.
 This run is red overall; the earlier full three-job pass does not clear this
 additional unresolved Windows failure.
+
+The subsequent postmortem-control run39021135850 passes all three jobs using the
+same canonical0e25 Linux product, including its unchanged bytes on Windows.
+All three frozen-Windows Snapshot editor pictures were inspected: readable
+labels, saved values and active Actions after reopen. The native control proves
+capture for its own deliberate fault; no new game fatal error occurs in this
+run, so the earlier Windows game-crash cause is still unresolved.
 Raw case/hash receipt: build/test-evidence/release-audit-20261017/world-snapshot-39019305927-receipt.json,
 SHA25651f3fc05874770d3eca5b8b09cef4eb6899847c96ed80c5a4057235ac4a00f15.
 Follow-up receipt: world-snapshot-39019817908-receipt.json,
 SHA256d57a987b9b2c0d89261a610975c4cbdef93e745650ea73495bc5b29fc4dee785.
+Frozen-input follow-up: postmortem-frozen-39021135850-receipt.json,
+SHA256f5deb25183798af07fa45a876fc618d560f0282e03de8aba80646a87cba58429.
 Dedicated-server startup, visible world-reset capture and the full release audit
 remain open. This feature has no completed demonstration or publication approval.

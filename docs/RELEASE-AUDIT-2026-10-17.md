@@ -20,7 +20,9 @@ See WORLD-SNAPSHOT-REPAIR-2026-10-17.md for evidence and full repair acceptance.
   `0e25e5031a2bad726928177b3247560a4af1d4f0cf652d8eb223137913a98d7b`,
   source ebdb9b245. Both source-build jobs pass, with readable labels and active
   Actions after reopen. The unchanged-input Windows job fails before tests;
-  run39019817908 is red overall.
+  run39019817908 is red overall. Later capture-control run39021135850 passes
+  all three jobs with the same0e25 bytes under postmortem configuration;
+  the original native-crash cause remains unresolved.
 - Previous snapshot world-tested Linux candidate:
   `1cee43da1b4fcd40e26994bbc8640fcd0e32c619299dc87f41070bca7624589b`,
   source cc05a931f. The unchanged bytes also pass on Windows. The subsequent
@@ -361,8 +363,13 @@ successful readback; downloaded artifacts contain no raw dumps.
 
 The actual marked game PID10212 is observed-unattached, without a monitor PID.
 Its source-build case loads46a3337e371b4e1790065aa2253d7091ccd311af71e7d3bf143e6e019582126d
-and passes. The frozen Linux-on-Windows job remains pending at this record.
+and passes. The frozen Linux-on-Windows job subsequently also passes, loading
+exactly0e25. Its own native-control capture and registry restoration pass;
+game PID4040 is observed-unattached. All three frozen Snapshot editor images
+were inspected and show readable labels and active Actions after reopen.
 No new game fatal error was reproduced, so the earlier game's cause and whether
 this path captures that particular fatal condition remain open.
 Receipt: build/test-evidence/release-audit-20261017/postmortem-control-39021135850-receipt.json,
 SHA2567d1f76e6e32382ebe21b478b249b3c342b868563681ed87e7ddbdcbcfbc54f45.
+Frozen-input receipt: postmortem-frozen-39021135850-receipt.json,
+SHA256f5deb25183798af07fa45a876fc618d560f0282e03de8aba80646a87cba58429.
