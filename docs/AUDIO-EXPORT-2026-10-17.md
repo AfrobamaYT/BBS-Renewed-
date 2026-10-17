@@ -18,7 +18,15 @@ whose input group has no user-supplied -f. Other formats and explicit format
 arguments remain intact; the actual audio regression checks that override rule.
 The [FFmpeg input-format contract](https://ffmpeg.org/ffmpeg.html) supports declaring
 the known container. Runtime acceptance remains pending. Generic asynchronous
-frame-write failure handling is still open and must not be cleared by this fix.
+frame-write failure handling must not be cleared by the WAV-format correction.
+
+The separate frame-capture repair catches an export RuntimeException at the
+completed-frame boundary and routes it to the current film/world export's normal
+failure cleanup, callback and visible message. It leaves unrelated rendering
+outside the catch. A bare recorder is stopped with a visible failure as well.
+The regression kills the actual encoder both before continued frames and
+immediately before ordinary finalization; both must leave Minecraft alive with
+the correct failed status. This repair builds, with runtime acceptance pending.
 
 Raw audio-windows-before-39034142776.json and the source/encoder/crash logs remain
 in the public audit evidence directory. Cancellation, stereo/spatial audio,

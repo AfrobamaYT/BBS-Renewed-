@@ -191,7 +191,7 @@ public class BBSModClient implements ClientModInitializer
         {
             BBSRendering.fuellen();
             minecraftSoundCapture.captureFrame();
-            videoRecorder.recordFrame();
+            mchorse.bbs_mod.film.VideoExportSession.captureFrame(videoRecorder, worldExportSession);
         }
     }
 

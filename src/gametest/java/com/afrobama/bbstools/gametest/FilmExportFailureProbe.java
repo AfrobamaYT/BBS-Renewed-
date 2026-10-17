@@ -20,6 +20,12 @@ final class FilmExportFailureProbe
 {
     static void run(ClientGameTestContext context, Path evidence) throws Exception
     {
+        run(context, evidence, false);
+        run(context, evidence, true);
+    }
+
+    private static void run(ClientGameTestContext context, Path evidence, boolean finalizeImmediately) throws Exception
+    {
         AtomicReference<Boolean> finished = new AtomicReference<>();
         context.runOnClient(client ->
         {
@@ -33,7 +39,8 @@ final class FilmExportFailureProbe
         context.waitTicks(3);
         FilmVideoExportGameTest.clickRecord(context);
         context.waitFor(client -> panel().recorder.isRecording() && BBSModClient.getVideoRecorder().getCounter() >= 2);
-        Map<String, Object> injection = context.computeOnClient(client -> terminateEncoder());
+        Map<String, Object> injection = context.computeOnClient(client -> terminateEncoder(finalizeImmediately));
+        context.waitFor(client -> finished.get() != null);
         context.waitTicks(2);
         Map<String, Object> state = context.computeOnClient(client ->
         {
@@ -45,17 +52,20 @@ final class FilmExportFailureProbe
             return result;
         });
         String json = new com.google.gson.Gson().toJson(state);
-        Files.writeString(evidence.resolve("encoder-failure.json"), json + "\n");
+        Files.writeString(evidence.resolve(finalizeImmediately ? "encoder-failure.json" : "encoder-frame-failure.json"), json + "\n");
         System.out.println("BBS_ENCODER_FAILURE " + json);
-        context.takeScreenshot("film-export-encoder-failure");
+        context.takeScreenshot(finalizeImmediately ? "film-export-encoder-failure" : "film-export-encoder-frame-failure");
         boolean errorVisible = ((java.util.List<?>) state.get("errorMessages")).stream()
             .anyMatch(message -> message.toString().contains("Video export failed"));
         if (!Boolean.TRUE.equals(finished.get()) || !Boolean.TRUE.equals(state.get("editorIdle")) || !errorVisible
             || Boolean.TRUE.equals(state.get("encoderAliveAfterStop")) || ((Number) state.get("ownedEncoderChildrenAlive")).longValue() != 0L)
             throw new AssertionError("Failed encoder finalization was reported as success or lost its visible failure");
+        context.runOnClient(client -> panel().getContext().menu.overlay.getChildren(UIMessageOverlayPanel.class)
+            .forEach(UIMessageOverlayPanel::close));
+        context.waitTicks(2);
     }
 
-    private static Map<String, Object> terminateEncoder()
+    private static Map<String, Object> terminateEncoder(boolean finalizeImmediately)
     {
         try
         {
@@ -73,9 +83,10 @@ final class FilmExportFailureProbe
             if (!process.waitFor(3L, TimeUnit.SECONDS)) throw new AssertionError("Owned encoder did not terminate");
             int exit = process.exitValue();
             if (exit == 0) throw new AssertionError("Fault injection did not produce an encoder failure");
-            panel().recorder.stop();
+            if (finalizeImmediately) panel().recorder.stop();
             return Map.of("ownedEncoderPid", pid, "encoderExit", exit, "submittedFramesAtFailure", frames,
-                "encoderAliveAfterStop", process.isAlive(), "ownedEncoderChildrenAlive", children.stream().filter(ProcessHandle::isAlive).count());
+                "encoderAliveAfterStop", process.isAlive(), "ownedEncoderChildrenAlive", children.stream().filter(ProcessHandle::isAlive).count(),
+                "finalizedImmediately", finalizeImmediately);
         }
         catch (ReflectiveOperationException failure)
         {

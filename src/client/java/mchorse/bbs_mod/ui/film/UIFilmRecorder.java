@@ -71,6 +71,11 @@ public class UIFilmRecorder extends UIElement
         this.session.stop();
     }
 
+    public void fail(Exception failure)
+    {
+        this.session.fail(failure);
+    }
+
     public void openMovies()
     {
         UIUtils.openFolder(BBSRendering.getVideoFolder());

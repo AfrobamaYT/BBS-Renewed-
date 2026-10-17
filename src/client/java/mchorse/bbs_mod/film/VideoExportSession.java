@@ -64,6 +64,30 @@ public abstract class VideoExportSession
         return laufendeExporte > 0;
     }
 
+    public static void captureFrame(VideoRecorder recorder, WorldVideoExportSession world)
+    {
+        try { recorder.recordFrame(); }
+        catch (RuntimeException failure)
+        {
+            mchorse.bbs_mod.ui.dashboard.UIDashboard dashboard = BBSModClient.getDashboardIfCreated();
+            mchorse.bbs_mod.ui.film.UIFilmPanel panel = dashboard == null ? null
+                : dashboard.getPanels().getPanel(mchorse.bbs_mod.ui.film.UIFilmPanel.class);
+            if (panel != null && panel.recorder.isExporting())
+            {
+                panel.recorder.fail(failure);
+                if (world.isExporting()) world.cancel();
+            }
+            else if (world.isExporting()) world.fail(failure);
+            else
+            {
+                try { recorder.stopRecording(false); }
+                catch (RuntimeException cleanup) { if (cleanup != failure) failure.addSuppressed(cleanup); }
+                if (BBSModClient.getMinecraftSoundCapture().isActive()) BBSModClient.getMinecraftSoundCapture().end();
+                reportEncoderFailure(failure);
+            }
+        }
+    }
+
     /** Haelt {@link #laufendeExporte} an JEDEM zustandswechsel synchron. */
     protected void setzeZustand(State neuerZustand)
     {
@@ -292,6 +316,16 @@ public abstract class VideoExportSession
 
     private void finish(boolean cancelled)
     {
+        this.finish(cancelled, null);
+    }
+
+    public final void fail(Exception failure)
+    {
+        this.finish(true, Objects.requireNonNull(failure));
+    }
+
+    private void finish(boolean cancelled, Exception encoderFailure)
+    {
         if (this.state == State.IDLE)
         {
             return;
@@ -301,7 +335,6 @@ public abstract class VideoExportSession
         int recordedFrames = recorder.getCounter();
         MinecraftSoundCapture capture = BBSModClient.getMinecraftSoundCapture();
         boolean postPass = capture.isActive();
-        Exception encoderFailure = null;
 
         if (recorder.isRecording())
         {
@@ -313,7 +346,8 @@ public abstract class VideoExportSession
             }
             catch (Exception e)
             {
-                encoderFailure = e;
+                if (encoderFailure == null) encoderFailure = e;
+                else if (encoderFailure != e) encoderFailure.addSuppressed(e);
                 cancelled = true;
             }
         }
@@ -345,7 +379,7 @@ public abstract class VideoExportSession
 
         if (encoderFailure != null)
         {
-            this.reportEncoderFailure(encoderFailure);
+            reportEncoderFailure(encoderFailure);
         }
 
         FinishedListener listener = this.finishedListener;
@@ -357,7 +391,7 @@ public abstract class VideoExportSession
         }
     }
 
-    private void reportEncoderFailure(Exception failure)
+    public static void reportEncoderFailure(Exception failure)
     {
         failure.printStackTrace();
         String message = "Video export failed: " + failure.getMessage();

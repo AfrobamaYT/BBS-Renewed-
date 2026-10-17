@@ -16,7 +16,13 @@ The source repair marks failed finalization cancelled, preserves cleanup and
 reports an error through the actual editor overlay or world-player chat. Overlay
 insertion is deferred past rendering. A failed video is not passed to captured-
 sound muxing and prepared audio remains available for recovery. Build/API/boundary
-pass; the unchanged actual-encoder regression still needs runtime acceptance.
+pass. Run39033702049 passes all three production jobs. Actual Linux, Windows
+and unchanged-Linux-on-Windows results report cancelled=true, editorIdle=true,
+no surviving encoder/children and the actual error. All three error screenshots
+were inspected and have no false green completion. Canonical Linux/frozen product:
+d2b54f4f501c1fb51e46ea3619c3016d2ddf4282928adbc22e85d4f6499fb3d3.
+Raw encoder-finalization-after-39033702049.json SHA256
+1474f6e0a27b1ab5a69233ebf2525dbd09a68a3a1c17f7ed0f166c8196da16c3.
 
 Raw encoder-finalization-before-39033057307.json SHA256
 12bcefcc7daf416bc7f6db131a08684b074ae7ac6b4766b318eb27398f1ff396.
