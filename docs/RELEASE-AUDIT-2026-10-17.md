@@ -3,6 +3,11 @@
 Status: ongoing. This record preserves the user's full release/deep-audit objective;
 no overall release-readiness or older-version parity is established.
 
+Confirmed exposed unfinished function: WorldSnapshotClip is registered as
+bbstools:world_snapshot but its shipped action only logs, without restoring any
+blocks. This blocks treating the complete current feature set as ready.
+See WORLD-SNAPSHOT-REPAIR-2026-10-17.md for evidence and full repair acceptance.
+
 ## Frozen inputs and present candidates
 
 - Current production-tested Linux candidate:
