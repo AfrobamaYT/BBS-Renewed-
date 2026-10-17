@@ -336,3 +336,7 @@ debugger until a fault. It preserves/restores the original runner registry and
 keeps raw dumps in RUNNER_TEMP. This is a capture repair, not a product crash fix.
 References: [ProcDump](https://learn.microsoft.com/en-us/sysinternals/downloads/procdump),
 [Windows postmortem handling](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/enabling-postmortem-debugging).
+Implementation e57da0a1c passes PowerShell syntax and the actual non-Windows host
+guard. [Run39020764340](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39020764340)
+on the separate native-0e25-postmortem branch is pending. A configured flag and a
+compiled control are not proof that its Windows postmortem capture has fired.
