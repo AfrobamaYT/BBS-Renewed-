@@ -68,7 +68,8 @@ public final class FirstAnchorUndoGameTest implements FabricClientGameTest
             for (int i = 0; i < points.length; i++)
             {
                 double[] end = points[(i + 12) % points.length];
-                if (!inside(points[i]) || !inside(end)) continue;
+                double[] candidate = points[i];
+                if (!context.computeOnClient(client -> inside(candidate) && inside(end))) continue;
                 context.getInput().setCursorPos(points[i][0], points[i][1]);
                 context.waitTicks(2);
                 if (context.computeOnClient(client -> panel().getController().getGizmoStencil().getIndex()) == 13)
