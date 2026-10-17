@@ -3,6 +3,11 @@
 Status: ongoing. This record preserves the user's full release/deep-audit objective;
 no overall release-readiness or older-version parity is established.
 
+Latest confirmed blocker: failed FFmpeg finalization in the currente803 candidate
+is reported as success, with an actual green UI checkmark and no visible failure.
+Run39033057307 reproduces this with the real owned encoder. Source repair builds;
+runtime acceptance remains pending. See ENCODER-FINALIZATION-2026-10-17.md.
+
 Confirmed exposed unfinished function in the prior fa96 candidate:
 WorldSnapshotClip is registered as bbstools:world_snapshot but only logs.
 Repair source cc05a931f now builds the server restore and actual editor;

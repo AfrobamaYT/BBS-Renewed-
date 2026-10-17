@@ -8,6 +8,12 @@ import mchorse.bbs_mod.audio.MinecraftSoundMixer;
 import mchorse.bbs_mod.audio.Wave;
 import mchorse.bbs_mod.audio.wav.WaveReader;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.framework.UIBaseMenu;
+import mchorse.bbs_mod.ui.framework.UIScreen;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageOverlayPanel;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.VideoMuxer;
 import mchorse.bbs_mod.utils.VideoRecorder;
@@ -295,6 +301,7 @@ public abstract class VideoExportSession
         int recordedFrames = recorder.getCounter();
         MinecraftSoundCapture capture = BBSModClient.getMinecraftSoundCapture();
         boolean postPass = capture.isActive();
+        Exception encoderFailure = null;
 
         if (recorder.isRecording())
         {
@@ -305,10 +312,18 @@ public abstract class VideoExportSession
                 recorder.stopRecording(!postPass && this.finishEffects());
             }
             catch (Exception e)
-            {}
+            {
+                encoderFailure = e;
+                cancelled = true;
+            }
         }
 
-        if (postPass)
+        if (postPass && encoderFailure != null)
+        {
+            /* Preserve any prepared audio for recovery; no video exists to mux reliably. */
+            capture.end();
+        }
+        else if (postPass)
         {
             this.finishCapturedSounds(capture, recordedFrames);
 
@@ -328,12 +343,35 @@ public abstract class VideoExportSession
         this.teardown(cancelled);
         this.reset();
 
+        if (encoderFailure != null)
+        {
+            this.reportEncoderFailure(encoderFailure);
+        }
+
         FinishedListener listener = this.finishedListener;
         this.finishedListener = null;
 
         if (listener != null)
         {
             listener.onFinished(cancelled);
+        }
+    }
+
+    private void reportEncoderFailure(Exception failure)
+    {
+        failure.printStackTrace();
+        String message = "Video export failed: " + failure.getMessage();
+        UIBaseMenu menu = UIScreen.getCurrentMenu();
+
+        if (menu != null)
+        {
+            /* Finalization also runs during overlay rendering; mutate its tree afterwards. */
+            menu.context.render.postRunnable(() -> UIOverlay.addOverlay(menu.context,
+                new UIMessageOverlayPanel(UIKeys.GENERAL_ERROR, IKey.constant(message))));
+        }
+        else if (net.minecraft.client.Minecraft.getInstance().player != null)
+        {
+            net.minecraft.client.Minecraft.getInstance().player.sendSystemMessage(net.minecraft.network.chat.Component.literal(message));
         }
     }
 
