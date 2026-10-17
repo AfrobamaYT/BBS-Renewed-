@@ -45,7 +45,7 @@ changes from other worktrees require an explicit source/artifact delta and retes
 - The updated public client suite compiles. It reads the real welcome button's
   rendered hit zone, sends Fabric mouse input, requires the known state and hint
   removal, then records the dashboard. Production mode now logs the loaded JAR
-  SHA256 and CI retains the actual built JARs. Execution remains pending.
+  SHA256 and CI retains the actual built JARs. The updated run is recorded below.
 - Missing categories.json produced a real first-run stack trace in the26.2 CI.
   The existing public guard is now also in the shared source; all14 packages pass.
   A new fresh-client log is required to accept that correction at runtime.
@@ -66,10 +66,10 @@ The private matrix/runtime evidence is under
 
 | Area | Required proof | Present limit |
 | --- | --- | --- |
-| Distribution/startup | Exact released bytes, matching full source/licences, correct Minecraft/Java metadata, fresh Windows/Linux production launch without companion, inspected images and relevant logs | New public candidate runtime pending; previous release is only a preview. |
-| Editor/input | Dashboard, actual Film editor, docks, search/text, BBS Default shortcuts, picking, scale and first interaction after cold start | Welcome input test compiled; whole-editor acceptance open. |
+| Distribution/startup | Exact released bytes, matching full source/licences, correct Minecraft/Java metadata, fresh Windows/Linux production launch without companion, inspected images and relevant logs | Exact Linux product passes startup/welcome input on Linux and Windows; full release remains open. |
+| Editor/input | Dashboard, actual Film editor, docks, search/text, BBS Default shortcuts, picking, scale and first interaction after cold start | Welcome mouse input passes on both systems; actual whole-editor acceptance open. |
 | Film/data | Create/edit real replay/camera/pose keys, recording, first Undo/Redo, native save/reload without sibling or authored-data loss | Scoped26.2 contracts and handlers pass; first gizmo Undo/H1 and broad26.3 cases remain open. |
-| Animation/timing | Playback, scrubbing, fractional time, loop/ghost/source edits, motion-shift drag/reset, grouped hidden tracks, stepped preview and visible state | Some actual26.2 widget cases pass; physical shortcuts, continuous drag and visible stepped HUD remain open. |
+| Animation/timing | Playback, scrubbing, fractional time, loop/ghost/source edits, motion-shift drag/reset, grouped hidden tracks, stepped preview and visible state | The26.2 cold HUD, Default X11 Alt+K and multi-frame loop move pass; resize/Escape/motion-shift/ghost/hidden-group cases remain open. |
 | Models/rigs/props | Cubic/BOBJ, hand/finger/facial controls, held-prop identity, independent hands, quaternion/Euler-pole/gimbal behavior | Named exports/poses have scoped private evidence; broad new-public-artifact acceptance remains open. |
 | Regie | Start/preroll/timing, marker selection/drag/edit/delete, save/reload, Simple/Detailed display at relevant scales | UI-scale2 guide controls are reported clipped; source attempts were reverted. |
 | Materials/rendering | Real material/model pixels and preview/world pass with supported render backends; state restored after preview/picking | Shader/mod combinations and broad rendering regression cases remain open. |
@@ -77,7 +77,7 @@ The private matrix/runtime evidence is under
 | Blender/Resolve | Actual included bridge workflows, ownership, reconnect/conflict/persistence, exporter package/source identity | Resolve reverse playback and process-restart pending-edit cases remain open; new exporter licence package needs independent inspection. |
 | Older-version parity | Same complete supported product behavior on26.2/1.21.11/1.21.4/1.21.1/1.20.4/1.20.1; build both artifacts and use owned runtime/motion evidence per target | Compilation/data contracts alone do not establish parity. |
 
-### Specific unresolved observations
+### Specific observations and status
 
 1. Resolve J/reverse playback was actually reported leaving BBS at cursor792,
    playing=false while Resolve moves backward. Its owning chat is fixing it;
@@ -89,10 +89,10 @@ The private matrix/runtime evidence is under
    corrections were reverted; do not treat those commits as a working fix.
 4. H1: first gizmo interaction after opening a Film was once not undone. Existing
    later Undo/data contracts do not replace a new exact first-interaction test.
-5. The26.2 stepped badge remained absent in recorded pixels. Source candidate
-   `9b58075a7770df5758c00048465109a9f1dd046b` restores the reference42px constructor;
-   its frozen pair is prepared for the next explicitly coordinated owned test slot.
-   A prior live resize alone was insufficient. No runtime acceptance yet.
+5. The missing26.2 stepped badge is now fixed for the cold9b58075a7 pair. Actual
+   orange pixels, BBS Default X11 Alt+K, continuous loop drag and attached
+   Undo/Redo/save/reload pass. See OWNED-HUD-INPUT-26.2-2026-10-17.md in the
+   parity worktree; other versions and remaining gestures are not inferred.
 6. The older preview-world camera in `src/compat/vor261/.../ZweitKamera.java`
    remains an explicit false/null/zero/black stub. It is not built, and blocks full
    older-version parity. Primary version-specific rendering research already exists.
@@ -103,3 +103,20 @@ The separately requested model browser and free second3D editor are still unbuil
 product work. The original user notes explicitly schedule them later; they must
 not be advertised as delivered or confused with the existing Camera View preview.
 No Discord/video publication approval follows from this audit or a green build.
+
+## Exact public product on both operating systems
+
+[Run39006225543](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39006225543),
+source `a7d739a7639ddc79b1489efd85f464083ff34af4`, passes both native source-build
+jobs and an additional Windows job using the unchanged Linux product/test JARs.
+The actual loaded product SHA256 matches on Linux and frozen-input Windows:
+`1823b43a64ceb0f89b39fe64884fb72d7eb99acda848e4ad25f3f36a3c3e6dfc`.
+All six actual before/after welcome/dashboard screenshots were inspected.
+The welcome disappears through Fabric mouse events, known-state and removal
+assertions pass, and no VisibilityManager category-read stack trace appears.
+Both canonical licence entries in the new packages have the full pinned LF text.
+This is production startup/world/dashboard/input evidence, not full Film, rig,
+recording, shader or integration acceptance. The release remains unpublished.
+Raw runtime hashes, images and logs are retained in
+`build/test-evidence/release-audit-20261017/ci-39006225543-receipts.json` and the
+corresponding downloaded artifact directory in the public release worktree.
