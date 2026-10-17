@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.LayeringTransform;
 import mchorse.bbs_mod.graphics.Blockmodell;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
@@ -46,6 +47,8 @@ public final class BlockAnimationRenderer
         {
             Vec3 p = ab.currentPos();
             matrices.pushPose();
+            /* Use vanilla's projection-aware offset for copies overlapping real block faces. */
+            LayeringTransform.VIEW_OFFSET_Z_LAYERING.getModifier().accept(matrices.last().pose());
             matrices.translate(p.x - camPos.x, p.y - camPos.y, p.z - camPos.z);
             try
             {
