@@ -26,8 +26,8 @@ if ($Mode -eq "prepare") {
     New-ItemProperty -Force $taskKey -Name DumpFolder -PropertyType ExpandString -Value $taskDumpDir | Out-Null
     New-ItemProperty -Force $taskKey -Name DumpType -PropertyType DWord -Value 1 | Out-Null
     New-ItemProperty -Force $taskKey -Name DumpCount -PropertyType DWord -Value 2 | Out-Null
-    if ($env:BBS_PROCDUMP_POSTMORTEM -eq "1" -and $env:BBS_PROCDUMP_CAPTURE -ne "1") {
-        throw "Postmortem capture requires the signed ProcDump preparation"
+    if (($env:BBS_PROCDUMP_POSTMORTEM -eq "1" -or $env:BBS_PROCDUMP_FIRST_CHANCE -eq "1") -and $env:BBS_PROCDUMP_CAPTURE -ne "1") {
+        throw "Requested native capture requires the signed ProcDump preparation"
     }
     if ($env:BBS_PROCDUMP_CAPTURE -eq "1") { & "$PSScriptRoot/windows-procdump.ps1" prepare }
     Write-Output "Enabled local Java minidumps in disposable CI; raw dumps are not uploaded"

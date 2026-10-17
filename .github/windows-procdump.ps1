@@ -23,7 +23,8 @@ if ($Mode -eq "prepare") {
         throw "Require the signed Microsoft ProcDump binary"
     }
     Save-CaptureState @{ binary=$taskBinary; sha256=(Get-FileHash $taskBinary -Algorithm SHA256).Hash
-        captureMode=$(if ($env:BBS_PROCDUMP_POSTMORTEM -eq "1") { "postmortem" } else { "monitor" })
+        captureMode=$(if ($env:BBS_PROCDUMP_POSTMORTEM -eq "1") { "postmortem" }
+            elseif ($env:BBS_PROCDUMP_FIRST_CHANCE -eq "1") { "first-chance" } else { "monitor" })
         startedUtc=[DateTime]::UtcNow.ToString("o"); state="prepared"; rawDumpsUploaded=$false }
     if ($env:BBS_PROCDUMP_POSTMORTEM -eq "1") {
         & "$PSScriptRoot/windows-postmortem.ps1" prepare -Binary $taskBinary
@@ -59,6 +60,9 @@ if ($Mode -eq "watch") {
             exit 0
         }
         $taskArguments = '-accepteula -mm -e -t -n 2 ' + $taskMeta.gamePid + ' "' + $taskDumpDir + '"'
+        if ($taskMeta.captureMode -eq "first-chance") {
+            $taskArguments = '-accepteula -mm -e 1 -f C0000005,C0000374 -t -n 8 ' + $taskMeta.gamePid + ' "' + $taskDumpDir + '"'
+        }
         $taskMonitor = Start-Process -FilePath $taskMeta.binary -ArgumentList $taskArguments -PassThru -NoNewWindow `
             -RedirectStandardOutput (Join-Path $taskOutput "procdump.stdout.log") `
             -RedirectStandardError (Join-Path $taskOutput "procdump.stderr.log")

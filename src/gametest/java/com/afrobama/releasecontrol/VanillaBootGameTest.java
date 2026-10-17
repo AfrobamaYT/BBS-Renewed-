@@ -29,6 +29,8 @@ public final class VanillaBootGameTest implements FabricClientGameTest
         String hash = sourceHash();
         String expected = System.getProperty("bbs.ci.expectedControlSha256", "");
         if (!expected.isEmpty() && !expected.equals(hash)) throw new AssertionError("Changed frozen vanilla control JAR");
+        System.out.println("VANILLA_NATIVE_CONTROL_STARTED " + new com.google.gson.Gson().toJson(Map.of(
+            "minecraft", minecraft, "bbsAbsent", true, "controlJarSha256", hash)));
         try (TestSingleplayerContext world = context.worldBuilder().create())
         {
             world.getConnection().waitForChunksRender();
@@ -39,6 +41,7 @@ public final class VanillaBootGameTest implements FabricClientGameTest
             context.takeScreenshot("vanilla-control-before-reload");
             for (int cycle = 1; cycle <= 3; cycle++)
             {
+                System.out.println("VANILLA_NATIVE_RELOAD_BEGIN " + cycle);
                 CompletableFuture<Void> reload = context.computeOnClient(Minecraft::reloadResourcePacks);
                 context.waitFor(client -> reload.isDone());
                 reload.join();
@@ -46,6 +49,7 @@ public final class VanillaBootGameTest implements FabricClientGameTest
                 world.getConnection().waitForChunksRender();
                 context.waitTicks(5);
                 context.takeScreenshot("vanilla-control-reload-" + cycle);
+                System.out.println("VANILLA_NATIVE_RELOAD_COMPLETE " + cycle);
             }
             System.out.println("VANILLA_NATIVE_CONTROL " + new com.google.gson.Gson().toJson(Map.of(
                 "minecraft", minecraft, "java", System.getProperty("java.runtime.version"),
