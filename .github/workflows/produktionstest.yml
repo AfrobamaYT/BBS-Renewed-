@@ -24,6 +24,10 @@ on:
         description: Compare Minecraft and Fabric without the BBS mod or classes
         type: boolean
         default: false
+      record_linux_video:
+        description: Record the private Linux CI framebuffer for motion inspection
+        type: boolean
+        default: false
 
 env:
   BBS_PRODUCTION_VANILLA_CONTROL: ${{ inputs.vanilla_control && '1' || '0' }}
@@ -55,7 +59,7 @@ jobs:
 
       - name: Xvfb and Mesa (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-utils
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-utils ffmpeg
 
       - name: Build
         run: ./gradlew build -x test
@@ -93,7 +97,8 @@ jobs:
           # SDL's native EGL context path keeps the actual OpenGL renderer.
           SDL_VIDEO_FORCE_EGL: '1'
           BBS_EXPORT_NATIVE_WORLD: ${{ github.workspace }}/build/production-diagnostics/native-fixture-world
-        run: xvfb-run -a -s '-screen 0 1280x720x24 +extension GLX' bash .github/produktionstest-linux.sh
+          BBS_RECORD_PRODUCTION_VIDEO: ${{ inputs.record_linux_video && '1' || '0' }}
+        run: xvfb-run -a -s '-screen 0 1280x720x24 +extension GLX' bash .github/record-production-video.sh bash .github/produktionstest-linux.sh
 
       - name: Collect Windows native failure evidence
         if: always() && runner.os == 'Windows'
