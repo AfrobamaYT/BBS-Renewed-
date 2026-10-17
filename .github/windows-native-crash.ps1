@@ -23,6 +23,7 @@ if ($Mode -eq "prepare") {
     New-ItemProperty -Force $taskKey -Name DumpFolder -PropertyType ExpandString -Value $taskDumpDir | Out-Null
     New-ItemProperty -Force $taskKey -Name DumpType -PropertyType DWord -Value 1 | Out-Null
     New-ItemProperty -Force $taskKey -Name DumpCount -PropertyType DWord -Value 2 | Out-Null
+    if ($env:BBS_PROCDUMP_CAPTURE -eq "1") { & "$PSScriptRoot/windows-procdump.ps1" prepare }
     Write-Output "Enabled local Java minidumps in disposable CI; raw dumps are not uploaded"
     exit 0
 }
@@ -32,6 +33,9 @@ if (-not (Test-Path $taskState)) {
 }
 $taskSaved = Get-Content -Raw $taskState | ConvertFrom-Json
 try {
+    $taskProcError = $null
+    try { & "$PSScriptRoot/windows-procdump.ps1" collect }
+    catch { $taskProcError = $_.Exception.Message; Write-Warning $taskProcError }
     Start-Sleep -Seconds 2
     $taskEvents = @(Get-WinEvent -FilterHashtable @{
         LogName="Application"; Id=1000,1001; StartTime=([DateTime]::Parse($taskSaved.startedUtc)).ToLocalTime()
@@ -44,7 +48,7 @@ try {
     foreach ($taskDump in $taskDumps) {
         if (-not (Test-Path $taskCdb)) { break }
         $taskStack = Join-Path $taskOutput ($taskDump.BaseName + "-stack.txt")
-        $taskArguments = '-z "' + $taskDump.FullName + '" -logo "' + $taskStack + '" -c ".symfix; .ecxr; kv; q"'
+        $taskArguments = '-z "' + $taskDump.FullName + '" -logo "' + $taskStack + '" -c ".symfix; .ecxr; kv; ~* kv; lm; q"'
         $taskProcess = Start-Process -FilePath $taskCdb -ArgumentList $taskArguments -PassThru
         if (-not $taskProcess.WaitForExit(45000)) { $taskProcess.Kill(); $taskProcess.WaitForExit() }
         $taskStacks += @{ file=[IO.Path]::GetFileName($taskStack); exitCode=$taskProcess.ExitCode }
@@ -52,8 +56,9 @@ try {
     @{
         prepared=$true; cdbAvailable=(Test-Path $taskCdb); applicationEvents=$taskEvents.Count
         dumps=@($taskDumps | ForEach-Object { @{ name=$_.Name; bytes=$_.Length } })
-        stacks=$taskStacks; rawDumpsUploaded=$false
+        stacks=$taskStacks; rawDumpsUploaded=$false; procDumpError=$taskProcError
     } | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $taskOutput "collection.json")
+    if ($taskProcError) { throw $taskProcError }
 }
 finally {
     if (Test-Path $taskKey) { Remove-Item -Recurse -Force $taskKey }

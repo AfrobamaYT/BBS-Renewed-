@@ -7,6 +7,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      native_diagnostics:
+        description: Capture Windows native termination with signed ProcDump
+        type: boolean
+        default: false
 
 jobs:
   produktionstest:
@@ -43,6 +48,8 @@ jobs:
       - name: Prepare isolated Windows crash diagnostics
         if: runner.os == 'Windows'
         shell: pwsh
+        env:
+          BBS_PROCDUMP_CAPTURE: ${{ inputs.native_diagnostics && '1' || '0' }}
         run: ./.github/windows-native-crash.ps1 prepare
 
       - name: Production run with client gametest (Windows)
@@ -107,6 +114,8 @@ jobs:
           path: build/frozen-linux
       - name: Prepare isolated Windows crash diagnostics
         shell: pwsh
+        env:
+          BBS_PROCDUMP_CAPTURE: ${{ inputs.native_diagnostics && '1' || '0' }}
         run: ./.github/windows-native-crash.ps1 prepare
       - name: Test the unchanged Linux product and test mod
         timeout-minutes: 6
