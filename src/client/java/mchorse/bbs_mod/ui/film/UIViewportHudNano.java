@@ -115,13 +115,13 @@ public class UIViewportHudNano extends UIElement
         EditorTypAuswahl.nano(vg, f, this, "preview", "persp", k);
 
 		/* Schattenkante, damit die Schrift ueber hellem Himmel und dunklem Boden lesbar bleibt. */
-        NanoStifte.text(vg, NanoDesign.BOLD, 11F * k, 44F * k, 12F * k + 1F * k, 0x0A0A0A,
+        NanoStifte.text(vg, NanoDesign.BOLD, 11F * k, 1F * k, 12F * k + 1F * k, 0x0A0A0A,
 			"User Perspective", null);
-        NanoStifte.text(vg, NanoDesign.BOLD, 11F * k, 43F * k, 12F * k, 0xFFFFFF,
+        NanoStifte.text(vg, NanoDesign.BOLD, 11F * k, 0F, 12F * k, 0xFFFFFF,
 			"User Perspective", null);
 
-        NanoStifte.text(vg, NanoDesign.SANS, 10F * k, 44F * k, 24F * k + 1F * k, 0x0A0A0A, zweite, null);
-        NanoStifte.text(vg, NanoDesign.SANS, 10F * k, 43F * k, 24F * k, keyHier() ? 0xE8D84A : 0xC8D2DC, zweite, null);
+        NanoStifte.text(vg, NanoDesign.SANS, 10F * k, 1F * k, 24F * k + 1F * k, 0x0A0A0A, zweite, null);
+        NanoStifte.text(vg, NanoDesign.SANS, 10F * k, 0F, 24F * k, keyHier() ? 0xE8D84A : 0xC8D2DC, zweite, null);
 
 		if (mchorse.bbs_mod.utils.keyframes.KeyframeStufen.an()) /* stays in sight while on, or a held pose reads as a bug */
 		{
