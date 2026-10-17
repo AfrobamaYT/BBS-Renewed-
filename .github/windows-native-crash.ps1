@@ -37,6 +37,10 @@ try {
     try { & "$PSScriptRoot/windows-procdump.ps1" collect }
     catch { $taskProcError = $_.Exception.Message; Write-Warning $taskProcError }
     Start-Sleep -Seconds 2
+    $taskGameDir = Join-Path $env:GITHUB_WORKSPACE "build/produktionstest"
+    foreach ($taskJvmDump in @(Get-ChildItem $taskGameDir -Filter "hs_err_pid*.mdmp" -File -ErrorAction SilentlyContinue)) {
+        Move-Item $taskJvmDump.FullName (Join-Path $taskDumpDir ($taskJvmDump.BaseName + ".dmp"))
+    }
     $taskEvents = @(Get-WinEvent -FilterHashtable @{
         LogName="Application"; Id=1000,1001; StartTime=([DateTime]::Parse($taskSaved.startedUtc)).ToLocalTime()
     } -ErrorAction SilentlyContinue | Where-Object { $_.Message -match "java\.exe" })
