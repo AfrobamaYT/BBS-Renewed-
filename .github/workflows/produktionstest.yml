@@ -62,6 +62,7 @@ jobs:
           # Minecraft 26.3 requests sRGB, which Xvfb's GLX visuals do not provide.
           # SDL's native EGL context path keeps the actual OpenGL renderer.
           SDL_VIDEO_FORCE_EGL: '1'
+          BBS_EXPORT_NATIVE_WORLD: ${{ github.workspace }}/build/production-diagnostics/native-fixture-world
         run: xvfb-run -a -s '-screen 0 1280x720x24 +extension GLX' bash .github/produktionstest-linux.sh
 
       - name: Collect Windows native failure evidence

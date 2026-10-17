@@ -88,7 +88,9 @@ public class BBSClientGameTest implements FabricClientGameTest {
 				throw new AssertionError("Cannot identify the actual production product bytes", failure);
 			}
 		}
+		java.nio.file.Path nativeWorld = null;
 		try (TestSingleplayerContext welt = context.worldBuilder().create()) {
+			if (System.getenv("BBS_EXPORT_NATIVE_WORLD") != null) nativeWorld = welt.getWorldSave().getSaveDirectory();
 			// Ohne dieses Warten faengt der Screenshot halb geladene Chunks ein -- der Vergleich
 			// waere dann bei jedem Lauf anders, also flatterhaft. Genau solche Tests bringen
 			// niemandem etwas: sie schlagen zufaellig fehl und werden dann ignoriert.
@@ -140,6 +142,12 @@ public class BBSClientGameTest implements FabricClientGameTest {
 			DashboardFirstRun.dismiss(context);
 
 			pruefe(context, "bbs-dashboard");
+		}
+		if (nativeWorld != null)
+		{
+			if (!context.computeOnClient(client -> client.getSingleplayerServer() == null))
+				throw new AssertionError("Close the fixture server before exporting its files");
+			NativeWorldExport.copyClosed(nativeWorld, java.nio.file.Path.of(System.getenv("BBS_EXPORT_NATIVE_WORLD")));
 		}
 	}
 
