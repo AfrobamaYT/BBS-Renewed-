@@ -17,6 +17,10 @@ no overall release-readiness or older-version parity is established.
 - Locally built public candidate: `cded6b7bdb76d48e9cd68aa8bbc55ff16ac4eb1853744013da501da5977921dc`.
   Sources JAR: `90217ee5d2c7c03fb28af851202e166e7e1b54c291bfcae54c17b38484719afa`.
   Subsequent checker/client-test changes do not alter product source behavior.
+- The subsequent standalone-Actor world correction is source `409ab2449`,
+  local product `765766e928933292028ae96054c35a7fd0b26aee48f6cf81cc6604a65c70e96e`.
+  Build/boundary and exact tested-class identity pass; its full cold package
+  remains pending. See ACTOR-WORLD-RENDER-2026-10-17.md.
 
 The public candidate is not a new published release. Earlier Preview2 gameplay
 results must not be used as acceptance of the changed candidate. New unrelated
@@ -35,8 +39,13 @@ changes from other worktrees require an explicit source/artifact delta and retes
 - Full comparison to the private program reference finds no removed entries.
   Differences include public metadata/manifest, complete licence packaging,
   the existing VisibilityManager first-run correction and eleven anonymous
-  class binaries. Anonymous-class instruction comparison and exact public
-  runtime acceptance remain necessary; binary differences are not waved away.
+  class binaries in the local build. A complete raw-entry comparison now
+  establishes that the canonical Linux1823 product matches the private reference
+  byte-for-byte for those eleven and every other product class except the known
+  VisibilityManager guard. Its only other entry differences are the explicit
+  licence, manifest and mod metadata changes. Local anonymous-class instruction
+  text also matches; one inspected verbose diff contains only a local-variable
+  parameter name. Broad runtime acceptance remains separate from this comparison.
 - The private26.2 fresh-runner CI39003103176 passes configuration, actual launch-
   dependency agent selection, build, real production client/world and screenshot.
   It asserts no bbsdev/development environment and logs the loaded product JAR.
@@ -74,7 +83,7 @@ The private matrix/runtime evidence is under
 | Regie | Start/preroll/timing, marker selection/drag/edit/delete, save/reload, Simple/Detailed display at relevant scales | UI-scale2 guide controls are reported clipped; source attempts were reverted. |
 | Materials/rendering | Real material/model pixels and preview/world pass with supported render backends; state restored after preview/picking | Shader/mod combinations and broad rendering regression cases remain open. |
 | Audio/video/export | Actual recording/playback, audio sync and WAV/PCM, exported media inspected with FFprobe and motion/audio readback | No whole-product export acceptance from a launch/solver test. |
-| Blender/Resolve | Actual included bridge workflows, ownership, reconnect/conflict/persistence, exporter package/source identity | Resolve reverse playback and process-restart pending-edit cases remain open; new exporter licence package needs independent inspection. |
+| Blender/Resolve | Actual included bridge workflows, ownership, reconnect/conflict/persistence, exporter package/source identity | Resolve reverse playback and process-restart pending-edit cases remain open; the corrected exporter package identity/licence-only delta passes independent inspection. |
 | Older-version parity | Same complete supported product behavior on26.2/1.21.11/1.21.4/1.21.1/1.20.4/1.20.1; build both artifacts and use owned runtime/motion evidence per target | Compilation/data contracts alone do not establish parity. |
 
 ### Specific observations and status
@@ -138,7 +147,17 @@ receiving a KeyEvent carrying SDL's captured left-Control mask. It requires an
 initially empty history, the first real ring drag, restored authored/widget
 values and consumption of the existing history entry. It never calls the Undo
 manager as a shortcut or changes product key matching. Compilation passes;
-the corrected input/runtime result is still pending.
+the corrected runtime test now passes in all three jobs of
+[run39009807975](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39009807975),
+source `3703d03479b36692523094b91d8523f4a0c24139`. Logs confirm modifiers0/ctrl=false
+for Fabric, modifiers64/ctrl=true for the corrected KeyboardHandler event,
+unchanged edited values after the first path, and exact authored/widget restore
+plus history index0 to -1 after the second. The unchanged Linux1823 product
+passes on Linux and Windows; Windows' own build also passes. All nine actual
+ring-ready/drag/Undo images were inspected. Raw records and image/log hashes:
+`build/test-evidence/release-audit-20261017/ci-39009807975-receipts.json`.
+This is a test-adapter correction and one current saved-anchor case, not a product
+Undo fix or closure of the historical native-X11 H1 observation.
 
 Separately, Windows in
 [run39008269225](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39008269225)
@@ -147,3 +166,22 @@ No cause is established. The next run did not repeat this native failure;
 its hosted-only WER/CDB collection executed, with no dumps or matching events.
 That round does not clear the earlier native crash. Raw dump memory is excluded
 from uploaded artifacts; event/stack diagnostics are retained when available.
+
+## Corrected exporter package and remaining version gap
+
+The actual corrected exporter ZIP has SHA256
+`d295ae800f95db862076172e8789e4b769c2c11a8bf20b6fc26b5da29060333d`.
+Independent inspection confirms the complete18002-byte pinned GPL copy,
+all SOURCE.json entry hashes and byte equality of all nine Python files plus
+README against the previously inspected94767b package. SOURCE.json transparently
+pins producer3cc118a9 and the unchanged c32bf4b9 payload provenance. This accepts
+the licence-only package delta; no new Blender runtime or publication is implied.
+Raw package and canonical/private program comparisons are retained beside the
+CI receipts as `exporter-corrected-package-inspection.json` and
+`canonical-private-program-comparison.json`.
+
+The actual seven-version private matrix at eb5dc9983 still lacks the newer
+public mchorse.bbs_mod.api classes. Full older-version parity requires their
+functional contracts and real dispatch paths, not just a successful compile.
+StructureForm/StructureRenderer are also absent and must not be fabricated as
+empty compatibility classes. No older release is established by that matrix.
