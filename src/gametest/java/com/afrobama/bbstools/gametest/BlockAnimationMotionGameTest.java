@@ -72,6 +72,14 @@ public final class BlockAnimationMotionGameTest implements FabricClientGameTest
                     fire("bbstools:block_animation", origin, true);
                     return BlockAnimation.getActiveBlocks().size() == 1;
                 });
+                if (single)
+                {
+                    long began = context.computeOnClient(client -> BlockAnimation.getActiveBlocks().getFirst().startTimeNanos);
+                    context.waitFor(client -> System.nanoTime() - began >= 800_000_000L);
+                    context.takeScreenshot("block-animation-single-middle");
+                    context.waitFor(client -> System.nanoTime() - began >= 2_200_000_000L);
+                    context.takeScreenshot("block-animation-single-end");
+                }
                 boolean unchanged = world.getServer().computeOnServer(server ->
                     server.overworld().getBlockState(origin).is(Blocks.GOLD_BLOCK)
                         && server.overworld().getBlockState(origin.east()).is(Blocks.GOLD_BLOCK));

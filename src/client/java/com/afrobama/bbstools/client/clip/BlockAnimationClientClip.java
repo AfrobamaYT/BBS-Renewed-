@@ -43,13 +43,6 @@ public class BlockAnimationClientClip extends BlockAnimationActionClip
         int y1 = Math.max(this.minY.get(), this.maxY.get());
         int z1 = Math.max(this.minZ.get(), this.maxZ.get());
 
-        if (x0 == x1 && y0 == y1 && z0 == z1)
-        {
-            LOG.warn("BlockAnimationClip fired at tick {} but region is empty (single block at {},{},{}) — set min/max corners via TAB-select + 'Capture' or type manually",
-                tick, x0, y0, z0);
-            return;
-        }
-
         BlockAnimation.captureAndAnimateRegion(
             new BlockPos(x0, y0, z0),
             new BlockPos(x1, y1, z1),
