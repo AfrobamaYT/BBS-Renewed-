@@ -320,7 +320,7 @@ public class Films
     {
         /* Placed model blocks first: kept from their submit, drawn in the same pass as the
          * film actors (see ModelBlockEntityRenderer.WELTZUEGE). */
-        mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer.weltzuegeZeichnen();
+        mchorse.bbs_mod.client.renderer.VitrailModelBlockRenderer.renderPending();
 
         /* Hier stand frueher Tiefentest AN vor den Controllern und AUS danach — globaler
          * GL-Zustand fuer Zeichenaufrufe, die diese Methode gar nicht selbst macht,

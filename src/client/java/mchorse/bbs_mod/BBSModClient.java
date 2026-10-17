@@ -11,7 +11,7 @@ import mchorse.bbs_mod.camera.clips.misc.CurveClientClip;
 import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
+import mchorse.bbs_mod.client.renderer.VitrailModelBlockRenderer;
 import mchorse.bbs_mod.client.renderer.entity.ActorEntityRenderer;
 import mchorse.bbs_mod.client.renderer.entity.GunProjectileEntityRenderer;
 import mchorse.bbs_mod.client.renderer.item.GunItemRenderer;
@@ -853,7 +853,7 @@ public class BBSModClient implements ClientModInitializer
         EntityRendererRegistry.register(BBSMod.ACTOR_ENTITY, ActorEntityRenderer::new);
         EntityRendererRegistry.register(BBSMod.GUN_PROJECTILE_ENTITY, GunProjectileEntityRenderer::new);
 
-        BlockEntityRendererRegistryImpl.register(BBSMod.MODEL_BLOCK_ENTITY, ModelBlockEntityRenderer::new);
+        BlockEntityRendererRegistryImpl.register(BBSMod.MODEL_BLOCK_ENTITY, VitrailModelBlockRenderer::new);
 
         /* Bild-im-Bild-Zeichner fuer die Modellvorschauen der Oberflaeche.
          *

@@ -18,6 +18,7 @@ public final class VitrailFrameLogik
 
     public static void begin()
     {
+        mchorse.bbs_mod.client.renderer.VitrailModelBlockRenderer.beginFrame();
         mchorse.bbs_mod.client.renderer.MorphAufschub.discard();
         VitrailActorFrame.begin();
         mchorse.bbs_mod.client.renderer.NativeMorphCapture.beginCollection();
