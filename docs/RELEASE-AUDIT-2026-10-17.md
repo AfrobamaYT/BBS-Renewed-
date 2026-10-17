@@ -330,8 +330,9 @@ missing bbs:block_animation editor, with actual UIClipsPanel NullPointerExceptio
 Source30060eb1c repairs them; run39023007388 passes the selector/native-data checks
 for every offered action on Linux, Windows and frozen-input Windows. All twelve
 source-build editor images were inspected. Follow-up39023507738 also proves actual
-offset mouse input and saved-film values on both source-build systems; its final
-frozen result is recorded separately. Physics/Gore/animation effects were disabled.
+offset mouse input and saved-film values on both source-build systems and unchanged
+Linux bytes on Windows. All three jobs pass and edited-field images were inspected.
+Physics/Gore/animation effects were disabled.
 The implemented bbs effect bodies are not declared unbuilt by this registry bug.
 
 ## Another native failure after the snapshot UI refinement

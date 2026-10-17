@@ -52,6 +52,8 @@ not the disabled effects themselves.
 Run39023507738 adds an actual Block Animation offset drag and native film save/load.
 Linux and Windows source jobs pass: X changes0 to2.25 through actual mouse input,
 Y remains10, Z remains0, and the saved film retains those values. Both images
-were inspected. The frozen-input Windows result is pending at this record.
+were inspected. The frozen-input Windows job also passes, loading the same d7f3
+product, preserving those values and showing the edited2.25 field in its image.
+All three jobs pass; the frozen image was inspected separately.
 Raw receipts: action-registry-after-39023007388.json and
 block-animation-editor-39023507738.json under the public audit evidence directory.

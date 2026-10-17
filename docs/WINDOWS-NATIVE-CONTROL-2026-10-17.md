@@ -37,3 +37,13 @@ if that limit is exhausted, and analysis of the newest sixteen captured dumps.
 All raw captures remain in RUNNER_TEMP; metadata lists the full capture set.
 Run39023834565 tests the extended capture. The original native cause is still open.
 Handled/first-chance exceptions must never be relabelled as terminal game faults.
+
+The source-build Windows job of39023834565 now retains capture through normal
+game exit0. PID2548 produces65 triage captures within the128 limit; the latest
+sixteen decode successfully. The actual log records normal termination and the
+limit not being reached. Minecraft/Fabric completes all three reloads without
+BBS, using Mesa26.0.3/git1897b18965, llvmpipe LLVM22.1.1 and Java25.0.4.1+1-LTS.
+No terminal fault occurs in this monitored case; the original cause remains open.
+Raw memory is absent from the downloaded artifact. This is successful capture
+coverage for this run, not a game-crash fix. The frozen-control job is still pending.
+Receipt: firstchance-extended-39023834565.json in the public audit evidence directory.
