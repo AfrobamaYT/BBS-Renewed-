@@ -338,5 +338,31 @@ References: [ProcDump](https://learn.microsoft.com/en-us/sysinternals/downloads/
 [Windows postmortem handling](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/enabling-postmortem-debugging).
 Implementation e57da0a1c passes PowerShell syntax and the actual non-Windows host
 guard. [Run39020764340](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39020764340)
-on the separate native-0e25-postmortem branch is pending. A configured flag and a
+on the separate native-0e25-postmortem branch is recorded below. A configured flag and a
 compiled control are not proof that its Windows postmortem capture has fired.
+
+Run39020764340 subsequently failed in compiler discovery before the native control
+or Windows game could run. The installed postmortem registry values were read back
+and original values were restored, with no restoration errors. It produced no dump.
+Source25f5d754e now selects Visual Studio's declared default toolset using
+Microsoft.VCToolsVersion.default.txt and records discovery metadata, following
+[Microsoft's vswhere procedure](https://github.com/microsoft/vswhere/wiki/Find-VC).
+The separate [run39021135850](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39021135850)
+tests this repair. Neither this tooling failure nor a future successful control
+establishes the cause of the original game's native failure.
+
+The Windows source-build job of run39021135850 now proves actual postmortem
+capture for the owned native control. Visual Studio's declared toolset14.51.36231
+compiles it; PID6592 exits with0xC0000005. Two real158771-byte minidumps retain
+the exception context, and CDB exits0 for both. The inspected context shows
+bbs_native_capture_control!entry writing1 through RAX=0. This is the deliberate
+control fault, not a BBS/JVM crash. Both prior registry views were restored with
+successful readback; downloaded artifacts contain no raw dumps.
+
+The actual marked game PID10212 is observed-unattached, without a monitor PID.
+Its source-build case loads46a3337e371b4e1790065aa2253d7091ccd311af71e7d3bf143e6e019582126d
+and passes. The frozen Linux-on-Windows job remains pending at this record.
+No new game fatal error was reproduced, so the earlier game's cause and whether
+this path captures that particular fatal condition remain open.
+Receipt: build/test-evidence/release-audit-20261017/postmortem-control-39021135850-receipt.json,
+SHA2567d1f76e6e32382ebe21b478b249b3c342b868563681ed87e7ddbdcbcfbc54f45.
