@@ -12,8 +12,9 @@ package com.afrobama.bbstools.client.blockanim;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
@@ -83,7 +84,16 @@ public final class BlockAnimation
     {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.level == null) return 0;
-        Level world = mc.level;
+        ClientLevel world = mc.level;
+        /* ClientLevel.hasChunk always returns true; query actual storage without an empty fallback. */
+        for (int chunkX = min.getX() >> 4; chunkX <= max.getX() >> 4; chunkX++)
+        {
+            for (int chunkZ = min.getZ() >> 4; chunkZ <= max.getZ() >> 4; chunkZ++)
+            {
+                if (world.getChunkSource().getChunk(chunkX, chunkZ, ChunkStatus.FULL, false) == null)
+                    throw new IllegalArgumentException("Load the complete animation region before playback.");
+            }
+        }
         long now = System.nanoTime();
         List<AnimatedBlock> captured = new ArrayList<>();
         for (int x = min.getX(); x <= max.getX(); x++)

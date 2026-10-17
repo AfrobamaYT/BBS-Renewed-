@@ -17,6 +17,8 @@ import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.utils.clips.Clip;
 import net.minecraft.core.BlockPos;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,11 +45,22 @@ public class BlockAnimationClientClip extends BlockAnimationActionClip
         int y1 = Math.max(this.minY.get(), this.maxY.get());
         int z1 = Math.max(this.minZ.get(), this.maxZ.get());
 
-        BlockAnimation.captureAndAnimateRegion(
-            new BlockPos(x0, y0, z0),
-            new BlockPos(x1, y1, z1),
-            new Vec3(this.offsetX.get(), this.offsetY.get(), this.offsetZ.get()),
-            this.animDuration.get());
+        try
+        {
+            BlockAnimation.captureAndAnimateRegion(
+                new BlockPos(x0, y0, z0),
+                new BlockPos(x1, y1, z1),
+                new Vec3(this.offsetX.get(), this.offsetY.get(), this.offsetZ.get()),
+                this.animDuration.get());
+        }
+        catch (IllegalArgumentException failure)
+        {
+            String message = "Block Animation failed: " + failure.getMessage();
+            Minecraft client = Minecraft.getInstance();
+            if (client.player != null) client.player.sendSystemMessage(Component.literal(message));
+            LOG.warn("{} (tick {})", message, tick);
+            return;
+        }
 
         LOG.info("BlockAnimationClip fired tick={} region ({},{},{})->({},{},{}) offset=({},{},{}) duration={}s",
             tick, x0, y0, z0, x1, y1, z1, this.offsetX.get(), this.offsetY.get(), this.offsetZ.get(), this.animDuration.get());

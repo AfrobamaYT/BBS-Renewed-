@@ -93,8 +93,17 @@ public final class BlockAnimationMotionGameTest implements FabricClientGameTest
                     boolean rejected = false;
                     try { BlockAnimation.captureAndAnimateRegion(unloaded, unloaded, new net.minecraft.world.phys.Vec3(0, 1, 0), 1F); }
                     catch (IllegalArgumentException expected) { rejected = true; }
+                    BlockAnimationActionClip invalid = (BlockAnimationActionClip) BBSMod.getFactoryActionClips()
+                        .create(Link.create("bbstools:block_animation"));
+                    invalid.minX.set(unloaded.getX()); invalid.maxX.set(unloaded.getX());
+                    invalid.minY.set(unloaded.getY()); invalid.maxY.set(unloaded.getY());
+                    invalid.minZ.set(unloaded.getZ()); invalid.maxZ.set(unloaded.getZ());
+                    Replay replay = new Replay("invalid_region");
+                    replay.actions.addClip(invalid);
+                    replay.applyClientActions(0, new MCEntity(client.player), new Film());
                     return Map.of("unloadedRegionRejected", rejected,
-                        "existingEffectPreserved", previous == BlockAnimation.getActiveBlocks());
+                        "existingEffectPreserved", previous == BlockAnimation.getActiveBlocks(),
+                        "failureDeliveredToActualChat", chatContains("Block Animation failed: Load the complete animation region before playback."));
                 });
                 System.out.println("BBS_BLOCK_ANIMATION_MOTION " + new com.google.gson.Gson().toJson(
                     Map.of("origin", List.of(origin.getX(), origin.getY(), origin.getZ()), "cases", results,
@@ -104,6 +113,9 @@ public final class BlockAnimationMotionGameTest implements FabricClientGameTest
                 if (!unchanged || !single) throw new AssertionError("Block Animation failed inclusive single-block or unchanged-world contract");
                 if (!region.get("unloadedRegionRejected") || !region.get("existingEffectPreserved"))
                     throw new AssertionError("Invalid unloaded-region capture was silent or replaced the existing effect");
+                if (!region.get("failureDeliveredToActualChat")) throw new AssertionError("Invalid action did not reach the actual chat feedback path");
+                context.waitTicks(2);
+                context.takeScreenshot("block-animation-invalid-region-feedback");
             }
             finally { context.runOnClient(client -> BlockAnimation.clear()); }
         }
@@ -129,5 +141,21 @@ public final class BlockAnimationMotionGameTest implements FabricClientGameTest
     private static List<Double> positions()
     {
         return BlockAnimation.getActiveBlocks().stream().map(block -> block.currentPos().y).toList();
+    }
+
+    private static boolean chatContains(String text)
+    {
+        try
+        {
+            net.minecraft.client.gui.components.ChatComponent chat = Minecraft.getInstance().gui.hud.getChat();
+            java.lang.reflect.Field field = chat.getClass().getDeclaredField("allMessages");
+            field.setAccessible(true);
+            return ((List<?>) field.get(chat)).stream().anyMatch(message ->
+                message instanceof net.minecraft.client.multiplayer.chat.GuiMessage entry && entry.content().getString().equals(text));
+        }
+        catch (ReflectiveOperationException failure)
+        {
+            throw new AssertionError("Cannot inspect the real chat message queue", failure);
+        }
     }
 }
