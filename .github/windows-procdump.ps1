@@ -61,7 +61,8 @@ if ($Mode -eq "watch") {
         }
         $taskArguments = '-accepteula -mm -e -t -n 2 ' + $taskMeta.gamePid + ' "' + $taskDumpDir + '"'
         if ($taskMeta.captureMode -eq "first-chance") {
-            $taskArguments = '-accepteula -mm -e 1 -f C0000005,C0000374 -t -n 8 ' + $taskMeta.gamePid + ' "' + $taskDumpDir + '"'
+            $taskMeta.dumpLimit = 128
+            $taskArguments = '-accepteula -mt -e 1 -f C0000005,C0000374 -t -n 128 ' + $taskMeta.gamePid + ' "' + $taskDumpDir + '"'
         }
         $taskMonitor = Start-Process -FilePath $taskMeta.binary -ArgumentList $taskArguments -PassThru -NoNewWindow `
             -RedirectStandardOutput (Join-Path $taskOutput "procdump.stdout.log") `
@@ -125,6 +126,9 @@ foreach ($taskLogName in @("procdump.stdout.log", "procdump.stderr.log")) {
 }
 Save-CaptureState $taskMeta
 Copy-Item $taskState (Join-Path $taskOutput "procdump-collection.json")
+if ($taskMeta.captureMode -eq "first-chance" -and $taskMeta.dumpFiles.Count -ge $taskMeta.dumpLimit) {
+    throw "First-chance capture exhausted its dump limit; do not treat it as complete game coverage"
+}
 if (-not $taskMeta.gamePid -or $taskMeta.state -eq "failed" -or $taskMeta.dumpFiles.Count -eq 0) {
     throw "Requested native monitoring failed: $($taskMeta.error)"
 }

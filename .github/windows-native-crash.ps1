@@ -54,8 +54,9 @@ try {
         Set-Content -Encoding utf8 (Join-Path $taskOutput "java-application-events.xml")
     $taskCdb = Join-Path ${env:ProgramFiles(x86)} "Windows Kits/10/Debuggers/x64/cdb.exe"
     $taskDumps = @(Get-ChildItem $taskDumpDir -Filter "*.dmp" -File -ErrorAction SilentlyContinue)
+    $taskAnalyzedDumps = @($taskDumps | Sort-Object LastWriteTimeUtc | Select-Object -Last 16)
     $taskStacks = @()
-    foreach ($taskDump in $taskDumps) {
+    foreach ($taskDump in $taskAnalyzedDumps) {
         if (-not (Test-Path $taskCdb)) { break }
         $taskStack = Join-Path $taskOutput ($taskDump.BaseName + "-stack.txt")
         $taskArguments = '-z "' + $taskDump.FullName + '" -logo "' + $taskStack + '" -c ".symfix; .ecxr; kv; ~* kv; lm; q"'
@@ -67,6 +68,7 @@ try {
         prepared=$true; cdbAvailable=(Test-Path $taskCdb); applicationEvents=$taskEvents.Count
         dumps=@($taskDumps | ForEach-Object { @{ name=$_.Name; bytes=$_.Length } })
         stacks=$taskStacks; rawDumpsUploaded=$false; procDumpError=$taskProcError
+        analyzedNewestDumps=$taskAnalyzedDumps.Count; capturedDumps=$taskDumps.Count
     } | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $taskOutput "collection.json")
     if ($taskProcError) { throw $taskProcError }
 }
