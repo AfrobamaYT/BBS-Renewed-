@@ -64,6 +64,16 @@ Source4436e82f7 checks actual client chunk storage before collecting/publishing
 the region. The registered client action catches that invalid request, logs it
 and sends an actual player system-chat failure. The contract now checks both
 state preservation and the real chat queue, with a captured feedback image.
-Build/API/public-companion boundary pass; runtime acceptance is pending.
+Build/API/public-companion boundary pass. Run39028684189 passes Linux and
+Windows source-build jobs with all three runtime checks true: reject the unloaded
+region, preserve the existing effect, deliver the exact failure to the real chat.
+Both actual feedback images were inspected and show the still-present gold copy
+and readable failure. Linux loadsbb6d051f5219ea567738c02f533582360ea2c57ea910c6307527dde26d66c0a3;
+Windows loads15a26b84a5ffd52b5d838bfa27b8d5793bc1c6421a966cab83b8c640a9e57c00.
+The frozen-input Windows job also passes with the unchanged Linuxbb6d product
+and all three region checks true. Its actual feedback image was inspected too.
+All three production jobs pass; this successful run does not explain the earlier
+intermittent Windows native failures. Raw receipt:
+block-unloaded-after-39028684189.json in the public audit evidence directory.
 There is no new limit on valid loaded capture sizes. Large loaded-region cost,
 other invalid inputs, render failures and timeline lifecycle remain open.

@@ -17,7 +17,14 @@ See WORLD-SNAPSHOT-REPAIR-2026-10-17.md for evidence and full repair acceptance.
 
 ## Frozen inputs and present candidates
 
-- Current motion-corrected Linux candidate:
+- Current unloaded-region repaired Linux candidate:
+  `bb6d051f5219ea567738c02f533582360ea2c57ea910c6307527dde26d66c0a3`,
+  source4436e82f7. Linux/Windows source jobs pass in39028684189: invalid capture
+  is rejected, old effect retained, actual chat feedback verified in data/images.
+  Frozen Windows also passes with the unchanged Linuxbb6d JAR and all three
+  region checks true; its actual feedback image was inspected. Valid large
+  loaded-region cost is still open, as is the earlier intermittent native failure.
+- Previous motion-corrected Linux candidate:
   `9387e83c6ee649b9219fef4b4c1c79d8d9f19b5a539747548db3718cb928b73b`,
   sourcecbfcdbf5d. Linux/Windows source jobs pass in39026151559; inspected Linux
   video shows both two-block actions and the one-block action, without the earlier
@@ -447,6 +454,25 @@ has runtime proof; unrelated server behavior and all other release gates stay op
 The corrected client-cache negative in39028199277 reproduces another Block
 Animation error: an unloaded request silently erases the active animation.
 Source4436e82f7 adds an actual-cache preflight and visible player feedback without
-imposing a smaller capture-size limit. Build/API/boundary pass; runtime checks
-for rejection, prior-state preservation and delivered chat feedback are pending.
+imposing a smaller capture-size limit. Build/API/boundary and all three
+production runtime jobs pass in39028684189, including the unchanged Linux JAR on
+Windows. All three actual chat images were inspected. Receipt SHA256
+bb782c52b148ddd0304518a8c0538bb067a650d096f7bd78470380d0cb78b41b.
 ClientLevel.hasChunksAt was explicitly ruled out as a valid client presence test.
+
+## Corresponding full sources for the unloaded-region candidate
+
+The complete4436e82f7 source ZIP has SHA256
+fe626f818bf3795de48e9a5cf3fc859ab28ebee28d2e89ea7c306e98e548165d.
+Its fresh build outside Git passes all12 source tasks, reusing the dependency
+cache. The rebuilt product is25575c14784a560022c645ed31fe2dd1217322b1f7a6890dd3b9af7451e7bc8d.
+Every decompressed entry matches the tested canonicalbb6d product except the
+order of the same2452 Client-Only-Entries in MANIFEST.MF; all other attributes,
+classes and resources are byte-identical. This is source correspondence, not
+another gameplay run or cold dependency/network acceptance.
+Raw full-source-4436e82f7-result.json has SHA256
+395115bfcece280ae0d243272b765bf3d6bbae5e86fc6549e8cf8e53c05ffefe.
+Compared with9387, exactly BlockAnimation.class, its AnimatedBlock class and
+BlockAnimationClientClip.class change; all other decompressed entries are equal.
+Raw block-unloaded-product-delta.json has SHA256
+43a09487a482c5ad8c6fbb3f988f081351331013f9fda6f0d7ca3ff1d652e923.
