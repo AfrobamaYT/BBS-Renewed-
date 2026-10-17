@@ -28,15 +28,21 @@ public final class EditorTypAuswahl
 
     public static void nano(long vg, NanoFlaeche f, UIElement owner, String id, String symbol, float k)
     {
-        NanoStifte.widget(vg, 6F * k, 3F * k, 30F * k, 20F * k, 4F * k, NanoDesign.WIDGET, k);
-        NanoSymbole.symbol(vg, symbol, 15F * k, 13F * k, NanoDesign.TXT, k);
-        NanoSymbole.pfeilAb(vg, 29F * k, 13F * k, NanoDesign.TXT_DIM, k * 0.8F);
+        float x = knopfX(f, id, k);
+        NanoStifte.widget(vg, x, 3F * k, 30F * k, 20F * k, 4F * k, NanoDesign.WIDGET, k);
+        NanoSymbole.symbol(vg, symbol, x + 9F * k, 13F * k, NanoDesign.TXT, k);
+        NanoSymbole.pfeilAb(vg, x + 23F * k, 13F * k, NanoDesign.TXT_DIM, k * 0.8F);
         binden(f, owner, id, k);
+    }
+
+    private static float knopfX(NanoFlaeche f, String id, float k)
+    {
+        return "preview".equals(id) ? Math.max(6F * k, f.area.w * f.skala() - 43F * k) : 6F * k;
     }
 
     private static void binden(NanoFlaeche f, UIElement owner, String id, float k)
     {
-        f.zone("editor-type", 6F * k, 2F * k, 37F * k, 22F * k,
+        f.zone("editor-type", knopfX(f, id, k), 2F * k, 37F * k, 22F * k,
             new Oeffnen(owner, id), "Editor type", "");
     }
 
