@@ -45,14 +45,25 @@ if ($Mode -eq "prepare") {
 
     # Compile a native child with no CRT or imports; its only action is a null write.
     $taskVswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio/Installer/vswhere.exe"
-    $taskCompiler = @(& $taskVswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-        -find 'VC\Tools\MSVC\**\bin\Hostx64\x64\cl.exe')
-    if ($taskCompiler.Count -ne 1) { throw "Require one installed Microsoft native compiler for the capture control" }
-    $taskLinker = Join-Path (Split-Path $taskCompiler[0]) "link.exe"
+    # Use Microsoft's documented default-toolset selection: microsoft/vswhere/wiki/Find-VC.
+    $taskInstallations = @(& $taskVswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+        -property installationPath)
+    @{ installations=$taskInstallations } | ConvertTo-Json -Depth 3 |
+        Set-Content -Encoding utf8 (Join-Path $taskOutput "postmortem-compiler-discovery.json")
+    if ($taskInstallations.Count -ne 1) { throw "Expected one Visual Studio installation, got $($taskInstallations.Count)" }
+    $taskVersionFile = Join-Path $taskInstallations[0] "VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt"
+    if (-not (Test-Path $taskVersionFile)) { throw "Missing Visual Studio default toolset declaration: $taskVersionFile" }
+    $taskVersion = (Get-Content -Raw $taskVersionFile).Trim()
+    $taskCompiler = Join-Path $taskInstallations[0] "VC/Tools/MSVC/$taskVersion/bin/Hostx64/x64/cl.exe"
+    $taskMeta.compiler = $taskCompiler
+    $taskMeta.toolsetVersion = $taskVersion
+    Save-PostmortemState $taskMeta
+    if (-not (Test-Path $taskCompiler)) { throw "Declared Visual Studio compiler is missing: $taskCompiler" }
+    $taskLinker = Join-Path (Split-Path $taskCompiler) "link.exe"
     $taskSource = Join-Path $PSScriptRoot "native-crash-control.c"
     $taskObject = Join-Path $taskRoot "control.obj"
     $taskControl = Join-Path $taskRoot "bbs_native_capture_control.exe"
-    & $taskCompiler[0] /nologo /c /Od /GS- /Z7 /Zl ("/Fo" + $taskObject) $taskSource |
+    & $taskCompiler /nologo /c /Od /GS- /Z7 /Zl ("/Fo" + $taskObject) $taskSource |
         Set-Content -Encoding utf8 (Join-Path $taskOutput "postmortem-control-compile.txt")
     if ($LASTEXITCODE -ne 0) { throw "Cannot compile the native capture control" }
     & $taskLinker /nologo /NODEFAULTLIB /ENTRY:entry /SUBSYSTEM:CONSOLE /DEBUG /MACHINE:X64 `
