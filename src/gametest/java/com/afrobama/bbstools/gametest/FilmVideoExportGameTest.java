@@ -74,23 +74,7 @@ public final class FilmVideoExportGameTest implements FabricClientGameTest
         context.waitFor(client -> Files.isRegularFile(savedFilm));
         context.waitTicks(10);
         context.takeScreenshot("film-export-ready");
-        double[] point = context.computeOnClient(client ->
-        {
-            List<com.mcstudio.nano.NanoFlaeche> surfaces = panel().preview.werkzeuge.getChildren(com.mcstudio.nano.NanoFlaeche.class);
-            if (surfaces.size() != 1) throw new AssertionError("Expected the actual visible viewport toolbar surface");
-            com.mcstudio.nano.NanoFlaeche surface = surfaces.getFirst();
-            int index = surface.zonenNamen().indexOf("Record video");
-            if (index < 0) throw new AssertionError("Visible toolbar did not publish its real Record video hit zone");
-            float[] zone = surface.zonenMasse().get(index);
-            float scale = (float) client.getWindow().getScreenWidth() / panel().getContext().menu.width;
-            return new double[] {(surface.area.x + (zone[0] + zone[2] / 2F) / surface.skala()) * scale,
-                (surface.area.y + (zone[1] + zone[3] / 2F) / surface.skala()) * scale};
-        });
-        context.getInput().setCursorPos(point[0], point[1]);
-        context.waitTicks(2);
-        context.getInput().holdMouse(mchorse.bbs_mod.graphics.window.Window.nativeMouseButton(0));
-        context.waitTick();
-        context.getInput().releaseMouse(mchorse.bbs_mod.graphics.window.Window.nativeMouseButton(0));
+        clickRecord(context);
         context.waitFor(client -> finished.get() != null);
         int submitted = context.computeOnClient(client -> BBSModClient.getVideoRecorder().getCounter());
         boolean restored = context.computeOnClient(client -> !panel().isRunning()
@@ -120,6 +104,28 @@ public final class FilmVideoExportGameTest implements FabricClientGameTest
             || stream.get("height").getAsInt() != 180 || !stream.get("r_frame_rate").getAsString().equals("20/1")
             || stream.get("nb_read_frames").getAsInt() != 20 || submitted != 20)
             throw new AssertionError("Exported bytes do not contain the requested one-second 320x180/20fps film");
+        FilmExportFailureProbe.run(context, evidence);
+    }
+
+    static void clickRecord(ClientGameTestContext context)
+    {
+        double[] point = context.computeOnClient(client ->
+        {
+            List<com.mcstudio.nano.NanoFlaeche> surfaces = panel().preview.werkzeuge.getChildren(com.mcstudio.nano.NanoFlaeche.class);
+            if (surfaces.size() != 1) throw new AssertionError("Expected the actual visible viewport toolbar surface");
+            com.mcstudio.nano.NanoFlaeche surface = surfaces.getFirst();
+            int index = surface.zonenNamen().indexOf("Record video");
+            if (index < 0) throw new AssertionError("Visible toolbar did not publish its real Record video hit zone");
+            float[] zone = surface.zonenMasse().get(index);
+            float scale = (float) client.getWindow().getScreenWidth() / panel().getContext().menu.width;
+            return new double[] {(surface.area.x + (zone[0] + zone[2] / 2F) / surface.skala()) * scale,
+                (surface.area.y + (zone[1] + zone[3] / 2F) / surface.skala()) * scale};
+        });
+        context.getInput().setCursorPos(point[0], point[1]);
+        context.waitTicks(2);
+        context.getInput().holdMouse(mchorse.bbs_mod.graphics.window.Window.nativeMouseButton(0));
+        context.waitTick();
+        context.getInput().releaseMouse(mchorse.bbs_mod.graphics.window.Window.nativeMouseButton(0));
     }
 
     private static void verifyEncoderRootLookup(Path evidence) throws Exception
