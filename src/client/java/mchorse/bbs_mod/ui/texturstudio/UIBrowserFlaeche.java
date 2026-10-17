@@ -131,10 +131,29 @@ public class UIBrowserFlaeche extends UIElement implements IFocusedUIElement
 
         if (context.getKeyAction() != KeyAction.RELEASED)
         {
-            this.browser.zoom(zoom);
+            this.zoomAnsicht(zoom);
         }
 
         return true;
+    }
+
+    private void zoomAnsicht(CefZoomCommand zoom)
+    {
+        if (this.browser.getURL().startsWith(TexturStudioKanal.SEITE))
+        {
+            String aktion = switch (zoom)
+            {
+                case IN -> "zoomIn";
+                case OUT -> "zoomOut";
+                case RESET -> KeyCombo.isKeyDown(InputConstants.KEY_LALT) ? "pixelToPixel" : "fitTheArea";
+            };
+
+            this.browser.executeJavaScript("bbsAnsicht('" + aktion + "');", TexturStudioKanal.SEITE, 0);
+        }
+        else
+        {
+            this.browser.zoom(zoom);
+        }
     }
 
     /** BBS zaehlt Maustasten alt (0 links, 1 rechts, 2 Mitte), Rinku erwartet Minecrafts SDL-Nummern. */
@@ -184,7 +203,12 @@ public class UIBrowserFlaeche extends UIElement implements IFocusedUIElement
             return false;
         }
 
-        if (KeyCombo.isKeyDown(InputConstants.KEY_LCONTROL) && context.mouseWheel != 0D)
+        if (KeyCombo.isKeyDown(InputConstants.KEY_LALT) && context.mouseWheel != 0D
+            && this.browser.getURL().startsWith(TexturStudioKanal.SEITE))
+        {
+            this.zoomAnsicht(context.mouseWheel > 0D ? CefZoomCommand.IN : CefZoomCommand.OUT);
+        }
+        else if (KeyCombo.isKeyDown(InputConstants.KEY_LCONTROL) && context.mouseWheel != 0D)
         {
             this.browser.zoom(context.mouseWheel > 0D ? CefZoomCommand.IN : CefZoomCommand.OUT);
         }

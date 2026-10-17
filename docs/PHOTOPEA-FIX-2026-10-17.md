@@ -1,5 +1,9 @@
 # Texture Studio preview and browser zoom
 
+Follow-up: [canvas zoom and automatic fit](PHOTOPEA-CANVAS-2026-10-17.md).
+The keyboard zoom scope described below is historical; current Ctrl+Plus/Minus/0
+controls the Photopea document, while Ctrl+wheel controls the browser page.
+
 User report: a Steve Bends replay displayed a different rig with the skin applied;
 Photopea looked small and Ctrl zoom did not work.
 

@@ -24,6 +24,23 @@ var bereit = false;      /* Photopea hat sein erstes "done" geschickt */
 var beschaeftigt = false; /* eine Anfrage laeuft, die naechste wartet */
 var wartend = null;      /* Bild, das kam, bevor Photopea bereit war */
 var letztes = "";        /* zuletzt gemeldetes Bild (Base64), gegen Doppelmeldungen */
+var einpassen = false;
+var ansichten = [];
+
+/* Serialize view commands with document import/export: each API message ends in done. */
+function sendeAnsicht() {
+  if (!bereit || beschaeftigt || !ansichten.length) return false;
+  var aktion = ansichten.shift();
+  beschaeftigt = true;
+  editor.contentWindow.postMessage("if (app.documents.length > 0) app.UI." + aktion + "();", "*");
+  return true;
+}
+
+function bbsAnsicht(aktion) {
+  if (["zoomIn", "zoomOut", "fitTheArea", "pixelToPixel"].indexOf(aktion) < 0) throw new Error("Unknown view command");
+  ansichten.push(aktion);
+  sendeAnsicht();
+}
 
 function melden(text) {
   if (window.cefQuery) window.cefQuery({ request: text, onSuccess: function () {}, onFailure: function () {} });
@@ -46,6 +63,7 @@ function bbsLade(b64) {
   if (!bereit) { wartend = b64; return; }
   beschaeftigt = true;
   letztes = "";
+  einpassen = true;
   editor.contentWindow.postMessage(puffer(b64), "*");
 }
 
@@ -57,7 +75,10 @@ window.addEventListener("message", function (e) {
       bereit = true;
       melden("bereit");
       if (wartend) { var b = wartend; wartend = null; bbsLade(b); }
+      return;
     }
+    if (einpassen) { einpassen = false; bbsAnsicht("fitTheArea"); }
+    else sendeAnsicht();
     return;
   }
   if (e.data instanceof ArrayBuffer) {
@@ -68,7 +89,7 @@ window.addEventListener("message", function (e) {
 
 /* Viermal je Sekunde das aktive Dokument als PNG holen, solange nichts anderes laeuft. */
 setInterval(function () {
-  if (!bereit || beschaeftigt) return;
+  if (!bereit || beschaeftigt || sendeAnsicht()) return;
   beschaeftigt = true;
   editor.contentWindow.postMessage("if (app.documents.length > 0) app.activeDocument.saveToOE('png');", "*");
 }, 250);
