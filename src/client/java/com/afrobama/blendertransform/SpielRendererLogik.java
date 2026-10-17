@@ -8,9 +8,11 @@ import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.camera.controller.CameraWorkCameraController;
 import mchorse.bbs_mod.camera.controller.ICameraController;
+import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.HudSichtbarkeit;
 import mchorse.bbs_mod.graphics.Stapelwache;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import net.minecraft.client.Minecraft;
 
 /**
@@ -99,15 +101,25 @@ public final class SpielRendererLogik
      */
     public static boolean kopfwackeln(PoseStack matrizen)
     {
-        if (BBSModClient.getCameraController().getCurrent() == null)
+        ICameraController controller = BBSModClient.getCameraController().getCurrent();
+
+        if (controller == null)
         {
             return false;
         }
 
         if (TrackerClientClip.shouldRenderHand())
         {
-            TrackerClientClip.applyBob(matrizen,
-                Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false));
+            float transition = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+
+            if (controller instanceof RunnerCameraController runner && !runner.isRunning()
+                && !BBSModClient.getDashboard().getPanel(UIFilmPanel.class).getController().isControlling())
+            {
+                /* The world clock keeps ticking while the film is paused. */
+                transition = com.mcstudio.see.SubTick.oder(runner.getBruch());
+            }
+
+            TrackerClientClip.applyBob(matrizen, transition);
         }
 
         return true;
