@@ -259,6 +259,17 @@ in a different order; every other attribute is identical. This is a correspondin
 source/build-input check, not a new gameplay run or a cold dependency download.
 Raw result: `build/test-evidence/release-audit-20261017/full-source-outside-git-result.json`.
 
+The newer corresponding-source ZIP at723f30724 covers the current9387 program:
+SHA256e6f91269b144f4eb294889827c03aaab215887cc7688a334845aad4f23980976.
+It was extracted into /tmp/bbs-release-source-723f30724-20261017/bbs-renewed-source
+outside Git and built successfully with all12 source tasks executed, reusing the
+dependency cache. Rebuilt product932db0b763b7197a609420de1005064f275c9716a21e9b10cb5929a652dbf053
+matches every decompressed9387 entry except MANIFEST.MF. Its only differing
+attribute has the same2452 Client-Only-Entries and frequencies in another order.
+No extra gameplay, bitwise reproducibility or cold-network build is claimed.
+Raw result: full-source-723f30724-result.json, SHA256
+f92fa0b0215da939072635cead3f2e4a9cbbeddef97cc5619626f51751bf1123.
+
 ## Native X11 trial107 and replacement world fixture
 
 The actual owned1920x1080/OpenGL run loaded fa96/c85, verified by native
@@ -342,6 +353,12 @@ offset mouse input and saved-film values on both source-build systems and unchan
 Linux bytes on Windows. All three jobs pass and edited-field images were inspected.
 Physics/Gore/animation effects were disabled.
 The implemented bbs effect bodies are not declared unbuilt by this registry bug.
+
+The analogous actual camera/media probe at723f30724 passes all21 offered IDs
+on Linux and the Windows source-build job in39027375264, including a complete
+native film camera-timeline save/reload. Frozen-input Windows fails natively
+before tests, so this run is red overall. Its clips remain disabled: playback, camera evaluation and the
+separate preview manager remain unproven. See CAMERA-MEDIA-REGISTRY-2026-10-17.md.
 
 ## Another native failure after the snapshot UI refinement
 
