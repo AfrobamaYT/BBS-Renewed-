@@ -9,7 +9,8 @@
 		"fabric-client-gametest": [
 			"com.afrobama.bbstools.gametest.BBSClientGameTest",
 			"com.afrobama.bbstools.gametest.FirstAnchorUndoGameTest",
-			"com.afrobama.bbstools.gametest.GuideScaleGameTest"
+			"com.afrobama.bbstools.gametest.GuideScaleGameTest",
+			"com.afrobama.bbstools.gametest.StandaloneActorLifecycleGameTest"
 		]
 	},
 	"depends": {
