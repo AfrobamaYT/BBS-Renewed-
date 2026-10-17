@@ -6,13 +6,26 @@ no overall release-readiness or older-version parity is established.
 Confirmed exposed unfinished function in the prior fa96 candidate:
 WorldSnapshotClip is registered as bbstools:world_snapshot but only logs.
 Repair source cc05a931f now builds the server restore and actual editor;
-production world/input acceptance is pending in run39019305927.
-This still blocks treating the complete current feature set as ready.
+production world/input cases pass all three jobs of run39019305927.
+Narrow-dock labels and the editor-test reopen setup are corrected in ebdb9b245;
+follow-up run39019817908 passes Linux/Windows source builds and inspected UI,
+but its unchanged-Linux-input Windows job crashes natively before tests.
+Visible world-reset capture and dedicated-server startup remain open.
+The complete current feature set is not ready.
 See WORLD-SNAPSHOT-REPAIR-2026-10-17.md for evidence and full repair acceptance.
 
 ## Frozen inputs and present candidates
 
-- Current production-tested Linux candidate:
+- Current snapshot world/UI-tested Linux candidate:
+  `0e25e5031a2bad726928177b3247560a4af1d4f0cf652d8eb223137913a98d7b`,
+  source ebdb9b245. Both source-build jobs pass, with readable labels and active
+  Actions after reopen. The unchanged-input Windows job fails before tests;
+  run39019817908 is red overall.
+- Previous snapshot world-tested Linux candidate:
+  `1cee43da1b4fcd40e26994bbc8640fcd0e32c619299dc87f41070bca7624589b`,
+  source cc05a931f. The unchanged bytes also pass on Windows. The subsequent
+  UI-only refinement ebdb9b245 is reported separately above.
+- Previous production-tested Linux candidate:
   `fa96dc2487ef22d109dad4cf88ee879d0c8c2e873ac845ebb7bdd4576b8c3073`,
   built from `db3ae209f`; test-only source `ba80899a8` produces the same product.
   Cold startup, saved-anchor input and the scoped Guide case pass on Linux and
@@ -307,3 +320,19 @@ The common base bytecode inherits the empty ActionClip.applyClientAction.
 An actual production registry/picker check is still required before calling
 this a reproduced UI/runtime failure. This finding does not imply that the
 implemented bbs client path or the separately owned Physics/Gore work is unbuilt.
+
+## Another native failure after the snapshot UI refinement
+
+Run39019817908 passes source-build Linux and Windows world/input cases; all six
+Snapshot editor images were inspected. The frozen-input Windows job exits with
+0xC0000005 before tests. It produces no hs_err, dump, stack or application event,
+despite enabled WER/JVM capture. No loaded-product hash marker is reached there.
+The earlier successful controls do not clear this repeat. The cause is unknown.
+
+Microsoft documents a separate ProcDump/AeDebug postmortem mode. The additional
+optional CI capture must first produce a real dump from an owned native
+access-violation control, then observe the marked game PID without attaching a
+debugger until a fault. It preserves/restores the original runner registry and
+keeps raw dumps in RUNNER_TEMP. This is a capture repair, not a product crash fix.
+References: [ProcDump](https://learn.microsoft.com/en-us/sysinternals/downloads/procdump),
+[Windows postmortem handling](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/enabling-postmortem-debugging).

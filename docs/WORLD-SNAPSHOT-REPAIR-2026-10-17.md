@@ -44,9 +44,9 @@ world-editing subsystem. A missing snapshot must fail visibly with no partial re
   pixels and capture the visible reset before any demonstration is approved.
 
 Removing the registered clip or relabelling the placeholder is not completion
-of this repair. The full release audit remains open while this function is unbuilt.
+of this repair. Remaining acceptance must be completed before a feature-ready claim.
 
-## Implementation candidate, runtime acceptance pending
+## Implemented and world-tested; remaining acceptance
 
 Source cc05a931fa3916965629b746a465e5ff08166b8d replaces the logging-only action
 with server-side StructureTemplate placement through Replay.applyActions. It
@@ -63,10 +63,37 @@ pass. Locally built product SHA256:
 This local artifact is distinct from the earlier fa96 product and is not released.
 
 [Production run39019305927](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39019305927)
-tests actual server blocks/chests, saved vanilla structure disk round trip,
+passes all three jobs: Linux, Windows and unchanged Linux product on Windows.
+It tests actual server blocks/chests, saved vanilla structure disk round trip,
 both policy modes, a repeated unchanged restore, reversed/single-block bounds
 and rejected missing/invalid/unauthorized requests. A separate actual editor
 test uses Fabric mouse/text input and film save/reopen, with screenshots.
-Neither compiling these tests nor starting that run is runtime acceptance.
-Dedicated-server startup, visible reset capture and the full release audit
-remain separate requirements.
+The actual canonical Linux product is
+1cee43da1b4fcd40e26994bbc8640fcd0e32c619299dc87f41070bca7624589b;
+Windows' own build is c88f30277e442b62c7e56433a4392fe003d2a9d177ef7b41519bc9ab59645bf2.
+All nine editor screenshots were inspected. They show truncated narrow-dock
+labels. The test's reopen helper also toggled Actions off on its second call;
+the saved values/widgets still passed, but this is not active-mode acceptance.
+
+Source ebdb9b245 shortens the labels, adds explanatory option tooltips and makes
+the test setup idempotent, with an explicit active-Actions assertion after reopen.
+[Follow-up run39019817908](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39019817908)
+passes the Linux and Windows source-build jobs. All six editor images were
+inspected: labels are readable and the actual Actions timeline remains active
+after reopening. Its canonical Linux product is
+0e25e5031a2bad726928177b3247560a4af1d4f0cf652d8eb223137913a98d7b;
+Windows' own build is46a3337e371b4e1790065aa2253d7091ccd311af71e7d3bf143e6e019582126d.
+Against the previous canonical Linux JAR, exactly UIWorldSnapshotClip.class
+changes; all server restore bytecode is unchanged.
+
+The unchanged-Linux-input Windows job fails natively before gametests with
+NTSTATUS0xC0000005 (-1073741819). No loaded-product receipt or snapshot case
+is reached there, and the enabled WER/JVM capture still produces no dump/stack.
+This run is red overall; the earlier full three-job pass does not clear this
+additional unresolved Windows failure.
+Raw case/hash receipt: build/test-evidence/release-audit-20261017/world-snapshot-39019305927-receipt.json,
+SHA25651f3fc05874770d3eca5b8b09cef4eb6899847c96ed80c5a4057235ac4a00f15.
+Follow-up receipt: world-snapshot-39019817908-receipt.json,
+SHA256d57a987b9b2c0d89261a610975c4cbdef93e745650ea73495bc5b29fc4dee785.
+Dedicated-server startup, visible world-reset capture and the full release audit
+remain open. This feature has no completed demonstration or publication approval.
