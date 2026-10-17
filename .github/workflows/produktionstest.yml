@@ -61,6 +61,17 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-utils ffmpeg
 
+      - name: FFmpeg for the actual film export (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+            choco install ffmpeg --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "FFmpeg installation failed" }
+          }
+          ffmpeg -version
+          ffprobe -version
+
       - name: Build
         run: ./gradlew build -x test
 
@@ -115,6 +126,7 @@ jobs:
             build/produktionstest/logs/
             build/produktionstest/crash-reports/
             build/produktionstest/screenshots/
+            build/produktionstest/ci-film-export-evidence/
             build/production-diagnostics/
             build/produktionstest/**/screenshots/
           if-no-files-found: warn
@@ -135,6 +147,15 @@ jobs:
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
       - uses: ssciwr/setup-mesa-dist-win@v3
+      - name: FFmpeg for the unchanged product export
+        shell: pwsh
+        run: |
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+            choco install ffmpeg --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "FFmpeg installation failed" }
+          }
+          ffmpeg -version
+          ffprobe -version
       - name: Download the exact Linux runtime inputs
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
@@ -167,5 +188,6 @@ jobs:
             build/production-diagnostics/
             build/produktionstest/logs/
             build/produktionstest/crash-reports/
+            build/produktionstest/ci-film-export-evidence/
             build/produktionstest/**/screenshots/
           if-no-files-found: warn

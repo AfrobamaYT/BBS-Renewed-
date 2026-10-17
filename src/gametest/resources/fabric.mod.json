@@ -14,7 +14,8 @@
 			"com.afrobama.bbstools.clips.WorldSnapshotGameTest",
 			"com.afrobama.bbstools.gametest.WorldSnapshotEditorGameTest",
 			"com.afrobama.bbstools.gametest.ActionRegistryGameTest",
-			"com.afrobama.bbstools.gametest.BlockAnimationMotionGameTest"
+			"com.afrobama.bbstools.gametest.BlockAnimationMotionGameTest",
+			"com.afrobama.bbstools.gametest.FilmVideoExportGameTest"
 		]
 	},
 	"depends": {
