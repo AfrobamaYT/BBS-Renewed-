@@ -250,3 +250,34 @@ generator minecraft:flat. The old missing reference is absent from its DAT files
 This validates the replacement dataset, not the pending native physical H1 case.
 Inspection receipt: `build/test-evidence/release-audit-20261017/native-fixture-world-inspection.json`,
 SHA25664f0a8de4cb47dcc27f79f2a65d09771880f9cfc69ed651ea082fe484bc1d760.
+
+## Standalone Actor lifecycle and unresolved Windows native crashes
+
+The Linux job of
+[run39016558132](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39016558132)
+passes cold standalone-Actor creation through normal server tracking/form sync,
+three real Minecraft resource reloads, preserved UUID/position and server removal.
+All five actual images were inspected: geometry is visible initially and after
+each reload, then absent after removal. The test now waits for the loading overlay
+to disappear; earlier pictures under that overlay are not visual acceptance.
+Product remains fa96. Raw receipt: standalone-linux-39016558132-receipt.json,
+SHA256af76fb30add7cfb29f5f39940bbe92d5963d4669baea3c073f301e79a691c43a.
+
+That run's Windows JVM exited before tests with NTSTATUS0xC0000005
+(-1073741819), in addition to the earlier0xC0000374 observation. No cause is
+established. WER preparation ran but produced no dump, stack or matching event;
+there was no uploaded hs_err file. This remains an unresolved native failure.
+
+Opt-in signed Microsoft ProcDump monitoring was then added for the unique JVM
+marked bbs.ci.production=true, including documented exception/termination triggers
+and cancellation. Raw dumps stay in RUNNER_TEMP; only metadata/stacks are uploaded.
+[Diagnostic run39017242286](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39017242286)
+passes all three jobs. The Windows monitor observed PID5716, wrote a real minidump
+on normal exit0 and CDB parsed it successfully. No fatal crash was reproduced.
+Handled first-chance exception lines in the monitor log are not process crashes.
+All five Windows Actor images were inspected and pass this scoped lifecycle case
+under diagnostic monitoring; they do not clear the earlier uninstrumented failures.
+The capture collector now rejects missing dump output and retains readable UTF8
+copies of native logs. The JVM's own Windows crash-dump option is also explicit.
+The same fa96 product source is frozen separately on
+codex/native-fa96-diagnostics-20261017 for continued native failure isolation.

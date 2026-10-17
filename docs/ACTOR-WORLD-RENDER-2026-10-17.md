@@ -50,3 +50,11 @@ also runs unchanged on Windows. Against the preceding1823 product, only the
 renderer and nested state entries differ; d323 remains the exact renderer.
 This adds cold startup/world/dashboard and saved-anchor input evidence for
 the new package. A cold standalone-Actor visual case remains separate.
+
+Subsequent Linux case39016558132 proves the cold standalone geometry path:
+normal server spawn/form synchronization, three resource reloads, same UUID and
+position, then removal. Its five unobstructed images were independently inspected.
+The first attempt's pictures were still under the loading overlay and are excluded.
+Windows diagnostic case39017242286 also passes with all five images inspected,
+under explicit ProcDump monitoring. Earlier uninstrumented Windows native crashes
+remain unresolved; this is not a whole-platform stability clearance.
