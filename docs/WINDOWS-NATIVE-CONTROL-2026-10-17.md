@@ -45,5 +45,6 @@ limit not being reached. Minecraft/Fabric completes all three reloads without
 BBS, using Mesa26.0.3/git1897b18965, llvmpipe LLVM22.1.1 and Java25.0.4.1+1-LTS.
 No terminal fault occurs in this monitored case; the original cause remains open.
 Raw memory is absent from the downloaded artifact. This is successful capture
-coverage for this run, not a game-crash fix. The frozen-control job is still pending.
+coverage for this run, not a game-crash fix. The run subsequently completes with
+all three jobs successful, including the unchanged Linux control JAR on Windows.
 Receipt: firstchance-extended-39023834565.json in the public audit evidence directory.
