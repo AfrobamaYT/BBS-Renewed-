@@ -62,6 +62,8 @@ public final class StandaloneActorLifecycleGameTest implements FabricClientGameT
                 CompletableFuture<Void> reload = context.computeOnClient(Minecraft::reloadResourcePacks);
                 context.waitFor(client -> reload.isDone());
                 reload.join();
+                context.waitFor(client -> client.gui.overlay() == null);
+                world.getConnection().waitForChunksRender();
                 context.waitTicks(10);
                 Map<String, Object> after = context.computeOnClient(client -> state(client, entityId));
                 if (!before.get("uuid").equals(after.get("uuid")) || !before.get("position").equals(after.get("position")))
@@ -86,6 +88,7 @@ public final class StandaloneActorLifecycleGameTest implements FabricClientGameT
 
     private static Map<String, Object> state(Minecraft client, int id)
     {
+        if (client.gui.overlay() != null) throw new AssertionError("Loading overlay obscures the actor image");
         Entity entity = client.level.getEntity(id);
         if (!(entity instanceof ActorEntity actor) || !(actor.getForm() instanceof ModelForm form)
             || !form.model.get().equals(MODEL) || actor.isInvisible())
