@@ -7,7 +7,8 @@
 	"environment": "client",
 	"entrypoints": {
 		"fabric-client-gametest": [
-			"com.afrobama.bbstools.gametest.BBSClientGameTest"
+			"com.afrobama.bbstools.gametest.BBSClientGameTest",
+			"com.afrobama.bbstools.gametest.FirstAnchorUndoGameTest"
 		]
 	},
 	"depends": {
