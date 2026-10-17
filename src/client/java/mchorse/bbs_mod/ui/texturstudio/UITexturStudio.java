@@ -10,6 +10,7 @@ import mchorse.bbs_mod.settings.EditorZustaende;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.utils.UIFormRenderer;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.IUIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIListOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageOverlayPanel;
@@ -55,7 +56,10 @@ public class UITexturStudio extends UIOverlayPanel
             return;
         }
 
-        UIOverlay.addOverlay(context, new UITexturStudio(textur, datei, png), 0.96F, 0.92F);
+        UITexturStudio studio = new UITexturStudio(textur, datei, png);
+
+        studio.form.model.set(TexturStudio.vorschauModell(context));
+        UIOverlay.addOverlay(context, studio, 0.96F, 0.92F);
     }
 
     private UITexturStudio(Link textur, File datei, byte[] png)
@@ -88,6 +92,18 @@ public class UITexturStudio extends UIOverlayPanel
 
         this.onClose((e) -> this.aufraeumen());
         this.kanal.lade(png);
+    }
+
+    /** Release browser focus before a preview or toolbar control handles the click. */
+    @Override
+    protected IUIElement childrenMouseClicked(UIContext context)
+    {
+        if (context.activeElement == this.flaeche && !this.flaeche.area.isInside(context))
+        {
+            context.unfocus();
+        }
+
+        return super.childrenMouseClicked(context);
     }
 
     /** Neues Bild aus dem Editor (oder das Startbild) in die Vorschau-Textur. */

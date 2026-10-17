@@ -3,12 +3,15 @@ package mchorse.bbs_mod.ui.texturstudio;
 import com.mojang.blaze3d.platform.InputConstants;
 import de.keksuccino.rinku.RinkuBrowser;
 import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.IFocusedUIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.utils.keys.KeyAction;
+import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
+import org.cef.browser.CefZoomCommand;
+import org.lwjgl.sdl.SDLScancode;
 
 /**
  * Zeichnet einen Rinku-Browser in seinen Bereich und reicht Maus und Tastatur an ihn weiter.
@@ -17,7 +20,7 @@ import net.minecraft.resources.Identifier;
  * Mauskoordinaten gehen im selben Raum hinein. Tasten bekommt er nur, solange er den Fokus
  * hat (Klick hinein); Escape bleibt bei BBS, damit das Fenster sich schliessen laesst.</p>
  */
-public class UIBrowserFlaeche extends UIElement
+public class UIBrowserFlaeche extends UIElement implements IFocusedUIElement
 {
     private final RinkuBrowser browser;
     private int breite;
@@ -28,7 +31,40 @@ public class UIBrowserFlaeche extends UIElement
 
     public UIBrowserFlaeche(RinkuBrowser browser)
     {
-        this.browser = browser;
+        this.browser = browser.useBrowserControls(false);
+    }
+
+    @Override
+    public boolean isFocused()
+    {
+        return this.fokus;
+    }
+
+    @Override
+    public void focus(UIContext context)
+    {
+        this.fokus = true;
+        this.browser.setFocus(true);
+    }
+
+    @Override
+    public void unfocus(UIContext context)
+    {
+        this.fokus = false;
+        this.browser.setFocus(false);
+    }
+
+    @Override
+    public void selectAll(UIContext context)
+    {
+        this.browser.sendKeyPress(InputConstants.KEY_A, 0L, InputConstants.MOD_CONTROL);
+        this.browser.sendKeyRelease(InputConstants.KEY_A, 0L, InputConstants.MOD_CONTROL);
+    }
+
+    @Override
+    public void unselect(UIContext context)
+    {
+        /* The embedded document owns its selection; changing BBS focus must preserve it. */
     }
 
     @Override
@@ -60,9 +96,45 @@ public class UIBrowserFlaeche extends UIElement
 
     private static int modifikatoren()
     {
-        return (Window.isShiftPressed() ? InputConstants.MOD_SHIFT : 0)
-            | (Window.isCtrlPressed() ? InputConstants.MOD_CONTROL : 0)
-            | (Window.isAltPressed() ? InputConstants.MOD_ALT : 0);
+        return (KeyCombo.isKeyDown(InputConstants.KEY_LSHIFT) ? InputConstants.MOD_SHIFT : 0)
+            | (KeyCombo.isKeyDown(InputConstants.KEY_LCONTROL) ? InputConstants.MOD_CONTROL : 0)
+            | (KeyCombo.isKeyDown(InputConstants.KEY_LALT) ? InputConstants.MOD_ALT : 0);
+    }
+
+    private boolean zoomTaste(UIContext context)
+    {
+        if (!KeyCombo.isKeyDown(InputConstants.KEY_LCONTROL))
+        {
+            return false;
+        }
+
+        int taste = context.getKeyCode();
+        int zeichen = context.getScanCode();
+        CefZoomCommand zoom;
+
+        if (taste == InputConstants.KEY_EQUALS || zeichen == '+' || taste == SDLScancode.SDL_SCANCODE_KP_PLUS)
+        {
+            zoom = CefZoomCommand.IN;
+        }
+        else if (taste == InputConstants.KEY_MINUS || taste == SDLScancode.SDL_SCANCODE_KP_MINUS)
+        {
+            zoom = CefZoomCommand.OUT;
+        }
+        else if (taste == InputConstants.KEY_0 || taste == SDLScancode.SDL_SCANCODE_KP_0)
+        {
+            zoom = CefZoomCommand.RESET;
+        }
+        else
+        {
+            return false;
+        }
+
+        if (context.getKeyAction() != KeyAction.RELEASED)
+        {
+            this.browser.zoom(zoom);
+        }
+
+        return true;
     }
 
     /** BBS zaehlt Maustasten alt (0 links, 1 rechts, 2 Mitte), Rinku erwartet Minecrafts SDL-Nummern. */
@@ -78,8 +150,7 @@ public class UIBrowserFlaeche extends UIElement
 
         if (innen != this.fokus)
         {
-            this.fokus = innen;
-            this.browser.setFocus(innen);
+            context.focus(innen ? this : null);
         }
 
         if (!innen)
@@ -113,7 +184,14 @@ public class UIBrowserFlaeche extends UIElement
             return false;
         }
 
-        this.browser.sendMouseWheel(this.px(context), this.py(context), context.mouseWheel, modifikatoren());
+        if (KeyCombo.isKeyDown(InputConstants.KEY_LCONTROL) && context.mouseWheel != 0D)
+        {
+            this.browser.zoom(context.mouseWheel > 0D ? CefZoomCommand.IN : CefZoomCommand.OUT);
+        }
+        else
+        {
+            this.browser.sendMouseWheel(this.px(context), this.py(context), context.mouseWheel, modifikatoren());
+        }
 
         return true;
     }
@@ -124,6 +202,11 @@ public class UIBrowserFlaeche extends UIElement
         if (!this.fokus || context.getKeyCode() == InputConstants.KEY_ESCAPE)
         {
             return false;
+        }
+
+        if (this.zoomTaste(context))
+        {
+            return true;
         }
 
         if (context.getKeyAction() == KeyAction.RELEASED)
@@ -144,6 +227,11 @@ public class UIBrowserFlaeche extends UIElement
         if (!this.fokus)
         {
             return false;
+        }
+
+        if (KeyCombo.isKeyDown(InputConstants.KEY_LCONTROL) && "+-=0".indexOf(context.getInputCharacter()) >= 0)
+        {
+            return true;
         }
 
         this.browser.sendKeyTyped(context.getInputCharacter(), modifikatoren());

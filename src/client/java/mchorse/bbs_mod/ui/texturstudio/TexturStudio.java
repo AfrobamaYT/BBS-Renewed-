@@ -1,6 +1,11 @@
 package mchorse.bbs_mod.ui.texturstudio;
 
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.settings.EditorZustaende;
+import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -32,6 +37,31 @@ public final class TexturStudio
     public static boolean verfuegbar()
     {
         return FabricLoader.getInstance().isModLoaded("rinku");
+    }
+
+    /** The edited form takes precedence over a remembered, unrelated preview model. */
+    static String vorschauModell(UIContext context)
+    {
+        for (UIFormEditor editor : context.menu.getRoot().getChildren(UIFormEditor.class))
+        {
+            if (editor.isVisible() && editor.editor != null && editor.editor.form instanceof ModelForm model)
+            {
+                return model.model.get();
+            }
+        }
+
+        if (context.menu instanceof UIDashboard dashboard)
+        {
+            UIFilmPanel film = dashboard.getPanel(UIFilmPanel.class);
+
+            if (film != null && film.replayEditor.getReplay() != null
+                && film.replayEditor.getReplay().form.get() instanceof ModelForm model)
+            {
+                return model.model.get();
+            }
+        }
+
+        return EditorZustaende.texturStudioModell.get();
     }
 
     /**
