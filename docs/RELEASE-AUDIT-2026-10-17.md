@@ -3,9 +3,11 @@
 Status: ongoing. This record preserves the user's full release/deep-audit objective;
 no overall release-readiness or older-version parity is established.
 
-Confirmed exposed unfinished function: WorldSnapshotClip is registered as
-bbstools:world_snapshot but its shipped action only logs, without restoring any
-blocks. This blocks treating the complete current feature set as ready.
+Confirmed exposed unfinished function in the prior fa96 candidate:
+WorldSnapshotClip is registered as bbstools:world_snapshot but only logs.
+Repair source cc05a931f now builds the server restore and actual editor;
+production world/input acceptance is pending in run39019305927.
+This still blocks treating the complete current feature set as ready.
 See WORLD-SNAPSHOT-REPAIR-2026-10-17.md for evidence and full repair acceptance.
 
 ## Frozen inputs and present candidates
@@ -281,3 +283,27 @@ The capture collector now rejects missing dump output and retains readable UTF8
 copies of native logs. The JVM's own Windows crash-dump option is also explicit.
 The same fa96 product source is frozen separately on
 codex/native-fa96-diagnostics-20261017 for continued native failure isolation.
+
+[Normal comparison run39018217629](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39018217629)
+at frozen source91908c207 passes Linux, Windows and unchanged Linux product on
+Windows without ProcDump attached. The JVM dump option is enabled. No fatal
+failure was reproduced; the earlier0xC0000374/0xC0000005 causes remain unresolved.
+This is another successful control run, not evidence of a crash fix.
+Both Windows artifact sets were downloaded and all ten Actor lifecycle pictures
+were inspected. Geometry is visible initially and after each reload, then absent
+after removal. Frozen Windows logs load exactly fa96; Windows' own build is
+92252a081a69eb892f38dd19030b7b893ee0347ad473d92782bdb27ca794046d.
+Raw hashes, runtime records and the no-debugger diagnostic state are retained in
+build/test-evidence/release-audit-20261017/normal-actor-lifecycle-39018217629.json.
+
+## Additional action-picker path under investigation
+
+Source and packaged class inspection identify four common bbstools IDs mapped
+to data-only action bases: model_fracture, block_destruction, ragdoll_proxy and
+block_animation. BBSToolsModClient registers their implemented client subclasses
+and editor factories under distinct bbs IDs. MapFactory keeps both IDs; UIClips'
+add menu enumerates every key, and UIClip resolves an exact class match.
+The common base bytecode inherits the empty ActionClip.applyClientAction.
+An actual production registry/picker check is still required before calling
+this a reproduced UI/runtime failure. This finding does not imply that the
+implemented bbs client path or the separately owned Physics/Gore work is unbuilt.

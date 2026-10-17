@@ -57,4 +57,9 @@ position, then removal. Its five unobstructed images were independently inspecte
 The first attempt's pictures were still under the loading overlay and are excluded.
 Windows diagnostic case39017242286 also passes with all five images inspected,
 under explicit ProcDump monitoring. Earlier uninstrumented Windows native crashes
-remain unresolved; this is not a whole-platform stability clearance.
+remain unresolved. The subsequent normal run39018217629 passes all three jobs
+without ProcDump attached. All ten Windows source-build/frozen-input Actor images
+were inspected: present before and after three reloads, absent after removal.
+Frozen Windows loads exactly fa96; the Windows build loads
+92252a081a69eb892f38dd19030b7b893ee0347ad473d92782bdb27ca794046d.
+This extends the scoped lifecycle evidence without establishing a native crash fix.
