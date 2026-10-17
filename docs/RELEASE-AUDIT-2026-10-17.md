@@ -120,3 +120,30 @@ recording, shader or integration acceptance. The release remains unpublished.
 Raw runtime hashes, images and logs are retained in
 `build/test-evidence/release-audit-20261017/ci-39006225543-receipts.json` and the
 corresponding downloaded artifact directory in the public release worktree.
+
+## First-anchor Undo probe and separate Windows failure
+
+The red Linux/Windows assertions in
+[run39008963180](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39008963180)
+are not a current product reproduction of historical H1. Inspection of the
+actually resolved Fabric client-gametest6.0.7 input driver shows it constructs
+every keyboard KeyEvent with modifiers=0, including after holdControl(). BBS
+intentionally matches the captured event modifiers, including queued quick taps.
+The test therefore sent an unmodified Z. The previous current-product claim
+was explicitly withdrawn; the historical native-input H1 observation remains open.
+
+The updated test records events at the real UIScreen, delegates them unchanged,
+and compares the original Fabric path with the same Minecraft KeyboardHandler
+receiving a KeyEvent carrying SDL's captured left-Control mask. It requires an
+initially empty history, the first real ring drag, restored authored/widget
+values and consumption of the existing history entry. It never calls the Undo
+manager as a shortcut or changes product key matching. Compilation passes;
+the corrected input/runtime result is still pending.
+
+Separately, Windows in
+[run39008269225](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39008269225)
+exited during resource loading with NTSTATUS0xC0000374 (-1073740940).
+No cause is established. The next run did not repeat this native failure;
+its hosted-only WER/CDB collection executed, with no dumps or matching events.
+That round does not clear the earlier native crash. Raw dump memory is excluded
+from uploaded artifacts; event/stack diagnostics are retained when available.

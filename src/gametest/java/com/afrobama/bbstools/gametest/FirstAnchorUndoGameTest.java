@@ -55,7 +55,7 @@ public final class FirstAnchorUndoGameTest implements FabricClientGameTest
             context.setScreen(() ->
             {
                 AnnouncementGate.markShown();
-                return new UIScreen(Component.empty(), BBSModClient.getDashboard());
+                return new KeyTraceScreen(BBSModClient.getDashboard());
             });
             context.runOnClient(FirstAnchorUndoGameTest::prepare);
             context.waitTicks(20);
@@ -81,6 +81,8 @@ public final class FirstAnchorUndoGameTest implements FabricClientGameTest
             if (selected < 0) throw new AssertionError("H1 fixture has no actual X-ring stencil hit");
             float[] before = context.computeOnClient(client -> authored());
             Map<String, Object> beforeState = context.computeOnClient(client -> state());
+            if (!beforeState.get("historySize").equals(0) || !beforeState.get("historyIndex").equals(-1))
+                throw new AssertionError("H1 fixture already contains an edit before its first ring drag");
             double[] start = points[selected], end = points[(selected + 12) % points.length];
             context.getInput().holdMouse(mchorse.bbs_mod.graphics.window.Window.nativeMouseButton(0));
 
@@ -108,16 +110,49 @@ public final class FirstAnchorUndoGameTest implements FabricClientGameTest
             try { context.getInput().pressKey(InputConstants.KEY_Z); }
             finally { context.getInput().releaseControl(); }
             context.waitTicks(5);
+            Map<String, Object> fabricUndoState = context.computeOnClient(client -> state());
+            int fabricModifiers = context.computeOnClient(client -> ((KeyTraceScreen) client.gui.screen()).lastUndoModifiers);
+            if (fabricModifiers < 0) throw new AssertionError("Fabric's Z event did not reach the real screen");
+            if ((fabricModifiers & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_CTRL) == 0)
+            {
+                if (!Arrays.equals(after, (float[]) fabricUndoState.get("authored"))
+                    || !afterState.get("historyIndex").equals(fabricUndoState.get("historyIndex")))
+                    throw new AssertionError("Modifier-free Fabric Z unexpectedly changed the authored edit/history");
+                context.getInput().holdControl();
+                try
+                {
+                    context.runOnClient(client ->
+                    {
+                        int modifiers = org.lwjgl.sdl.SDLKeycode.SDL_KMOD_LCTRL;
+                        net.minecraft.client.input.KeyEvent event = new net.minecraft.client.input.KeyEvent(InputConstants.KEY_Z,
+                            org.lwjgl.sdl.SDLKeyboard.SDL_GetKeyFromScancode(InputConstants.KEY_Z, (short) modifiers, false), modifiers);
+                        if (!event.hasControlDown()) throw new AssertionError("Corrected event lacks its captured Control modifier");
+                        net.fabricmc.fabric.mixin.client.gametest.input.KeyboardHandlerAccessor handler =
+                            (net.fabricmc.fabric.mixin.client.gametest.input.KeyboardHandlerAccessor) client.keyboardHandler;
+                        handler.invokeKeyPress(client.getWindow().handle(), InputConstants.PRESS, event);
+                        handler.invokeKeyPress(client.getWindow().handle(), InputConstants.RELEASE, event);
+                    });
+                }
+                finally { context.getInput().releaseControl(); }
+                context.waitTicks(5);
+            }
             float[] undo = context.computeOnClient(client -> authored());
             Map<String, Object> undoState = context.computeOnClient(client -> state());
+            int capturedModifiers = context.computeOnClient(client -> ((KeyTraceScreen) client.gui.screen()).lastUndoModifiers);
+            if ((capturedModifiers & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_CTRL) == 0)
+                throw new AssertionError("The corrected Control+Z event did not reach the real screen");
             context.takeScreenshot("h1-anchor-after-undo");
             System.out.println("BBS_H1_FIRST_ANCHOR " + new com.google.gson.Gson().toJson(
-                Map.of("before", beforeState, "afterDrag", afterState, "afterUndo", undoState)));
+                Map.of("before", beforeState, "afterDrag", afterState, "fabricUndo", fabricUndoState,
+                    "fabricModifiers", fabricModifiers, "capturedModifiers", capturedModifiers, "afterUndo", undoState)));
             if (!Arrays.equals(before, undo))
                 throw new AssertionError("H1 first anchor Undo failed: before=" + Arrays.toString(before)
                     + " after=" + Arrays.toString(after) + " undo=" + Arrays.toString(undo));
             if (!Arrays.equals(before, (float[]) undoState.get("widget")))
                 throw new AssertionError("Authored anchor restored but the displayed transform is stale");
+            if (!undoState.get("historyIndex").equals(beforeState.get("historyIndex"))
+                || !undoState.get("historySize").equals(afterState.get("historySize")))
+                throw new AssertionError("Undo did not consume the existing first edit through its normal history");
         }
     }
 
@@ -239,5 +274,24 @@ public final class FirstAnchorUndoGameTest implements FabricClientGameTest
     {
         return point[0] >= 0D && point[1] >= 0D && point[0] < Minecraft.getInstance().getWindow().getScreenWidth()
             && point[1] < Minecraft.getInstance().getWindow().getScreenHeight();
+    }
+
+    /** Observe the event actually reaching the real screen; delegate every event unchanged. */
+    private static final class KeyTraceScreen extends UIScreen
+    {
+        private int lastUndoModifiers = -1;
+
+        private KeyTraceScreen(UIDashboard dashboard) { super(Component.empty(), dashboard); }
+
+        @Override
+        public boolean keyPressed(net.minecraft.client.input.KeyEvent event)
+        {
+            if (event.key() == InputConstants.KEY_Z)
+            {
+                this.lastUndoModifiers = event.modifiers();
+                System.out.println("BBS_H1_KEY_EVENT " + event + " ctrl=" + event.hasControlDown());
+            }
+            return super.keyPressed(event);
+        }
     }
 }
