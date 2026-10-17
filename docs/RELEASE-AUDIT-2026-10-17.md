@@ -222,3 +222,26 @@ attributes shows exactly the same2444 Client-Only-Entries with the same frequenc
 in a different order; every other attribute is identical. This is a corresponding
 source/build-input check, not a new gameplay run or a cold dependency download.
 Raw result: `build/test-evidence/release-audit-20261017/full-source-outside-git-result.json`.
+
+## Native X11 trial107 and replacement world fixture
+
+The actual owned1920x1080/OpenGL run loaded fa96/c85, verified by native
+Render-thread CodeSource hashes. Physical XTest Control+Z reached the unchanged
+UIScreen with modifiers64; history remained empty at index-1. No valid visible
+replay/gizmo X-ring hit was obtained and no first drag occurred. This is transport
+evidence only: historical H1 has no new failure, fix or acceptance from this run.
+The inherited owned-world player records contain the missing texture reference
+logged by renderArm. That establishes an unsuitable dependency in the fixture,
+not the cause of the invisible replay. The owned JVM, wrappers, Xvfb and four ports
+were physically gone, and lease107 released, before the fixed07:31:55UTC end.
+
+The replacement follows Fabric's TestWorldSave API: export the actual freshly
+created world only after its server closes. All three jobs of
+[run39014391362](https://github.com/AfrobamaYT/BBS-Renewed-/actions/runs/39014391362)
+pass with product fa96. The actual exported level.dat has SHA256
+`2d7eff267aed08ceb0e4d3483e161a9462ad3330b46116762c261f4e193a4b93`.
+Minecraft's own NBT parser confirms DataVersion5023 and the exact overworld
+generator minecraft:flat. The old missing reference is absent from its DAT files.
+This validates the replacement dataset, not the pending native physical H1 case.
+Inspection receipt: `build/test-evidence/release-audit-20261017/native-fixture-world-inspection.json`,
+SHA25664f0a8de4cb47dcc27f79f2a65d09771880f9cfc69ed651ea082fe484bc1d760.
