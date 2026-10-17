@@ -1,1 +1,3 @@
 *.bobj binary
+COPYING text eol=lf
+src/main/resources/META-INF/LICENSE-BLENDER-IK.txt text eol=lf

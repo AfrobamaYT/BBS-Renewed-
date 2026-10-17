@@ -26,3 +26,10 @@ an explicit checksum of the licence entry in each final package. The current
 public candidate has the complete text in both its COPYING and META-INF
 entries. Changes to this checker do not change product class bytes or prove
 new gameplay behavior.
+
+The Windows CI copy was complete but used CRLF (18342 bytes, SHA256
+`e55f40e907647a4ae74b6f9cf10dd72ac9996c5d2b227d8e226e7154a85b531d`).
+Normalizing its line endings gives the pinned complete text, unlike the actual
+truncated copy above. Git attributes now preserve LF for both canonical source
+copies on every platform. An actual Windows-style git checkout control changes
+from18342/CRLF to18002/LF; the strict release gate remains unchanged.
