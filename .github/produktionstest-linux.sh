@@ -19,7 +19,7 @@ trap 'kill "$diagnostics_pid" 2>/dev/null || true' EXIT
 
 timeout --kill-after=15s 180s ./gradlew --no-daemon -I .github/produktionstest.gradle produktionstest -Pbbs.externalXvfb
 
-if [[ -n "${BBS_EXPORT_NATIVE_WORLD:-}" ]]; then
+if [[ -n "${BBS_EXPORT_NATIVE_WORLD:-}" && "${BBS_PRODUCTION_VANILLA_CONTROL:-0}" != 1 ]]; then
     test -s "$BBS_EXPORT_NATIVE_WORLD/level.dat"
     test -s "$BBS_EXPORT_NATIVE_WORLD/fixture-manifest.json"
 fi

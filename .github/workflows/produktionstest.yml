@@ -16,6 +16,13 @@ on:
         description: Verify signed postmortem capture before an unattached Windows game
         type: boolean
         default: false
+      vanilla_control:
+        description: Compare Minecraft and Fabric without the BBS mod or classes
+        type: boolean
+        default: false
+
+env:
+  BBS_PRODUCTION_VANILLA_CONTROL: ${{ inputs.vanilla_control && '1' || '0' }}
 
 jobs:
   produktionstest:

@@ -32,9 +32,27 @@ rootProject {
 			jar.archiveClassifier.set("gametest")
 		}
 
+		def vanillaControlJar = p.tasks.register("vanillaControlJar", org.gradle.api.tasks.bundling.Jar) { jar ->
+			jar.from(p.sourceSets.gametest.output) { include("com/afrobama/releasecontrol/VanillaBootGameTest*.class") }
+			jar.from(p.file(".github/vanilla-control.fabric.mod.json")) { rename { "fabric.mod.json" } }
+			jar.archiveClassifier.set("vanilla-control")
+		}
+		def controlSetting = System.getenv("BBS_PRODUCTION_VANILLA_CONTROL") ?: "0"
+		if (!(controlSetting in ["0", "1"])) { throw new GradleException("Vanilla control requires an explicit 0 or 1") }
+
 		p.tasks.register("produktionstest", runType) { run ->
 			def frozenDirectory = System.getenv("BBS_PRODUCTION_MOD_DIR")
-			if (frozenDirectory != null && !frozenDirectory.isBlank()) {
+			if (controlSetting == "1") {
+				if (frozenDirectory != null && !frozenDirectory.isBlank()) {
+					def control = new File(p.file(frozenDirectory), vanillaControlJar.get().archiveFile.get().asFile.name)
+					if (!control.isFile()) { throw new GradleException("Frozen vanilla control JAR is missing: " + control) }
+					run.mods.setFrom(control, fabricApi, gametestApi)
+					run.jvmArgs.add("-Dbbs.ci.expectedControlSha256=" + MessageDigest.getInstance("SHA-256").digest(control.bytes).encodeHex().toString())
+				} else {
+					run.dependsOn(vanillaControlJar)
+					run.mods.setFrom(vanillaControlJar.flatMap { it.archiveFile }, fabricApi, gametestApi)
+				}
+			} else if (frozenDirectory != null && !frozenDirectory.isBlank()) {
 				def directory = p.file(frozenDirectory)
 				def product = new File(directory, p.tasks.named("jar").get().archiveFile.get().asFile.name)
 				def tests = new File(directory, gametestJar.get().archiveFile.get().asFile.name)
