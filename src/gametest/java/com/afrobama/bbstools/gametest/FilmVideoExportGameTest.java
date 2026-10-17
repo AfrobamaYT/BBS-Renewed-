@@ -105,6 +105,7 @@ public final class FilmVideoExportGameTest implements FabricClientGameTest
             || stream.get("nb_read_frames").getAsInt() != 20 || submitted != 20)
             throw new AssertionError("Exported bytes do not contain the requested one-second 320x180/20fps film");
         FilmAudioExportProbe.run(context, evidence);
+        FilmExportCancellationProbe.run(context, evidence);
         FilmExportFailureProbe.run(context, evidence);
     }
 
