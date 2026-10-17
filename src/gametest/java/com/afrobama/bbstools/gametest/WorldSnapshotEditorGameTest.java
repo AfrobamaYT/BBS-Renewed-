@@ -12,6 +12,7 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.film.UIZeitleisteNano;
 import mchorse.bbs_mod.ui.film.ZeitleisteZweig;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -73,6 +74,9 @@ public final class WorldSnapshotEditorGameTest implements FabricClientGameTest
                     || editor().diffOnly.getValue()) throw new AssertionError("Reopened editor widgets are stale");
             });
             context.waitTicks(5);
+            if (!context.computeOnClient(client -> panel().actionEditor.isVisible()
+                && panel().zeitleisteNano instanceof UIZeitleisteNano timeline && timeline.modus == 3))
+                throw new AssertionError("Reopened snapshot editor is outside the active Actions timeline");
             context.takeScreenshot("snapshot-editor-reopened");
             System.out.println("BBS_WORLD_SNAPSHOT_EDITOR " + new com.google.gson.Gson().toJson(
                 Map.of("registeredPanel", true, "typedStructureId", SNAPSHOT, "actualMouseToggles", true,
@@ -109,7 +113,10 @@ public final class WorldSnapshotEditorGameTest implements FabricClientGameTest
         mchorse.bbs_mod.ui.hilfe.HilfeErststart.hilfeGeoeffnet();
         Replay replay = film.replays.getAllTyped().getFirst();
         panel().replayEditor.setReplay(replay);
-        ZeitleisteZweig.aktionenModus(panel());
+        if (!(panel().zeitleisteNano instanceof UIZeitleisteNano timeline))
+            throw new AssertionError("Snapshot editor fixture requires the actual Nano timeline");
+        if (timeline.modus != 3) ZeitleisteZweig.aktionenModus(panel());
+        ZeitleisteZweig.anwenden(panel(), 3);
         panel().actionEditor.pickClip(replay.actions.get(0));
         editor();
     }

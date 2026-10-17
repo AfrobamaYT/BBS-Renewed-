@@ -33,10 +33,12 @@ public final class UIWorldSnapshotClip extends UIActionClip<WorldSnapshotClip>
         this.maxX = this.coordinate(this.clip.maxX);
         this.maxY = this.coordinate(this.clip.maxY);
         this.maxZ = this.coordinate(this.clip.maxZ);
-        this.restoreBlockEntities = new UIToggle(IKey.constant("Restore block entities"),
+        this.restoreBlockEntities = new UIToggle(IKey.constant("Block entities"),
             value -> this.editor.editMultiple(this.clip.restoreBlockEntities, target -> target.set(value.getValue())));
-        this.diffOnly = new UIToggle(IKey.constant("Only changed blocks"),
+        this.restoreBlockEntities.tooltip(IKey.constant("Restore saved chest contents and other block entity data."));
+        this.diffOnly = new UIToggle(IKey.constant("Changed blocks"),
             value -> this.editor.editMultiple(this.clip.diffOnly, target -> target.set(value.getValue())));
+        this.diffOnly.tooltip(IKey.constant("Only write blocks that differ from the saved snapshot."));
         this.addBlockPositionContext(this.minX, this.minY, this.minZ,
             this.clip.minX::get, this.clip.minY::get, this.clip.minZ::get,
             value -> this.editor.editMultiple(this.clip.minX, value),
@@ -60,10 +62,10 @@ public final class UIWorldSnapshotClip extends UIActionClip<WorldSnapshotClip>
     protected void registerPanels()
     {
         super.registerPanels();
-        this.panels.add(this.section(IKey.constant("Saved structure ID"), this.snapshot));
+        this.panels.add(this.section(IKey.constant("Snapshot ID"), this.snapshot));
         this.snapshot.tooltip(IKey.constant("Save the snapshot with a vanilla structure block first."));
-        this.panels.add(this.section(IKey.constant("First corner (X / Y / Z)"), UI.row(this.minX, this.minY, this.minZ)));
-        this.panels.add(this.section(IKey.constant("Second corner (X / Y / Z)"), UI.row(this.maxX, this.maxY, this.maxZ)));
+        this.panels.add(this.section(IKey.constant("First corner"), UI.row(this.minX, this.minY, this.minZ)));
+        this.panels.add(this.section(IKey.constant("Second corner"), UI.row(this.maxX, this.maxY, this.maxZ)));
         this.panels.add(this.section(IKey.constant("Restore options"), this.restoreBlockEntities, this.diffOnly));
     }
 
