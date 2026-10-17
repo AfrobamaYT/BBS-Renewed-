@@ -70,6 +70,8 @@ public final class SpielRendererLogik
     /** The GUI samples this texture after the current world's shaderpack/post passes finished. */
     public static void vorGuiZeichnen()
     {
+        mchorse.bbs_mod.client.renderer.item.InventarFigurRenderer.vorbereiten();
+
         if (Minecraft.getInstance().level != null && BBSRendering.isCustomSize())
         {
             BBSRendering.fuellen();
