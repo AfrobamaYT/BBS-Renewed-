@@ -69,6 +69,7 @@ public final class RegieWelt
 
         if (aufnahme != null && BBSSettings.recordingOverlays.get())
         {
+            if (RegieDarstellung.einfach(aufnahme.film.regie)) return;
             boolean laeuft = !aufnahme.hasNotStarted();
             float tick = aufnahme.getTick() + (laeuft ? mc.getDeltaTracker().getGameTimeDeltaPartialTick(false) : 0F);
 
@@ -83,6 +84,7 @@ public final class RegieWelt
         else if (editorPanel != null && editorPanel.getData() != null && jetzt - editorZeit < 250_000_000L
             && !com.mcstudio.see.SubTick.aktiv() && !mchorse.bbs_mod.film.VideoExportSession.laeuftExport())
         {
+            if (RegieDarstellung.einfach(editorPanel.getData().regie)) return;
             float tick = editorPanel.getCursor() + (editorPanel.isRunning() ? mc.getDeltaTracker().getGameTimeDeltaPartialTick(false) : 0F);
 
             RegieWeltWege.zeichnen(mc.level, editorPanel.getData().regie, dt, kamera);

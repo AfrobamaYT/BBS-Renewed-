@@ -38,5 +38,6 @@ public class Regie extends ValueGroup
         this.add(this.anfang);
         this.add(this.vorlauf);
         this.add(this.marker);
+        RegieDarstellung.fuer(this);
     }
 }

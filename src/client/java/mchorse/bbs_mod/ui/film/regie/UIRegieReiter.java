@@ -82,6 +82,7 @@ public class UIRegieReiter extends UIElement implements UISeitenleiste.Auffrisch
     public void auffrischen()
     {
         Regie regie = this.bedienung.regie();
+        UIRegieDarstellung.auffrischen(this, regie);
         RegieMarker m = this.bedienung.gewaehlt();
         List<RegieMarker> sortiert = regie == null ? List.of() : RegieAnsicht.sortiert(regie);
         StringBuilder neu = new StringBuilder(regie == null ? "-" : this.panel.getData().getId());

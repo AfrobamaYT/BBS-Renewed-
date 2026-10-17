@@ -57,8 +57,10 @@ public class UIRegieGriff extends UIElement
         Camera kamera = this.panel.getCamera();
         Vector3f d = this.strahl(context);
 
-        this.gezogen = RegieGriff.fassen(film.regie, kamera.position.x + this.versatz.x, kamera.position.y + this.versatz.y,
-            kamera.position.z + this.versatz.z, d.x, d.y, d.z);
+        this.gezogen = mchorse.bbs_mod.film.regie.RegieDarstellung.einfach(film.regie)
+            ? mchorse.bbs_mod.film.regie.RegieEinfach.fassen(this.panel, context)
+            : RegieGriff.fassen(film.regie, kamera.position.x + this.versatz.x, kamera.position.y + this.versatz.y,
+                kamera.position.z + this.versatz.z, d.x, d.y, d.z);
 
         if (this.gezogen == null)
         {

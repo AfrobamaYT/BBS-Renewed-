@@ -91,7 +91,8 @@ public final class RegieHud
 
             RegieZeichner.schriftenAnmelden(vg);
             SPIEL.berechnen(regie, tick, true, laeuft, KAMERA, b, h, k, ZEICHNER.messer(vg), RegieHud::verdeckt);
-            ZEICHNER.zeichnen(vg, SPIEL, zeit(), k);
+            if (RegieDarstellung.einfach(regie)) RegieEinfach.zeichnen(vg, regie, tick, KAMERA, b, h, k);
+            else ZEICHNER.zeichnen(vg, SPIEL, zeit(), k);
         });
 
         aufblenden(batcher, SPIELEBENE, textur, 0F, 0F,
@@ -120,8 +121,12 @@ public final class RegieHud
         Texture textur = EDITOREBENE.malen(breite, hoehe, (vg, b, hh) ->
         {
             RegieZeichner.schriftenAnmelden(vg);
-            EDITOR.berechnen(regie, tick, false, false, KAMERA, b, hh, k, ZEICHNER.messer(vg), RegieHud::verdeckt);
-            ZEICHNER.zeichnen(vg, EDITOR, zeit(), k);
+            if (RegieDarstellung.einfach(regie)) RegieEinfach.zeichnen(vg, regie, tick, KAMERA, b, hh, k);
+            else
+            {
+                EDITOR.berechnen(regie, tick, false, false, KAMERA, b, hh, k, ZEICHNER.messer(vg), RegieHud::verdeckt);
+                ZEICHNER.zeichnen(vg, EDITOR, zeit(), k);
+            }
         });
 
         context.batcher.flush();
