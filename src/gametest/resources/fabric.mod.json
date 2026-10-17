@@ -12,7 +12,8 @@
 			"com.afrobama.bbstools.gametest.GuideScaleGameTest",
 			"com.afrobama.bbstools.gametest.StandaloneActorLifecycleGameTest",
 			"com.afrobama.bbstools.clips.WorldSnapshotGameTest",
-			"com.afrobama.bbstools.gametest.WorldSnapshotEditorGameTest"
+			"com.afrobama.bbstools.gametest.WorldSnapshotEditorGameTest",
+			"com.afrobama.bbstools.gametest.ActionRegistryGameTest"
 		]
 	},
 	"depends": {
