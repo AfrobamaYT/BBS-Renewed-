@@ -10,13 +10,20 @@ production world/input cases pass all three jobs of run39019305927.
 Narrow-dock labels and the editor-test reopen setup are corrected in ebdb9b245;
 follow-up run39019817908 passes Linux/Windows source builds and inspected UI,
 but its unchanged-Linux-input Windows job crashes natively before tests.
-Visible world-reset capture and dedicated-server startup remain open.
+Visible world-reset capture remains open; the dedicated-server snapshot case
+now passes on both systems in run39025447300, with actual receipts read.
 The complete current feature set is not ready.
 See WORLD-SNAPSHOT-REPAIR-2026-10-17.md for evidence and full repair acceptance.
 
 ## Frozen inputs and present candidates
 
-- Current action-editor repaired Linux candidate:
+- Current motion-corrected Linux candidate:
+  `9387e83c6ee649b9219fef4b4c1c79d8d9f19b5a539747548db3718cb928b73b`,
+  sourcecbfcdbf5d. Linux/Windows source jobs pass in39026151559; inspected Linux
+  video shows both two-block actions and the one-block action, without the earlier
+  overlap stripes in that case. Frozen Windows is pending. Region/render/lifecycle
+  breadth and the complete release scope remain open.
+- Previous action-editor repaired Linux candidate:
   `d7f3f2740ba9e86679dada9ccd2150c869396025053e2021c5dc9b7b91327161`,
   source30060eb1c. Production run39023007388 passes all three jobs, including
   unchanged Linux bytes on Windows. Five broken action-editor selections are
@@ -399,3 +406,22 @@ contexts but exhausts its limit before the terminal failure. Extended capture
 39023834565 keeps smaller dumps through startup and fails explicitly if coverage
 is exhausted. Exact scope, inputs and receipts are preserved in
 WINDOWS-NATIVE-CONTROL-2026-10-17.md. No native game-crash cause or fix is established.
+
+## Actual Block Animation motion and dedicated snapshot action
+
+Run39025023645 proves live two-block effect state for both registered IDs and
+unchanged server blocks; its actual Linux video was inspected with watch-screen.
+Motion and explicit clear are visible, with early-overlap striping still open.
+The single-block exclusion is a measured Linux/Windows failure. Sourcee286ae1bb
+corrects it, and sourcecbfcdbf5d tests vanilla's layering modifier for the observed
+striping. The one-block correction passes all three jobs in39025821014. The
+subsequent Linux/Windows source jobs in39026151559 pass, and its actual Linux
+video shows the one-block action and no earlier stripe pattern in inspected
+perspective/gold-block frames. Broader effects/cameras and frozen-input result
+remain separate. Full scope and raw
+hashes are in BLOCK-ANIMATION-MOTION-2026-10-17.md.
+
+The separate real dedicated-server run39025447300 passes on Linux and Windows:
+no Minecraft client class/companion, actual saved vanilla structure, registered
+replay action and restored real block. The current named snapshot server boundary
+has runtime proof; unrelated server behavior and all other release gates stay open.

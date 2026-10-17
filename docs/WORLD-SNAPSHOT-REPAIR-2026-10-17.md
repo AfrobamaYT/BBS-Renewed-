@@ -104,5 +104,23 @@ Follow-up receipt: world-snapshot-39019817908-receipt.json,
 SHA256d57a987b9b2c0d89261a610975c4cbdef93e745650ea73495bc5b29fc4dee785.
 Frozen-input follow-up: postmortem-frozen-39021135850-receipt.json,
 SHA256f5deb25183798af07fa45a876fc618d560f0282e03de8aba80646a87cba58429.
-Dedicated-server startup, visible world-reset capture and the full release audit
-remain open. This feature has no completed demonstration or publication approval.
+Visible world-reset capture and the full release audit remain open; the subsequent
+dedicated-server result is recorded below. This feature has no completed demonstration
+or publication approval.
+
+## Actual dedicated-server proof
+
+Run39025447300 at sourceada3af2b1 boots the normal public JAR with a small,
+separate server-only test mod on both Linux and Windows. Runtime assertions
+require a real dedicated production server, no Minecraft client class and no
+bbsdev companion. A vanilla single-block structure is saved to disk, evicted
+from the manager cache, and restored through the registered replay action.
+The real server block is gold again. Both successful receipts were read.
+Linux loads the canonical d7f3 product, Windows its own e7d5821e build.
+The receipt gate rejects missing/failed results even if the server exits normally.
+
+This closes the named dedicated-server startup/action requirement for that
+artifact. It does not close visible world-reset capture, all server workflows,
+full-product stability, or the wider release/parity scope.
+Raw receipt: dedicated-snapshot-39025447300.json, SHA256
+0183bd08cfbd526439d00d391ee92b679f57e21fe2ddba3a3f1eebc303cf91b6.
