@@ -61,6 +61,7 @@ rootProject {
 			run.jvmArgs.add("-Dfabric.client.gametest")
 			run.jvmArgs.add("-Dbbs.gametest.aufnehmen=true")
 			run.jvmArgs.add("-Dbbs.ci.production=true")
+			run.jvmArgs.add("-XX:ErrorFile=" + p.file("build/production-diagnostics/hs_err_pid%p.log").absolutePath)
 			run.jvmArgs.add("-Xmx3G")
 		}
 	}
