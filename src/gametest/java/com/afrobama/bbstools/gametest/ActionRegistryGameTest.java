@@ -69,6 +69,7 @@ public final class ActionRegistryGameTest implements FabricClientGameTest
             System.out.println("BBS_ACTION_REGISTRY " + new com.google.gson.Gson().toJson(
                 Map.of("rows", rows, "failures", failures, "scope", "editor selection, native data and method resolution; effects disabled")));
             if (!failures.isEmpty()) throw new AssertionError("Offered actions lack an editor/handler or lose data: " + failures);
+            BlockAnimationEditorProbe.verify(context);
         }
     }
 
