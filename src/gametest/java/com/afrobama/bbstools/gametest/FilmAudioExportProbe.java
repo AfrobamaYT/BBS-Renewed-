@@ -36,6 +36,7 @@ final class FilmAudioExportProbe
             samples.putShort((short) Math.round(Math.sin(2D * Math.PI * 1000D * i / 48_000D) * 8191D));
         WaveWriter.write(source.toFile(), new Wave(1, 1, 48_000, 16, samples.array()));
         Files.copy(source, evidence.resolve("audio-source-tone.wav"));
+        verifyExplicitFormatPreserved(source);
         AtomicReference<Boolean> finished = new AtomicReference<>();
         context.runOnClient(client ->
         {
@@ -91,6 +92,16 @@ final class FilmAudioExportProbe
         while (match.find()) result = Double.parseDouble(match.group(1));
         if (result == null || !Double.isFinite(result)) throw new AssertionError("Missing finite FFmpeg statistic: " + name);
         return result;
+    }
+
+    private static void verifyExplicitFormatPreserved(Path wave) throws Exception
+    {
+        Class<?> type = Class.forName("mchorse.bbs_mod.utils.VideoAudioInput");
+        java.lang.reflect.Method prepare = type.getDeclaredMethod("prepare", String[].class, java.io.File.class);
+        prepare.setAccessible(true);
+        String[] custom = {"-f", "s16le", "-i", "%AUDIO_TRACK%"};
+        String[] actual = (String[]) prepare.invoke(null, custom, wave.toFile());
+        if (!java.util.Arrays.equals(custom, actual)) throw new AssertionError("Explicit user audio input format was overridden");
     }
 
     private static UIFilmPanel panel()

@@ -132,7 +132,7 @@ public class VideoRecorder
              * ffmpeg die Rohdaten als rgba und wandelt selbst um. Die Java-Schleife in bgr8() kostete
              * bei 4K60 74 % der Exportzeit (JFR, 2026-10-14); eigene Argumente ohne bgr24 behalten
              * den alten Weg. */
-            String[] teile = params.split(" ");
+            String[] teile = VideoAudioInput.prepare(params.split(" "), audioFile);
 
             boolean roh = false;
 
