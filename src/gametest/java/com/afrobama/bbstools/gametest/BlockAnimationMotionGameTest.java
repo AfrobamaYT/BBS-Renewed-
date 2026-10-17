@@ -86,7 +86,9 @@ public final class BlockAnimationMotionGameTest implements FabricClientGameTest
                 Map<String, Boolean> region = context.computeOnClient(client ->
                 {
                     BlockPos unloaded = origin.offset(1_000_000, 0, 1_000_000);
-                    if (client.level.hasChunksAt(unloaded, unloaded)) throw new AssertionError("Negative fixture unexpectedly loaded");
+                    if (client.level.getChunkSource().getChunk(unloaded.getX() >> 4, unloaded.getZ() >> 4,
+                        net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false) != null)
+                        throw new AssertionError("Negative fixture unexpectedly present in actual client chunk storage");
                     List<BlockAnimation.AnimatedBlock> previous = BlockAnimation.getActiveBlocks();
                     boolean rejected = false;
                     try { BlockAnimation.captureAndAnimateRegion(unloaded, unloaded, new net.minecraft.world.phys.Vec3(0, 1, 0), 1F); }
