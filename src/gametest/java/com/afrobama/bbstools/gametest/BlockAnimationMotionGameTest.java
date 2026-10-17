@@ -83,11 +83,25 @@ public final class BlockAnimationMotionGameTest implements FabricClientGameTest
                 boolean unchanged = world.getServer().computeOnServer(server ->
                     server.overworld().getBlockState(origin).is(Blocks.GOLD_BLOCK)
                         && server.overworld().getBlockState(origin.east()).is(Blocks.GOLD_BLOCK));
+                Map<String, Boolean> region = context.computeOnClient(client ->
+                {
+                    BlockPos unloaded = origin.offset(1_000_000, 0, 1_000_000);
+                    if (client.level.hasChunksAt(unloaded, unloaded)) throw new AssertionError("Negative fixture unexpectedly loaded");
+                    List<BlockAnimation.AnimatedBlock> previous = BlockAnimation.getActiveBlocks();
+                    boolean rejected = false;
+                    try { BlockAnimation.captureAndAnimateRegion(unloaded, unloaded, new net.minecraft.world.phys.Vec3(0, 1, 0), 1F); }
+                    catch (IllegalArgumentException expected) { rejected = true; }
+                    return Map.of("unloadedRegionRejected", rejected,
+                        "existingEffectPreserved", previous == BlockAnimation.getActiveBlocks());
+                });
                 System.out.println("BBS_BLOCK_ANIMATION_MOTION " + new com.google.gson.Gson().toJson(
                     Map.of("origin", List.of(origin.getX(), origin.getY(), origin.getZ()), "cases", results,
                         "singleBlockAccepted", single, "serverBlocksUnchanged", unchanged,
+                        "regionValidation", region,
                         "visualAcceptance", "requires recorded-video inspection; position data alone is insufficient")));
                 if (!unchanged || !single) throw new AssertionError("Block Animation failed inclusive single-block or unchanged-world contract");
+                if (!region.get("unloadedRegionRejected") || !region.get("existingEffectPreserved"))
+                    throw new AssertionError("Invalid unloaded-region capture was silent or replaced the existing effect");
             }
             finally { context.runOnClient(client -> BlockAnimation.clear()); }
         }
