@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import glob
+import hashlib
 import json
 import pathlib
 import re
@@ -25,6 +26,7 @@ DIRECT_PORT_MARKERS = (
 SOURCE_SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp", ".java", ".py", ".rs"}
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 SPDX_RE = re.compile(r"SPDX-License-Identifier:\s*([A-Za-z0-9.+-]+)")
+GPL2_SHA256 = "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c"
 
 
 def load_register() -> dict:
@@ -113,6 +115,11 @@ def main() -> int:
     if not isinstance(ports, list):
         errors.append("ports muss eine Liste sein.")
         ports = []
+
+    if arguments.release and any(isinstance(entry.get("license"), str) and entry["license"].startswith("GPL-2.0") for entry in ports):
+        license_path = ROOT / "src/main/resources/META-INF/LICENSE-BLENDER-IK.txt"
+        if not license_path.is_file() or hashlib.sha256(license_path.read_bytes()).hexdigest() != GPL2_SHA256:
+            errors.append("Vollstaendige unveraenderte GPL-v2-Kopie fehlt: src/main/resources/META-INF/LICENSE-BLENDER-IK.txt")
 
     for entry in ports:
         port_id = entry.get("id")
