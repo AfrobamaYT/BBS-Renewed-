@@ -765,7 +765,7 @@ public class BBSSettings {
 		shaderCurvesEnabled = builder.getBoolean("enabled", true);
 
 		builder.category("audio", Icons.SOUND);
-		audioWaveformVisibleInPreview = builder.getBoolean("waveform_visible_preview", true);
+		audioWaveformVisibleInPreview = builder.getBoolean("waveform_visible_preview", false);
 		audioWaveformVisibleInKeyframes = builder.getBoolean("waveform_visible_keyframes", true); audioWaveformDetailed = builder.getBoolean("waveform_detailed", true); /* BBS FS 07159d44d */
 		audioWaveformDensity = builder.getInt("waveform_density", 20, 10, 100).slider();
 		audioWaveformWidth = builder.getFloat("waveform_width", 0.8F, 0F, 1F).slider();
