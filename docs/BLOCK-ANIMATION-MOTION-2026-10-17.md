@@ -35,7 +35,8 @@ and the single-block action visibly rise, and explicit clear removes the copies.
 The earlier overlap stripes are absent in the inspected perspective/gold-block
 frames. Other materials, camera modes and performance are not accepted by this
 case. Canonical Linux product9387e83c6ee649b9219fef4b4c1c79d8d9f19b5a539747548db3718cb928b73b.
-The frozen-input Windows job is pending at this record.
+The frozen-input Windows job also passes with unchanged9387 bytes and real
+one-block/two-block state; the final runtime receipt was read. All three jobs pass.
 Raw receipt: block-motion-after-39026151559.json in the public audit evidence directory.
 
 Remaining acceptance includes reversed/empty and large regions, invalid input,

@@ -21,7 +21,8 @@ See WORLD-SNAPSHOT-REPAIR-2026-10-17.md for evidence and full repair acceptance.
   `9387e83c6ee649b9219fef4b4c1c79d8d9f19b5a539747548db3718cb928b73b`,
   sourcecbfcdbf5d. Linux/Windows source jobs pass in39026151559; inspected Linux
   video shows both two-block actions and the one-block action, without the earlier
-  overlap stripes in that case. Frozen Windows is pending. Region/render/lifecycle
+  overlap stripes in that case. Frozen Windows also passes with unchanged9387
+  bytes and its actual motion-state receipt was read. Region/render/lifecycle
   breadth and the complete release scope remain open.
 - Previous action-editor repaired Linux candidate:
   `d7f3f2740ba9e86679dada9ccd2150c869396025053e2021c5dc9b7b91327161`,
@@ -417,8 +418,8 @@ corrects it, and sourcecbfcdbf5d tests vanilla's layering modifier for the obser
 striping. The one-block correction passes all three jobs in39025821014. The
 subsequent Linux/Windows source jobs in39026151559 pass, and its actual Linux
 video shows the one-block action and no earlier stripe pattern in inspected
-perspective/gold-block frames. Broader effects/cameras and frozen-input result
-remain separate. Full scope and raw
+perspective/gold-block frames. The frozen-input Windows job also passes with
+unchanged9387 bytes. Broader effects/cameras remain separate. Full scope and raw
 hashes are in BLOCK-ANIMATION-MOTION-2026-10-17.md.
 
 The separate real dedicated-server run39025447300 passes on Linux and Windows:
