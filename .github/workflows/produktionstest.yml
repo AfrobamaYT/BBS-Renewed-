@@ -65,6 +65,7 @@ jobs:
         with:
           name: produktionstest-${{ runner.os }}
           path: |
+            build/libs/bbs-*.jar
             build/produktionstest/logs/
             build/produktionstest/crash-reports/
             build/produktionstest/screenshots/

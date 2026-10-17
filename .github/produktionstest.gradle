@@ -46,6 +46,7 @@ rootProject {
 			run.jvmArgs.add("-Dfabric.noGui=true")
 			run.jvmArgs.add("-Dfabric.client.gametest")
 			run.jvmArgs.add("-Dbbs.gametest.aufnehmen=true")
+			run.jvmArgs.add("-Dbbs.ci.production=true")
 			run.jvmArgs.add("-Xmx3G")
 		}
 	}

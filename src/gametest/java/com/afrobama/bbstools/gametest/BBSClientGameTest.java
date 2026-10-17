@@ -61,6 +61,27 @@ public class BBSClientGameTest implements FabricClientGameTest {
 
 	@Override
 	public void runTest(ClientGameTestContext context) {
+		if (Boolean.getBoolean("bbs.ci.production"))
+		{
+			if (net.fabricmc.loader.api.FabricLoader.getInstance().isDevelopmentEnvironment()
+				|| net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("bbsdev"))
+			{
+				throw new AssertionError("Production smoke test requires the product JAR and no companion");
+			}
+			String source = mchorse.bbs_mod.BBSMod.class.getProtectionDomain().getCodeSource().getLocation().toExternalForm();
+			if (!source.endsWith(".jar")) throw new AssertionError("Production BBS CodeSource is not a JAR: " + source);
+			System.out.println("BBS_PRODUCTION_SOURCE " + source);
+			try
+			{
+				java.nio.file.Path jar = java.nio.file.Path.of(mchorse.bbs_mod.BBSMod.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+				String digest = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(java.nio.file.Files.readAllBytes(jar)));
+				System.out.println("BBS_PRODUCTION_SHA256 " + digest);
+			}
+			catch (Exception failure)
+			{
+				throw new AssertionError("Cannot identify the actual production product bytes", failure);
+			}
+		}
 		try (TestSingleplayerContext welt = context.worldBuilder().create()) {
 			// Ohne dieses Warten faengt der Screenshot halb geladene Chunks ein -- der Vergleich
 			// waere dann bei jedem Lauf anders, also flatterhaft. Genau solche Tests bringen
@@ -110,6 +131,7 @@ public class BBSClientGameTest implements FabricClientGameTest {
 			// Wartezeit faengt der Screenshot ein halb aufgebautes Fenster ein und der
 			// Vergleich wird flatterhaft -- derselbe Grund wie beim Warten auf die Chunks.
 			context.waitTicks(20);
+			DashboardFirstRun.dismiss(context);
 
 			pruefe(context, "bbs-dashboard");
 		}
