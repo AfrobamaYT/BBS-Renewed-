@@ -12,6 +12,10 @@ on:
         description: Capture Windows native termination with signed ProcDump
         type: boolean
         default: false
+      native_postmortem:
+        description: Verify signed postmortem capture before an unattached Windows game
+        type: boolean
+        default: false
 
 jobs:
   produktionstest:
@@ -45,11 +49,18 @@ jobs:
       - name: Build
         run: ./gradlew build -x test
 
+      - name: Reject postmortem configuration on the Linux host
+        if: runner.os == 'Linux'
+        shell: pwsh
+        run: ./.github/test-postmortem-host-guard.ps1
+
       - name: Prepare isolated Windows crash diagnostics
         if: runner.os == 'Windows'
         shell: pwsh
         env:
-          BBS_PROCDUMP_CAPTURE: ${{ inputs.native_diagnostics && '1' || '0' }}
+          BBS_PROCDUMP_CAPTURE: ${{ (inputs.native_diagnostics || inputs.native_postmortem) && '1' || '0' }}
+          BBS_PROCDUMP_POSTMORTEM: ${{ inputs.native_postmortem && '1' || '0' }}
+          BBS_PROCDUMP_MONITOR: ${{ inputs.native_diagnostics && '1' || '0' }}
         run: ./.github/windows-native-crash.ps1 prepare
 
       - name: Production run with client gametest (Windows)
@@ -115,7 +126,9 @@ jobs:
       - name: Prepare isolated Windows crash diagnostics
         shell: pwsh
         env:
-          BBS_PROCDUMP_CAPTURE: ${{ inputs.native_diagnostics && '1' || '0' }}
+          BBS_PROCDUMP_CAPTURE: ${{ (inputs.native_diagnostics || inputs.native_postmortem) && '1' || '0' }}
+          BBS_PROCDUMP_POSTMORTEM: ${{ inputs.native_postmortem && '1' || '0' }}
+          BBS_PROCDUMP_MONITOR: ${{ inputs.native_diagnostics && '1' || '0' }}
         run: ./.github/windows-native-crash.ps1 prepare
       - name: Test the unchanged Linux product and test mod
         timeout-minutes: 6

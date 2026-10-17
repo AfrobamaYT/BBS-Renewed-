@@ -10,6 +10,9 @@ $taskKey = "HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\
 $taskRegKey = "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\java.exe"
 New-Item -ItemType Directory -Force $taskOutput | Out-Null
 if ($Mode -eq "prepare") {
+    if ($env:BBS_PROCDUMP_POSTMORTEM -eq "1" -and $env:BBS_PROCDUMP_MONITOR -eq "1") {
+        throw "Choose either attached monitoring or postmortem capture, not both"
+    }
     New-Item -ItemType Directory -Force $taskDumpDir | Out-Null
     $taskHadKey = Test-Path $taskKey
     $taskBackup = Join-Path $env:RUNNER_TEMP "bbs-previous-localdumps.reg"
@@ -23,6 +26,9 @@ if ($Mode -eq "prepare") {
     New-ItemProperty -Force $taskKey -Name DumpFolder -PropertyType ExpandString -Value $taskDumpDir | Out-Null
     New-ItemProperty -Force $taskKey -Name DumpType -PropertyType DWord -Value 1 | Out-Null
     New-ItemProperty -Force $taskKey -Name DumpCount -PropertyType DWord -Value 2 | Out-Null
+    if ($env:BBS_PROCDUMP_POSTMORTEM -eq "1" -and $env:BBS_PROCDUMP_CAPTURE -ne "1") {
+        throw "Postmortem capture requires the signed ProcDump preparation"
+    }
     if ($env:BBS_PROCDUMP_CAPTURE -eq "1") { & "$PSScriptRoot/windows-procdump.ps1" prepare }
     Write-Output "Enabled local Java minidumps in disposable CI; raw dumps are not uploaded"
     exit 0
@@ -65,9 +71,15 @@ try {
     if ($taskProcError) { throw $taskProcError }
 }
 finally {
-    if (Test-Path $taskKey) { Remove-Item -Recurse -Force $taskKey }
-    if ($taskSaved.hadKey) {
-        & reg.exe import $taskSaved.backup | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "Cannot restore the previous CI dump configuration" }
+    try {
+        if (Test-Path (Join-Path $env:RUNNER_TEMP "bbs-postmortem/state.json")) {
+            & "$PSScriptRoot/windows-postmortem.ps1" collect
+        }
+    } finally {
+        if (Test-Path $taskKey) { Remove-Item -Recurse -Force $taskKey }
+        if ($taskSaved.hadKey) {
+            & reg.exe import $taskSaved.backup | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "Cannot restore the previous CI dump configuration" }
+        }
     }
 }

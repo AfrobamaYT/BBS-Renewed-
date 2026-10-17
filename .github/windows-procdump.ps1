@@ -23,11 +23,15 @@ if ($Mode -eq "prepare") {
         throw "Require the signed Microsoft ProcDump binary"
     }
     Save-CaptureState @{ binary=$taskBinary; sha256=(Get-FileHash $taskBinary -Algorithm SHA256).Hash
+        captureMode=$(if ($env:BBS_PROCDUMP_POSTMORTEM -eq "1") { "postmortem" } else { "monitor" })
         startedUtc=[DateTime]::UtcNow.ToString("o"); state="prepared"; rawDumpsUploaded=$false }
+    if ($env:BBS_PROCDUMP_POSTMORTEM -eq "1") {
+        & "$PSScriptRoot/windows-postmortem.ps1" prepare -Binary $taskBinary
+    }
     $taskArguments = '-NoProfile -File "' + $PSCommandPath + '" watch'
     $taskWatcher = Start-Process -FilePath (Get-Process -Id $PID).Path -ArgumentList $taskArguments -PassThru -WindowStyle Hidden
     $taskWatcher.Id | Set-Content $taskPidFile
-    Write-Output "Prepared signed ProcDump monitor for the uniquely marked production JVM"
+    Write-Output "Prepared signed native capture and identity observation for the uniquely marked production JVM"
     exit 0
 }
 if (-not (Test-Path $taskState)) {
@@ -47,8 +51,13 @@ if ($Mode -eq "watch") {
         } while ([DateTime]::UtcNow -lt $taskDeadline)
         if ($taskCandidates.Count -ne 1) { throw "No marked production JVM observed before the monitor deadline" }
         $taskMeta.gamePid = [int]$taskCandidates[0].ProcessId
+        $taskMeta.gameCommandLine = $taskCandidates[0].CommandLine
         $taskMeta.state = "observed"
         Save-CaptureState $taskMeta
+        if ($taskMeta.captureMode -eq "postmortem") {
+            $taskMeta.state = "observed-unattached"
+            exit 0
+        }
         $taskArguments = '-accepteula -mm -e -t -n 2 ' + $taskMeta.gamePid + ' "' + $taskDumpDir + '"'
         $taskMonitor = Start-Process -FilePath $taskMeta.binary -ArgumentList $taskArguments -PassThru -NoNewWindow `
             -RedirectStandardOutput (Join-Path $taskOutput "procdump.stdout.log") `
@@ -90,6 +99,15 @@ if (Test-Path $taskPidFile) {
     }
 }
 $taskMeta = Get-Content -Raw $taskState | ConvertFrom-Json -AsHashtable
+if ($taskMeta.captureMode -eq "postmortem") {
+    try {
+        Copy-Item $taskState (Join-Path $taskOutput "postmortem-game.json")
+        if (-not $taskMeta.gamePid -or $taskMeta.state -eq "failed") {
+            throw "Postmortem identity observation failed: $($taskMeta.error)"
+        }
+    } finally { & "$PSScriptRoot/windows-postmortem.ps1" collect }
+    exit 0
+}
 $taskMeta.dumpFiles = @(Get-ChildItem $taskDumpDir -Filter "*.dmp" -File -ErrorAction SilentlyContinue |
     ForEach-Object { @{ name=$_.Name; bytes=$_.Length } })
 foreach ($taskLogName in @("procdump.stdout.log", "procdump.stderr.log")) {
