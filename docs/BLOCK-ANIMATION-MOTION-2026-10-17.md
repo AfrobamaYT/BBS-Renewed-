@@ -44,3 +44,26 @@ render failures, timeline/replay lifecycle and the relevant materials/cameras.
 Explicit clear is not proof of automatic film-stop cleanup. Source concerns about
 unbounded capture loops and swallowed render failures remain open. No arbitrary
 new capture-size restriction is substituted for completing the feature.
+
+## Unloaded-region contract
+
+The first negative fixture in run39027699685 incorrectly used
+ClientLevel.hasChunksAt as a presence check. Actual26.3 ClientLevel.hasChunk
+bytecode returns true unconditionally; that fixture failure was not a product
+reproduction. Source040e08fff checks ClientChunkCache.getChunk(FULL,false), which
+returns null rather than the fallback empty chunk when data is unavailable.
+
+The corrected negative in run39028199277 reproduces the product error on Linux:
+an unloaded single-position region silently returns an empty capture and replaces
+the previously active effect. Actual state reports unloadedRegionRejected=false
+and existingEffectPreserved=false. No huge loop or fake Minecraft class is used.
+Raw receipt: block-unloaded-before-39028199277.json, SHA256
+1bfdd4cb804dd16bf67ec4caf9e019c884cdb29387740ec66573d5dba1dddcca.
+
+Source4436e82f7 checks actual client chunk storage before collecting/publishing
+the region. The registered client action catches that invalid request, logs it
+and sends an actual player system-chat failure. The contract now checks both
+state preservation and the real chat queue, with a captured feedback image.
+Build/API/public-companion boundary pass; runtime acceptance is pending.
+There is no new limit on valid loaded capture sizes. Large loaded-region cost,
+other invalid inputs, render failures and timeline lifecycle remain open.

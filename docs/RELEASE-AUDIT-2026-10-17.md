@@ -443,3 +443,10 @@ The separate real dedicated-server run39025447300 passes on Linux and Windows:
 no Minecraft client class/companion, actual saved vanilla structure, registered
 replay action and restored real block. The current named snapshot server boundary
 has runtime proof; unrelated server behavior and all other release gates stay open.
+
+The corrected client-cache negative in39028199277 reproduces another Block
+Animation error: an unloaded request silently erases the active animation.
+Source4436e82f7 adds an actual-cache preflight and visible player feedback without
+imposing a smaller capture-size limit. Build/API/boundary pass; runtime checks
+for rejection, prior-state preservation and delivered chat feedback are pending.
+ClientLevel.hasChunksAt was explicitly ruled out as a valid client presence test.
