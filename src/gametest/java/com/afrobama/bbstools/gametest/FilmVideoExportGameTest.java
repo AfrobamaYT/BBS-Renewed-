@@ -104,6 +104,7 @@ public final class FilmVideoExportGameTest implements FabricClientGameTest
             || stream.get("height").getAsInt() != 180 || !stream.get("r_frame_rate").getAsString().equals("20/1")
             || stream.get("nb_read_frames").getAsInt() != 20 || submitted != 20)
             throw new AssertionError("Exported bytes do not contain the requested one-second 320x180/20fps film");
+        FilmAudioExportProbe.run(context, evidence);
         FilmExportFailureProbe.run(context, evidence);
     }
 
@@ -191,7 +192,7 @@ public final class FilmVideoExportGameTest implements FabricClientGameTest
         return BBSModClient.getDashboard().getPanels().getPanel(UIFilmPanel.class);
     }
 
-    private static void execute(List<String> command, Path log) throws Exception
+    static void execute(List<String> command, Path log) throws Exception
     {
         Process process = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile()).start();
         if (!process.waitFor(20, TimeUnit.SECONDS))

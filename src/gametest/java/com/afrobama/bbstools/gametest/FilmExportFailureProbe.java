@@ -24,6 +24,7 @@ final class FilmExportFailureProbe
         context.runOnClient(client ->
         {
             BBSSettings.videoExportFilenameFormat.set("film export interrupted");
+            BBSSettings.videoExportAudio.set(false);
             panel().getData().camera.get(0).duration.set(200);
             panel().forceSave();
             panel().setCursor(0);
